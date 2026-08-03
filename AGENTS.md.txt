@@ -1,0 +1,23 @@
+Every Goal is local, but every decision must remain globally consistent
+with PROJECT.md, ARCHITECTURE.md, BUSINESS_RULES.md, and approved decisions.
+
+Before starting a Goal, reload the project context from the repository.
+
+After completing a Goal, persist all information required for the next Goal
+inside the repository.
+
+Never rely on conversation history for continuity.
+
+One execution = One Goal.
+
+A Goal is the largest unit of implementation.
+
+Never implement two Goals in the same execution.
+
+Finish the current Goal completely.
+
+Update all documentation.
+
+Prepare the next Goal.
+
+Stop and wait.
