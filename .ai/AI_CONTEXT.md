@@ -4,17 +4,9 @@
 
 This file defines how AI assistants must interact with this project's documentation system.
 
-This file is project-independent.
-
-It does not contain:
-
-- Project information
-- Business goals
-- Technical details
-- Current status
-- Active tasks
-
-Project-specific information exists in other documentation files.
+This file is the stable map for the Jupiter documentation system. Project facts
+live in the files named below; current implementation facts live only in
+`CURRENT_STATE.md`.
 
 ---
 
@@ -44,105 +36,26 @@ Information must not be duplicated across files.
 
 Every AI session must follow this order:
 
-1. AI_CONTEXT.md
-
-2. CURRENT_STATE.md
-
-3. NEXT_TASK.md
-
-4. PROJECT.md
-
-5. ARCHITECTURE.md
-
-6. DESIGN_SYSTEM.md
-
-7. DECISIONS.md
-
-8. MASTER_PLAN.md
-
-9. CHANGELOG.md
-
-10. SESSION_LOG.md
-
-11. PROMPTS.md
+1. `AGENTS.md`
+2. `AI_CONTEXT.md`
+3. `CURRENT_STATE.md`
+4. `NEXT_TASK.md`
+5. `PROJECT.md`
+6. `ARCHITECTURE.md`, `AI_ARCHITECTURE.md`, `DOMAIN_MODEL.md`
+7. `BUSINESS_RULES.md`, `USE_CASES.md`, `SECURITY.md`
+8. `DECISIONS.md`, `MASTER_PLAN.md`, `EXECUTION_PLAN.md`
+9. Other documents relevant to the Goal
 
 ---
 
 # File Responsibilities
 
-## PROJECT.md
-
-Contains:
-
-- Project identity
-- Goals
-- Scope
-- Business context
-
-
-## ARCHITECTURE.md
-
-Contains:
-
-- Technical architecture
-- Technology decisions
-- System structure
-
-
-## CURRENT_STATE.md
-
-Contains:
-
-- Current project condition
-- Completed work
-- Current phase
-
-
-## NEXT_TASK.md
-
-Contains:
-
-- The single active task
-- Immediate next action
-
-
-## DESIGN_SYSTEM.md
-
-Contains:
-
-- Visual rules
-- UI principles
-- Design decisions
-
-
-## DECISIONS.md
-
-Contains:
-
-- Important decisions
-- Reasons behind decisions
-
-
-## MASTER_PLAN.md
-
-Contains:
-
-- Long-term roadmap
-- Project phases
-
-
-## CHANGELOG.md
-
-Contains:
-
-- Important historical changes
-
-
-## SESSION_LOG.md
-
-Contains:
-
-- Development session summaries
+`PROJECT.md` owns scope and roles. `ARCHITECTURE.md` owns system boundaries.
+`AI_ARCHITECTURE.md` owns AI integration. `DOMAIN_MODEL.md` owns aggregates.
+`BUSINESS_RULES.md` owns testable policies. `USE_CASES.md` owns user flows.
+`SECURITY.md` owns threat controls. `MASTER_PLAN.md` owns milestones;
+`EXECUTION_PLAN.md` owns executable Goals. `CURRENT_STATE.md` owns facts now;
+`NEXT_TASK.md` owns exactly one active Goal. `DECISIONS.md` owns ADRs.
 
 
 # AI Operating Rules
