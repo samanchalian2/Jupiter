@@ -34,4 +34,7 @@ export class AiGatewayService {
  async review(actor:{userId:string;organizationId:string}, requestId:string) {
   return this.database.withOrganization(actor.organizationId, async client => (await client.query('SELECT r.id,r.status,r.redacted_input,result.output,result.usage,result.provider,result.model FROM ai_requests r LEFT JOIN ai_results result ON result.request_id=r.id WHERE r.id=$1 AND r.created_by_user_id=$2',[requestId,actor.userId])).rows[0]);
  }
+ async confirm(actor:{userId:string;organizationId:string}, requestId:string) {
+  return this.database.withOrganization(actor.organizationId, async client => { const row=(await client.query<{ticket_id:string;output:{title?:string;normalizedDescription?:string;priority?:string}}>('SELECT r.ticket_id,result.output FROM ai_requests r JOIN ai_results result ON result.request_id=r.id WHERE r.id=$1 AND r.created_by_user_id=$2',[requestId,actor.userId])).rows[0]; if(!row) throw new ForbiddenException(); await client.query('UPDATE tickets SET title=COALESCE($1,title),description=COALESCE($2,description),priority=COALESCE($3,priority),updated_at=now() WHERE id=$4 AND requester_user_id=$5',[row.output.title,row.output.normalizedDescription,row.output.priority,row.ticket_id,actor.userId]); return {confirmed:true}; });
+ }
 }
