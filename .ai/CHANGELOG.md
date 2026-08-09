@@ -14,3 +14,5 @@
 
 - Added PostgreSQL migration, RLS tenant isolation, local authentication,
   bootstrap platform-admin support, and organization directory schema.
+- Added tenant-scoped ticket drafts, submission, assignment, transition history,
+  audit records, and lifecycle integration tests.

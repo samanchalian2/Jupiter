@@ -21,4 +21,5 @@ export class AuthService {
     if (!result.rows[0]) throw new UnauthorizedException();
     return result.rows[0];
   }
+  async verify(token: string) { return this.jwt.verifyAsync<{sub:string}>(token); }
 }

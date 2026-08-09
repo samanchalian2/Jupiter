@@ -67,12 +67,16 @@ department and an unknown context saw zero records.
 
 ## GOAL-004 — Ticket lifecycle and assignment
 
-**Status:** PLANNED
+**Status:** DONE
 
 **Depends on:** GOAL-003. **Scope:** draft, submit, fixed lifecycle,
 classification, priorities, assignment, transitions, and audit history.
 
 **Done:** authorization and lifecycle integration tests pass.
+
+**Validation:** Migration 002 and permission Migration 003 applied. Integration
+test passed for draft creation, submission, manual assignment, and transition
+to IN_PROGRESS under RLS.
 
 ## GOAL-005 — Conversation and activity history
 

@@ -1,13 +1,11 @@
 # Next Task
 
-## GOAL-004 — Ticket lifecycle and assignment
+## GOAL-005 — Conversation and activity history
 
 **Status:** READY
 
-Implement tenant-scoped ticket drafts and submissions, fixed state transitions,
-priority/classification, manual assignment, activity/audit history, and
-authorization tests. Do not implement messages, attachments, AI, voice, or
-user-facing portals.
+Implement requester and expert messages, internal notes, immutable activity
+timeline, and SSE notifications. Do not implement file attachments, AI, voice,
+or role portals.
 
-Use the existing local PostgreSQL connection and preserve the approved lifecycle
-semantics in DOMAIN_MODEL.md and BUSINESS_RULES.md.
+Preserve tenant isolation and ensure internal notes never reach requester APIs.

@@ -114,3 +114,13 @@ build passed; RLS returned only the owning tenant's data for two organizations.
 
 Not implemented: tickets, messages, files, AI, voice, and management portals.
 GOAL-004 is next: tenant-scoped ticket lifecycle and manual assignment.
+
+## 2026-08-09 — GOAL-004 handoff
+
+GOAL-004 completed. Added tickets, assignments and transition schema, backend
+APIs for draft/submit/status/assignment, canonical transition policy, and audit
+events. The integration suite verified the full draft-to-assignment-to-progress
+path with database RLS enabled.
+
+Not implemented: conversation, internal notes, attachments, AI, voice, and
+role portals. GOAL-005 is next.
