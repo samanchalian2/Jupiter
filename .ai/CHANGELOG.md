@@ -18,3 +18,5 @@
   audit records, and lifecycle integration tests.
 - Added public ticket conversation, staff-only internal notes, append-only
   ticket activity history, and recipient-scoped SSE notifications.
+- Added S3-compatible attachment adapter, secure attachment metadata workflow,
+  allowlisted media validation, and short-lived signed URLs.

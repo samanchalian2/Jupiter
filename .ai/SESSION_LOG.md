@@ -139,3 +139,17 @@ lint, typecheck, tests, build, and `git diff --check` passed.
 
 Not implemented: attachments, AI, voice, search, and role portals. GOAL-006 is
 next: secure attachment and media handling.
+
+## 2026-08-09 â€” GOAL-006 handoff
+
+GOAL-006 completed. Added tenant-scoped attachment metadata and an
+S3-compatible storage adapter. Upload requests validate filename, allowlisted
+type, and size before producing a five-minute signed URL; completion verifies
+the stored object's type and size before making it available for download.
+
+Validation: migration 005 applied; integration tests covered invalid media,
+metadata mismatch, requester/expert authorization, RLS denial, and signed
+upload/download URL flow. Workspace lint, typecheck, tests, build, and
+`git diff --check` passed.
+
+GOAL-007 is next: role-specific RTL portals and their primary E2E flows.

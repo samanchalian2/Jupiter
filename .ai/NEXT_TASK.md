@@ -1,13 +1,13 @@
 # Next Task
 
-## GOAL-006 — Secure attachments and media
+## GOAL-007 — Role portals
 
 **Status:** READY
 
-Implement the S3-compatible storage adapter, attachment metadata, signed
-upload/download URLs, media validation, and limits. Do not implement AI,
-voice transcription, or role portals.
+Implement responsive RTL requester, expert, supervisor, and organization-admin
+flows for the existing identity, tickets, conversations, activity, and
+attachment APIs. Do not implement AI, voice, advanced search, ratings, or
+administration APIs outside the established scope.
 
-Preserve tenant isolation and enforce authorization, allowlisted media types,
-size limits, and short-lived access URLs. Never expose storage credentials to
-clients or commit them.
+Preserve server-authoritative authorization: the UI must not expose internal
+notes to requesters or treat client-side role rendering as a security boundary.

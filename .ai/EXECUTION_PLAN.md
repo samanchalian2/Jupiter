@@ -93,18 +93,22 @@ recipient-scoped SSE event delivery.
 
 ## GOAL-006 — Secure attachments and media
 
+**Status:** DONE
+
 **Depends on:** GOAL-004. **Scope:** S3 adapter, signed uploads/downloads,
 validation, limits, metadata. **Done:** authorization and invalid-file tests
 pass.
 
-**Status:** READY
+**Validation:** Migration 005 applied. Integration tests covered allowlisted
+media, filename and size limits, storage metadata mismatch rejection,
+authorized downloads, and tenant isolation.
 
 ## GOAL-007 — Role portals
 
-**Status:** PLANNED
-
 **Depends on:** GOAL-005/006. **Scope:** responsive RTL requester, expert,
 supervisor, and organization-admin flows. **Done:** E2E primary flows pass.
+
+**Status:** READY
 
 ## GOAL-008 — AI gateway contract
 
