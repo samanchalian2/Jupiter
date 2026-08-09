@@ -108,7 +108,7 @@ authorized downloads, and tenant isolation.
 **Depends on:** GOAL-005/006. **Scope:** responsive RTL requester, expert,
 supervisor, and organization-admin flows. **Done:** E2E primary flows pass.
 
-**Status:** IN PROGRESS
+**Status:** DONE
 
 ## GOAL-008 — AI gateway contract
 
