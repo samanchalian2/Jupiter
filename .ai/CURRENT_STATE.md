@@ -1,6 +1,6 @@
 # Current State
 
-**Phase:** GOAL-006 complete; GOAL-007 is ready.
+**Phase:** GOAL-006 complete; GOAL-007 is in progress.
 
 GOAL-001 through GOAL-006 are complete. The repository contains the executable
 foundation plus a PostgreSQL migration for organizations, users, memberships,

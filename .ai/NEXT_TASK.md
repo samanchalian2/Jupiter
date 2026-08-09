@@ -2,7 +2,7 @@
 
 ## GOAL-007 — Role portals
 
-**Status:** READY
+**Status:** IN PROGRESS
 
 Implement responsive RTL requester, expert, supervisor, and organization-admin
 flows for the existing identity, tickets, conversations, activity, and
