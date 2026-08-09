@@ -112,7 +112,7 @@ supervisor, and organization-admin flows. **Done:** E2E primary flows pass.
 
 ## GOAL-008 — AI gateway contract
 
-**Status:** PLANNED
+**Status:** DONE
 
 **Depends on:** GOAL-003/004. **Scope:** provider abstraction, protected
 platform configuration, prompts, audit/usage, redaction, queue integration.

@@ -1,9 +1,8 @@
 # Next Task
 
-## GOAL-008 — AI gateway contract
+## GOAL-009 — Text AI review and initial response
 
 **Status:** READY
 
-Implement the provider abstraction, platform-controlled configuration, prompt
-and usage audit, redaction, and asynchronous queue boundary. Do not add a
-provider credential to source control or call providers from ticketing code.
+Implement structured text analysis review, user confirmation, AI-labelled
+initial response, and a manual fallback when the provider fails.

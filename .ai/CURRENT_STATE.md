@@ -1,8 +1,8 @@
 # Current State
 
-**Phase:** GOAL-007 complete; GOAL-008 is ready.
+**Phase:** GOAL-008 complete; GOAL-009 is ready.
 
-GOAL-001 through GOAL-007 are complete. The repository contains the executable
+GOAL-001 through GOAL-008 are complete. The repository contains the executable
 foundation plus a PostgreSQL migration for organizations, users, memberships,
 roles/permissions, organization directory tables, audit logs, and RLS policies.
 Local authentication supports bootstrap platform administration and login.
