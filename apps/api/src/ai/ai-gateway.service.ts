@@ -15,6 +15,11 @@ export class AiGatewayService {
    return request;
   });
  }
+ async configurePlatform(actorId: string, organizationId: string, enabled: boolean, model: string) {
+  const admin=(await this.database.query<{is_platform_admin:boolean}>('SELECT is_platform_admin FROM users WHERE id=$1 AND is_active=true',[actorId])).rows[0]?.is_platform_admin;
+  if (!admin) throw new ForbiddenException();
+  return this.database.withOrganization(organizationId, async client => (await client.query('INSERT INTO organization_ai_settings(organization_id,enabled,model,updated_by_user_id) VALUES($1,$2,$3,$4) ON CONFLICT(organization_id) DO UPDATE SET enabled=EXCLUDED.enabled,model=EXCLUDED.model,updated_by_user_id=EXCLUDED.updated_by_user_id,updated_at=now() RETURNING organization_id,enabled,model,updated_at',[organizationId,enabled,model,actorId])).rows[0]);
+ }
  async process(requestId: string, provider: AiProvider) {
   const request=(await this.database.query<{id:string;organization_id:string;redacted_input:{text:string};prompt_version:string}>('SELECT id,organization_id,redacted_input,prompt_version FROM ai_requests WHERE id=$1 AND status=\'QUEUED\'',[requestId])).rows[0];
   if (!request) return;
