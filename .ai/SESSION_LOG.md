@@ -102,3 +102,15 @@ foundation after the owner provides PostgreSQL connectivity details.
 Read `AGENTS.md`, `CURRENT_STATE.md`, `NEXT_TASK.md`, `ARCHITECTURE.md`,
 `DOMAIN_MODEL.md`, `SECURITY.md`, `DECISIONS.md`, and
 `EXECUTION_PLAN.md`.
+
+## 2026-08-09 — GOAL-003 handoff
+
+GOAL-003 completed. Added PostgreSQL migration infrastructure, organization,
+user, membership, RBAC and directory schema, audit logs, tenant transaction
+context, local login service, and bootstrap platform administrator.
+
+Validation: migration applied to the local Jupiter database; typecheck and
+build passed; RLS returned only the owning tenant's data for two organizations.
+
+Not implemented: tickets, messages, files, AI, voice, and management portals.
+GOAL-004 is next: tenant-scoped ticket lifecycle and manual assignment.

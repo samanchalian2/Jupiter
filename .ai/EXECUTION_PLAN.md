@@ -50,7 +50,7 @@ available on PATH.
 
 ## GOAL-003 — Tenant-aware identity, access, and organization directory
 
-**Status:** PLANNED
+**Status:** DONE
 
 **Depends on:** GOAL-002 and user-provided database access when migrations are
 ready.
@@ -60,6 +60,10 @@ organization, departments, locations, disciplines, and taxonomy foundations.
 
 **Done:** migration and isolation/security tests pass against the authorized
 database; no cross-tenant read/write is possible.
+
+**Validation:** PostgreSQL 18.4 local connection and migration succeeded.
+RLS was verified with two organizations: each context saw only its own
+department and an unknown context saw zero records.
 
 ## GOAL-004 — Ticket lifecycle and assignment
 

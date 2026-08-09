@@ -1,14 +1,13 @@
 # Current State
 
-**Phase:** foundation complete; GOAL-003 is ready.
+**Phase:** GOAL-003 complete; GOAL-004 is ready.
 
-GOAL-001 and GOAL-002 are complete. The repository now contains a pnpm
-workspace with a NestJS API health endpoint, a React/Vite Persian RTL shell,
-local Compose configuration for PostgreSQL, Redis, and MinIO, quality scripts,
-and CI baseline. Product capabilities, database schema/migrations, and
-production secrets remain out of scope.
+GOAL-001 through GOAL-003 are complete. The repository contains the executable
+foundation plus a PostgreSQL migration for organizations, users, memberships,
+roles/permissions, organization directory tables, audit logs, and RLS policies.
+Local authentication supports bootstrap platform administration and login.
 
-Validation on 2026-08-05: lint, typecheck, test, and production build passed;
-`GET /api/v1/health` returned the expected `jupiter-api/ok` contract. Node.js
-and pnpm are available through the bundled Codex runtime. Docker is not on
-PATH, so Compose was configured but not executed locally.
+Validation on 2026-08-09: PostgreSQL 18.4 is installed locally and Jupiter is
+running at 127.0.0.1:5433. Migration 001_identity.sql applied successfully;
+RLS returned one department for each of two tenant contexts and zero for an
+unknown context. The local database password exists only in ignored .env.

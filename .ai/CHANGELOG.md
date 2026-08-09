@@ -9,3 +9,8 @@
 
 - Added the pnpm TypeScript workspace, NestJS health API, React/Vite RTL shell,
   Compose development services, quality scripts, and CI baseline.
+
+## 2026-08-09
+
+- Added PostgreSQL migration, RLS tenant isolation, local authentication,
+  bootstrap platform-admin support, and organization directory schema.
