@@ -17,7 +17,7 @@ export class TicketService {
         'INSERT INTO tickets(organization_id,requester_user_id,title,description,priority,department_id) VALUES($1,$2,$3,$4,$5,$6) RETURNING id,ticket_number,status,title,description,priority,created_at',
         [actor.organizationId, actor.userId, data.title, data.description, data.priority ?? 'NORMAL', data.departmentId ?? null],
       );
-      await this.activity(client, actor, result.rows[0].id, 'ticket.draft_created');
+      await this.activity(client, actor, result.rows[0].id, 'ticket.draft_created', 'REQUESTER');
       return result.rows[0];
     });
   }
@@ -34,7 +34,7 @@ export class TicketService {
       assertTransition(ticket.status, to);
       await client.query('UPDATE tickets SET status=$1,updated_at=now() WHERE id=$2', [to, ticketId]);
       await client.query('INSERT INTO ticket_status_transitions(organization_id,ticket_id,from_status,to_status,changed_by_user_id,reason) VALUES($1,$2,$3,$4,$5,$6)', [actor.organizationId,ticketId,ticket.status,to,actor.userId,reason ?? null]);
-      await this.activity(client, actor, ticketId, 'ticket.status_changed', { from: ticket.status, to });
+      await this.activity(client, actor, ticketId, 'ticket.status_changed', 'REQUESTER', { from: ticket.status, to });
       return { ...ticket, status: to };
     });
   }
@@ -47,7 +47,7 @@ export class TicketService {
       if (!assignee.rowCount) throw new NotFoundException('Eligible assignee not found');
       await client.query('UPDATE ticket_assignments SET ended_at=now() WHERE ticket_id=$1 AND ended_at IS NULL', [ticketId]);
       const assignment = await client.query('INSERT INTO ticket_assignments(organization_id,ticket_id,assigned_to_user_id,assigned_by_user_id) VALUES($1,$2,$3,$4) RETURNING id,assigned_to_user_id,assigned_at', [actor.organizationId,ticketId,assignedToUserId,actor.userId]);
-      await this.activity(client, actor, ticketId, 'ticket.assigned', { assignedToUserId });
+      await this.activity(client, actor, ticketId, 'ticket.assigned', 'STAFF', { assignedToUserId });
       return assignment.rows[0];
     });
   }
@@ -65,7 +65,8 @@ export class TicketService {
     if (!result.rows[0]) throw new NotFoundException('Ticket not found');
     return result.rows[0];
   }
-  private activity(client: PoolClient, actor: Actor, ticketId: string, action: string, metadata: object = {}) {
-    return client.query('INSERT INTO audit_logs(organization_id,actor_user_id,action,target_type,target_id,metadata) VALUES($1,$2,$3,\'ticket\',$4,$5)', [actor.organizationId,actor.userId,action,ticketId,metadata]);
+  private async activity(client: PoolClient, actor: Actor, ticketId: string, action: string, visibility: 'REQUESTER' | 'STAFF', metadata: object = {}) {
+    await client.query('INSERT INTO audit_logs(organization_id,actor_user_id,action,target_type,target_id,metadata) VALUES($1,$2,$3,\'ticket\',$4,$5)', [actor.organizationId,actor.userId,action,ticketId,metadata]);
+    await client.query('INSERT INTO ticket_activities(organization_id,ticket_id,actor_user_id,activity_type,visibility,metadata) VALUES($1,$2,$3,$4,$5,$6)', [actor.organizationId, ticketId, actor.userId, action, visibility, metadata]);
   }
 }

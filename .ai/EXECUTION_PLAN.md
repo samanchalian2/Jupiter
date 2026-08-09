@@ -80,19 +80,24 @@ to IN_PROGRESS under RLS.
 
 ## GOAL-005 — Conversation and activity history
 
-**Status:** PLANNED
-
 **Depends on:** GOAL-004. **Scope:** requester/expert messages, internal notes,
 activity timeline, and SSE notifications. **Done:** secrecy and realtime tests
 pass.
 
-## GOAL-006 — Secure attachments and media
+**Status:** DONE
 
-**Status:** PLANNED
+**Validation:** Migration 004 applied. Integration tests verified public
+requester/expert messages, staff-only internal notes, requester timeline
+filtering, append-only record permissions, tenant RLS isolation, and
+recipient-scoped SSE event delivery.
+
+## GOAL-006 — Secure attachments and media
 
 **Depends on:** GOAL-004. **Scope:** S3 adapter, signed uploads/downloads,
 validation, limits, metadata. **Done:** authorization and invalid-file tests
 pass.
+
+**Status:** READY
 
 ## GOAL-007 — Role portals
 

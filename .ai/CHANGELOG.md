@@ -16,3 +16,5 @@
   bootstrap platform-admin support, and organization directory schema.
 - Added tenant-scoped ticket drafts, submission, assignment, transition history,
   audit records, and lifecycle integration tests.
+- Added public ticket conversation, staff-only internal notes, append-only
+  ticket activity history, and recipient-scoped SSE notifications.

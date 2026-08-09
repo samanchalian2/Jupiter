@@ -124,3 +124,18 @@ path with database RLS enabled.
 
 Not implemented: conversation, internal notes, attachments, AI, voice, and
 role portals. GOAL-005 is next.
+
+## 2026-08-09 â€” GOAL-005 handoff
+
+GOAL-005 completed. Added PostgreSQL conversation, internal-note, and
+append-only ticket-activity tables with tenant RLS. Added REST APIs for public
+messages, staff-only notes, and role-filtered activity timeline, plus an
+authenticated SSE notification stream scoped to named ticket recipients.
+
+Validation: migration 004 applied; integration tests verified requester/expert
+conversation, internal-note secrecy, activity visibility, database-level
+append-only permissions, cross-tenant denial, and SSE delivery. Workspace
+lint, typecheck, tests, build, and `git diff --check` passed.
+
+Not implemented: attachments, AI, voice, search, and role portals. GOAL-006 is
+next: secure attachment and media handling.
