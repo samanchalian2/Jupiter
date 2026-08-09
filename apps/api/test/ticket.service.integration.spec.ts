@@ -37,6 +37,7 @@ describe('TicketService integration', () => {
     expect(submitted.status).toBe('OPEN');
     const assignment = await tickets.assign(actor(), draft.id, expertId);
     expect(assignment.assigned_to_user_id).toBe(expertId);
+    expect((await tickets.assignees(actor())).map((user) => user.id)).toContain(expertId);
     const active = await tickets.changeStatus({ userId:expertId,organizationId,roles:['EXPERT'] }, draft.id, 'IN_PROGRESS');
     expect(active.status).toBe('IN_PROGRESS');
   });

@@ -60,6 +60,11 @@ export class TicketService {
     });
   }
 
+  async assignees(actor: Actor) {
+    if (!actor.roles.some((role) => managerRoles.has(role))) throw new ForbiddenException();
+    return this.database.withOrganization(actor.organizationId, async (client) => (await client.query('SELECT DISTINCT u.id,u.display_name,u.email FROM memberships m JOIN membership_roles mr ON mr.membership_id=m.id JOIN roles r ON r.id=mr.role_id JOIN users u ON u.id=m.user_id WHERE m.status=\'active\' AND r.code IN (\'EXPERT\',\'SUPERVISOR\',\'ORG_ADMIN\') ORDER BY u.display_name')).rows);
+  }
+
   private async ticket(client: PoolClient, id: string) {
     const result = await client.query<{id:string;status:TicketStatus;requester_user_id:string}>('SELECT id,status,requester_user_id FROM tickets WHERE id=$1', [id]);
     if (!result.rows[0]) throw new NotFoundException('Ticket not found');

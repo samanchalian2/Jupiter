@@ -7,6 +7,7 @@ import { TicketActorService } from './ticket-actor.service.js';
 export class TicketController {
   constructor(private readonly actors: TicketActorService, private readonly tickets: TicketService) {}
   @Get() async list(@Headers('authorization') authorization?: string, @Headers('x-organization-id') organizationId?: string) { return this.tickets.list(await this.actors.fromHeaders(authorization, organizationId)); }
+  @Get('assignees') async assignees(@Headers('authorization') authorization?: string, @Headers('x-organization-id') organizationId?: string) { return this.tickets.assignees(await this.actors.fromHeaders(authorization, organizationId)); }
   @Post('drafts') async draft(@Headers('authorization') authorization: string | undefined, @Headers('x-organization-id') organizationId: string | undefined, @Body() body: {title?:string;description?:string;priority?:string;departmentId?:string}) {
     if (!body.title || !body.description) throw new UnauthorizedException('Title and description are required');
     return this.tickets.createDraft(await this.actors.fromHeaders(authorization,organizationId), { title:body.title, description:body.description, priority:body.priority, departmentId:body.departmentId });
