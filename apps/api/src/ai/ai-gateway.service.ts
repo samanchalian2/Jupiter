@@ -31,4 +31,7 @@ export class AiGatewayService {
    await this.database.withOrganization(request.organization_id, async client => { await client.query('INSERT INTO ai_results(request_id,organization_id,output,usage,provider,model) VALUES($1,$2,$3,$4,\'configured\',$5)',[requestId,request.organization_id,answer.output,answer.usage,setting.model]); await client.query('UPDATE ai_requests SET status=\'SUCCEEDED\',completed_at=now() WHERE id=$1',[requestId]); });
   } catch { await this.database.withOrganization(request.organization_id, async client => { await client.query('UPDATE ai_requests SET status=\'FAILED\',completed_at=now() WHERE id=$1',[requestId]); }); }
  }
+ async review(actor:{userId:string;organizationId:string}, requestId:string) {
+  return this.database.withOrganization(actor.organizationId, async client => (await client.query('SELECT r.id,r.status,r.redacted_input,result.output,result.usage,result.provider,result.model FROM ai_requests r LEFT JOIN ai_results result ON result.request_id=r.id WHERE r.id=$1 AND r.created_by_user_id=$2',[requestId,actor.userId])).rows[0]);
+ }
 }
