@@ -1,8 +1,7 @@
 # Next Task
 
-## GOAL-009 — Text AI review and initial response
+## GOAL-010 — Voice transcription and asynchronous jobs
 
 **Status:** READY
 
-Implement structured text analysis review, user confirmation, AI-labelled
-initial response, and a manual fallback when the provider fails.
+Implement voice transcription flow, retry/dead-letter visibility, and manual fallback.

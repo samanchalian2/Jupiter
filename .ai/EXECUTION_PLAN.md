@@ -119,7 +119,7 @@ platform configuration, prompts, audit/usage, redaction, queue integration.
 
 ## GOAL-009 — Text AI review and initial response
 
-**Status:** PLANNED
+**Status:** DONE
 
 **Depends on:** GOAL-008/007. **Scope:** structured analysis, review/confirm,
 AI-labelled response, fallback. **Done:** provider success/failure E2E passes.
