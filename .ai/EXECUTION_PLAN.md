@@ -126,7 +126,7 @@ AI-labelled response, fallback. **Done:** provider success/failure E2E passes.
 
 ## GOAL-010 — Voice transcription and asynchronous jobs
 
-**Status:** PLANNED
+**Status:** DONE
 
 **Depends on:** GOAL-006/009. **Scope:** voice transcription, retry/dead-letter
 visibility and review flow. **Done:** retry and manual fallback tests pass.

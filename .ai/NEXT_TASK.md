@@ -1,7 +1,7 @@
 # Next Task
 
-## GOAL-010 — Voice transcription and asynchronous jobs
+## GOAL-011 — Search, rating, and basic dashboards
 
 **Status:** READY
 
-Implement voice transcription flow, retry/dead-letter visibility, and manual fallback.
+Implement tenant-scoped search/filter, post-resolution rating, and basic workload dashboards.
