@@ -1,1 +1,1 @@
-import { Module } from '@nestjs/common'; import { ReportingService } from './reporting.service.js'; @Module({providers:[ReportingService],exports:[ReportingService]}) export class ReportingModule {}
+import { Module } from '@nestjs/common'; import { AuthModule } from '../auth/auth.module.js'; import { ReportingService } from './reporting.service.js'; import { ReportingController } from './reporting.controller.js'; @Module({imports:[AuthModule],controllers:[ReportingController],providers:[ReportingService],exports:[ReportingService]}) export class ReportingModule {}
