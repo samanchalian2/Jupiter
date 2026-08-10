@@ -6,11 +6,12 @@ import { ConversationModule } from './conversation/conversation.module.js';
 import { NotificationModule } from './notifications/notification.module.js';
 import { AttachmentModule } from './attachments/attachment.module.js';
 import { AiModule } from './ai/ai.module.js';
+import { TranscriptionModule } from './transcription/transcription.module.js';
 import { HealthController } from './health.controller.js';
 import { HealthService } from './health.service.js';
 
 @Module({
-  imports: [DatabaseModule, AuthModule, TicketModule, NotificationModule, ConversationModule, AttachmentModule, AiModule],
+  imports: [DatabaseModule, AuthModule, TicketModule, NotificationModule, ConversationModule, AttachmentModule, AiModule, TranscriptionModule],
   controllers: [HealthController],
   providers: [HealthService],
 })
