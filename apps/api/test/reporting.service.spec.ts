@@ -1,3 +1,3 @@
 import { describe, expect, it } from 'vitest';
 import { ReportingService } from '../src/reporting/reporting.service.js';
-describe('Reporting access policy',()=>{const service=new ReportingService({withOrganization:async()=>[]} as never);it('rejects requester workload access',async()=>await expect(service.workload({organizationId:'org',roles:['REQUESTER']})).rejects.toBeDefined())});
+describe('Reporting access policy',()=>{const service=new ReportingService({withOrganization:async(_o:string,work:(c:{query:()=>Promise<{rowCount:number;rows:unknown[]}>})=>unknown)=>work({query:async()=>({rowCount:0,rows:[]})})} as never);it('rejects requester workload access',async()=>await expect(service.workload({organizationId:'org',roles:['REQUESTER']})).rejects.toBeDefined());it('rejects rating before resolution',async()=>await expect(service.rate({userId:'u',organizationId:'o'},'ticket',5)).rejects.toBeDefined())});
