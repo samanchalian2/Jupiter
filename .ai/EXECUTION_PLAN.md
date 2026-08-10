@@ -133,7 +133,7 @@ visibility and review flow. **Done:** retry and manual fallback tests pass.
 
 ## GOAL-011 — Search, rating, and basic dashboards
 
-**Status:** PLANNED
+**Status:** DONE
 
 **Depends on:** GOAL-007. **Scope:** tenant-scoped search/filter, ratings,
 basic workloads/operational views. **Done:** role and tenant tests pass.

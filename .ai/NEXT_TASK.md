@@ -1,7 +1,7 @@
 # Next Task
 
-## GOAL-011 — Search, rating, and basic dashboards
+## GOAL-012 — MVP hardening and release readiness
 
 **Status:** READY
 
-Implement tenant-scoped search/filter, post-resolution rating, and basic workload dashboards.
+Complete integration/security/performance checks, observability, backup/restore runbook, and release gates.
