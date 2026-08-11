@@ -10,11 +10,12 @@ import { TranscriptionModule } from './transcription/transcription.module.js';
 import { ReportingModule } from './reporting/reporting.module.js';
 import { OrganizationModule } from './organization/organization.module.js';
 import { KnowledgeModule } from './knowledge/knowledge.module.js';
+import { SlaModule } from './sla/sla.module.js';
 import { HealthController } from './health.controller.js';
 import { HealthService } from './health.service.js';
 
 @Module({
-  imports: [DatabaseModule, AuthModule, TicketModule, NotificationModule, ConversationModule, AttachmentModule, AiModule, TranscriptionModule, ReportingModule, OrganizationModule, KnowledgeModule],
+  imports: [DatabaseModule, AuthModule, TicketModule, NotificationModule, ConversationModule, AttachmentModule, AiModule, TranscriptionModule, ReportingModule, OrganizationModule, KnowledgeModule, SlaModule],
   controllers: [HealthController],
   providers: [HealthService],
 })
