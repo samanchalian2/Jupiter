@@ -1,10 +1,10 @@
 # Next Task
 
-## Commercial transformation — Phase 2
+## Commercial transformation — Phase 3
 
 **Status:** READY
 
-Implement role-scoped dashboards from `docs/COMMERCIAL_PRODUCT_PLAN.md`.
-Replace placeholder metrics with ticket and workload data, ensure drill-down to
-permitted ticket views, and add tests for requester, expert/supervisor,
-organization-admin, and platform-admin visibility.
+Implement organization and platform administration from
+`docs/COMMERCIAL_PRODUCT_PLAN.md`: member lifecycle, roles, directories,
+catalogs, templates, business policy, and audited platform settings. Do not
+expose privileged operations outside their authorized role.

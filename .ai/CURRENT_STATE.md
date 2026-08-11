@@ -2,13 +2,15 @@
 
 **Phase:** MVP complete; all planned Goals are done.
 
-**Commercial transformation:** Phases 0 and 1 are complete. The commercial
+**Commercial transformation:** Phases 0 through 2 are complete. The commercial
 product scope, role-based information architecture, nine delivery phases, and
 acceptance criteria are defined in `docs/COMMERCIAL_PRODUCT_PLAN.md`. The web
 now has a protected responsive RTL shell, role-aware navigation, persistent
 local session, organization context, accessible states, and bounded pages for
 dashboard, tickets, knowledge, reports, organization administration, and
-platform administration. Phase 2 role dashboards is next.
+platform administration. Role dashboards use live permitted ticket counts,
+manager workload, and protected platform aggregates; they were browser-tested
+against the local database. Phase 3 administration is next.
 
 GOAL-001 through GOAL-012 are complete. The repository contains the executable
 foundation plus a PostgreSQL migration for organizations, users, memberships,
