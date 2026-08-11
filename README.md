@@ -19,6 +19,8 @@ pnpm dev:web
 
 The health endpoint is `http://localhost:3000/api/v1/health`. Run quality
 checks with `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm build`.
+Database readiness is available at `/api/v1/health/ready`; see
+`docs/RELEASE_RUNBOOK.md` for release, backup, restore, and rollback gates.
 
 Copy `.env.example` to `.env` only for local Docker Compose use. Do not
 commit real values. Compose configures PostgreSQL, Redis, and MinIO; it does not

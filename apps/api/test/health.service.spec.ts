@@ -3,7 +3,7 @@ import { HealthService } from '../src/health.service.js';
 
 describe('HealthService', () => {
   it('returns the API health contract', () => {
-    const response = new HealthService().getHealth();
+    const response = new HealthService({ query: async () => ({}) } as never).getHealth();
 
     expect(response.service).toBe('jupiter-api');
     expect(response.status).toBe('ok');
