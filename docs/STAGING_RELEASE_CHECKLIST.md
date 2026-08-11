@@ -6,6 +6,8 @@ Complete this checklist in the staging environment for each release candidate.
       injected by the environment.
 - [ ] Migrations applied once and `schema_migrations` matches the release.
 - [ ] Health and readiness return HTTP 200 through the staging ingress.
+- [ ] Edge responses contain the configured Content-Security-Policy and other
+      browser-security headers; HTTPS/HSTS is enforced by the ingress.
 - [ ] Request IDs and structured request logs are visible without tenant
       content or secrets.
 - [ ] A requester creates a ticket, staff responds, and an organization admin

@@ -17,11 +17,12 @@
 ## Monitoring and incidents
 
 Every API response carries `X-Request-Id`; request logs are structured JSON
-with that ID, method, path and duration. Search that ID across edge and API
+with that ID, method, path, status code and duration. Search that ID across edge and API
 logs when investigating a request. Do not add tokens, passwords, attachment
 contents, redacted AI input, or transcript content to incident notes.
 
-Alert when readiness fails, HTTP 5xx grows unexpectedly, or request latency
+Alert when readiness fails, HTTP 5xx grows unexpectedly, rate-limit responses
+grow unexpectedly, or request latency
 changes materially from the deployment baseline. Treat tenant-isolation,
 authorization, attachment-access, and AI data disclosure reports as security
 incidents: preserve request IDs, restrict access, and rotate affected secrets

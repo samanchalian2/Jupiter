@@ -6,7 +6,7 @@
   `pnpm verify:release`.
 - Liveness and database readiness are available at `/api/v1/health` and
   `/api/v1/health/ready`.
-- Request security headers, per-client rate limiting, request IDs and
+- Request security headers, a deploy-time Content-Security-Policy, per-client rate limiting, request IDs and
   structured request timing logs are implemented and covered by API tests.
 - The load smoke runner checks concurrent liveness/readiness requests without
   requiring credentials or tenant data.
