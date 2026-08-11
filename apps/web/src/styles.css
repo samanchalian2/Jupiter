@@ -72,6 +72,7 @@ header { margin-bottom: 22px; }
 .metric-card strong { font-size: 2rem; }
 .empty-state { max-width: 720px; text-align: center; margin: 56px auto; }
 .ticket-workspace { display: grid; grid-template-columns: 340px minmax(0, 1fr); gap: 20px; }
+.admin-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
 
 @media (max-width: 760px) {
   .shell, .portal { padding: 16px; }
@@ -84,5 +85,5 @@ header { margin-bottom: 22px; }
   .sidebar-footer { display: none; }
   .app-main { padding: 16px; }
   .app-header, .page-intro { align-items: flex-start; flex-direction: column; }
-  .metric-grid, .ticket-workspace { grid-template-columns: 1fr; }
+  .metric-grid, .ticket-workspace, .admin-grid { grid-template-columns: 1fr; }
 }

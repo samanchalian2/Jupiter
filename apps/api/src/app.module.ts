@@ -8,11 +8,12 @@ import { AttachmentModule } from './attachments/attachment.module.js';
 import { AiModule } from './ai/ai.module.js';
 import { TranscriptionModule } from './transcription/transcription.module.js';
 import { ReportingModule } from './reporting/reporting.module.js';
+import { OrganizationModule } from './organization/organization.module.js';
 import { HealthController } from './health.controller.js';
 import { HealthService } from './health.service.js';
 
 @Module({
-  imports: [DatabaseModule, AuthModule, TicketModule, NotificationModule, ConversationModule, AttachmentModule, AiModule, TranscriptionModule, ReportingModule],
+  imports: [DatabaseModule, AuthModule, TicketModule, NotificationModule, ConversationModule, AttachmentModule, AiModule, TranscriptionModule, ReportingModule, OrganizationModule],
   controllers: [HealthController],
   providers: [HealthService],
 })
