@@ -39,8 +39,14 @@ and recorded usage; requesters see clearly labelled AI review/confirmation and
 manual-fallback guidance in their ticket workspace; transcription jobs expose
 state, attempts and retry controls. AI and transcription actions are written to
 the audit log and surfaced to platform administrators. Provider failure is
-covered by integration testing without blocking the ticket path. Phase 9 is
-next.
+covered by integration testing without blocking the ticket path. Phase 9 is in
+progress: local release hardening now includes security headers, request IDs,
+structured request timing logs, fixed-window rate limiting, readiness failure
+handling, release-gate automation, a concurrent health/readiness smoke load
+test, local browser smoke evidence, and a completed isolated PostgreSQL
+restore drill with RLS verification. The final staging-only gates remain
+unverified because no staging deployment, registry, secret manager or managed
+backup target is available in this workspace.
 
 GOAL-001 through GOAL-012 are complete. The repository contains the executable
 foundation plus a PostgreSQL migration for organizations, users, memberships,

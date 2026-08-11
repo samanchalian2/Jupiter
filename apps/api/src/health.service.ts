@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, ServiceUnavailableException } from '@nestjs/common';
 import { DatabaseService } from './database/database.service.js';
 
 export interface HealthResponse {
@@ -17,5 +17,9 @@ export class HealthService {
       timestamp: new Date().toISOString(),
     };
   }
-  async readiness() { await this.database.query('SELECT 1'); return { service: 'jupiter-api', status: 'ready' as const, timestamp: new Date().toISOString() }; }
+  async readiness() {
+    try { await this.database.query('SELECT 1'); }
+    catch { throw new ServiceUnavailableException('Database is not ready'); }
+    return { service: 'jupiter-api', status: 'ready' as const, timestamp: new Date().toISOString() };
+  }
 }
