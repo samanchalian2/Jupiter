@@ -77,6 +77,15 @@ export class TicketService {
     return this.database.withOrganization(actor.organizationId, async (client) => { await this.ticket(client,ticketId); return (await client.query('INSERT INTO ticket_watchers(ticket_id,user_id,organization_id) VALUES($1,$2,$3) ON CONFLICT DO NOTHING RETURNING ticket_id,user_id',[ticketId,actor.userId,actor.organizationId])).rows[0]; });
   }
 
+  async bulkStatus(actor: Actor, ticketIds: string[], status: TicketStatus) {
+    if (!actor.roles.some((role) => managerRoles.has(role))) throw new ForbiddenException();
+    const outcomes: { id: string; ok: boolean }[] = [];
+    for (const id of [...new Set(ticketIds)].slice(0, 100)) {
+      try { await this.changeStatus(actor,id,status,'bulk operation'); outcomes.push({id,ok:true}); } catch { outcomes.push({id,ok:false}); }
+    }
+    return outcomes;
+  }
+
   private async ticket(client: PoolClient, id: string) {
     const result = await client.query<{id:string;status:TicketStatus;requester_user_id:string}>('SELECT id,status,requester_user_id FROM tickets WHERE id=$1', [id]);
     if (!result.rows[0]) throw new NotFoundException('Ticket not found');
