@@ -66,6 +66,17 @@ export class TicketService {
     return this.database.withOrganization(actor.organizationId, async (client) => (await client.query('SELECT DISTINCT u.id,u.display_name,u.email FROM memberships m JOIN membership_roles mr ON mr.membership_id=m.id JOIN roles r ON r.id=mr.role_id JOIN users u ON u.id=m.user_id WHERE m.status=\'active\' AND r.code IN (\'EXPERT\',\'SUPERVISOR\',\'ORG_ADMIN\') ORDER BY u.display_name')).rows);
   }
 
+  async tags(actor: Actor) { return this.database.withOrganization(actor.organizationId, async (client) => (await client.query('SELECT id,name,color FROM ticket_tags ORDER BY name')).rows); }
+
+  async createTag(actor: Actor, name: string, color = '#1769aa') {
+    if (!actor.roles.some((role) => managerRoles.has(role))) throw new ForbiddenException();
+    return this.database.withOrganization(actor.organizationId, async (client) => (await client.query('INSERT INTO ticket_tags(organization_id,name,color) VALUES($1,$2,$3) ON CONFLICT(organization_id,name) DO UPDATE SET color=EXCLUDED.color RETURNING id,name,color', [actor.organizationId,name,color])).rows[0]);
+  }
+
+  async watch(actor: Actor, ticketId: string) {
+    return this.database.withOrganization(actor.organizationId, async (client) => { await this.ticket(client,ticketId); return (await client.query('INSERT INTO ticket_watchers(ticket_id,user_id,organization_id) VALUES($1,$2,$3) ON CONFLICT DO NOTHING RETURNING ticket_id,user_id',[ticketId,actor.userId,actor.organizationId])).rows[0]; });
+  }
+
   private async ticket(client: PoolClient, id: string) {
     const result = await client.query<{id:string;status:TicketStatus;requester_user_id:string}>('SELECT id,status,requester_user_id FROM tickets WHERE id=$1', [id]);
     if (!result.rows[0]) throw new NotFoundException('Ticket not found');
