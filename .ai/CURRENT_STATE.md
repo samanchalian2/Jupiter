@@ -23,7 +23,11 @@ history; supports secured attachment upload/download, requester ratings,
 closure/reopen actions consistent with the fixed lifecycle, and a protected
 live notification center. Browser testing confirmed staff-only notes appear in
 the unified timeline without exposing a separate requester view. Phase 6 is
-next.
+complete: tenant business calendars drive SLA due times, active policies drive
+timers, the periodic monitor issues warning/breach escalation, assignment rules
+automatically route new tickets, and in-app notification preference is exposed
+in the product shell. Deterministic calendar and two-tenant escalation tests
+plus automatic-assignment integration coverage pass. Phase 7 is next.
 
 GOAL-001 through GOAL-012 are complete. The repository contains the executable
 foundation plus a PostgreSQL migration for organizations, users, memberships,

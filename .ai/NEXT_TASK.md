@@ -1,19 +1,13 @@
 # Next Task
 
-## Commercial transformation — Phase 6
+## Commercial transformation — Phase 7
 
-**Status:** IN PROGRESS
+**Status:** READY
 
-Implement SLA and automation: business calendars, SLA policies and timers,
-warnings, escalation, assignment rules, and notification preferences. Preserve
-tenant isolation and prove calculation and escalation under two tenants.
+Implement role-scoped reporting and knowledge: report export, operational and
+satisfaction metrics, and reviewed knowledge article authoring/search with a
+draft/review/published lifecycle.
 
-**Prerequisites verified:** Ticket SLA clock and policy schema exists. The
-ticket workspace and complete collaboration experience are implemented and
-validated. Migration 013, admin policy/calendar UI, and tenant-safe periodic
-warning/breach monitor are implemented and locally browser-tested. Due times
-now use each organization's timezone/workday calendar; deterministic calendar
-and two-tenant escalation integration tests pass. Assignment-rule and
-notification-preference tables now exist, and a matching active rule assigns
-new tickets automatically. Remaining: administrator/user API and UI for those
-two settings, plus an end-to-end assignment test.
+**Prerequisites verified:** SLA/automation is complete and validated. Existing
+reporting and knowledge APIs provide the starting point; extend them with
+export and reviewed content lifecycle UI without weakening role scoping.
