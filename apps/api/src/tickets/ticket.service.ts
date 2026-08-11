@@ -17,6 +17,8 @@ export class TicketService {
         'INSERT INTO tickets(organization_id,requester_user_id,title,description,priority,department_id) VALUES($1,$2,$3,$4,$5,$6) RETURNING id,ticket_number,status,title,description,priority,created_at',
         [actor.organizationId, actor.userId, data.title, data.description, data.priority ?? 'NORMAL', data.departmentId ?? null],
       );
+      const policy = (await client.query<{id:string;first_response_minutes:number;resolution_minutes:number}>('SELECT id,first_response_minutes,resolution_minutes FROM sla_policies WHERE priority=$1 AND is_active=true ORDER BY id LIMIT 1',[data.priority ?? 'NORMAL'])).rows[0];
+      if (policy) await client.query('INSERT INTO ticket_sla_clocks(ticket_id,organization_id,policy_id,first_response_due_at,resolution_due_at) VALUES($1,$2,$3,now()+($4::text||\' minutes\')::interval,now()+($5::text||\' minutes\')::interval)',[result.rows[0].id,actor.organizationId,policy.id,policy.first_response_minutes,policy.resolution_minutes]);
       await this.activity(client, actor, result.rows[0].id, 'ticket.draft_created', 'REQUESTER');
       return result.rows[0];
     });
