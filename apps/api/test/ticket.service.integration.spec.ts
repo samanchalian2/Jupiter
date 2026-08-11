@@ -20,6 +20,7 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
+  await database.query('DELETE FROM assignment_rules WHERE organization_id=$1', [organizationId]);
   await database.query('DELETE FROM ticket_assignments WHERE organization_id=$1', [organizationId]);
   await database.query('DELETE FROM ticket_status_transitions WHERE organization_id=$1', [organizationId]);
   await database.query('DELETE FROM tickets WHERE organization_id=$1', [organizationId]);
@@ -40,5 +41,12 @@ describe('TicketService integration', () => {
     expect((await tickets.assignees(actor())).map((user) => user.id)).toContain(expertId);
     const active = await tickets.changeStatus({ userId:expertId,organizationId,roles:['EXPERT'] }, draft.id, 'IN_PROGRESS');
     expect(active.status).toBe('IN_PROGRESS');
+  });
+
+  it('applies an active organization assignment rule to a new ticket', async () => {
+    await database.query('INSERT INTO assignment_rules(organization_id,assignee_user_id) VALUES($1,$2) ON CONFLICT(organization_id,department_id) DO UPDATE SET assignee_user_id=EXCLUDED.assignee_user_id,is_active=true', [organizationId, expertId]);
+    const draft = await tickets.createDraft(actor(), { title:'Automatic assignment', description:'Exercise the assignment rule.' });
+    const assignment = await database.query<{assigned_to_user_id:string}>('SELECT assigned_to_user_id FROM ticket_assignments WHERE ticket_id=$1 AND ended_at IS NULL', [draft.id]);
+    expect(assignment.rows[0]?.assigned_to_user_id).toBe(expertId);
   });
 });
