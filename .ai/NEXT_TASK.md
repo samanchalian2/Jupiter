@@ -1,14 +1,13 @@
 # Next Task
 
-## Commercial transformation — Phase 5
+## Commercial transformation — Phase 6
 
 **Status:** READY
 
-Implement complete ticket collaboration: unified timeline, internal notes,
-attachment UI, requester-facing status history, satisfaction flow, closure and
-reopen policy UI, and notifications. Preserve fixed ticket semantics,
-authorization boundaries, and audit evidence.
+Implement SLA and automation: business calendars, SLA policies and timers,
+warnings, escalation, assignment rules, and notification preferences. Preserve
+tenant isolation and prove calculation and escalation under two tenants.
 
-**Prerequisites verified:** Ticket conversations, internal notes, activities,
-attachments, ratings, notifications, and organization closure policy APIs
-already exist. Phase 4 workspace capabilities are complete and tested.
+**Prerequisites verified:** Ticket SLA clock and policy schema exists. The
+ticket workspace and complete collaboration experience are implemented and
+validated. Add the operational policy, worker, and UI layers next.

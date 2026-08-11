@@ -17,7 +17,13 @@ applied locally and all quality gates passed. Phase 4 is complete: the ticket
 workspace provides role-scoped queues, text/status/priority filtering,
 sorting, session-saved views, assignment, tag creation/linking, watching, and
 server-validated bulk transitions. The live local browser flow was verified
-with the organization-admin account after an API restart. Phase 5 is next.
+with the organization-admin account after an API restart. Phase 5 is complete:
+the ticket detail now unifies public messages, staff-only notes and activity
+history; supports secured attachment upload/download, requester ratings,
+closure/reopen actions consistent with the fixed lifecycle, and a protected
+live notification center. Browser testing confirmed staff-only notes appear in
+the unified timeline without exposing a separate requester view. Phase 6 is
+next.
 
 GOAL-001 through GOAL-012 are complete. The repository contains the executable
 foundation plus a PostgreSQL migration for organizations, users, memberships,
