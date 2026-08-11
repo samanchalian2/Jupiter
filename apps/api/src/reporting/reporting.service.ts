@@ -1,4 +1,4 @@
-import { ForbiddenException, Injectable } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service.js';
 
 type Actor = { userId: string; organizationId: string; roles: string[] };
@@ -27,21 +27,23 @@ export class ReportingService {
     return this.database.withOrganization(actor.organizationId, async (client) => (await client.query('SELECT status,count(*)::int AS count FROM tickets GROUP BY status ORDER BY status')).rows);
   }
 
-  async summary(actor: Pick<Actor, 'organizationId' | 'roles'>) {
+  async summary(actor: Pick<Actor, 'organizationId' | 'roles'>, range: ReportRange = {}) {
     if (!actor.roles.some((role) => ['ORG_ADMIN', 'SUPERVISOR'].includes(role))) throw new ForbiddenException();
+    const window = reportWindow(range);
     return this.database.withOrganization(actor.organizationId, async (client) => (await client.query(`SELECT
       count(*)::int AS total_tickets,
       count(*) FILTER (WHERE status IN ('OPEN','IN_PROGRESS','WAITING_FOR_REQUESTER'))::int AS active_tickets,
       count(*) FILTER (WHERE status IN ('RESOLVED','CLOSED'))::int AS completed_tickets,
-      COALESCE((SELECT round(avg(score)::numeric,2) FROM ticket_ratings),0) AS average_satisfaction,
-      (SELECT count(*)::int FROM ticket_sla_clocks WHERE breached_at IS NOT NULL) AS sla_breaches
-      FROM tickets`)).rows[0]);
+      COALESCE((SELECT round(avg(r.score)::numeric,2) FROM ticket_ratings r JOIN tickets rated ON rated.id=r.ticket_id WHERE rated.created_at >= $1 AND rated.created_at < $2),0) AS average_satisfaction,
+      (SELECT count(*)::int FROM ticket_sla_clocks clock JOIN tickets clocked ON clocked.id=clock.ticket_id WHERE clock.breached_at IS NOT NULL AND clocked.created_at >= $1 AND clocked.created_at < $2) AS sla_breaches
+      FROM tickets WHERE created_at >= $1 AND created_at < $2`, [window.from, window.to])).rows[0]);
   }
 
-  async exportCsv(actor: Pick<Actor, 'organizationId' | 'roles'>) {
+  async exportCsv(actor: Pick<Actor, 'organizationId' | 'roles'>, range: ReportRange = {}) {
     if (!actor.roles.some((role) => ['ORG_ADMIN', 'SUPERVISOR'].includes(role))) throw new ForbiddenException();
+    const window = reportWindow(range);
     return this.database.withOrganization(actor.organizationId, async (client) => {
-      const rows = (await client.query<{ticket_number:number;title:string;status:string;priority:string;created_at:Date}>('SELECT ticket_number,title,status,priority,created_at FROM tickets ORDER BY created_at DESC LIMIT 10000')).rows;
+      const rows = (await client.query<{ticket_number:number;title:string;status:string;priority:string;created_at:Date}>('SELECT ticket_number,title,status,priority,created_at FROM tickets WHERE created_at >= $1 AND created_at < $2 ORDER BY created_at DESC LIMIT 10000', [window.from, window.to])).rows;
       const quote = (value: unknown) => `"${String(value ?? '').replaceAll('"','""')}"`;
       return ['ticket_number,title,status,priority,created_at', ...rows.map(row => [row.ticket_number,row.title,row.status,row.priority,row.created_at.toISOString()].map(quote).join(','))].join('\n');
     });
@@ -56,4 +58,24 @@ export class ReportingService {
       (SELECT count(*)::int FROM tickets WHERE status IN ('OPEN','IN_PROGRESS','WAITING_FOR_REQUESTER')) AS open_tickets`);
     return result.rows[0];
   }
+}
+
+type ReportRange = { from?: string; to?: string };
+function reportWindow(range: ReportRange) {
+  const today = new Date();
+  const defaultTo = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate() + 1));
+  const defaultFrom = new Date(defaultTo);
+  defaultFrom.setUTCDate(defaultFrom.getUTCDate() - 30);
+  const from = parseReportDate(range.from, defaultFrom);
+  const to = parseReportDate(range.to, defaultTo, true);
+  if (from >= to || to.getTime() - from.getTime() > 366 * 24 * 60 * 60 * 1000) throw new BadRequestException('Report date range is invalid');
+  return { from, to };
+}
+function parseReportDate(value: string | undefined, fallback: Date, end = false) {
+  if (!value) return fallback;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) throw new BadRequestException('Report dates must use YYYY-MM-DD');
+  const result = new Date(`${value}T00:00:00.000Z`);
+  if (Number.isNaN(result.getTime())) throw new BadRequestException('Report date is invalid');
+  if (end) result.setUTCDate(result.getUTCDate() + 1);
+  return result;
 }

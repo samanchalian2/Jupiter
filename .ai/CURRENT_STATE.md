@@ -27,7 +27,13 @@ complete: tenant business calendars drive SLA due times, active policies drive
 timers, the periodic monitor issues warning/breach escalation, assignment rules
 automatically route new tickets, and in-app notification preference is exposed
 in the product shell. Deterministic calendar and two-tenant escalation tests
-plus automatic-assignment integration coverage pass. Phase 7 is next.
+plus automatic-assignment integration coverage pass. Phase 7 is complete:
+supervisors and organization administrators have a role-scoped operational
+report with a validated, bounded date-range builder and matching safe CSV
+export; the knowledge base supports contributor authoring, review submission,
+manager review and publication, and published-only search. API lifecycle and
+export-policy tests pass, and the full knowledge lifecycle plus live report
+metrics were browser-tested against the local database. Phase 8 is next.
 
 GOAL-001 through GOAL-012 are complete. The repository contains the executable
 foundation plus a PostgreSQL migration for organizations, users, memberships,

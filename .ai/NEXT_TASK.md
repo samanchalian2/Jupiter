@@ -1,13 +1,14 @@
 # Next Task
 
-## Commercial transformation — Phase 7
+## Commercial transformation — Phase 8
 
 **Status:** READY
 
-Implement role-scoped reporting and knowledge: report export, operational and
-satisfaction metrics, and reviewed knowledge article authoring/search with a
-draft/review/published lifecycle.
+Implement the organization-entitled AI and transcription experience: expose
+configuration, review/confirmation, usage and job state, retry visibility,
+and a clearly usable manual fallback without weakening the existing AI provider
+contract or tenant isolation.
 
-**Prerequisites verified:** SLA/automation is complete and validated. Existing
-reporting and knowledge APIs provide the starting point; extend them with
-export and reviewed content lifecycle UI without weakening role scoping.
+**Prerequisites verified:** reporting/knowledge is complete and validated.
+Existing AI gateway and transcription APIs provide the starting point; extend
+their web experience with auditable, role-scoped controls and failure states.
