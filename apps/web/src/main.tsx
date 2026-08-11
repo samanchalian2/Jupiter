@@ -1,5 +1,6 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+import 'shabnam-font/dist/font-face.css';
 import { App } from './App.js';
 import './styles.css';
 

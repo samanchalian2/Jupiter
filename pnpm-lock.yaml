@@ -68,6 +68,9 @@ importers:
       react-dom:
         specifier: ^19.1.0
         version: 19.2.8(react@19.2.8)
+      shabnam-font:
+        specifier: 5.0.0
+        version: 5.0.0
     devDependencies:
       '@types/react':
         specifier: ^19.1.2
@@ -1683,6 +1686,9 @@ packages:
 
   setprototypeof@1.2.0:
     resolution: {integrity: sha512-E5LDX7Wrp85Kil5bhZv46j8jOeboKq5JMmYM3gVGdGH8xFpPWXUMsNrlODCrkoxMEeNi/XZIwuRvY4XNwYMJpw==}
+
+  shabnam-font@5.0.0:
+    resolution: {integrity: sha512-ngRcvlyoq7Ka42uXmy+YjKQBaspOZSRBvGbN6mKeBM2oBj7DgdAWVvxHetvZPyxHS4fsD91Wap5uccg1MwquCQ==}
 
   side-channel-list@1.0.1:
     resolution: {integrity: sha512-mjn/0bi/oUURjc5Xl7IaWi/OJJJumuoJFQJfDDyO46+hBWsfaVM65TBHq2eoZBhzl9EchxOijpkbRC8SVBQU0w==}
@@ -3777,6 +3783,8 @@ snapshots:
       - supports-color
 
   setprototypeof@1.2.0: {}
+
+  shabnam-font@5.0.0: {}
 
   side-channel-list@1.0.1:
     dependencies:
