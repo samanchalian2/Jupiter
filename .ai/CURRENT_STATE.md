@@ -2,6 +2,11 @@
 
 **Phase:** MVP complete; all planned Goals are done.
 
+**Commercial transformation:** Phase 0 is complete. The commercial product
+scope, role-based information architecture, nine delivery phases, acceptance
+criteria, and RTL visual foundation are defined in
+`docs/COMMERCIAL_PRODUCT_PLAN.md`. Phase 1 is next.
+
 GOAL-001 through GOAL-012 are complete. The repository contains the executable
 foundation plus a PostgreSQL migration for organizations, users, memberships,
 roles/permissions, organization directory tables, audit logs, and RLS policies.
