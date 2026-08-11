@@ -1,0 +1,6 @@
+CREATE TABLE assignment_rules (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), organization_id uuid NOT NULL REFERENCES organizations(id) ON DELETE CASCADE, department_id uuid REFERENCES departments(id) ON DELETE CASCADE, assignee_user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE, is_active boolean NOT NULL DEFAULT true, UNIQUE NULLS NOT DISTINCT(organization_id,department_id));
+CREATE TABLE notification_preferences (organization_id uuid NOT NULL REFERENCES organizations(id) ON DELETE CASCADE, user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE, in_app_enabled boolean NOT NULL DEFAULT true, PRIMARY KEY(organization_id,user_id));
+ALTER TABLE assignment_rules ENABLE ROW LEVEL SECURITY; ALTER TABLE notification_preferences ENABLE ROW LEVEL SECURITY;
+CREATE POLICY assignment_rules_tenant ON assignment_rules USING(organization_id=app.current_organization_id()) WITH CHECK(organization_id=app.current_organization_id());
+CREATE POLICY notification_preferences_tenant ON notification_preferences USING(organization_id=app.current_organization_id()) WITH CHECK(organization_id=app.current_organization_id());
+GRANT SELECT,INSERT,UPDATE,DELETE ON assignment_rules,notification_preferences TO jupiter_app;
