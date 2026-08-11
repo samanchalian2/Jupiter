@@ -52,11 +52,12 @@ export class TicketService {
     });
   }
 
-  async list(actor: Actor) {
+  async list(actor: Actor, filters: { status?: string; priority?: string } = {}) {
     return this.database.withOrganization(actor.organizationId, async (client) => {
-      if (actor.roles.some((role) => managerRoles.has(role))) return (await client.query('SELECT id,ticket_number,title,status,priority,requester_user_id,created_at FROM tickets ORDER BY created_at DESC')).rows;
-      if (actor.roles.includes('EXPERT')) return (await client.query('SELECT t.id,t.ticket_number,t.title,t.status,t.priority,t.requester_user_id,t.created_at FROM tickets t JOIN ticket_assignments a ON a.ticket_id=t.id AND a.ended_at IS NULL WHERE a.assigned_to_user_id=$1 ORDER BY t.created_at DESC', [actor.userId])).rows;
-      return (await client.query('SELECT id,ticket_number,title,status,priority,requester_user_id,created_at FROM tickets WHERE requester_user_id=$1 ORDER BY created_at DESC', [actor.userId])).rows;
+      const conditions = '($2::text IS NULL OR t.status=$2) AND ($3::text IS NULL OR t.priority=$3)';
+      if (actor.roles.some((role) => managerRoles.has(role))) return (await client.query(`SELECT t.id,t.ticket_number,t.title,t.status,t.priority,t.requester_user_id,t.created_at FROM tickets t WHERE ${conditions} ORDER BY t.created_at DESC`, [actor.userId, filters.status ?? null, filters.priority ?? null])).rows;
+      if (actor.roles.includes('EXPERT')) return (await client.query(`SELECT t.id,t.ticket_number,t.title,t.status,t.priority,t.requester_user_id,t.created_at FROM tickets t JOIN ticket_assignments a ON a.ticket_id=t.id AND a.ended_at IS NULL WHERE a.assigned_to_user_id=$1 AND ${conditions} ORDER BY t.created_at DESC`, [actor.userId, filters.status ?? null, filters.priority ?? null])).rows;
+      return (await client.query(`SELECT t.id,t.ticket_number,t.title,t.status,t.priority,t.requester_user_id,t.created_at FROM tickets t WHERE t.requester_user_id=$1 AND ${conditions} ORDER BY t.created_at DESC`, [actor.userId, filters.status ?? null, filters.priority ?? null])).rows;
     });
   }
 

@@ -10,7 +10,10 @@ local session, organization context, accessible states, and bounded pages for
 dashboard, tickets, knowledge, reports, organization administration, and
 platform administration. Role dashboards use live permitted ticket counts,
 manager workload, and protected platform aggregates; they were browser-tested
-against the local database. Phase 3 administration is next.
+against the local database. Phase 3 administration is complete: organization
+admins can manage members, catalogs, closure policy and response templates;
+platform admins can view and activate/suspend organizations. Migration 009
+applied locally and all quality gates passed. Phase 4 is next.
 
 GOAL-001 through GOAL-012 are complete. The repository contains the executable
 foundation plus a PostgreSQL migration for organizations, users, memberships,

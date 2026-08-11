@@ -1,10 +1,9 @@
 # Next Task
 
-## Commercial transformation — Phase 3
+## Commercial transformation — Phase 4
 
 **Status:** READY
 
-Implement organization and platform administration from
-`docs/COMMERCIAL_PRODUCT_PLAN.md`: member lifecycle, roles, directories,
-catalogs, templates, business policy, and audited platform settings. Do not
-expose privileged operations outside their authorized role.
+Implement the professional ticket workspace: queues, filters, search, sorting,
+assignment, tags, watchers, and safe bulk operations. Preserve fixed ticket
+semantics and existing authorization rules.

@@ -1,0 +1,8 @@
+CREATE TABLE ticket_tags (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), organization_id uuid NOT NULL REFERENCES organizations(id) ON DELETE CASCADE, name text NOT NULL CHECK(char_length(name) BETWEEN 2 AND 50), color text NOT NULL DEFAULT '#1769aa' CHECK(color ~ '^#[0-9A-Fa-f]{6}$'), UNIQUE(organization_id,name));
+CREATE TABLE ticket_tag_links (ticket_id uuid NOT NULL REFERENCES tickets(id) ON DELETE CASCADE, tag_id uuid NOT NULL REFERENCES ticket_tags(id) ON DELETE CASCADE, organization_id uuid NOT NULL REFERENCES organizations(id) ON DELETE CASCADE, PRIMARY KEY(ticket_id,tag_id));
+CREATE TABLE ticket_watchers (ticket_id uuid NOT NULL REFERENCES tickets(id) ON DELETE CASCADE, user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE, organization_id uuid NOT NULL REFERENCES organizations(id) ON DELETE CASCADE, created_at timestamptz NOT NULL DEFAULT now(), PRIMARY KEY(ticket_id,user_id));
+ALTER TABLE ticket_tags ENABLE ROW LEVEL SECURITY; ALTER TABLE ticket_tag_links ENABLE ROW LEVEL SECURITY; ALTER TABLE ticket_watchers ENABLE ROW LEVEL SECURITY;
+CREATE POLICY ticket_tags_tenant ON ticket_tags USING(organization_id=app.current_organization_id()) WITH CHECK(organization_id=app.current_organization_id());
+CREATE POLICY ticket_tag_links_tenant ON ticket_tag_links USING(organization_id=app.current_organization_id()) WITH CHECK(organization_id=app.current_organization_id());
+CREATE POLICY ticket_watchers_tenant ON ticket_watchers USING(organization_id=app.current_organization_id()) WITH CHECK(organization_id=app.current_organization_id());
+GRANT SELECT,INSERT,UPDATE,DELETE ON ticket_tags,ticket_tag_links,ticket_watchers TO jupiter_app;
