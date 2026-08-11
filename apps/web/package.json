@@ -12,6 +12,7 @@
   "dependencies": {
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
+    "react-router-dom": "7.13.1",
     "shabnam-font": "5.0.0"
   },
   "devDependencies": {

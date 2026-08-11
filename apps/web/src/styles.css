@@ -49,10 +49,40 @@ header { margin-bottom: 22px; }
 .messages article { background: #f3f7fc; border-radius: 9px; padding: 10px; }
 .messages p { margin: 6px 0 0; }
 .hint { color: var(--text-muted); font-size: .9rem; margin-top: 18px; }
+.app-shell { min-height: 100vh; display: grid; grid-template-columns: 250px minmax(0, 1fr); background: #f4f7fb; }
+.app-sidebar { display: flex; flex-direction: column; gap: 24px; padding: 24px 16px; color: #dcecff; background: #102a43; }
+.brand { display: grid; gap: 4px; padding: 0 8px; }
+.brand strong { color: #fff; letter-spacing: .12em; }
+.brand span, .sidebar-footer span { color: #a8c1d9; font-size: .82rem; }
+.app-sidebar nav { display: grid; gap: 6px; }
+.app-sidebar a { border-radius: 8px; padding: 11px 12px; color: #dcecff; text-decoration: none; }
+.app-sidebar a:hover, .app-sidebar a.active { color: #fff; background: #1f4b70; }
+.sidebar-footer { display: grid; gap: 4px; margin-top: auto; padding: 14px 8px 0; border-top: 1px solid #2a4d6e; }
+.app-main { min-width: 0; padding: 28px; }
+.app-header { display: flex; justify-content: space-between; align-items: center; gap: 18px; margin: 0 auto 24px; max-width: 1440px; }
+.app-header h1 { margin-bottom: 0; }
+.page, .ticket-workspace { max-width: 1440px; margin: auto; }
+.page-intro, .section-heading { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-bottom: 20px; }
+.page-intro h2, .section-heading h2 { margin-bottom: 6px; }
+.page-intro p { color: var(--text-muted); margin-bottom: 0; }
+.button-link { display: inline-flex; align-items: center; border-radius: 8px; padding: 10px 14px; background: var(--primary); color: #fff; font-weight: bold; text-decoration: none; }
+.metric-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-bottom: 20px; }
+.metric-card { display: grid; gap: 8px; min-height: 150px; padding: 18px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); box-shadow: var(--shadow); }
+.metric-card span, .metric-card small { color: var(--text-muted); }
+.metric-card strong { font-size: 2rem; }
+.empty-state { max-width: 720px; text-align: center; margin: 56px auto; }
+.ticket-workspace { display: grid; grid-template-columns: 340px minmax(0, 1fr); gap: 20px; }
 
 @media (max-width: 760px) {
   .shell, .portal { padding: 16px; }
   .workspace { grid-template-columns: 1fr; }
   .sidebar { max-height: 280px; overflow: auto; }
   header, .ticket-heading { align-items: flex-start; flex-direction: column; }
+  .app-shell { grid-template-columns: 1fr; }
+  .app-sidebar { gap: 12px; padding: 16px; }
+  .app-sidebar nav { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .sidebar-footer { display: none; }
+  .app-main { padding: 16px; }
+  .app-header, .page-intro { align-items: flex-start; flex-direction: column; }
+  .metric-grid, .ticket-workspace { grid-template-columns: 1fr; }
 }
