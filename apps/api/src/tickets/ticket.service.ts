@@ -2,6 +2,7 @@ import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/commo
 import { PoolClient } from 'pg';
 import { DatabaseService } from '../database/database.service.js';
 import { assertTransition, TicketStatus } from './ticket-lifecycle.js';
+import { addBusinessMinutes } from '../sla/business-time.js';
 
 type Actor = { userId: string; organizationId: string; roles: string[] };
 const managerRoles = new Set(['ORG_ADMIN', 'SUPERVISOR']);
@@ -18,7 +19,7 @@ export class TicketService {
         [actor.organizationId, actor.userId, data.title, data.description, data.priority ?? 'NORMAL', data.departmentId ?? null],
       );
       const policy = (await client.query<{id:string;first_response_minutes:number;resolution_minutes:number}>('SELECT id,first_response_minutes,resolution_minutes FROM sla_policies WHERE priority=$1 AND is_active=true ORDER BY id LIMIT 1',[data.priority ?? 'NORMAL'])).rows[0];
-      if (policy) await client.query('INSERT INTO ticket_sla_clocks(ticket_id,organization_id,policy_id,first_response_due_at,resolution_due_at) VALUES($1,$2,$3,now()+($4::text||\' minutes\')::interval,now()+($5::text||\' minutes\')::interval)',[result.rows[0].id,actor.organizationId,policy.id,policy.first_response_minutes,policy.resolution_minutes]);
+      if (policy) { const calendar=(await client.query<{timezone:string;workdays:number[];start_minute:number;end_minute:number}>('SELECT timezone,workdays,start_minute,end_minute FROM business_calendars WHERE organization_id=$1',[actor.organizationId])).rows[0]??{timezone:'UTC',workdays:[1,2,3,4,5],start_minute:480,end_minute:1020}; const now=new Date(); await client.query('INSERT INTO ticket_sla_clocks(ticket_id,organization_id,policy_id,first_response_due_at,resolution_due_at) VALUES($1,$2,$3,$4,$5)',[result.rows[0].id,actor.organizationId,policy.id,addBusinessMinutes(now,policy.first_response_minutes,{timezone:calendar.timezone,workdays:calendar.workdays,startMinute:calendar.start_minute,endMinute:calendar.end_minute}),addBusinessMinutes(now,policy.resolution_minutes,{timezone:calendar.timezone,workdays:calendar.workdays,startMinute:calendar.start_minute,endMinute:calendar.end_minute})]); }
       await this.activity(client, actor, result.rows[0].id, 'ticket.draft_created', 'REQUESTER');
       return result.rows[0];
     });
