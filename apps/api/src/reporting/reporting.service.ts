@@ -27,6 +27,26 @@ export class ReportingService {
     return this.database.withOrganization(actor.organizationId, async (client) => (await client.query('SELECT status,count(*)::int AS count FROM tickets GROUP BY status ORDER BY status')).rows);
   }
 
+  async summary(actor: Pick<Actor, 'organizationId' | 'roles'>) {
+    if (!actor.roles.some((role) => ['ORG_ADMIN', 'SUPERVISOR'].includes(role))) throw new ForbiddenException();
+    return this.database.withOrganization(actor.organizationId, async (client) => (await client.query(`SELECT
+      count(*)::int AS total_tickets,
+      count(*) FILTER (WHERE status IN ('OPEN','IN_PROGRESS','WAITING_FOR_REQUESTER'))::int AS active_tickets,
+      count(*) FILTER (WHERE status IN ('RESOLVED','CLOSED'))::int AS completed_tickets,
+      COALESCE((SELECT round(avg(score)::numeric,2) FROM ticket_ratings),0) AS average_satisfaction,
+      (SELECT count(*)::int FROM ticket_sla_clocks WHERE breached_at IS NOT NULL) AS sla_breaches
+      FROM tickets`)).rows[0]);
+  }
+
+  async exportCsv(actor: Pick<Actor, 'organizationId' | 'roles'>) {
+    if (!actor.roles.some((role) => ['ORG_ADMIN', 'SUPERVISOR'].includes(role))) throw new ForbiddenException();
+    return this.database.withOrganization(actor.organizationId, async (client) => {
+      const rows = (await client.query<{ticket_number:number;title:string;status:string;priority:string;created_at:Date}>('SELECT ticket_number,title,status,priority,created_at FROM tickets ORDER BY created_at DESC LIMIT 10000')).rows;
+      const quote = (value: unknown) => `"${String(value ?? '').replaceAll('"','""')}"`;
+      return ['ticket_number,title,status,priority,created_at', ...rows.map(row => [row.ticket_number,row.title,row.status,row.priority,row.created_at.toISOString()].map(quote).join(','))].join('\n');
+    });
+  }
+
   async platformOverview(userId: string) {
     const admin = await this.database.query<{ is_platform_admin: boolean }>('SELECT is_platform_admin FROM users WHERE id=$1 AND is_active=true', [userId]);
     if (!admin.rows[0]?.is_platform_admin) throw new ForbiddenException();
