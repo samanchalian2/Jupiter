@@ -1,0 +1,1 @@
+import { Module } from '@nestjs/common'; import { TicketModule } from '../tickets/ticket.module.js'; import { KnowledgeController } from './knowledge.controller.js'; import { KnowledgeService } from './knowledge.service.js'; @Module({imports:[TicketModule],controllers:[KnowledgeController],providers:[KnowledgeService]}) export class KnowledgeModule {}

@@ -1,0 +1,5 @@
+CREATE TABLE knowledge_articles (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), organization_id uuid NOT NULL REFERENCES organizations(id) ON DELETE CASCADE, title text NOT NULL CHECK(char_length(title) BETWEEN 3 AND 200), body text NOT NULL CHECK(char_length(body) BETWEEN 1 AND 20000), status text NOT NULL DEFAULT 'DRAFT' CHECK(status IN ('DRAFT','IN_REVIEW','PUBLISHED','ARCHIVED')), author_user_id uuid NOT NULL REFERENCES users(id), reviewer_user_id uuid REFERENCES users(id), published_at timestamptz, created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now());
+CREATE INDEX knowledge_articles_search ON knowledge_articles(organization_id,status,updated_at DESC);
+ALTER TABLE knowledge_articles ENABLE ROW LEVEL SECURITY;
+CREATE POLICY knowledge_articles_tenant ON knowledge_articles USING(organization_id=app.current_organization_id()) WITH CHECK(organization_id=app.current_organization_id());
+GRANT SELECT,INSERT,UPDATE,DELETE ON knowledge_articles TO jupiter_app;
