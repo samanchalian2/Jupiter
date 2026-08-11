@@ -61,6 +61,11 @@ export class ConversationService {
     });
   }
 
+  async unifiedTimeline(actor: TicketActor, ticketId: string) {
+    const [activities,messages,notes] = await Promise.all([this.timeline(actor,ticketId),this.listMessages(actor,ticketId),actor.roles.some(role=>staffRoles.has(role)) ? this.listNotes(actor,ticketId) : Promise.resolve([])]);
+    return [...activities.map((item:any)=>({...item,kind:'activity'})),...messages.map((item:any)=>({...item,kind:'message'})),...notes.map((item:any)=>({...item,kind:'note'}))].sort((a:any,b:any)=>String(a.created_at).localeCompare(String(b.created_at)));
+  }
+
   private async accessibleTicket(client: PoolClient, actor: TicketActor, ticketId: string): Promise<Ticket> {
     const ticket = (await client.query<Ticket>('SELECT id,requester_user_id FROM tickets WHERE id=$1', [ticketId])).rows[0];
     if (!ticket) throw new NotFoundException('Ticket not found');
