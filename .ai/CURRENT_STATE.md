@@ -1,8 +1,8 @@
 # Current State
 
-**Phase:** GOAL-011 complete; GOAL-012 is ready.
+**Phase:** MVP complete; all planned Goals are done.
 
-GOAL-001 through GOAL-011 are complete. The repository contains the executable
+GOAL-001 through GOAL-012 are complete. The repository contains the executable
 foundation plus a PostgreSQL migration for organizations, users, memberships,
 roles/permissions, organization directory tables, audit logs, and RLS policies.
 Local authentication supports bootstrap platform administration and login.

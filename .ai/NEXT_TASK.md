@@ -1,7 +1,7 @@
 # Next Task
 
-## GOAL-012 — MVP hardening and release readiness
+## MVP release handoff
 
-**Status:** READY
+**Status:** COMPLETE
 
-Complete integration/security/performance checks, observability, backup/restore runbook, and release gates.
+All MVP Goals are complete. Use `docs/RELEASE_RUNBOOK.md` before deployment and create a new approved Goal for any post-MVP work.

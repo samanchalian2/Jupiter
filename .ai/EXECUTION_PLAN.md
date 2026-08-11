@@ -140,7 +140,7 @@ basic workloads/operational views. **Done:** role and tenant tests pass.
 
 ## GOAL-012 — MVP hardening and release readiness
 
-**Status:** PLANNED
+**Status:** DONE
 
 **Depends on:** GOAL-010/011. **Scope:** integration/security/performance
 suite, observability, backup/restore runbook, release checks. **Done:** all
