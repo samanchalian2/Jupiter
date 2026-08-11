@@ -54,12 +54,18 @@ export class TicketService {
     });
   }
 
-  async list(actor: Actor, filters: { status?: string; priority?: string } = {}) {
+  async list(actor: Actor, filters: { status?: string; priority?: string; query?: string; sort?: string } = {}) {
     return this.database.withOrganization(actor.organizationId, async (client) => {
-      const conditions = '($2::text IS NULL OR t.status=$2) AND ($3::text IS NULL OR t.priority=$3)';
-      if (actor.roles.some((role) => managerRoles.has(role))) return (await client.query(`SELECT t.id,t.ticket_number,t.title,t.status,t.priority,t.requester_user_id,t.created_at FROM tickets t WHERE ${conditions} ORDER BY t.created_at DESC`, [actor.userId, filters.status ?? null, filters.priority ?? null])).rows;
-      if (actor.roles.includes('EXPERT')) return (await client.query(`SELECT t.id,t.ticket_number,t.title,t.status,t.priority,t.requester_user_id,t.created_at FROM tickets t JOIN ticket_assignments a ON a.ticket_id=t.id AND a.ended_at IS NULL WHERE a.assigned_to_user_id=$1 AND ${conditions} ORDER BY t.created_at DESC`, [actor.userId, filters.status ?? null, filters.priority ?? null])).rows;
-      return (await client.query(`SELECT t.id,t.ticket_number,t.title,t.status,t.priority,t.requester_user_id,t.created_at FROM tickets t WHERE t.requester_user_id=$1 AND ${conditions} ORDER BY t.created_at DESC`, [actor.userId, filters.status ?? null, filters.priority ?? null])).rows;
+      const conditions = '($1::uuid IS NOT NULL) AND ($2::text IS NULL OR t.status=$2) AND ($3::text IS NULL OR t.priority=$3) AND ($4::text IS NULL OR t.title ILIKE \'%\'||$4||\'%\')';
+      const orderBy = filters.sort === 'oldest' ? 't.created_at ASC' : filters.sort === 'priority' ? "CASE t.priority WHEN 'URGENT' THEN 1 WHEN 'HIGH' THEN 2 WHEN 'NORMAL' THEN 3 ELSE 4 END, t.created_at DESC" : 't.created_at DESC';
+      const fields = `t.id,t.ticket_number,t.title,t.status,t.priority,t.requester_user_id,t.created_at,
+        assignee.id AS assigned_to_user_id, assignee.display_name AS assignee_display_name,
+        COALESCE((SELECT json_agg(json_build_object('id',tag.id,'name',tag.name,'color',tag.color) ORDER BY tag.name)
+          FROM ticket_tag_links link JOIN ticket_tags tag ON tag.id=link.tag_id WHERE link.ticket_id=t.id), '[]'::json) AS tags`;
+      const values = [actor.userId, filters.status ?? null, filters.priority ?? null, filters.query?.trim() || null];
+      if (actor.roles.some((role) => managerRoles.has(role))) return (await client.query(`SELECT ${fields} FROM tickets t LEFT JOIN ticket_assignments assignment ON assignment.ticket_id=t.id AND assignment.ended_at IS NULL LEFT JOIN users assignee ON assignee.id=assignment.assigned_to_user_id WHERE ${conditions} ORDER BY ${orderBy}`, values)).rows;
+      if (actor.roles.includes('EXPERT')) return (await client.query(`SELECT ${fields} FROM tickets t JOIN ticket_assignments mine ON mine.ticket_id=t.id AND mine.ended_at IS NULL AND mine.assigned_to_user_id=$1 LEFT JOIN ticket_assignments assignment ON assignment.ticket_id=t.id AND assignment.ended_at IS NULL LEFT JOIN users assignee ON assignee.id=assignment.assigned_to_user_id WHERE ${conditions} ORDER BY ${orderBy}`, values)).rows;
+      return (await client.query(`SELECT ${fields} FROM tickets t LEFT JOIN ticket_assignments assignment ON assignment.ticket_id=t.id AND assignment.ended_at IS NULL LEFT JOIN users assignee ON assignee.id=assignment.assigned_to_user_id WHERE t.requester_user_id=$1 AND ${conditions} ORDER BY ${orderBy}`, values)).rows;
     });
   }
 
@@ -76,7 +82,19 @@ export class TicketService {
   }
 
   async watch(actor: Actor, ticketId: string) {
-    return this.database.withOrganization(actor.organizationId, async (client) => { await this.ticket(client,ticketId); return (await client.query('INSERT INTO ticket_watchers(ticket_id,user_id,organization_id) VALUES($1,$2,$3) ON CONFLICT DO NOTHING RETURNING ticket_id,user_id',[ticketId,actor.userId,actor.organizationId])).rows[0]; });
+    return this.database.withOrganization(actor.organizationId, async (client) => { await this.accessibleTicket(client, actor, ticketId); return (await client.query('INSERT INTO ticket_watchers(ticket_id,user_id,organization_id) VALUES($1,$2,$3) ON CONFLICT DO NOTHING RETURNING ticket_id,user_id',[ticketId,actor.userId,actor.organizationId])).rows[0]; });
+  }
+
+  async linkTag(actor: Actor, ticketId: string, tagId: string) {
+    if (!actor.roles.some((role) => managerRoles.has(role))) throw new ForbiddenException();
+    return this.database.withOrganization(actor.organizationId, async (client) => {
+      await this.ticket(client, ticketId);
+      const tag = await client.query('SELECT id,name,color FROM ticket_tags WHERE id=$1', [tagId]);
+      if (!tag.rowCount) throw new NotFoundException('Tag not found');
+      await client.query('INSERT INTO ticket_tag_links(ticket_id,tag_id,organization_id) VALUES($1,$2,$3) ON CONFLICT DO NOTHING', [ticketId, tagId, actor.organizationId]);
+      await this.activity(client, actor, ticketId, 'ticket.tagged', 'STAFF', { tagId });
+      return tag.rows[0];
+    });
   }
 
   async bulkStatus(actor: Actor, ticketIds: string[], status: TicketStatus) {
@@ -92,6 +110,13 @@ export class TicketService {
     const result = await client.query<{id:string;status:TicketStatus;requester_user_id:string}>('SELECT id,status,requester_user_id FROM tickets WHERE id=$1', [id]);
     if (!result.rows[0]) throw new NotFoundException('Ticket not found');
     return result.rows[0];
+  }
+  private async accessibleTicket(client: PoolClient, actor: Actor, id: string) {
+    const ticket = await this.ticket(client, id);
+    if (ticket.requester_user_id === actor.userId || actor.roles.some((role) => managerRoles.has(role))) return ticket;
+    const assigned = await client.query('SELECT 1 FROM ticket_assignments WHERE ticket_id=$1 AND assigned_to_user_id=$2 AND ended_at IS NULL', [id, actor.userId]);
+    if (assigned.rowCount) return ticket;
+    throw new ForbiddenException();
   }
   private async activity(client: PoolClient, actor: Actor, ticketId: string, action: string, visibility: 'REQUESTER' | 'STAFF', metadata: object = {}) {
     await client.query('INSERT INTO audit_logs(organization_id,actor_user_id,action,target_type,target_id,metadata) VALUES($1,$2,$3,\'ticket\',$4,$5)', [actor.organizationId,actor.userId,action,ticketId,metadata]);

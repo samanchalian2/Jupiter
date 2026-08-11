@@ -13,7 +13,11 @@ manager workload, and protected platform aggregates; they were browser-tested
 against the local database. Phase 3 administration is complete: organization
 admins can manage members, catalogs, closure policy and response templates;
 platform admins can view and activate/suspend organizations. Migration 009
-applied locally and all quality gates passed. Phase 4 is next.
+applied locally and all quality gates passed. Phase 4 is complete: the ticket
+workspace provides role-scoped queues, text/status/priority filtering,
+sorting, session-saved views, assignment, tag creation/linking, watching, and
+server-validated bulk transitions. The live local browser flow was verified
+with the organization-admin account after an API restart. Phase 5 is next.
 
 GOAL-001 through GOAL-012 are complete. The repository contains the executable
 foundation plus a PostgreSQL migration for organizations, users, memberships,

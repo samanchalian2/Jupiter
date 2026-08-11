@@ -73,6 +73,17 @@ header { margin-bottom: 22px; }
 .empty-state { max-width: 720px; text-align: center; margin: 56px auto; }
 .ticket-workspace { display: grid; grid-template-columns: 340px minmax(0, 1fr); gap: 20px; }
 .admin-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.workspace-filters { display: grid; gap: 10px; padding: 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-muted); }
+.inline-actions, .bulk-actions, .ticket-tools { display: flex; align-items: end; flex-wrap: wrap; gap: 8px; }
+.bulk-actions { padding: 10px; border-radius: 10px; background: #e5f1fb; color: #173d5d; }
+.ticket-row { display: flex; align-items: center; gap: 8px; border-radius: 9px; }
+.ticket-row.active { outline: 2px solid #78b8ed; }
+.ticket-row > input { width: 18px; height: 18px; }
+.ticket-row .ticket { flex: 1; }
+.tag-list { display: flex; flex-wrap: wrap; gap: 4px; }
+.tag-list i { border-radius: 999px; padding: 2px 7px; color: white; font-size: .72rem; font-style: normal; }
+.ticket-tools { margin: 0 0 22px; padding: 14px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-muted); }
+.ticket-tools label { min-width: 180px; flex: 1; }
 
 @media (max-width: 760px) {
   .shell, .portal { padding: 16px; }
@@ -86,4 +97,5 @@ header { margin-bottom: 22px; }
   .app-main { padding: 16px; }
   .app-header, .page-intro { align-items: flex-start; flex-direction: column; }
   .metric-grid, .ticket-workspace, .admin-grid { grid-template-columns: 1fr; }
+  .ticket-tools { align-items: stretch; }
 }

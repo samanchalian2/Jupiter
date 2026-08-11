@@ -1,9 +1,14 @@
 # Next Task
 
-## Commercial transformation — Phase 4
+## Commercial transformation — Phase 5
 
 **Status:** READY
 
-Implement the professional ticket workspace: queues, filters, search, sorting,
-assignment, tags, watchers, and safe bulk operations. Preserve fixed ticket
-semantics and existing authorization rules.
+Implement complete ticket collaboration: unified timeline, internal notes,
+attachment UI, requester-facing status history, satisfaction flow, closure and
+reopen policy UI, and notifications. Preserve fixed ticket semantics,
+authorization boundaries, and audit evidence.
+
+**Prerequisites verified:** Ticket conversations, internal notes, activities,
+attachments, ratings, notifications, and organization closure policy APIs
+already exist. Phase 4 workspace capabilities are complete and tested.
