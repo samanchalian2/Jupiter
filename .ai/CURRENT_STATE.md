@@ -33,7 +33,14 @@ report with a validated, bounded date-range builder and matching safe CSV
 export; the knowledge base supports contributor authoring, review submission,
 manager review and publication, and published-only search. API lifecycle and
 export-policy tests pass, and the full knowledge lifecycle plus live report
-metrics were browser-tested against the local database. Phase 8 is next.
+metrics were browser-tested against the local database. Phase 8 is complete:
+platform administrators can control each organization's AI entitlement, model,
+and recorded usage; requesters see clearly labelled AI review/confirmation and
+manual-fallback guidance in their ticket workspace; transcription jobs expose
+state, attempts and retry controls. AI and transcription actions are written to
+the audit log and surfaced to platform administrators. Provider failure is
+covered by integration testing without blocking the ticket path. Phase 9 is
+next.
 
 GOAL-001 through GOAL-012 are complete. The repository contains the executable
 foundation plus a PostgreSQL migration for organizations, users, memberships,

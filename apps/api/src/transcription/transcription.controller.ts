@@ -1,2 +1,21 @@
-import { Body, Controller, Get, Headers, Param, Post, UnauthorizedException } from '@nestjs/common'; import { AuthService } from '../auth/auth.service.js'; import { DatabaseService } from '../database/database.service.js'; import { TranscriptionService } from './transcription.service.js';
-@Controller('tickets/:ticketId/transcription') export class TranscriptionController { constructor(private readonly auth:AuthService,private readonly jobs:TranscriptionService){} async actor(a?:string,o?:string){const t=a?.replace(/^Bearer\s+/i,'');if(!t||!o)throw new UnauthorizedException();return {userId:(await this.auth.verify(t)).sub,organizationId:o}} @Post() async create(@Param('ticketId') ticketId:string,@Headers('authorization') a:string|undefined,@Headers('x-organization-id') o:string|undefined,@Body() b:{attachmentId:string}){const x=await this.actor(a,o);return this.jobs.enqueue(x.organizationId,ticketId,b.attachmentId,x.userId)} @Get(':id') async get(@Param('id') id:string,@Headers('authorization') a:string|undefined,@Headers('x-organization-id') o:string|undefined){const x=await this.actor(a,o);return this.jobs.get(x.organizationId,id,x.userId)}}
+import { Body, Controller, Get, Headers, Param, Post, UnauthorizedException } from '@nestjs/common';
+import { AuthService } from '../auth/auth.service.js';
+import { TranscriptionService } from './transcription.service.js';
+
+@Controller('tickets/:ticketId/transcription')
+export class TranscriptionController {
+  constructor(private readonly auth: AuthService, private readonly jobs: TranscriptionService) {}
+  private async actor(authorization?: string, organizationId?: string) {
+    const token = authorization?.replace(/^Bearer\s+/i, '');
+    if (!token || !organizationId) throw new UnauthorizedException();
+    return { userId: (await this.auth.verify(token)).sub, organizationId };
+  }
+  @Post()
+  async create(@Param('ticketId') ticketId: string, @Headers('authorization') authorization: string | undefined, @Headers('x-organization-id') organizationId: string | undefined, @Body() body: { attachmentId: string }) { return this.jobs.enqueue(await this.actor(authorization, organizationId), ticketId, body.attachmentId); }
+  @Get()
+  async list(@Param('ticketId') ticketId: string, @Headers('authorization') authorization?: string, @Headers('x-organization-id') organizationId?: string) { return this.jobs.list(await this.actor(authorization, organizationId), ticketId); }
+  @Get(':id')
+  async get(@Param('ticketId') ticketId: string, @Param('id') id: string, @Headers('authorization') authorization?: string, @Headers('x-organization-id') organizationId?: string) { return this.jobs.get(await this.actor(authorization, organizationId), ticketId, id); }
+  @Post(':id/retry')
+  async retry(@Param('ticketId') ticketId: string, @Param('id') id: string, @Headers('authorization') authorization?: string, @Headers('x-organization-id') organizationId?: string) { return this.jobs.retry(await this.actor(authorization, organizationId), ticketId, id); }
+}

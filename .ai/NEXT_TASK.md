@@ -1,14 +1,15 @@
 # Next Task
 
-## Commercial transformation — Phase 8
+## Commercial transformation — Phase 9
 
 **Status:** READY
 
-Implement the organization-entitled AI and transcription experience: expose
-configuration, review/confirmation, usage and job state, retry visibility,
-and a clearly usable manual fallback without weakening the existing AI provider
-contract or tenant isolation.
+Deliver enterprise release readiness: security and observability controls,
+staged deployment and restore procedures, load and browser E2E evidence,
+accessibility review, and operator runbooks. Prove every locally testable gate
+and make staging-only gates explicit rather than claiming unverified release
+readiness.
 
-**Prerequisites verified:** reporting/knowledge is complete and validated.
-Existing AI gateway and transcription APIs provide the starting point; extend
-their web experience with auditable, role-scoped controls and failure states.
+**Prerequisites verified:** the commercial product capabilities through Phase
+8 are implemented and validated. Existing health, release-runbook and test
+foundations provide the starting point for release-gate automation.
