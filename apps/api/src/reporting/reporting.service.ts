@@ -27,6 +27,32 @@ export class ReportingService {
     return this.database.withOrganization(actor.organizationId, async (client) => (await client.query('SELECT status,count(*)::int AS count FROM tickets GROUP BY status ORDER BY status')).rows);
   }
 
+  async overview(actor: Actor) {
+    const staff = actor.roles.some((role) => ['ORG_ADMIN', 'SUPERVISOR', 'EXPERT'].includes(role));
+    return this.database.withOrganization(actor.organizationId, async (client) => {
+      const scope = staff ? '' : ' AND requester_user_id=$1';
+      const values = staff ? [] : [actor.userId];
+      const metrics = (await client.query<{total:number;active:number;in_progress:number;waiting:number;completed:number;unassigned:number;at_risk:number}>(
+        `SELECT count(*)::int AS total,
+          count(*) FILTER (WHERE status IN ('OPEN','IN_PROGRESS','WAITING_FOR_REQUESTER'))::int AS active,
+          count(*) FILTER (WHERE status='IN_PROGRESS')::int AS in_progress,
+          count(*) FILTER (WHERE status='WAITING_FOR_REQUESTER')::int AS waiting,
+          count(*) FILTER (WHERE status IN ('RESOLVED','CLOSED'))::int AS completed,
+          count(*) FILTER (WHERE status IN ('OPEN','IN_PROGRESS') AND NOT EXISTS(SELECT 1 FROM ticket_assignments assignment WHERE assignment.ticket_id=tickets.id AND assignment.ended_at IS NULL))::int AS unassigned,
+          count(*) FILTER (WHERE EXISTS(SELECT 1 FROM ticket_sla_clocks clock WHERE clock.ticket_id=tickets.id AND clock.resolution_due_at <= now()+interval '4 hours' AND clock.breached_at IS NULL) AND status NOT IN ('RESOLVED','CLOSED'))::int AS at_risk
+         FROM tickets WHERE true${scope}`, values,
+      )).rows[0];
+      const recent = (await client.query(
+        `SELECT tickets.id,tickets.ticket_number,tickets.title,tickets.status,tickets.priority,tickets.updated_at,
+          assignee.display_name AS assignee_display_name
+         FROM tickets LEFT JOIN ticket_assignments assignment ON assignment.ticket_id=tickets.id AND assignment.ended_at IS NULL
+         LEFT JOIN users assignee ON assignee.id=assignment.assigned_to_user_id
+         WHERE true${scope} ORDER BY tickets.updated_at DESC LIMIT 8`, values,
+      )).rows;
+      return { ...metrics, recent };
+    });
+  }
+
   async summary(actor: Pick<Actor, 'organizationId' | 'roles'>, range: ReportRange = {}) {
     if (!actor.roles.some((role) => ['ORG_ADMIN', 'SUPERVISOR'].includes(role))) throw new ForbiddenException();
     const window = reportWindow(range);
@@ -46,6 +72,20 @@ export class ReportingService {
       const rows = (await client.query<{ticket_number:number;title:string;status:string;priority:string;created_at:Date}>('SELECT ticket_number,title,status,priority,created_at FROM tickets WHERE created_at >= $1 AND created_at < $2 ORDER BY created_at DESC LIMIT 10000', [window.from, window.to])).rows;
       const quote = (value: unknown) => `"${String(value ?? '').replaceAll('"','""')}"`;
       return ['ticket_number,title,status,priority,created_at', ...rows.map(row => [row.ticket_number,row.title,row.status,row.priority,row.created_at.toISOString()].map(quote).join(','))].join('\n');
+    });
+  }
+
+  async breakdown(actor: Pick<Actor, 'organizationId' | 'roles'>, range: ReportRange = {}) {
+    if (!actor.roles.some((role) => ['ORG_ADMIN', 'SUPERVISOR'].includes(role))) throw new ForbiddenException();
+    const window = reportWindow(range);
+    return this.database.withOrganization(actor.organizationId, async (client) => {
+      const [status, priority, trend, recent] = await Promise.all([
+        client.query<{label:string;count:number}>(`SELECT status AS label,count(*)::int AS count FROM tickets WHERE created_at >= $1 AND created_at < $2 GROUP BY status ORDER BY count DESC`, [window.from,window.to]),
+        client.query<{label:string;count:number}>(`SELECT priority AS label,count(*)::int AS count FROM tickets WHERE created_at >= $1 AND created_at < $2 GROUP BY priority ORDER BY count DESC`, [window.from,window.to]),
+        client.query<{day:string;created:number;completed:number}>(`SELECT to_char(day,'YYYY-MM-DD') AS day,COALESCE(created,0)::int AS created,COALESCE(completed,0)::int AS completed FROM generate_series($1::date,$2::date-1,interval '1 day') day LEFT JOIN LATERAL (SELECT count(*) AS created FROM tickets WHERE created_at >= day AND created_at < day+interval '1 day') c ON true LEFT JOIN LATERAL (SELECT count(*) AS completed FROM tickets WHERE status IN ('RESOLVED','CLOSED') AND updated_at >= day AND updated_at < day+interval '1 day') d ON true ORDER BY day`, [window.from,window.to]),
+        client.query(`SELECT ticket_number,title,status,priority,created_at FROM tickets WHERE created_at >= $1 AND created_at < $2 ORDER BY created_at DESC LIMIT 50`, [window.from,window.to]),
+      ]);
+      return { status: status.rows, priority: priority.rows, trend: trend.rows, tickets: recent.rows };
     });
   }
 

@@ -24,6 +24,11 @@ export class S3AttachmentStorageService implements AttachmentStorage {
     return getSignedUrl(this.client, new GetObjectCommand({ Bucket: this.config.bucket, Key: key, ResponseContentDisposition: `attachment; filename*=UTF-8''${encodeURIComponent(filename)}` }), { expiresIn: expiresInSeconds });
   }
 
+  async createViewUrl(key: string, expiresInSeconds: number) {
+    this.assertConfigured();
+    return getSignedUrl(this.client, new GetObjectCommand({ Bucket: this.config.bucket, Key: key }), { expiresIn: expiresInSeconds });
+  }
+
   async head(key: string): Promise<StoredObject | undefined> {
     this.assertConfigured();
     try {

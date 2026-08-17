@@ -9,6 +9,7 @@ class FakeStorage implements AttachmentStorage {
   readonly objects = new Map<string, StoredObject>();
   async createUploadUrl(key: string) { return `https://storage.test/upload/${key}`; }
   async createDownloadUrl(key: string) { return `https://storage.test/download/${key}`; }
+  async createViewUrl(key: string) { return `https://storage.test/view/${key}`; }
   async head(key: string) { return this.objects.get(key); }
 }
 

@@ -27,11 +27,11 @@ describe('Knowledge article lifecycle', () => {
   });
 
   it('lets a contributor create and submit only their draft for review', async () => {
-    const { service, calls } = serviceWith([{ rows: [{ id: 'article', status: 'DRAFT' }] }, { rows: [{ id: 'article', status: 'IN_REVIEW' }] }]);
+    const { service, calls } = serviceWith([{ rows: [{ id: 'article', title: 'راهنمای شبکه', body: 'متن مقاله', status: 'DRAFT' }] }, { rows: [] }, { rows: [{ id: 'article', status: 'IN_REVIEW' }] }]);
     await service.create(contributor, { title: 'راهنمای شبکه', body: 'متن مقاله' });
     await service.submitReview(contributor, 'article');
-    expect(calls[1].sql).toContain("status='DRAFT'");
-    expect(calls[1].values).toEqual(['article', 'author', false]);
+    expect(calls[2].sql).toContain("status='DRAFT'");
+    expect(calls[2].values).toEqual(['article', 'author', false]);
   });
 
   it('does not allow a requester to author, review, or publish', async () => {

@@ -7,17 +7,20 @@ import { addBusinessMinutes } from '../sla/business-time.js';
 type Actor = { userId: string; organizationId: string; roles: string[] };
 const managerRoles = new Set(['ORG_ADMIN', 'SUPERVISOR']);
 const workerRoles = new Set(['ORG_ADMIN', 'SUPERVISOR', 'EXPERT']);
+const readableCatalogs = new Set(['departments', 'categories', 'locations', 'disciplines']);
 
 @Injectable()
 export class TicketService {
   constructor(private readonly database: DatabaseService) {}
 
-  async createDraft(actor: Actor, data: { title:string; description:string; priority?:string; departmentId?:string }) {
+  async createDraft(actor: Actor, data: { title:string; description:string; priority?:string; departmentId?:string; categoryId?:string; locationId?:string; customFields?:Record<string,unknown> }) {
     return this.database.withOrganization(actor.organizationId, async (client) => {
       const result = await client.query(
-        'INSERT INTO tickets(organization_id,requester_user_id,title,description,priority,department_id) VALUES($1,$2,$3,$4,$5,$6) RETURNING id,ticket_number,status,title,description,priority,created_at',
-        [actor.organizationId, actor.userId, data.title, data.description, data.priority ?? 'NORMAL', data.departmentId ?? null],
+        'INSERT INTO tickets(organization_id,requester_user_id,title,description,priority,department_id,category_id,location_id) VALUES($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id,ticket_number,status,title,description,priority,created_at',
+        [actor.organizationId, actor.userId, data.title, data.description, data.priority ?? 'NORMAL', data.departmentId ?? null, data.categoryId ?? null, data.locationId ?? null],
       );
+      const definitions=(await client.query<{id:string;field_key:string;field_type:string;options:unknown[];is_required:boolean}>('SELECT id,field_key,field_type,options,is_required FROM ticket_custom_field_definitions WHERE is_active=true ORDER BY sort_order,label')).rows;
+      for(const definition of definitions){const value=data.customFields?.[definition.field_key];if((value===undefined||value===''||value===null)&&definition.is_required) throw new ForbiddenException(`Custom field ${definition.field_key} is required`);if(value===undefined||value===''||value===null)continue;if(definition.field_type==='NUMBER'&&typeof value!=='number'&&Number.isNaN(Number(value)))throw new ForbiddenException(`Custom field ${definition.field_key} must be numeric`);if(definition.field_type==='BOOLEAN'&&typeof value!=='boolean')throw new ForbiddenException(`Custom field ${definition.field_key} must be boolean`);if(definition.field_type==='SELECT'&&!(definition.options??[]).includes(value))throw new ForbiddenException(`Custom field ${definition.field_key} has invalid option`);await client.query('INSERT INTO ticket_custom_field_values(organization_id,ticket_id,field_id,value) VALUES($1,$2,$3,$4)',[actor.organizationId,result.rows[0].id,definition.id,JSON.stringify(value)]);}
       const policy = (await client.query<{id:string;first_response_minutes:number;resolution_minutes:number}>('SELECT id,first_response_minutes,resolution_minutes FROM sla_policies WHERE priority=$1 AND is_active=true ORDER BY id LIMIT 1',[data.priority ?? 'NORMAL'])).rows[0];
       if (policy) { const calendar=(await client.query<{timezone:string;workdays:number[];start_minute:number;end_minute:number}>('SELECT timezone,workdays,start_minute,end_minute FROM business_calendars WHERE organization_id=$1',[actor.organizationId])).rows[0]??{timezone:'UTC',workdays:[1,2,3,4,5],start_minute:480,end_minute:1020}; const now=new Date(); await client.query('INSERT INTO ticket_sla_clocks(ticket_id,organization_id,policy_id,first_response_due_at,resolution_due_at) VALUES($1,$2,$3,$4,$5)',[result.rows[0].id,actor.organizationId,policy.id,addBusinessMinutes(now,policy.first_response_minutes,{timezone:calendar.timezone,workdays:calendar.workdays,startMinute:calendar.start_minute,endMinute:calendar.end_minute}),addBusinessMinutes(now,policy.resolution_minutes,{timezone:calendar.timezone,workdays:calendar.workdays,startMinute:calendar.start_minute,endMinute:calendar.end_minute})]); }
       const assignmentRule=(await client.query<{assignee_user_id:string}>('SELECT assignee_user_id FROM assignment_rules WHERE is_active=true AND (department_id=$1 OR department_id IS NULL) ORDER BY department_id NULLS LAST LIMIT 1',[data.departmentId??null])).rows[0];
@@ -57,11 +60,51 @@ export class TicketService {
     });
   }
 
+  async get(actor: Actor, ticketId: string) {
+    return this.database.withOrganization(actor.organizationId, async (client) => {
+      const worker = actor.roles.some((role) => managerRoles.has(role));
+      const expert = actor.roles.includes('EXPERT');
+      const access = worker ? '' : expert
+        ? ' AND EXISTS(SELECT 1 FROM ticket_assignments mine WHERE mine.ticket_id=t.id AND mine.assigned_to_user_id=$2 AND mine.ended_at IS NULL)'
+        : ' AND t.requester_user_id=$2';
+      const ticket = (await client.query(
+        `SELECT t.id,t.ticket_number,t.title,t.description,t.status,t.priority,t.requester_user_id,t.created_at,t.updated_at,
+         GREATEST(t.updated_at,
+           COALESCE((SELECT max(message.created_at) FROM ticket_messages message WHERE message.ticket_id=t.id),t.updated_at),
+           COALESCE((SELECT max(activity.created_at) FROM ticket_activities activity WHERE activity.ticket_id=t.id AND activity.visibility='REQUESTER'),t.updated_at)) AS last_activity_at,
+         requester.display_name AS requester_display_name,
+         department.name AS department_name,category.name AS category_name,location.name AS location_name,
+         assignee.id AS assigned_to_user_id,assignee.display_name AS assignee_display_name,
+         sla.resolution_due_at,sla.warning_at,sla.breached_at,
+         COALESCE((SELECT json_agg(json_build_object('key',definition.field_key,'label',definition.label,'value',field_value.value) ORDER BY definition.sort_order,definition.label)
+           FROM ticket_custom_field_values field_value JOIN ticket_custom_field_definitions definition ON definition.id=field_value.field_id
+           WHERE field_value.ticket_id=t.id),'[]'::json) AS custom_fields,
+         COALESCE((SELECT json_agg(json_build_object('id',tag.id,'name',tag.name,'color',tag.color) ORDER BY tag.name)
+           FROM ticket_tag_links link JOIN ticket_tags tag ON tag.id=link.tag_id WHERE link.ticket_id=t.id),'[]'::json) AS tags
+         FROM tickets t
+         JOIN users requester ON requester.id=t.requester_user_id
+         LEFT JOIN departments department ON department.id=t.department_id
+         LEFT JOIN categories category ON category.id=t.category_id
+         LEFT JOIN locations location ON location.id=t.location_id
+         LEFT JOIN ticket_assignments assignment ON assignment.ticket_id=t.id AND assignment.ended_at IS NULL
+         LEFT JOIN users assignee ON assignee.id=assignment.assigned_to_user_id
+         LEFT JOIN ticket_sla_clocks sla ON sla.ticket_id=t.id
+         WHERE t.id=$1${access}`,
+        worker ? [ticketId] : [ticketId, actor.userId],
+      )).rows[0];
+      if (!ticket) throw new NotFoundException('Ticket not found');
+      return ticket;
+    });
+  }
+
   async list(actor: Actor, filters: { status?: string; priority?: string; query?: string; sort?: string } = {}) {
     return this.database.withOrganization(actor.organizationId, async (client) => {
-      const conditions = '($1::uuid IS NOT NULL) AND ($2::text IS NULL OR t.status=$2) AND ($3::text IS NULL OR t.priority=$3) AND ($4::text IS NULL OR t.title ILIKE \'%\'||$4||\'%\')';
-      const orderBy = filters.sort === 'oldest' ? 't.created_at ASC' : filters.sort === 'priority' ? "CASE t.priority WHEN 'URGENT' THEN 1 WHEN 'HIGH' THEN 2 WHEN 'NORMAL' THEN 3 ELSE 4 END, t.created_at DESC" : 't.created_at DESC';
-      const fields = `t.id,t.ticket_number,t.title,t.status,t.priority,t.requester_user_id,t.created_at,
+      const conditions = '($1::uuid IS NOT NULL) AND ($2::text IS NULL OR t.status=ANY(string_to_array($2,\',\'))) AND ($3::text IS NULL OR t.priority=$3) AND ($4::text IS NULL OR t.title ILIKE \'%\'||$4||\'%\')';
+      const orderBy = filters.sort === 'oldest' ? 't.created_at ASC' : filters.sort === 'priority' ? "CASE t.priority WHEN 'URGENT' THEN 1 WHEN 'HIGH' THEN 2 WHEN 'NORMAL' THEN 3 ELSE 4 END, t.created_at DESC" : filters.sort === 'recent' ? 'last_activity_at DESC,t.created_at DESC' : 't.created_at DESC';
+      const fields = `t.id,t.ticket_number,t.title,t.description,t.status,t.priority,t.requester_user_id,t.created_at,t.updated_at,
+        GREATEST(t.updated_at,
+          COALESCE((SELECT max(message.created_at) FROM ticket_messages message WHERE message.ticket_id=t.id),t.updated_at),
+          COALESCE((SELECT max(activity.created_at) FROM ticket_activities activity WHERE activity.ticket_id=t.id AND activity.visibility='REQUESTER'),t.updated_at)) AS last_activity_at,
         assignee.id AS assigned_to_user_id, assignee.display_name AS assignee_display_name,
         COALESCE((SELECT json_agg(json_build_object('id',tag.id,'name',tag.name,'color',tag.color) ORDER BY tag.name)
           FROM ticket_tag_links link JOIN ticket_tags tag ON tag.id=link.tag_id WHERE link.ticket_id=t.id), '[]'::json) AS tags`;
@@ -72,12 +115,60 @@ export class TicketService {
     });
   }
 
+  async page(actor: Actor, filters: { status?: string; priority?: string; query?: string; sort?: string; page?: number; pageSize?: number } = {}) {
+    const page = Math.max(1, Math.floor(filters.page ?? 1));
+    const pageSize = Math.min(100, Math.max(10, Math.floor(filters.pageSize ?? 20)));
+    return this.database.withOrganization(actor.organizationId, async (client) => {
+      const base = '($1::uuid IS NOT NULL) AND ($2::text IS NULL OR t.status=ANY(string_to_array($2,\',\'))) AND ($3::text IS NULL OR t.priority=$3) AND ($4::text IS NULL OR t.title ILIKE \'%\'||$4||\'%\')';
+      const orderBy = filters.sort === 'oldest' ? 't.created_at ASC' : filters.sort === 'priority' ? "CASE t.priority WHEN 'URGENT' THEN 1 WHEN 'HIGH' THEN 2 WHEN 'NORMAL' THEN 3 ELSE 4 END, t.created_at DESC" : filters.sort === 'recent' ? 'last_activity_at DESC,t.created_at DESC' : 't.created_at DESC';
+      const fields = `t.id,t.ticket_number,t.title,t.description,t.status,t.priority,t.requester_user_id,t.created_at,t.updated_at,
+        GREATEST(t.updated_at,
+          COALESCE((SELECT max(message.created_at) FROM ticket_messages message WHERE message.ticket_id=t.id),t.updated_at),
+          COALESCE((SELECT max(activity.created_at) FROM ticket_activities activity WHERE activity.ticket_id=t.id AND activity.visibility='REQUESTER'),t.updated_at)) AS last_activity_at,
+        assignee.id AS assigned_to_user_id,assignee.display_name AS assignee_display_name,
+        COALESCE((SELECT json_agg(json_build_object('id',tag.id,'name',tag.name,'color',tag.color) ORDER BY tag.name)
+          FROM ticket_tag_links link JOIN ticket_tags tag ON tag.id=link.tag_id WHERE link.ticket_id=t.id), '[]'::json) AS tags`;
+      const values = [actor.userId, filters.status ?? null, filters.priority ?? null, filters.query?.trim() || null, pageSize, (page - 1) * pageSize];
+      const manager = actor.roles.some((role) => managerRoles.has(role));
+      const expert = actor.roles.includes('EXPERT');
+      const scope = manager ? '' : expert ? 'JOIN ticket_assignments mine ON mine.ticket_id=t.id AND mine.ended_at IS NULL AND mine.assigned_to_user_id=$1' : '';
+      const requester = manager || expert ? '' : ' AND t.requester_user_id=$1';
+      const joins = `${scope} LEFT JOIN ticket_assignments assignment ON assignment.ticket_id=t.id AND assignment.ended_at IS NULL LEFT JOIN users assignee ON assignee.id=assignment.assigned_to_user_id`;
+      const [items,total] = await Promise.all([
+        client.query(`SELECT ${fields} FROM tickets t ${joins} WHERE ${base}${requester} ORDER BY ${orderBy} LIMIT $5 OFFSET $6`, values),
+        client.query<{total:number}>(`SELECT count(*)::int AS total FROM tickets t ${scope} WHERE ${base}${requester}`, values.slice(0, 4)),
+      ]);
+      return { items: items.rows, total: total.rows[0]?.total ?? 0, page, pageSize };
+    });
+  }
+
+  async savedViews(actor: Actor) {
+    return this.database.withOrganization(actor.organizationId, async (client) => (await client.query(
+      'SELECT id,name,filters,is_shared,updated_at FROM saved_ticket_views WHERE user_id=$1 OR is_shared=true ORDER BY is_shared DESC,name', [actor.userId],
+    )).rows);
+  }
+
+  async saveView(actor: Actor, input: { name: string; filters: object; isShared?: boolean }) {
+    if (!input.name?.trim() || input.name.trim().length > 80) throw new ForbiddenException('View name is required.');
+    return this.database.withOrganization(actor.organizationId, async (client) => (await client.query(
+      `INSERT INTO saved_ticket_views(organization_id,user_id,name,filters,is_shared) VALUES($1,$2,$3,$4,$5)
+       ON CONFLICT(organization_id,user_id,name) DO UPDATE SET filters=EXCLUDED.filters,is_shared=EXCLUDED.is_shared,updated_at=now()
+       RETURNING id,name,filters,is_shared,updated_at`, [actor.organizationId, actor.userId, input.name.trim(), input.filters, input.isShared ?? false],
+    )).rows[0]);
+  }
+
   async assignees(actor: Actor) {
     if (!actor.roles.some((role) => managerRoles.has(role))) throw new ForbiddenException();
     return this.database.withOrganization(actor.organizationId, async (client) => (await client.query('SELECT DISTINCT u.id,u.display_name,u.email FROM memberships m JOIN membership_roles mr ON mr.membership_id=m.id JOIN roles r ON r.id=mr.role_id JOIN users u ON u.id=m.user_id WHERE m.status=\'active\' AND r.code IN (\'EXPERT\',\'SUPERVISOR\',\'ORG_ADMIN\') ORDER BY u.display_name')).rows);
   }
 
   async tags(actor: Actor) { return this.database.withOrganization(actor.organizationId, async (client) => (await client.query('SELECT id,name,color FROM ticket_tags ORDER BY name')).rows); }
+  async customFields(actor: Actor) { return this.database.withOrganization(actor.organizationId,async client=>(await client.query("SELECT field_key,label,field_type,options,is_required FROM ticket_custom_field_definitions WHERE is_active=true AND label !~ '[?]' AND position(chr(65533) IN label)=0 ORDER BY sort_order,label")).rows); }
+
+  async catalog(actor: Actor, kind: string) {
+    if (!readableCatalogs.has(kind)) throw new NotFoundException('Catalog not found');
+    return this.database.withOrganization(actor.organizationId, async (client) => (await client.query(`SELECT id,name FROM ${kind} ORDER BY name`)).rows);
+  }
 
   async createTag(actor: Actor, name: string, color = '#1769aa') {
     if (!actor.roles.some((role) => managerRoles.has(role))) throw new ForbiddenException();

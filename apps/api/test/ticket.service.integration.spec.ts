@@ -41,6 +41,14 @@ describe('TicketService integration', () => {
     expect((await tickets.assignees(actor())).map((user) => user.id)).toContain(expertId);
     const active = await tickets.changeStatus({ userId:expertId,organizationId,roles:['EXPERT'] }, draft.id, 'IN_PROGRESS');
     expect(active.status).toBe('IN_PROGRESS');
+    const queue = await tickets.page(actor(), { sort: 'recent' });
+    const queued = queue.items.find((ticket) => ticket.id === draft.id) as { updated_at?: Date; last_activity_at?: Date } | undefined;
+    expect(queued?.last_activity_at).toBeTruthy();
+    expect(new Date(queued!.last_activity_at!).getTime()).toBeGreaterThanOrEqual(new Date(queued!.updated_at!).getTime());
+    expect((await tickets.get(actor(), draft.id) as { id:string }).id).toBe(draft.id);
+    expect((await tickets.get({ userId:expertId,organizationId,roles:['EXPERT'] }, draft.id) as { id:string }).id).toBe(draft.id);
+    const activeQueue = await tickets.page(actor(), { status: 'OPEN,IN_PROGRESS' });
+    expect(activeQueue.items.map((ticket) => ticket.id)).toContain(draft.id);
   });
 
   it('applies an active organization assignment rule to a new ticket', async () => {

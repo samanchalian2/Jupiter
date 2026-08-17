@@ -1,23 +1,185 @@
-import { ForbiddenException, Injectable } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service.js';
 import { hashPassword } from '../auth/password.js';
+import { AttachmentStorage } from '../attachments/attachment-storage.js';
+import { randomUUID } from 'node:crypto';
 
 type Actor = { userId: string; organizationId: string; roles: string[] };
+type MemberInput = { email: string; username?: string; displayName: string; password?: string; roles: string[] };
 const catalogTables = new Set(['departments', 'locations', 'disciplines', 'categories']);
+const roleCodes = new Set(['ORG_ADMIN', 'SUPERVISOR', 'EXPERT', 'REQUESTER']);
+const usernamePattern = /^[a-z0-9][a-z0-9._-]{1,62}$/;
 
 @Injectable()
 export class OrganizationService {
-  constructor(private readonly database: DatabaseService) {}
+  constructor(private readonly database: DatabaseService, @Inject('AttachmentStorage') private readonly storage: AttachmentStorage) {}
+
   private admin(actor: Actor) { if (!actor.roles.includes('ORG_ADMIN')) throw new ForbiddenException(); }
-  async members(actor: Actor) { this.admin(actor); return this.database.withOrganization(actor.organizationId, async c => (await c.query('SELECT m.id,u.id AS user_id,u.email,u.display_name,m.status,array_remove(array_agg(r.code),NULL) AS roles FROM memberships m JOIN users u ON u.id=m.user_id LEFT JOIN membership_roles mr ON mr.membership_id=m.id LEFT JOIN roles r ON r.id=mr.role_id GROUP BY m.id,u.id ORDER BY u.display_name')).rows); }
-  async addMember(actor: Actor, input: { email: string; displayName: string; password: string; roles: string[] }) { this.admin(actor); return this.database.withOrganization(actor.organizationId, async c => { const user=(await c.query<{id:string}>('INSERT INTO users(email,display_name,password_hash) VALUES($1,$2,$3) ON CONFLICT(email) DO UPDATE SET display_name=EXCLUDED.display_name RETURNING id',[input.email.toLowerCase(),input.displayName,await hashPassword(input.password)])).rows[0]; const member=(await c.query<{id:string}>('INSERT INTO memberships(organization_id,user_id,status) VALUES($1,$2,\'active\') ON CONFLICT(organization_id,user_id) DO UPDATE SET status=\'active\' RETURNING id',[actor.organizationId,user.id])).rows[0]; await c.query('DELETE FROM membership_roles WHERE membership_id=$1',[member.id]); await c.query('INSERT INTO membership_roles(membership_id,role_id) SELECT $1,id FROM roles WHERE code=ANY($2::text[])',[member.id,input.roles]); await c.query('INSERT INTO audit_logs(organization_id,actor_user_id,action,target_type,target_id,metadata) VALUES($1,$2,\'member.upserted\',\'membership\',$3,$4)',[actor.organizationId,actor.userId,member.id,{roles:input.roles}]); return { id:member.id,userId:user.id }; }); }
-  async catalog(actor: Actor, kind: string) { this.admin(actor); if(!catalogTables.has(kind)) throw new ForbiddenException(); return this.database.withOrganization(actor.organizationId, async c => (await c.query(`SELECT id,code,name FROM ${kind} ORDER BY name`)).rows); }
-  async addCatalog(actor: Actor, kind: string, input: { code: string; name: string }) { this.admin(actor); if(!catalogTables.has(kind)) throw new ForbiddenException(); return this.database.withOrganization(actor.organizationId, async c => (await c.query(`INSERT INTO ${kind}(organization_id,code,name) VALUES($1,$2,$3) ON CONFLICT(organization_id,code) DO UPDATE SET name=EXCLUDED.name RETURNING id,code,name`,[actor.organizationId,input.code,input.name])).rows[0]); }
+  private validRoles(roles: string[]) {
+    const unique = [...new Set(roles ?? [])];
+    if (!unique.length || unique.some((role) => !roleCodes.has(role))) throw new BadRequestException('Select at least one valid role.');
+    return unique;
+  }
+  private username(value: string | undefined) {
+    if (!value?.trim()) return undefined;
+    const username = value.trim().toLowerCase();
+    if (!usernamePattern.test(username)) throw new BadRequestException('نام کاربری باید با حروف کوچک انگلیسی، عدد، نقطه، خط تیره یا زیرخط باشد.');
+    return username;
+  }
+  private usernameConflict(cause: unknown): never {
+    if (typeof cause === 'object' && cause && (cause as { code?: string; constraint?: string }).code === '23505' && (cause as { constraint?: string }).constraint === 'users_username_unique') throw new BadRequestException('نام کاربری قبلاً استفاده شده است.');
+    throw cause;
+  }
+  private audit(client: { query(query: string, values?: unknown[]): Promise<unknown> }, actor: Actor, action: string, targetType: string, targetId: string, metadata: object = {}) {
+    return client.query('INSERT INTO audit_logs(organization_id,actor_user_id,action,target_type,target_id,metadata) VALUES($1,$2,$3,$4,$5,$6)', [actor.organizationId, actor.userId, action, targetType, targetId, metadata]);
+  }
+
+  async members(actor: Actor) {
+    this.admin(actor);
+    return this.database.withOrganization(actor.organizationId, async (client) => (await client.query(
+      `SELECT m.id,u.id AS user_id,u.email,u.username,u.display_name,m.status,m.created_at,
+       array_remove(array_agg(r.code ORDER BY r.code),NULL) AS roles
+       FROM memberships m JOIN users u ON u.id=m.user_id
+       LEFT JOIN membership_roles mr ON mr.membership_id=m.id LEFT JOIN roles r ON r.id=mr.role_id
+       GROUP BY m.id,u.id ORDER BY u.display_name`,
+    )).rows);
+  }
+
+  async addMember(actor: Actor, input: MemberInput) {
+    this.admin(actor);
+    const roles = this.validRoles(input.roles);
+    const password = input.password;
+    const username = this.username(input.username);
+    if (!/^\S+@\S+\.\S+$/.test(input.email ?? '') || !input.displayName?.trim() || !password || password.length < 10) throw new BadRequestException('Provide a valid email, name, and a temporary password of at least 10 characters.');
+    try { return await this.database.withOrganization(actor.organizationId, async (client) => {
+      const existing = (await client.query<{ id: string }>('SELECT id FROM users WHERE email=$1', [input.email.toLowerCase()])).rows[0];
+      const user = existing ?? (await client.query<{id:string}>('INSERT INTO users(email,username,display_name,password_hash) VALUES($1,$2,$3,$4) RETURNING id', [input.email.toLowerCase(), username ?? null, input.displayName.trim(), await hashPassword(password)])).rows[0];
+      if (existing) await client.query('UPDATE users SET display_name=$1,username=COALESCE($2,username),updated_at=now() WHERE id=$3', [input.displayName.trim(), username ?? null, user.id]);
+      const member = (await client.query<{id:string}>('INSERT INTO memberships(organization_id,user_id,status) VALUES($1,$2,\'active\') ON CONFLICT(organization_id,user_id) DO UPDATE SET status=\'active\' RETURNING id', [actor.organizationId,user.id])).rows[0];
+      await this.replaceRoles(client, member.id, roles);
+      await this.audit(client, actor, 'member.created', 'membership', member.id, { roles });
+      return { id: member.id, userId: user.id };
+    }); } catch (cause) { this.usernameConflict(cause); }
+  }
+
+  async updateMember(actor: Actor, membershipId: string, input: { displayName?: string; username?: string; roles?: string[]; status?: 'active' | 'inactive' }) {
+    this.admin(actor);
+    try { return await this.database.withOrganization(actor.organizationId, async (client) => {
+      const member = (await client.query<{id:string;user_id:string;status:string}>('SELECT id,user_id,status FROM memberships WHERE id=$1', [membershipId])).rows[0];
+      if (!member) throw new NotFoundException('Member not found.');
+      if (member.user_id === actor.userId && input.status === 'inactive') throw new BadRequestException('You cannot deactivate your own membership.');
+      const username = this.username(input.username);
+      if (input.displayName?.trim() || username !== undefined) await client.query('UPDATE users SET display_name=COALESCE($1,display_name),username=COALESCE($2,username),updated_at=now() WHERE id=$3', [input.displayName?.trim() ?? null, username ?? null, member.user_id]);
+      if (input.status) await client.query('UPDATE memberships SET status=$1 WHERE id=$2', [input.status, member.id]);
+      const roles = input.roles ? this.validRoles(input.roles) : undefined;
+      if (roles) await this.replaceRoles(client, member.id, roles);
+      await this.audit(client, actor, 'member.updated', 'membership', member.id, { status: input.status, roles });
+      return { id: member.id, status: input.status ?? member.status, roles };
+    }); } catch (cause) { this.usernameConflict(cause); }
+  }
+
+  async resetMemberPassword(actor: Actor, membershipId: string, password: string) {
+    this.admin(actor);
+    if (!password || password.length < 10) throw new BadRequestException('Temporary password must be at least 10 characters.');
+    return this.database.withOrganization(actor.organizationId, async (client) => {
+      const member = (await client.query<{user_id:string}>('SELECT user_id FROM memberships WHERE id=$1', [membershipId])).rows[0];
+      if (!member) throw new NotFoundException('Member not found.');
+      await client.query('UPDATE users SET password_hash=$1,updated_at=now() WHERE id=$2', [await hashPassword(password), member.user_id]);
+      await client.query('UPDATE refresh_sessions SET revoked_at=now() WHERE user_id=$1 AND revoked_at IS NULL', [member.user_id]);
+      await this.audit(client, actor, 'member.password_reset', 'membership', membershipId);
+      return { ok: true };
+    });
+  }
+
+  async catalog(actor: Actor, kind: string) { this.admin(actor); this.catalogKind(kind); return this.database.withOrganization(actor.organizationId, async c => (await c.query(`SELECT id,code,name FROM ${kind} ORDER BY name`)).rows); }
+  async addCatalog(actor: Actor, kind: string, input: { code: string; name: string }) {
+    this.admin(actor); this.catalogKind(kind);
+    if (!/^[A-Za-z0-9_-]{2,64}$/.test(input.code ?? '') || !input.name?.trim()) throw new BadRequestException('Catalog code and name are required.');
+    return this.database.withOrganization(actor.organizationId, async c => {
+      const result = (await c.query(`INSERT INTO ${kind}(organization_id,code,name) VALUES($1,$2,$3) ON CONFLICT(organization_id,code) DO UPDATE SET name=EXCLUDED.name RETURNING id,code,name`,[actor.organizationId,input.code.trim(),input.name.trim()])).rows[0] as { id: string };
+      await this.audit(c, actor, 'catalog.saved', kind, result.id, { code: input.code.trim() });
+      return result;
+    });
+  }
+
+  async teams(actor: Actor) {
+    this.admin(actor);
+    return this.database.withOrganization(actor.organizationId, async (client) => (await client.query(
+      `SELECT team.id,team.name,team.is_active,team.created_at,
+       COALESCE(json_agg(json_build_object('user_id',user_row.id,'display_name',user_row.display_name) ORDER BY user_row.display_name) FILTER (WHERE user_row.id IS NOT NULL),'[]'::json) AS members
+       FROM teams team LEFT JOIN team_memberships tm ON tm.team_id=team.id LEFT JOIN users user_row ON user_row.id=tm.user_id
+       GROUP BY team.id ORDER BY team.name`,
+    )).rows);
+  }
+  async saveTeam(actor: Actor, input: { id?: string; name: string; memberIds: string[]; isActive?: boolean }) {
+    this.admin(actor);
+    if (!input.name?.trim() || input.name.trim().length > 120) throw new BadRequestException('Team name is required.');
+    return this.database.withOrganization(actor.organizationId, async (client) => {
+      const team = input.id
+        ? (await client.query<{id:string}>('UPDATE teams SET name=$1,is_active=$2,updated_at=now() WHERE id=$3 RETURNING id', [input.name.trim(), input.isActive ?? true, input.id])).rows[0]
+        : (await client.query<{id:string}>('INSERT INTO teams(organization_id,name,is_active) VALUES($1,$2,$3) RETURNING id', [actor.organizationId, input.name.trim(), input.isActive ?? true])).rows[0];
+      if (!team) throw new NotFoundException('Team not found.');
+      const memberIds = [...new Set(input.memberIds ?? [])];
+      if (memberIds.length) {
+        const valid = await client.query<{user_id:string}>('SELECT user_id FROM memberships WHERE status=\'active\' AND user_id=ANY($1::uuid[])', [memberIds]);
+        if (valid.rowCount !== memberIds.length) throw new BadRequestException('Every team member must be active in this organization.');
+      }
+      await client.query('DELETE FROM team_memberships WHERE team_id=$1', [team.id]);
+      if (memberIds.length) await client.query('INSERT INTO team_memberships(team_id,organization_id,user_id) SELECT $1,$2,unnest($3::uuid[])', [team.id, actor.organizationId, memberIds]);
+      await this.audit(client, actor, 'team.saved', 'team', team.id, { memberCount: memberIds.length });
+      return team;
+    });
+  }
+
   async settings(actor: Actor) { this.admin(actor); return this.database.withOrganization(actor.organizationId,async c=>(await c.query('SELECT closure_policy,reopen_window_days,business_timezone FROM organization_settings WHERE organization_id=$1',[actor.organizationId])).rows[0] ?? {closure_policy:'STAFF_ONLY',reopen_window_days:7,business_timezone:'Asia/Tehran'}); }
-  async saveSettings(actor: Actor, input:{closurePolicy:'STAFF_ONLY'|'REQUESTER_CONFIRMATION'|'AUTO_EXPIRE';reopenWindowDays:number;businessTimezone:string}) { this.admin(actor); return this.database.withOrganization(actor.organizationId,async c=>(await c.query('INSERT INTO organization_settings(organization_id,closure_policy,reopen_window_days,business_timezone) VALUES($1,$2,$3,$4) ON CONFLICT(organization_id) DO UPDATE SET closure_policy=EXCLUDED.closure_policy,reopen_window_days=EXCLUDED.reopen_window_days,business_timezone=EXCLUDED.business_timezone,updated_at=now() RETURNING closure_policy,reopen_window_days,business_timezone',[actor.organizationId,input.closurePolicy,input.reopenWindowDays,input.businessTimezone])).rows[0]); }
-  async templates(actor: Actor) { this.admin(actor); return this.database.withOrganization(actor.organizationId,async c=>(await c.query('SELECT id,name,body,created_at FROM response_templates ORDER BY name')).rows); }
-  async saveTemplate(actor: Actor, input:{name:string;body:string}) { this.admin(actor); return this.database.withOrganization(actor.organizationId,async c=>(await c.query('INSERT INTO response_templates(organization_id,name,body,created_by_user_id) VALUES($1,$2,$3,$4) ON CONFLICT(organization_id,name) DO UPDATE SET body=EXCLUDED.body,updated_at=now() RETURNING id,name,body',[actor.organizationId,input.name,input.body,actor.userId])).rows[0]); }
+  async saveSettings(actor: Actor, input:{closurePolicy:'STAFF_ONLY'|'REQUESTER_CONFIRMATION'|'AUTO_EXPIRE';reopenWindowDays:number;businessTimezone:string}) { this.admin(actor); if(!Number.isInteger(input.reopenWindowDays)||input.reopenWindowDays<0||input.reopenWindowDays>90) throw new BadRequestException('Reopen window must be between 0 and 90 days.'); return this.database.withOrganization(actor.organizationId,async c=>{const result=(await c.query('INSERT INTO organization_settings(organization_id,closure_policy,reopen_window_days,business_timezone) VALUES($1,$2,$3,$4) ON CONFLICT(organization_id) DO UPDATE SET closure_policy=EXCLUDED.closure_policy,reopen_window_days=EXCLUDED.reopen_window_days,business_timezone=EXCLUDED.business_timezone,updated_at=now() RETURNING closure_policy,reopen_window_days,business_timezone',[actor.organizationId,input.closurePolicy,input.reopenWindowDays,input.businessTimezone])).rows[0] as { organization_id?: string }; await this.audit(c,actor,'organization.settings_saved','organization',actor.organizationId); return result;}); }
+  async branding(actor: Actor) {
+    return this.database.withOrganization(actor.organizationId, async (client) => {
+      const row = (await client.query<{ logo_storage_key: string | null }>('SELECT logo_storage_key FROM organization_settings WHERE organization_id=$1', [actor.organizationId])).rows[0];
+      return { logo_url: row?.logo_storage_key ? await this.storage.createViewUrl(row.logo_storage_key, 60 * 60) : null };
+    });
+  }
+  async requestBrandingUpload(actor: Actor, input: { filename: string; contentType: string; byteSize: number }) {
+    this.admin(actor);
+    this.validateBrandLogo(input);
+    const storageKey = `organizations/${actor.organizationId}/branding/${randomUUID()}`;
+    return { storageKey, uploadUrl: await this.storage.createUploadUrl(storageKey, input.contentType, 300), expiresInSeconds: 300 };
+  }
+  async completeBrandingUpload(actor: Actor, input: { storageKey: string; contentType: string; byteSize: number }) {
+    this.admin(actor);
+    this.validateBrandLogo({ filename: 'logo', ...input });
+    const prefix = `organizations/${actor.organizationId}/branding/`;
+    if (!input.storageKey.startsWith(prefix) || !/^[a-f0-9-]{36}$/i.test(input.storageKey.slice(prefix.length))) throw new BadRequestException('Invalid logo upload reference.');
+    const object = await this.storage.head(input.storageKey);
+    if (!object || object.contentLength !== input.byteSize || object.contentType?.toLowerCase() !== input.contentType.toLowerCase()) throw new BadRequestException('Uploaded logo does not match the approved metadata.');
+    return this.database.withOrganization(actor.organizationId, async (client) => {
+      await client.query(`INSERT INTO organization_settings(organization_id,logo_storage_key)
+        VALUES($1,$2)
+        ON CONFLICT(organization_id) DO UPDATE SET logo_storage_key=EXCLUDED.logo_storage_key,updated_at=now()`, [actor.organizationId, input.storageKey]);
+      await this.audit(client, actor, 'organization.brand_logo_saved', 'organization', actor.organizationId, { contentType: input.contentType, byteSize: input.byteSize });
+      return { logo_url: await this.storage.createViewUrl(input.storageKey, 60 * 60) };
+    });
+  }
+  private validateBrandLogo(input: { filename: string; contentType: string; byteSize: number }) {
+    if (typeof input.filename !== 'string' || !input.filename.trim() || input.filename.length > 255 || /[\\/\u0000-\u001f]/.test(input.filename)) throw new BadRequestException('Invalid logo filename.');
+    if (!['image/png', 'image/jpeg', 'image/webp'].includes(input.contentType)) throw new BadRequestException('Logo format must be PNG, JPEG, or WebP.');
+    if (!Number.isInteger(input.byteSize) || input.byteSize < 1 || input.byteSize > 2 * 1024 * 1024) throw new BadRequestException('Logo must be no larger than 2 MB.');
+  }
+  async templates(actor: Actor) { this.admin(actor); return this.database.withOrganization(actor.organizationId,async c=>(await c.query('SELECT id,name,body,created_at,updated_at FROM response_templates ORDER BY name')).rows); }
+  async saveTemplate(actor: Actor, input:{name:string;body:string}) { this.admin(actor); return this.database.withOrganization(actor.organizationId,async c=>{const result=(await c.query('INSERT INTO response_templates(organization_id,name,body,created_by_user_id) VALUES($1,$2,$3,$4) ON CONFLICT(organization_id,name) DO UPDATE SET body=EXCLUDED.body,updated_at=now() RETURNING id,name,body',[actor.organizationId,input.name.trim(),input.body.trim(),actor.userId])).rows[0] as { id:string }; await this.audit(c,actor,'template.saved','response_template',result.id); return result;}); }
+
+  async customFields(actor: Actor) { this.admin(actor); return this.database.withOrganization(actor.organizationId,async c=>(await c.query('SELECT id,field_key,label,field_type,options,is_required,is_active,sort_order FROM ticket_custom_field_definitions ORDER BY sort_order,label')).rows); }
+  async saveCustomField(actor: Actor, input:{id?:string;fieldKey:string;label:string;fieldType:'TEXT'|'NUMBER'|'DATE'|'SELECT'|'BOOLEAN';options?:string[];isRequired?:boolean;isActive?:boolean;sortOrder?:number}) { this.admin(actor); const label=input.label?.trim(); if(!/^[a-z][a-z0-9_]{1,63}$/.test(input.fieldKey||'')||!label || label.includes('?') || label.includes('\uFFFD')) throw new BadRequestException('عنوان فیلد سفارشی معتبر نیست؛ عنوان خوانا و بدون نویسهٔ خراب وارد کنید.'); if(!['TEXT','NUMBER','DATE','SELECT','BOOLEAN'].includes(input.fieldType)|| (input.fieldType==='SELECT'&&!(input.options??[]).length)) throw new BadRequestException('Custom field type or options are invalid.'); return this.database.withOrganization(actor.organizationId,async c=>{const row=(await c.query(`INSERT INTO ticket_custom_field_definitions(organization_id,field_key,label,field_type,options,is_required,is_active,sort_order) VALUES($1,$2,$3,$4,$5::jsonb,$6,$7,$8) ON CONFLICT(organization_id,field_key) DO UPDATE SET label=EXCLUDED.label,field_type=EXCLUDED.field_type,options=EXCLUDED.options,is_required=EXCLUDED.is_required,is_active=EXCLUDED.is_active,sort_order=EXCLUDED.sort_order,updated_at=now() RETURNING id,field_key,label,field_type,options,is_required,is_active,sort_order`,[actor.organizationId,input.fieldKey,label,input.fieldType,JSON.stringify(input.options??[]),input.isRequired??false,input.isActive??true,input.sortOrder??0])).rows[0] as {id:string}; await this.audit(c,actor,'custom_field.saved','ticket_custom_field',row.id,{fieldKey:input.fieldKey});return row;}); }
+  async emailIntegration(actor: Actor) { this.admin(actor); return this.database.withOrganization(actor.organizationId,async c=>(await c.query('SELECT inbound_address,sender_name,enabled,updated_at FROM email_integration_settings WHERE organization_id=$1',[actor.organizationId])).rows[0]??{inbound_address:`support+${actor.organizationId.slice(0,8)}@jupiter.local`,sender_name:'Jupiter Support',enabled:false}); }
+  async saveEmailIntegration(actor: Actor, input:{inboundAddress:string;senderName:string;enabled:boolean}) { this.admin(actor); if(!/^\S+@\S+\.\S+$/.test(input.inboundAddress??'')||!input.senderName?.trim()) throw new BadRequestException('Email integration settings are invalid.'); return this.database.withOrganization(actor.organizationId,async c=>{const row=(await c.query('INSERT INTO email_integration_settings(organization_id,inbound_address,sender_name,enabled) VALUES($1,$2,$3,$4) ON CONFLICT(organization_id) DO UPDATE SET inbound_address=EXCLUDED.inbound_address,sender_name=EXCLUDED.sender_name,enabled=EXCLUDED.enabled,updated_at=now() RETURNING inbound_address,sender_name,enabled,updated_at',[actor.organizationId,input.inboundAddress.toLowerCase(),input.senderName.trim(),input.enabled])).rows[0]; await this.audit(c,actor,'email_integration.saved','organization',actor.organizationId,{enabled:input.enabled,inboundAddress:input.inboundAddress}); return row;}); }
+
+  private catalogKind(kind: string) { if (!catalogTables.has(kind)) throw new NotFoundException('Unknown catalog.'); }
+  private async replaceRoles(client: { query(query: string, values?: unknown[]): Promise<unknown> }, membershipId: string, roles: string[]) { await client.query('DELETE FROM membership_roles WHERE membership_id=$1',[membershipId]); await client.query('INSERT INTO membership_roles(membership_id,role_id) SELECT $1,id FROM roles WHERE code=ANY($2::text[])',[membershipId,roles]); }
   private async platform(userId:string) { const user=(await this.database.query<{is_platform_admin:boolean}>('SELECT is_platform_admin FROM users WHERE id=$1 AND is_active=true',[userId])).rows[0]; if(!user?.is_platform_admin) throw new ForbiddenException(); }
   async platformOrganizations(userId:string) { await this.platform(userId); return (await this.database.query('SELECT id,slug,name,status,created_at FROM organizations ORDER BY created_at DESC')).rows; }
+  async createPlatformOrganization(userId: string, input: { name: string; slug: string }) { await this.platform(userId); if(!input.name?.trim() || !/^[a-z0-9-]{3,63}$/.test(input.slug ?? '')) throw new BadRequestException('Organization name and slug are invalid.'); const result=(await this.database.query<{id:string;name:string;slug:string;status:string}>('INSERT INTO organizations(name,slug) VALUES($1,$2) RETURNING id,name,slug,status',[input.name.trim(),input.slug.trim()])); await this.database.query('INSERT INTO audit_logs(actor_user_id,action,target_type,target_id,metadata) VALUES($1,\'platform.organization_created\',\'organization\',$2,$3)',[userId,result.rows[0].id,{slug:input.slug.trim()}]); return result.rows[0]; }
+  async platformUsers(userId: string) { await this.platform(userId); return (await this.database.query('SELECT id,email,display_name,is_platform_admin,is_active,created_at FROM users ORDER BY display_name')).rows; }
+  async createPlatformUser(actorUserId: string, input: { email: string; username?: string; displayName: string; password: string; isPlatformAdmin?: boolean }) { await this.platform(actorUserId); if(!/^\S+@\S+\.\S+$/.test(input.email ?? '') || !input.displayName?.trim() || !input.password || input.password.length<10) throw new BadRequestException('Provide valid user details and a password of at least 10 characters.'); try { const result=(await this.database.query<{id:string;email:string;display_name:string;is_platform_admin:boolean;is_active:boolean}>('INSERT INTO users(email,username,display_name,password_hash,is_platform_admin) VALUES($1,$2,$3,$4,$5) RETURNING id,email,display_name,is_platform_admin,is_active',[input.email.toLowerCase(),this.username(input.username)??null,input.displayName.trim(),await hashPassword(input.password),input.isPlatformAdmin??false])).rows[0]; await this.database.query('INSERT INTO audit_logs(actor_user_id,action,target_type,target_id,metadata) VALUES($1,\'platform.user_created\',\'user\',$2,$3)',[actorUserId,result.id,{isPlatformAdmin:result.is_platform_admin}]); return result; } catch (cause) { this.usernameConflict(cause); } }
+  async updatePlatformUser(actorUserId: string, targetUserId: string, input: { displayName?: string; username?: string; isPlatformAdmin?: boolean; isActive?: boolean; password?: string }) { await this.platform(actorUserId); if(targetUserId===actorUserId && (input.isActive===false || input.isPlatformAdmin===false)) throw new BadRequestException('You cannot remove your own platform access.'); if(input.password !== undefined && (input.password.length < 10 || input.password.length > 200)) throw new BadRequestException('Password must be between 10 and 200 characters.'); const { password, ...auditInput } = input; try { const passwordHash=password ? await hashPassword(password) : null; const result=(await this.database.query<{id:string;email:string;display_name:string;is_platform_admin:boolean;is_active:boolean}>('UPDATE users SET display_name=COALESCE($1,display_name),username=COALESCE($2,username),is_platform_admin=COALESCE($3,is_platform_admin),is_active=COALESCE($4,is_active),password_hash=COALESCE($5,password_hash),updated_at=now() WHERE id=$6 RETURNING id,email,display_name,is_platform_admin,is_active',[input.displayName?.trim()||null,this.username(input.username)??null,input.isPlatformAdmin??null,input.isActive??null,passwordHash,targetUserId])).rows[0]; if(!result) throw new NotFoundException('Platform user not found.'); if(passwordHash) await this.database.query('UPDATE refresh_sessions SET revoked_at=now() WHERE user_id=$1 AND revoked_at IS NULL',[targetUserId]); await this.database.query('INSERT INTO audit_logs(actor_user_id,action,target_type,target_id,metadata) VALUES($1,\'platform.user_updated\',\'user\',$2,$3)',[actorUserId,targetUserId,{...auditInput,passwordChanged:Boolean(passwordHash)}]); return result; } catch (cause) { this.usernameConflict(cause); } }
   async setOrganizationStatus(userId:string, organizationId:string, status:'active'|'suspended') { await this.platform(userId); const result=await this.database.query('UPDATE organizations SET status=$1,updated_at=now() WHERE id=$2 RETURNING id,name,status',[status,organizationId]); if(result.rows[0]) await this.database.query('INSERT INTO audit_logs(actor_user_id,action,target_type,target_id,metadata) VALUES($1,\'platform.organization_status_changed\',\'organization\',$2,$3)',[userId,organizationId,{status}]); return result.rows[0]; }
 }

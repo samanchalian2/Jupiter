@@ -13,10 +13,12 @@ import { KnowledgeModule } from './knowledge/knowledge.module.js';
 import { SlaModule } from './sla/sla.module.js';
 import { HealthController } from './health.controller.js';
 import { HealthService } from './health.service.js';
+import { QueueWorker } from './jobs/queue.worker.js';
+import { EmailModule } from './email/email.module.js';
 
 @Module({
-  imports: [DatabaseModule, AuthModule, TicketModule, NotificationModule, ConversationModule, AttachmentModule, AiModule, TranscriptionModule, ReportingModule, OrganizationModule, KnowledgeModule, SlaModule],
+  imports: [DatabaseModule, AuthModule, TicketModule, NotificationModule, ConversationModule, AttachmentModule, AiModule, TranscriptionModule, ReportingModule, OrganizationModule, KnowledgeModule, SlaModule, EmailModule],
   controllers: [HealthController],
-  providers: [HealthService],
+  providers: [HealthService, QueueWorker],
 })
 export class AppModule {}

@@ -24,8 +24,8 @@ export class ConversationService {
       const ticket = await this.accessibleTicket(client, actor, ticketId);
       const message = (await client.query('INSERT INTO ticket_messages(organization_id,ticket_id,author_user_id,body) VALUES($1,$2,$3,$4) RETURNING id,author_user_id,body,created_at', [actor.organizationId,ticketId,actor.userId,body.trim()])).rows[0];
       await this.activity(client, actor, ticketId, 'ticket.message_posted', 'REQUESTER');
-      const recipients = await this.recipients(client, ticket, actor.userId, true);
-      this.notifications.publish(actor.organizationId, recipients, { type: 'ticket.message_posted', ticketId, occurredAt: message.created_at.toISOString() });
+      const recipients = await this.recipients(client, ticket, actor.organizationId, actor.userId, true);
+      await this.notifications.publish(actor.organizationId, recipients, { type: 'ticket.message_posted', ticketId, occurredAt: message.created_at.toISOString() });
       return message;
     });
   }
@@ -43,8 +43,8 @@ export class ConversationService {
       const ticket = await this.staffTicket(client, actor, ticketId);
       const note = (await client.query('INSERT INTO ticket_internal_notes(organization_id,ticket_id,author_user_id,body) VALUES($1,$2,$3,$4) RETURNING id,author_user_id,body,created_at', [actor.organizationId,ticketId,actor.userId,body.trim()])).rows[0];
       await this.activity(client, actor, ticketId, 'ticket.internal_note_added', 'STAFF');
-      const recipients = await this.recipients(client, ticket, actor.userId, false);
-      this.notifications.publish(actor.organizationId, recipients, { type: 'ticket.internal_note_added', ticketId, occurredAt: note.created_at.toISOString() });
+      const recipients = await this.recipients(client, ticket, actor.organizationId, actor.userId, false);
+      await this.notifications.publish(actor.organizationId, recipients, { type: 'ticket.internal_note_added', ticketId, occurredAt: note.created_at.toISOString() });
       return note;
     });
   }
@@ -55,8 +55,8 @@ export class ConversationService {
       const staff = actor.roles.some((role) => staffRoles.has(role));
       const visibility = staff ? [] : ['REQUESTER'];
       const query = staff
-        ? 'SELECT id,actor_user_id,activity_type,visibility,metadata,created_at FROM ticket_activities WHERE ticket_id=$1 ORDER BY created_at,id'
-        : 'SELECT id,actor_user_id,activity_type,visibility,metadata,created_at FROM ticket_activities WHERE ticket_id=$1 AND visibility=$2 ORDER BY created_at,id';
+        ? 'SELECT activity.id,activity.actor_user_id,actor.display_name AS actor_display_name,activity.activity_type,activity.visibility,activity.metadata,activity.created_at FROM ticket_activities activity LEFT JOIN users actor ON actor.id=activity.actor_user_id WHERE activity.ticket_id=$1 ORDER BY activity.created_at,activity.id'
+        : 'SELECT activity.id,activity.actor_user_id,actor.display_name AS actor_display_name,activity.activity_type,activity.visibility,activity.metadata,activity.created_at FROM ticket_activities activity LEFT JOIN users actor ON actor.id=activity.actor_user_id WHERE activity.ticket_id=$1 AND activity.visibility=$2 ORDER BY activity.created_at,activity.id';
       return (await client.query(query, staff ? [ticketId] : [ticketId, visibility[0]])).rows;
     });
   }
@@ -82,9 +82,16 @@ export class ConversationService {
     return this.accessibleTicket(client, actor, ticketId);
   }
 
-  private async recipients(client: PoolClient, ticket: Ticket, actorId: string, includeRequester: boolean) {
+  private async recipients(client: PoolClient, ticket: Ticket, organizationId: string, actorId: string, includeRequester: boolean) {
     const assignmentRows = await client.query<{assigned_to_user_id:string}>('SELECT assigned_to_user_id FROM ticket_assignments WHERE ticket_id=$1 AND ended_at IS NULL', [ticket.id]);
-    return [actorId, ...assignmentRows.rows.map((row) => row.assigned_to_user_id), ...(includeRequester ? [ticket.requester_user_id] : [])];
+    const candidates = [...new Set([actorId, ...assignmentRows.rows.map((row) => row.assigned_to_user_id), ...(includeRequester ? [ticket.requester_user_id] : [])])];
+    if (!candidates.length) return [];
+    return (await client.query<{user_id:string}>(
+      `SELECT candidate.user_id
+       FROM unnest($1::uuid[]) AS candidate(user_id)
+       LEFT JOIN notification_preferences preference ON preference.organization_id=$2 AND preference.user_id=candidate.user_id
+       WHERE COALESCE(preference.in_app_enabled,true)`, [candidates, organizationId],
+    )).rows.map((row) => row.user_id);
   }
 
   private activity(client: PoolClient, actor: TicketActor, ticketId: string, activityType: string, visibility: 'REQUESTER' | 'STAFF') {

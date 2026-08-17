@@ -58,6 +58,7 @@ describe('ConversationService integration', () => {
       expect((await conversations.listMessages(actor(requesterId, ['REQUESTER']), ticketId)).some((row) => row.body === 'Private routing detail')).toBe(false);
       const requesterTimeline = await conversations.timeline(actor(requesterId, ['REQUESTER']), ticketId);
       expect(requesterTimeline.some((row) => row.activity_type === 'ticket.internal_note_added')).toBe(false);
+      expect(requesterTimeline.some((row) => row.actor_display_name === 'Goal 5 Requester')).toBe(true);
       expect((await conversations.listNotes(actor(managerId, ['ORG_ADMIN']), ticketId)).map((row) => row.id)).toContain(note.id);
       expect(requesterEvents.map((event) => event.type)).toEqual(['ticket.message_posted']);
       await expect(conversations.listMessages(actor(requesterId, ['REQUESTER'], otherOrganizationId), ticketId)).rejects.toBeInstanceOf(NotFoundException);

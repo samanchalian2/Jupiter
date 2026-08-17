@@ -8,73 +8,19 @@ const reviewers = new Set(['ORG_ADMIN', 'SUPERVISOR']);
 @Injectable()
 export class KnowledgeService {
   constructor(private readonly database: DatabaseService) {}
+  private contributor(actor: Actor) { if (!actor.roles.some((role) => contributors.has(role))) throw new ForbiddenException(); }
+  private reviewer(actor: Actor) { if (!actor.roles.some((role) => reviewers.has(role))) throw new ForbiddenException(); }
+  private validate(input: { title: string; body: string }) { const title=input.title?.trim(); const body=input.body?.trim(); if (!title || title.length<3 || title.length>200 || !body || body.length>20_000) throw new BadRequestException('Article title or body is invalid'); return { title, body }; }
+  private async revision(client: { query(query:string,values?:unknown[]):Promise<{rows:unknown[]}> }, actor: Actor, id: string, title: string, body: string) { await client.query('INSERT INTO knowledge_article_revisions(organization_id,article_id,version,title,body,author_user_id) SELECT $1,$2,COALESCE(max(version),0)+1,$3,$4,$5 FROM knowledge_article_revisions WHERE article_id=$2', [actor.organizationId,id,title,body,actor.userId]); }
 
-  async list(actor: Actor, q = '') {
-    return this.database.withOrganization(actor.organizationId, async (client) =>
-      (await client.query(
-        `SELECT id,title,body,status,updated_at FROM knowledge_articles
-         WHERE status='PUBLISHED' AND (title ILIKE $1 OR body ILIKE $1)
-         ORDER BY updated_at DESC`,
-        [`%${q.trim()}%`],
-      )).rows,
-    );
-  }
-
-  async reviewQueue(actor: Actor) {
-    this.requireReviewer(actor);
-    return this.database.withOrganization(actor.organizationId, async (client) =>
-      (await client.query(
-        `SELECT id,title,body,status,created_at,updated_at
-         FROM knowledge_articles WHERE status IN ('DRAFT','IN_REVIEW') ORDER BY updated_at`,
-      )).rows,
-    );
-  }
-
-  async create(actor: Actor, input: { title: string; body: string }) {
-    if (!actor.roles.some((role) => contributors.has(role))) throw new ForbiddenException();
-    const title = input.title?.trim();
-    const body = input.body?.trim();
-    if (!title || title.length < 3 || title.length > 200 || !body || body.length > 20_000) {
-      throw new BadRequestException('Article title or body is invalid');
-    }
-    return this.database.withOrganization(actor.organizationId, async (client) =>
-      (await client.query(
-        `INSERT INTO knowledge_articles(organization_id,title,body,author_user_id)
-         VALUES($1,$2,$3,$4) RETURNING id,title,status`,
-        [actor.organizationId, title, body, actor.userId],
-      )).rows[0],
-    );
-  }
-
-  async submitReview(actor: Actor, id: string) {
-    if (!actor.roles.some((role) => contributors.has(role))) throw new ForbiddenException();
-    return this.database.withOrganization(actor.organizationId, async (client) => {
-      const result = await client.query(
-        `UPDATE knowledge_articles SET status='IN_REVIEW',updated_at=now()
-         WHERE id=$1 AND status='DRAFT' AND (author_user_id=$2 OR $3)
-         RETURNING id,status`,
-        [id, actor.userId, actor.roles.some((role) => reviewers.has(role))],
-      );
-      if (!result.rowCount) throw new NotFoundException('Draft article not found');
-      return result.rows[0];
-    });
-  }
-
-  async publish(actor: Actor, id: string) {
-    this.requireReviewer(actor);
-    return this.database.withOrganization(actor.organizationId, async (client) => {
-      const result = await client.query(
-        `UPDATE knowledge_articles
-         SET status='PUBLISHED',reviewer_user_id=$1,published_at=now(),updated_at=now()
-         WHERE id=$2 AND status='IN_REVIEW' RETURNING id,status`,
-        [actor.userId, id],
-      );
-      if (!result.rowCount) throw new NotFoundException('Article awaiting review not found');
-      return result.rows[0];
-    });
-  }
-
-  private requireReviewer(actor: Actor) {
-    if (!actor.roles.some((role) => reviewers.has(role))) throw new ForbiddenException();
-  }
+  async list(actor: Actor, q = '') { return this.database.withOrganization(actor.organizationId, async (client) => (await client.query(`SELECT article.id,article.title,article.body,article.status,article.published_at,article.updated_at,author.display_name AS author_display_name FROM knowledge_articles article JOIN users author ON author.id=article.author_user_id WHERE article.status='PUBLISHED' AND (article.title ILIKE $1 OR article.body ILIKE $1) ORDER BY article.published_at DESC`, [`%${q.trim()}%`])).rows); }
+  async reviewQueue(actor: Actor) { this.reviewer(actor); return this.workspace(actor); }
+  async workspace(actor: Actor) { this.contributor(actor); return this.database.withOrganization(actor.organizationId, async (client) => (await client.query(`SELECT article.id,article.title,article.body,article.status,article.published_at,article.updated_at,author.display_name AS author_display_name,reviewer.display_name AS reviewer_display_name FROM knowledge_articles article JOIN users author ON author.id=article.author_user_id LEFT JOIN users reviewer ON reviewer.id=article.reviewer_user_id WHERE article.author_user_id=$1 OR $2 ORDER BY article.updated_at DESC`, [actor.userId, actor.roles.some((role) => reviewers.has(role))])).rows); }
+  async detail(actor: Actor, id: string) { return this.database.withOrganization(actor.organizationId, async (client) => { const item=(await client.query(`SELECT article.id,article.title,article.body,article.status,article.published_at,article.updated_at,author.display_name AS author_display_name,reviewer.display_name AS reviewer_display_name FROM knowledge_articles article JOIN users author ON author.id=article.author_user_id LEFT JOIN users reviewer ON reviewer.id=article.reviewer_user_id WHERE article.id=$1`, [id])).rows[0] as {status:string;author_display_name:string} | undefined; if(!item) throw new NotFoundException('Article not found'); if(item.status !== 'PUBLISHED' && !actor.roles.some((role)=>contributors.has(role))) throw new ForbiddenException(); return item; }); }
+  async create(actor: Actor, input: { title: string; body: string }) { this.contributor(actor); const value=this.validate(input); return this.database.withOrganization(actor.organizationId, async (client) => { const article=(await client.query<{id:string;title:string;body:string;status:string}>(`INSERT INTO knowledge_articles(organization_id,title,body,author_user_id) VALUES($1,$2,$3,$4) RETURNING id,title,body,status`, [actor.organizationId,value.title,value.body,actor.userId])).rows[0]; await this.revision(client,actor,article.id,article.title,article.body); return article; }); }
+  async update(actor: Actor, id: string, input: { title: string; body: string }) { this.contributor(actor); const value=this.validate(input); return this.database.withOrganization(actor.organizationId, async (client) => { const article=(await client.query<{id:string;status:string}>(`UPDATE knowledge_articles SET title=$1,body=$2,status=CASE WHEN status='PUBLISHED' THEN 'DRAFT' ELSE status END,reviewer_user_id=NULL,published_at=NULL,updated_at=now() WHERE id=$3 AND (author_user_id=$4 OR $5) RETURNING id,status`,[value.title,value.body,id,actor.userId,actor.roles.some((role)=>reviewers.has(role))])).rows[0]; if(!article) throw new NotFoundException('Editable article not found'); await this.revision(client,actor,id,value.title,value.body); return article; }); }
+  async submitReview(actor: Actor, id: string) { this.contributor(actor); return this.database.withOrganization(actor.organizationId, async (client) => { const result=await client.query(`UPDATE knowledge_articles SET status='IN_REVIEW',updated_at=now() WHERE id=$1 AND status='DRAFT' AND (author_user_id=$2 OR $3) RETURNING id,status`,[id,actor.userId,actor.roles.some((role)=>reviewers.has(role))]); if(!result.rowCount) throw new NotFoundException('Draft article not found'); return result.rows[0]; }); }
+  async publish(actor: Actor, id: string) { this.reviewer(actor); return this.database.withOrganization(actor.organizationId, async (client) => { const result=await client.query(`UPDATE knowledge_articles SET status='PUBLISHED',reviewer_user_id=$1,published_at=now(),updated_at=now() WHERE id=$2 AND status='IN_REVIEW' RETURNING id,status`,[actor.userId,id]); if(!result.rowCount) throw new NotFoundException('Article awaiting review not found'); return result.rows[0]; }); }
+  async archive(actor: Actor, id: string) { this.reviewer(actor); return this.database.withOrganization(actor.organizationId, async (client) => { const result=await client.query(`UPDATE knowledge_articles SET status='ARCHIVED',updated_at=now() WHERE id=$1 AND status <> 'ARCHIVED' RETURNING id,status`,[id]); if(!result.rowCount) throw new NotFoundException('Article not found'); return result.rows[0]; }); }
+  async revisions(actor: Actor, id: string) { this.contributor(actor); return this.database.withOrganization(actor.organizationId, async (client) => (await client.query('SELECT version,title,author_user_id,created_at FROM knowledge_article_revisions WHERE article_id=$1 ORDER BY version DESC',[id])).rows); }
 }
