@@ -1,5 +1,5 @@
 import { Injectable, ServiceUnavailableException } from '@nestjs/common';
-import { GetObjectCommand, HeadObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { DeleteObjectCommand, GetObjectCommand, HeadObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { attachmentStorageConfig } from '../config.js';
 import { AttachmentStorage, StoredObject } from './attachment-storage.js';
@@ -14,9 +14,9 @@ export class S3AttachmentStorageService implements AttachmentStorage {
     credentials: this.config.accessKeyId && this.config.secretAccessKey ? { accessKeyId: this.config.accessKeyId, secretAccessKey: this.config.secretAccessKey } : undefined,
   });
 
-  async createUploadUrl(key: string, contentType: string, expiresInSeconds: number) {
+  async createUploadUrl(key: string, contentType: string, expiresInSeconds: number, metadata?: Record<string,string>) {
     this.assertConfigured();
-    return getSignedUrl(this.client, new PutObjectCommand({ Bucket: this.config.bucket, Key: key, ContentType: contentType }), { expiresIn: expiresInSeconds });
+    return getSignedUrl(this.client, new PutObjectCommand({ Bucket: this.config.bucket, Key: key, ContentType: contentType, Metadata: metadata }), { expiresIn: expiresInSeconds });
   }
 
   async createDownloadUrl(key: string, filename: string, expiresInSeconds: number) {
@@ -33,12 +33,24 @@ export class S3AttachmentStorageService implements AttachmentStorage {
     this.assertConfigured();
     try {
       const result = await this.client.send(new HeadObjectCommand({ Bucket: this.config.bucket, Key: key }));
-      return { contentType: result.ContentType, contentLength: result.ContentLength };
+      return { contentType: result.ContentType, contentLength: result.ContentLength, metadata: result.Metadata };
     } catch (error) {
       const status = (error as { $metadata?: { httpStatusCode?: number } }).$metadata?.httpStatusCode;
       if (status === 404) return undefined;
       throw error;
     }
+  }
+
+  async read(key: string) {
+    this.assertConfigured();
+    const result = await this.client.send(new GetObjectCommand({ Bucket: this.config.bucket, Key: key }));
+    if (!result.Body) throw new ServiceUnavailableException('Stored attachment is unavailable');
+    return result.Body.transformToByteArray();
+  }
+
+  async delete(key: string) {
+    this.assertConfigured();
+    await this.client.send(new DeleteObjectCommand({ Bucket: this.config.bucket, Key: key }));
   }
 
   private assertConfigured() {

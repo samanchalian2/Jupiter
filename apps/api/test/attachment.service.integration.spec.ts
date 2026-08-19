@@ -11,6 +11,8 @@ class FakeStorage implements AttachmentStorage {
   async createDownloadUrl(key: string) { return `https://storage.test/download/${key}`; }
   async createViewUrl(key: string) { return `https://storage.test/view/${key}`; }
   async head(key: string) { return this.objects.get(key); }
+  async read() { return new Uint8Array(); }
+  async delete(key: string) { this.objects.delete(key); }
 }
 
 const database = new DatabaseService();

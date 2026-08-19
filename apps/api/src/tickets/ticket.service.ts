@@ -5,19 +5,23 @@ import { assertTransition, TicketStatus } from './ticket-lifecycle.js';
 import { addBusinessMinutes } from '../sla/business-time.js';
 
 type Actor = { userId: string; organizationId: string; roles: string[] };
+export type CreateDraftData = { title:string; description:string; priority?:string; departmentId?:string; categoryId?:string; subcategoryId?:string; locationId?:string; disciplineId?:string; customFields?:Record<string,unknown> };
 const managerRoles = new Set(['ORG_ADMIN', 'SUPERVISOR']);
 const workerRoles = new Set(['ORG_ADMIN', 'SUPERVISOR', 'EXPERT']);
-const readableCatalogs = new Set(['departments', 'categories', 'locations', 'disciplines']);
+const readableCatalogs = new Set(['departments', 'categories', 'subcategories', 'locations', 'disciplines']);
 
 @Injectable()
 export class TicketService {
   constructor(private readonly database: DatabaseService) {}
 
-  async createDraft(actor: Actor, data: { title:string; description:string; priority?:string; departmentId?:string; categoryId?:string; locationId?:string; customFields?:Record<string,unknown> }) {
-    return this.database.withOrganization(actor.organizationId, async (client) => {
+  async createDraft(actor: Actor, data: CreateDraftData) {
+    return this.database.withOrganization(actor.organizationId, (client) => this.createDraftWithClient(client, actor, data));
+  }
+
+  async createDraftWithClient(client: PoolClient, actor: Actor, data: CreateDraftData) {
       const result = await client.query(
-        'INSERT INTO tickets(organization_id,requester_user_id,title,description,priority,department_id,category_id,location_id) VALUES($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id,ticket_number,status,title,description,priority,created_at',
-        [actor.organizationId, actor.userId, data.title, data.description, data.priority ?? 'NORMAL', data.departmentId ?? null, data.categoryId ?? null, data.locationId ?? null],
+        'INSERT INTO tickets(organization_id,requester_user_id,title,description,priority,department_id,category_id,subcategory_id,location_id,discipline_id) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING id,ticket_number,status,title,description,priority,created_at',
+        [actor.organizationId, actor.userId, data.title, data.description, data.priority ?? 'NORMAL', data.departmentId ?? null, data.categoryId ?? null, data.subcategoryId ?? null, data.locationId ?? null, data.disciplineId ?? null],
       );
       const definitions=(await client.query<{id:string;field_key:string;field_type:string;options:unknown[];is_required:boolean}>('SELECT id,field_key,field_type,options,is_required FROM ticket_custom_field_definitions WHERE is_active=true ORDER BY sort_order,label')).rows;
       for(const definition of definitions){const value=data.customFields?.[definition.field_key];if((value===undefined||value===''||value===null)&&definition.is_required) throw new ForbiddenException(`Custom field ${definition.field_key} is required`);if(value===undefined||value===''||value===null)continue;if(definition.field_type==='NUMBER'&&typeof value!=='number'&&Number.isNaN(Number(value)))throw new ForbiddenException(`Custom field ${definition.field_key} must be numeric`);if(definition.field_type==='BOOLEAN'&&typeof value!=='boolean')throw new ForbiddenException(`Custom field ${definition.field_key} must be boolean`);if(definition.field_type==='SELECT'&&!(definition.options??[]).includes(value))throw new ForbiddenException(`Custom field ${definition.field_key} has invalid option`);await client.query('INSERT INTO ticket_custom_field_values(organization_id,ticket_id,field_id,value) VALUES($1,$2,$3,$4)',[actor.organizationId,result.rows[0].id,definition.id,JSON.stringify(value)]);}
@@ -27,7 +31,6 @@ export class TicketService {
       if (assignmentRule) { await client.query('INSERT INTO ticket_assignments(organization_id,ticket_id,assigned_to_user_id,assigned_by_user_id) VALUES($1,$2,$3,$4)',[actor.organizationId,result.rows[0].id,assignmentRule.assignee_user_id,actor.userId]); await this.activity(client,actor,result.rows[0].id,'ticket.auto_assigned','STAFF',{assignedToUserId:assignmentRule.assignee_user_id}); }
       await this.activity(client, actor, result.rows[0].id, 'ticket.draft_created', 'REQUESTER');
       return result.rows[0];
-    });
   }
 
   async submit(actor: Actor, ticketId: string) { return this.changeStatus(actor, ticketId, 'OPEN'); }
@@ -167,7 +170,8 @@ export class TicketService {
 
   async catalog(actor: Actor, kind: string) {
     if (!readableCatalogs.has(kind)) throw new NotFoundException('Catalog not found');
-    return this.database.withOrganization(actor.organizationId, async (client) => (await client.query(`SELECT id,name FROM ${kind} ORDER BY name`)).rows);
+    const columns = kind === 'subcategories' ? 'id,name,category_id' : 'id,name';
+    return this.database.withOrganization(actor.organizationId, async (client) => (await client.query(`SELECT ${columns} FROM ${kind} ORDER BY name`)).rows);
   }
 
   async createTag(actor: Actor, name: string, color = '#1769aa') {

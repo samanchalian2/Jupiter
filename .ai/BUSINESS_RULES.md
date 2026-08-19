@@ -11,3 +11,11 @@
 - Reopen obeys the organization window; otherwise a related new ticket is made.
 - One requester rating is accepted only after resolution or closure.
 - AI, transcription, and file failures cannot block manual ticket submission.
+- AI intake never submits a ticket; final creation always requires the user's
+  explicit draft request.
+- The typed description is retained verbatim. Voice transcription is appended
+  and never silently replaces it.
+- Intake suggestions below 0.75 confidence or outside the active tenant
+  taxonomy/custom-field catalog are rejected rather than applied.
+- Intake voice is limited to 60 seconds and 10 MB, must pass post-upload
+  metadata verification, and expires with an unconsumed session after 24 hours.

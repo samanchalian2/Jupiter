@@ -4,10 +4,12 @@
   "private": true,
   "packageManager": "pnpm@11.9.0",
   "scripts": {
+    "dev": "node scripts/dev-all.mjs",
     "build": "pnpm -r build",
     "dev:api": "pnpm --filter @jupiter/api dev",
     "dev:web": "pnpm --filter @jupiter/web dev",
     "dev:worker": "pnpm --filter @jupiter/api worker",
+    "dev:ai-fake": "node scripts/fake-openai-provider.mjs",
     "lint": "pnpm -r lint",
     "test": "pnpm -r test",
     "typecheck": "pnpm -r typecheck",

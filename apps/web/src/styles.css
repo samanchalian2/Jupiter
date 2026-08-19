@@ -324,6 +324,188 @@ button.drawer-backdrop:focus-visible {
   background: rgba(15, 23, 42, 0.10);
 }
 
+/* GOAL-015: description-first smart ticket composer. */
+.smart-ticket-composer .quick-ticket-form {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.smart-ticket-composer .ticket-description-field,
+.smart-ticket-composer .smart-intake-toolbar,
+.smart-ticket-composer .ai-guidance,
+.smart-ticket-composer .composer-error {
+  grid-column: 1 / -1;
+}
+.smart-ticket-composer .ticket-description-field {
+  grid-row: auto;
+}
+.smart-ticket-composer .ticket-description-field textarea {
+  min-height: 180px;
+  line-height: 1.85;
+}
+.field-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+.ai-field-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex: none;
+  padding: 3px 7px;
+  color: var(--primary-text);
+  background: var(--primary-soft);
+  border: 1px solid var(--primary-border);
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 500;
+}
+.smart-intake-toolbar {
+  display: grid;
+  gap: 11px;
+  padding: 13px;
+  background: linear-gradient(135deg, var(--primary-soft), #fff 72%);
+  border: 1px solid var(--primary-border);
+  border-radius: var(--radius);
+}
+.smart-intake-actions,
+.voice-recorder,
+.intake-status {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.smart-intake-actions {
+  justify-content: flex-start;
+}
+.voice-recorder {
+  flex-wrap: wrap;
+  min-width: 0;
+  padding-top: 10px;
+  border-top: 1px solid var(--primary-border);
+}
+.voice-recorder audio {
+  width: min(310px, 100%);
+  height: 38px;
+}
+.voice-recorder > span:not(.recording-dot) {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+}
+.recording-dot {
+  width: 10px;
+  height: 10px;
+  background: var(--danger);
+  border-radius: 999px;
+  box-shadow: 0 0 0 5px color-mix(in srgb, var(--danger) 14%, transparent);
+  animation: recording-pulse 1.25s ease-in-out infinite;
+}
+.intake-status {
+  margin: 0;
+  padding: 8px 10px;
+  color: var(--text-muted);
+  background: rgba(255,255,255,.76);
+  border-radius: var(--radius-sm);
+  font-size: .8rem;
+}
+.intake-status.succeeded {
+  color: #176b4d;
+  background: #edf9f4;
+}
+.intake-status.failed {
+  color: var(--danger);
+  background: #fff3f2;
+}
+.status-spinner {
+  width: 15px;
+  height: 15px;
+  flex: none;
+  border: 2px solid var(--primary-border);
+  border-top-color: var(--primary);
+  border-radius: 999px;
+  animation: intake-spin .8s linear infinite;
+}
+.ai-guidance {
+  margin: 0;
+  padding: 10px 12px;
+  color: #74560d;
+  background: #fff9e8;
+  border: 1px solid #ead89d;
+  border-radius: var(--radius-sm);
+  font-size: .8rem;
+}
+.composer-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0;
+}
+.composer-error button {
+  flex: none;
+  padding: 6px 10px;
+  color: var(--danger);
+  background: #fff;
+  border: 1px solid currentColor;
+  border-radius: var(--radius-sm);
+}
+.smart-ticket-composer .quick-ticket-more {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.smart-ticket-composer .quick-ticket-actions .ui-button {
+  flex: none;
+}
+@keyframes intake-spin { to { transform: rotate(360deg); } }
+@keyframes recording-pulse { 50% { opacity: .5; transform: scale(.86); } }
+@media (prefers-reduced-motion: reduce) {
+  .status-spinner,
+  .recording-dot { animation: none; }
+}
+@media (max-width: 900px) {
+  .smart-ticket-composer .quick-ticket-form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .smart-ticket-composer .ticket-description-field,
+  .smart-ticket-composer .smart-intake-toolbar,
+  .smart-ticket-composer .ai-guidance,
+  .smart-ticket-composer .composer-error {
+    grid-column: auto;
+  }
+  .smart-ticket-composer .quick-ticket-more {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 600px) {
+  .smart-ticket-composer .ticket-description-field textarea {
+    min-height: 155px;
+  }
+  .smart-intake-actions,
+  .voice-recorder.ready {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .smart-intake-actions .ui-button,
+  .voice-recorder.ready .ui-button,
+  .voice-recorder.ready audio {
+    width: 100%;
+  }
+  .voice-recorder.recording {
+    justify-content: space-between;
+  }
+  .smart-ticket-composer .quick-ticket-more {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .field-label-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .composer-error {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
+
 /* Keep the mobile-drawer click target neutral: it should dim the page without
    turning the whole uncovered viewport into a purple surface. */
 .drawer-backdrop {

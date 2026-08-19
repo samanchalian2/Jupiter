@@ -27,10 +27,10 @@ export class AiPlatformController {
   }
 
   @Put()
-  async configure(@Headers('authorization') authorization: string | undefined, @Body() body: { organizationId: string; enabled: boolean; model: string }) {
+  async configure(@Headers('authorization') authorization: string | undefined, @Body() body: { organizationId: string; enabled: boolean; providerBaseUrl: string; analysisModel: string; transcriptionModel: string; apiKey?: string; removeApiKey?: boolean }) {
     const token = authorization?.replace(/^Bearer\s+/i, '');
     if (!token) throw new UnauthorizedException();
-    return this.ai.configurePlatform((await this.auth.verify(token)).sub, body.organizationId, body.enabled, body.model);
+    return this.ai.configurePlatform((await this.auth.verify(token)).sub, body);
   }
 
   @Post('requests/:ticketId')

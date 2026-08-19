@@ -145,3 +145,47 @@ basic workloads/operational views. **Done:** role and tenant tests pass.
 **Depends on:** GOAL-010/011. **Scope:** integration/security/performance
 suite, observability, backup/restore runbook, release checks. **Done:** all
 release gates documented and passing.
+
+## GOAL-013 — Secure per-organization OpenAI-compatible configuration
+
+**Status:** DONE
+
+**Depends on:** GOAL-008/012. **Scope:** encrypted organization API key,
+provider Base URL, independent analysis/transcription models, Platform Admin
+API/UI, explicit credential removal, provider host policy, direct structured
+Chat Completions adapter, audit safety, migration utility and ADR.
+
+**Validation:** migration 022 applied; AES-GCM tamper/round-trip, masking,
+audit redaction, URL policy, tenant AI gateway and provider contract tests pass;
+API/web typechecks and production builds pass; authenticated browser evidence
+shows a configured key without its value and successful blank-key preservation.
+
+## GOAL-014 — Pre-ticket text and voice intake pipeline
+
+**Status:** DONE
+
+**Depends on:** GOAL-013/006. **Scope:** tenant-scoped intake sessions,
+temporary presigned voice upload, transcription and analysis states, structured
+taxonomy-validated suggestions and confidence, idempotency, final ticket/audio
+attachment handoff, expiry and object cleanup.
+
+**Validation:** migrations 023–027 applied; tenant/owner isolation, idempotency,
+MIME/size/duration rejection, transcription ordering, redaction, catalog and
+confidence filtering, retry/manual fallback, atomic attachment/provenance and
+expiry deletion pass in integration tests. The complete release gate passes.
+
+## GOAL-015 — Smart ticket composer and acceptance E2E
+
+**Status:** DONE
+
+**Depends on:** GOAL-014/007. **Scope:** description-first composer, AI and
+microphone toolbar, one-minute recorder, processing/retry states, AI provenance
+badges, low-confidence guidance, responsive behavior and 375/768/1440 browser
+acceptance coverage.
+
+**Validation:** the full release gate passes with 41 API and 9 Web tests.
+Authenticated REQUESTER acceptance confirms initial description focus, secure
+AI success/failure behavior, manual editability, low-confidence guidance,
+microphone permission state and zero overflow at 375, 768 and 1440 px. The
+deterministic loopback provider was removed from active configuration after the
+test. Evidence is recorded in `docs/GOAL_015_EVIDENCE.md`.

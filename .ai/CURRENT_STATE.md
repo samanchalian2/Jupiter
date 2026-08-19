@@ -1,11 +1,61 @@
 # Current State
 
-**Local runtime recovery (2026-08-15):** Login was unavailable because the
-local PostgreSQL instance had stopped listening on port 5433, causing the API
-login query to fail and its SLA interval to terminate the API process. The
-stale PostgreSQL instance was stopped cleanly and restarted on 5433; the API
-was then restarted. Health is `ok` and the bootstrap administrator login now
-returns HTTP 201 with an access token.
+**GOAL-015 — Smart ticket composer and acceptance E2E (2026-08-19):** The
+requester composer is now description-first with initial focus, a directly
+adjacent AI/microphone toolbar, one-minute MediaRecorder controller, secure
+voice upload, live processing/fallback states, direct application of validated
+suggestions, per-field AI provenance badges and Persian low-confidence
+guidance. Subcategory and discipline are now exposed as manually editable
+catalog fields. Text-only manual submission remains available during a slow AI
+request; voice submission waits for its verified attachment handoff. Nine Web
+tests cover suggestion/transcript behavior, polling, permission denial,
+one-minute auto-stop and manual fallback. The complete release gate passes with
+41 API and 9 Web tests. Authenticated requester checks at 375, 768 and 1440 px
+show no overflow, correct mobile/desktop toolbar layout, successful fake-provider
+application and low-confidence rejection. Evidence is in
+`docs/GOAL_015_EVIDENCE.md`. GOAL-013 through GOAL-015 are complete; only the
+already-documented external staging Phase 9 gates remain outside local scope.
+
+**GOAL-014 — Tenant-scoped ticket intake pipeline (2026-08-19):** Migrations
+023–027 add owner-scoped, RLS-protected pre-ticket sessions, provenance, strict
+state constraints and tenant-safe subcategory integrity. The six intake routes
+support idempotent text sessions, temporary presigned voice upload, post-upload
+and pre-use MIME/size/duration verification, discard, status polling and
+analysis. The worker performs OpenAI-compatible transcription then versioned
+structured analysis, validates every taxonomy/custom-field value at confidence
+0.75, retries three times with a lease/backoff, and removes 24-hour orphaned
+objects. Draft creation accepts `intakeSessionId` and atomically creates the
+ticket, provenance and persistent voice attachment without changing the ticket
+lifecycle. Typed text remains unchanged, transcripts append separately, and
+provider failure retains a fully usable manual path. The root `pnpm dev` command
+now launches API, Web and Worker together. API/web release gates and 41 API
+tests pass. GOAL-015 is next.
+
+**GOAL-013 — Secure per-organization AI settings (2026-08-19):** Migration 022
+extends every organization AI policy with an OpenAI-compatible Base URL,
+separate analysis/transcription model identifiers, and an AES-256-GCM encrypted
+API key. Only Platform Admin can read or change the settings, GET responses
+return `hasApiKey` rather than secret material, blank key input preserves the
+credential, and explicit removal disables AI. Production provider hosts are
+HTTPS/allowlist constrained; development alone permits loopback HTTP fakes.
+The local key was imported into `jupiter-demo` as ciphertext and its plaintext
+migration source removed. The Platform UI exposes the masked state, replacement
+flow and confirmed removal. Migration, API/web typechecks, 37 API tests,
+production builds, and an authenticated browser save with an empty key all
+pass. A real synthetic request reached the configured provider but returned
+`429 billing_not_active`; implementation and connectivity are verified, while
+live inference requires billing to be activated for that OpenAI API project.
+GOAL-014 is next and remains fully testable with the local provider fake.
+
+**Local runtime resilience (2026-08-19):** The API fallback database URL now
+uses the Windows PostgreSQL service's standard port 5432 (matching the supplied
+local configuration, rather than the former non-persistent 5433 instance).
+The SLA background interval catches and records database failures, so a temporary
+database outage cannot terminate the API process. This fixes the recurring local
+startup login failure. The ignored local environment now also carries a stable
+JWT signing key, so an API restart no longer invalidates otherwise valid local
+browser sessions. API typecheck and a real bootstrap-admin login (HTTP 201 with
+its HTTP-only refresh cookie) passed after the repair.
 
 **Brand color update (2026-08-15):** The Jupiter commercial theme now uses
 `#6d5587` as its primary purple across brand marks, primary controls, active
@@ -116,13 +166,11 @@ exercised locally with an enabled inbox and returned HTTP 201 with a new OPEN
 ticket. A mail vendor only needs to forward its normalized message payload to
 this endpoint with the deployment secret.
 
-**AI/transcription provider boundary (2026-08-12):** The separate worker now
-uses validated HTTP provider adapters with a 30-second timeout. `AI_PROVIDER_URL`,
-`AI_PROVIDER_API_KEY`, `TRANSCRIPTION_PROVIDER_URL`, and
-`TRANSCRIPTION_PROVIDER_API_KEY` are deployment-only environment variables;
-without them queued work reaches a visible failure/retry state rather than
-remaining queued. API typecheck, 28 API tests, and the production web build
-pass after this change.
+**AI/transcription provider boundary (superseded 2026-08-19):** Analysis now
+uses the encrypted per-organization OpenAI-compatible configuration and Chat
+Completions structured output. The former global provider variables are legacy
+migration inputs only. Voice is deliberately prepared for the intake-session
+pipeline in GOAL-014 rather than continuing the ticket-first legacy job path.
 
 **Ticket UX refinement (2026-08-12):** Attachment upload now disables repeat
 submission and visibly reports preparation, secure upload, failure, and
@@ -251,8 +299,8 @@ selector from being isolated in the middle of the header.
 mobile hamburger control now use a Jupiter-purple surface with white menu
 strokes for reliable contrast.
 
-**Service title (2026-08-16):** The product-shell header and expanded brand
-caption use «مرکز خدمات پشتیبانی سازمانی».
+**Service title (2026-08-17):** The login brand, expanded product mark, and
+product-shell header use «مرکز خدمات پشتیبانی».
 
 **Header popovers (2026-08-16):** Global search and notifications use compact,
 labelled icon triggers. Their panels open inward within the viewport and close

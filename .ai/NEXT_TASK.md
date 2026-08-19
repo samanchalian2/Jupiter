@@ -1,12 +1,34 @@
 # Next Task
 
-## Local runtime recovery
+## GOAL-015 — Smart ticket composer and acceptance E2E
 
-**Status:** COMPLETE (local verification, 2026-08-15)
+**Status:** COMPLETE (local verification, 2026-08-19)
 
-PostgreSQL is accepting connections on port 5433, the API is running on port
-3000, and bootstrap administrator login returns HTTP 201. The next unfinished
-roadmap work remains the staging-only Phase 9 gates below.
+The description-first composer, AI/microphone toolbar, one-minute recorder,
+playback/delete/re-record controls, signed upload headers, processing/fallback
+states, direct accepted suggestions, AI provenance badges, low-confidence
+Persian guidance and explicit final submission are implemented. Authenticated
+REQUESTER acceptance passed at 375, 768 and 1440 pixels with no overflow; the
+complete release gate passes. See `docs/GOAL_015_EVIDENCE.md`.
+
+There is no further local smart-intake Goal. The next unfinished product gate
+is the external staging-only Phase 9 checklist below.
+
+**External runtime note:** the real provider currently returns
+`429 billing_not_active`. GOAL-015 development and automated acceptance can use
+the deterministic provider fake; live inference will require the project
+owner to activate API billing before staging acceptance.
+
+## Local runtime resilience
+
+**Status:** COMPLETE (local verification, 2026-08-19)
+
+The local API defaults to the Windows PostgreSQL service port 5432 and its SLA
+interval cannot terminate the process when the database is temporarily
+unavailable; its ignored local environment has a persistent JWT key so restarts
+do not invalidate local browser sessions. API typecheck and a real local
+bootstrap-admin login passed. The next unfinished roadmap work remains the
+staging-only Phase 9 gates below.
 
 ## List hover readability
 
@@ -126,9 +148,10 @@ keyboard-focus state.
 
 ## Service title
 
-**Status:** COMPLETE (local verification)
+**Status:** COMPLETE (local verification, updated 2026-08-17)
 
-The product header and expanded logo caption use «مرکز خدمات پشتیبانی سازمانی».
+The login brand, expanded product mark, and product header use
+«مرکز خدمات پشتیبانی».
 
 ## Header popovers
 

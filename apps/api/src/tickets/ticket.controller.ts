@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Headers, Param, Post, Query, UnauthorizedException } from '@nestjs/common';
+import { Body, Controller, Get, Headers, Param, Post, Query } from '@nestjs/common';
 import { TicketStatus } from './ticket-lifecycle.js';
 import { TicketService } from './ticket.service.js';
 import { TicketActorService } from './ticket-actor.service.js';
@@ -19,10 +19,6 @@ export class TicketController {
   @Post(':id/watch') watch(@Param('id') id:string,@Headers('authorization') a?:string,@Headers('x-organization-id') o?:string) { return this.actors.fromHeaders(a,o).then(actor=>this.tickets.watch(actor,id)); }
   @Post(':id/tags/:tagId') linkTag(@Param('id') id:string,@Param('tagId') tagId:string,@Headers('authorization') a?:string,@Headers('x-organization-id') o?:string) { return this.actors.fromHeaders(a,o).then(actor=>this.tickets.linkTag(actor,id,tagId)); }
   @Post('bulk/status') bulkStatus(@Body() body:{ticketIds:string[];status:TicketStatus},@Headers('authorization') a?:string,@Headers('x-organization-id') o?:string) { return this.actors.fromHeaders(a,o).then(actor=>this.tickets.bulkStatus(actor,body.ticketIds,body.status)); }
-  @Post('drafts') async draft(@Headers('authorization') authorization: string | undefined, @Headers('x-organization-id') organizationId: string | undefined, @Body() body: {title?:string;description?:string;priority?:string;departmentId?:string;categoryId?:string;locationId?:string;customFields?:Record<string,unknown>}) {
-    if (!body.title || !body.description) throw new UnauthorizedException('Title and description are required');
-    return this.tickets.createDraft(await this.actors.fromHeaders(authorization,organizationId), { title:body.title, description:body.description, priority:body.priority, departmentId:body.departmentId, categoryId:body.categoryId, locationId:body.locationId, customFields:body.customFields });
-  }
   @Post(':id/submit') async submit(@Param('id') id:string,@Headers('authorization') authorization:string|undefined,@Headers('x-organization-id') organizationId:string|undefined) { return this.tickets.submit(await this.actors.fromHeaders(authorization,organizationId),id); }
   @Post(':id/status') async change(@Param('id') id:string,@Headers('authorization') authorization:string|undefined,@Headers('x-organization-id') organizationId:string|undefined,@Body() body:{status:TicketStatus;reason?:string}) { return this.tickets.changeStatus(await this.actors.fromHeaders(authorization,organizationId),id,body.status,body.reason); }
   @Post(':id/assignment') async assign(@Param('id') id:string,@Headers('authorization') authorization:string|undefined,@Headers('x-organization-id') organizationId:string|undefined,@Body() body:{assignedToUserId:string}) { return this.tickets.assign(await this.actors.fromHeaders(authorization,organizationId),id,body.assignedToUserId); }

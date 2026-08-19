@@ -2,13 +2,15 @@ import { BadRequestException, ForbiddenException, Injectable, NotFoundException 
 import { DatabaseService } from '../database/database.service.js';
 import { redactForAi } from './redactor.js';
 import { AiProvider } from './ai-provider.js';
+import { AiCredentialService } from './ai-credential.service.js';
+import { aiProviderAllowedHosts } from '../config.js';
 
 type Actor = { userId: string; organizationId: string; roles?: string[] };
 const priorities = new Set(['LOW', 'NORMAL', 'HIGH', 'URGENT']);
 
 @Injectable()
 export class AiGatewayService {
-  constructor(private readonly database: DatabaseService) {}
+  constructor(private readonly database: DatabaseService, private readonly credentials: AiCredentialService) {}
 
   async enqueue(actor: Actor, ticketId: string, text: string) {
     if (text.trim().length < 3 || text.length > 20_000) throw new BadRequestException('AI input is invalid');
@@ -28,18 +30,57 @@ export class AiGatewayService {
     });
   }
 
-  async configurePlatform(actorId: string, organizationId: string, enabled: boolean, model: string) {
+  async configurePlatform(actorId: string, input: {
+    organizationId: string;
+    enabled: boolean;
+    providerBaseUrl: string;
+    analysisModel: string;
+    transcriptionModel: string;
+    apiKey?: string;
+    removeApiKey?: boolean;
+  }) {
     await this.platformAdmin(actorId);
-    if (!/^[a-zA-Z0-9._-]{1,120}$/.test(model)) throw new BadRequestException('Model identifier is invalid');
-    return this.database.withOrganization(organizationId, async (client) => {
-      const setting = (await client.query(
-        `INSERT INTO organization_ai_settings(organization_id,enabled,model,updated_by_user_id)
-         VALUES($1,$2,$3,$4)
-         ON CONFLICT(organization_id) DO UPDATE SET enabled=EXCLUDED.enabled,model=EXCLUDED.model,updated_by_user_id=EXCLUDED.updated_by_user_id,updated_at=now()
-         RETURNING organization_id,enabled,model,updated_at`,
-        [organizationId, enabled, model, actorId],
+    const providerBaseUrl = this.validProviderBaseUrl(input.providerBaseUrl);
+    const analysisModel = this.validModel(input.analysisModel);
+    const transcriptionModel = this.validModel(input.transcriptionModel);
+    const apiKey = input.apiKey?.trim() || undefined;
+    if (apiKey && input.removeApiKey) throw new BadRequestException('Choose either replacing or removing the API key');
+    const encrypted = apiKey ? this.credentials.encrypt(apiKey) : undefined;
+    const enabled = input.removeApiKey ? false : input.enabled;
+    return this.database.withOrganization(input.organizationId, async (client) => {
+      const existing = (await client.query<{ has_api_key: boolean }>(
+        'SELECT api_key_ciphertext IS NOT NULL AS has_api_key FROM organization_ai_settings WHERE organization_id=$1',
+        [input.organizationId],
       )).rows[0];
-      await this.audit(client, { userId: actorId, organizationId }, 'ai.settings_changed', 'organization', organizationId, { enabled, model });
+      const willHaveKey = input.removeApiKey ? false : Boolean(encrypted || existing?.has_api_key);
+      if (enabled && !willHaveKey) throw new BadRequestException('An organization API key is required before AI can be enabled');
+      const setting = (await client.query(
+        `INSERT INTO organization_ai_settings(
+           organization_id,enabled,model,provider_base_url,analysis_model,transcription_model,
+           api_key_ciphertext,api_key_iv,api_key_auth_tag,updated_by_user_id
+         ) VALUES($1,$2,$3,$4,$3,$5,$6,$7,$8,$9)
+         ON CONFLICT(organization_id) DO UPDATE SET
+           enabled=EXCLUDED.enabled,model=EXCLUDED.analysis_model,provider_base_url=EXCLUDED.provider_base_url,
+           analysis_model=EXCLUDED.analysis_model,transcription_model=EXCLUDED.transcription_model,
+           api_key_ciphertext=CASE WHEN $10 THEN NULL WHEN $6::bytea IS NOT NULL THEN $6 ELSE organization_ai_settings.api_key_ciphertext END,
+           api_key_iv=CASE WHEN $10 THEN NULL WHEN $7::bytea IS NOT NULL THEN $7 ELSE organization_ai_settings.api_key_iv END,
+           api_key_auth_tag=CASE WHEN $10 THEN NULL WHEN $8::bytea IS NOT NULL THEN $8 ELSE organization_ai_settings.api_key_auth_tag END,
+           credential_version=CASE WHEN $10 OR $6::bytea IS NOT NULL THEN organization_ai_settings.credential_version+1 ELSE organization_ai_settings.credential_version END,
+           updated_by_user_id=EXCLUDED.updated_by_user_id,updated_at=now()
+         RETURNING organization_id AS "organizationId",enabled,provider_base_url AS "providerBaseUrl",
+           analysis_model AS "analysisModel",transcription_model AS "transcriptionModel",
+           api_key_ciphertext IS NOT NULL AS "hasApiKey",updated_at AS "updatedAt"`,
+        [input.organizationId, enabled, analysisModel, providerBaseUrl, transcriptionModel,
+          encrypted?.ciphertext ?? null, encrypted?.iv ?? null, encrypted?.authTag ?? null, actorId, Boolean(input.removeApiKey)],
+      )).rows[0];
+      await this.audit(client, { userId: actorId, organizationId: input.organizationId }, 'ai.settings_changed', 'organization', input.organizationId, {
+        enabled,
+        providerBaseUrl,
+        analysisModel,
+        transcriptionModel,
+        credentialChanged: Boolean(encrypted),
+        credentialRemoved: Boolean(input.removeApiKey),
+      });
       return setting;
     });
   }
@@ -47,10 +88,13 @@ export class AiGatewayService {
   async platformSettings(actorId: string) {
     await this.platformAdmin(actorId);
     return (await this.database.query(
-      `SELECT o.id AS organization_id,o.name,o.slug,COALESCE(s.enabled,false) AS enabled,
-        COALESCE(s.model,'gpt-4.1-mini') AS model,s.updated_at,
-        COALESCE((SELECT count(*)::int FROM ai_requests r WHERE r.organization_id=o.id),0) AS request_count,
-        COALESCE((SELECT sum(COALESCE((result.usage->>'inputTokens')::int,0)+COALESCE((result.usage->>'outputTokens')::int,0))::int FROM ai_results result WHERE result.organization_id=o.id),0) AS token_count
+      `SELECT o.id AS "organizationId",o.name,o.slug,COALESCE(s.enabled,false) AS enabled,
+        COALESCE(s.provider_base_url,'https://api.openai.com/v1') AS "providerBaseUrl",
+        COALESCE(s.analysis_model,s.model,'gpt-4.1-mini') AS "analysisModel",
+        COALESCE(s.transcription_model,'gpt-4o-mini-transcribe') AS "transcriptionModel",
+        (s.api_key_ciphertext IS NOT NULL) AS "hasApiKey",s.updated_at AS "updatedAt",
+        COALESCE((SELECT count(*)::int FROM ai_requests r WHERE r.organization_id=o.id),0) AS "requestCount",
+        COALESCE((SELECT sum(COALESCE((result.usage->>'inputTokens')::int,0)+COALESCE((result.usage->>'outputTokens')::int,0))::int FROM ai_results result WHERE result.organization_id=o.id),0) AS "tokenCount"
        FROM organizations o LEFT JOIN organization_ai_settings s ON s.organization_id=o.id ORDER BY o.name`,
     )).rows;
   }
@@ -69,14 +113,18 @@ export class AiGatewayService {
     const request = (await this.database.query<{ id: string; organization_id: string; redacted_input: { text: string }; prompt_version: string }>('SELECT id,organization_id,redacted_input,prompt_version FROM ai_requests WHERE id=$1 AND status=\'QUEUED\'', [requestId])).rows[0];
     if (!request) return;
     try {
-      const setting = (await this.database.query<{ model: string }>('SELECT model FROM organization_ai_settings WHERE organization_id=$1', [request.organization_id])).rows[0];
-      if (!setting) throw new Error('AI configuration unavailable');
+      const setting = (await this.database.query<{ provider_base_url: string; analysis_model: string; api_key_ciphertext: Buffer | null; api_key_iv: Buffer | null; api_key_auth_tag: Buffer | null }>(
+        `SELECT provider_base_url,analysis_model,api_key_ciphertext,api_key_iv,api_key_auth_tag
+         FROM organization_ai_settings WHERE organization_id=$1 AND enabled=true`, [request.organization_id],
+      )).rows[0];
+      if (!setting?.api_key_ciphertext || !setting.api_key_iv || !setting.api_key_auth_tag) throw new Error('AI configuration unavailable');
+      const apiKey = this.credentials.decrypt({ ciphertext: setting.api_key_ciphertext, iv: setting.api_key_iv, authTag: setting.api_key_auth_tag });
       await this.database.withOrganization(request.organization_id, async (client) => { await client.query('UPDATE ai_requests SET status=\'RUNNING\' WHERE id=$1', [requestId]); });
-      const answer = await provider.analyze({ promptVersion: request.prompt_version, text: request.redacted_input.text, model: setting.model });
+      const answer = await provider.analyze({ promptVersion: request.prompt_version, text: request.redacted_input.text, configuration: { baseUrl: setting.provider_base_url, model: setting.analysis_model, apiKey } });
       await this.database.withOrganization(request.organization_id, async (client) => {
-        await client.query('INSERT INTO ai_results(request_id,organization_id,output,usage,provider,model) VALUES($1,$2,$3,$4,\'configured\',$5)', [requestId, request.organization_id, answer.output, answer.usage, setting.model]);
+        await client.query('INSERT INTO ai_results(request_id,organization_id,output,usage,provider,model) VALUES($1,$2,$3,$4,\'openai-compatible\',$5)', [requestId, request.organization_id, answer.output, answer.usage, setting.analysis_model]);
         await client.query('UPDATE ai_requests SET status=\'SUCCEEDED\',completed_at=now() WHERE id=$1', [requestId]);
-        await this.audit(client, { userId: '', organizationId: request.organization_id }, 'ai.completed', 'ai_request', requestId, { model: setting.model });
+        await this.audit(client, { userId: '', organizationId: request.organization_id }, 'ai.completed', 'ai_request', requestId, { model: setting.analysis_model });
       });
     } catch {
       await this.database.withOrganization(request.organization_id, async (client) => {
@@ -134,6 +182,21 @@ export class AiGatewayService {
   private async platformAdmin(userId: string) {
     const admin = (await this.database.query<{ is_platform_admin: boolean }>('SELECT is_platform_admin FROM users WHERE id=$1 AND is_active=true', [userId])).rows[0]?.is_platform_admin;
     if (!admin) throw new ForbiddenException();
+  }
+  private validModel(value: string) {
+    const model = value?.trim();
+    if (!model || !/^[a-zA-Z0-9._:/-]{1,160}$/.test(model)) throw new BadRequestException('Model identifier is invalid');
+    return model;
+  }
+  private validProviderBaseUrl(value: string) {
+    let url: URL;
+    try { url = new URL(value); } catch { throw new BadRequestException('Provider base URL is invalid'); }
+    if (url.username || url.password || url.search || url.hash || !['http:', 'https:'].includes(url.protocol)) throw new BadRequestException('Provider base URL is invalid');
+    const host = url.hostname.toLowerCase();
+    const loopback = host === 'localhost' || host === '127.0.0.1' || host === '[::1]' || host === '::1';
+    if (url.protocol !== 'https:' && !(process.env.NODE_ENV !== 'production' && loopback)) throw new BadRequestException('Provider base URL must use HTTPS');
+    if (process.env.NODE_ENV === 'production' && !aiProviderAllowedHosts().has(host)) throw new BadRequestException('Provider host is not allowed');
+    return url.toString().replace(/\/$/, '');
   }
   private async audit(client: { query: Function }, actor: Actor, action: string, targetType: string, targetId: string, metadata: object) {
     await client.query('INSERT INTO audit_logs(organization_id,actor_user_id,action,target_type,target_id,metadata) VALUES($1,NULLIF($2,\'\')::uuid,$3,$4,$5,$6)', [actor.organizationId, actor.userId, action, targetType, targetId, metadata]);

@@ -3,6 +3,7 @@ import { AiGatewayService } from '../ai/ai-gateway.service.js';
 import { DatabaseService } from '../database/database.service.js';
 import { TranscriptionService } from '../transcription/transcription.service.js';
 import { HttpAiProvider, HttpTranscriptionProvider } from './http-providers.js';
+import { TicketIntakeService } from '../ticket-intake/ticket-intake.service.js';
 
 /**
  * Deliberately small worker adapter.  It is run in a separate application
@@ -16,11 +17,13 @@ export class QueueWorker implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(QueueWorker.name);
   private timer?: NodeJS.Timeout;
   private working = false;
+  private lastIntakeCleanupAt = 0;
 
   constructor(
     private readonly database: DatabaseService,
     private readonly ai: AiGatewayService,
     private readonly transcription: TranscriptionService,
+    private readonly intakes: TicketIntakeService,
   ) {}
 
   onModuleInit() {
@@ -41,6 +44,9 @@ export class QueueWorker implements OnModuleInit, OnModuleDestroy {
       const transcriptionJobs = await this.database.query<{ id: string; organization_id: string }>("SELECT id,organization_id FROM transcription_jobs WHERE status IN ('QUEUED','RETRY') ORDER BY updated_at LIMIT 10");
       const transcriptionProvider = new HttpTranscriptionProvider();
       for (const job of transcriptionJobs.rows) await this.transcription.process(job.organization_id, job.id, transcriptionProvider);
+      const intakeJobs = await this.intakes.pending(10);
+      for (const job of intakeJobs) await this.intakes.process(job.organization_id,job.id,aiProvider,transcriptionProvider);
+      if (Date.now()-this.lastIntakeCleanupAt>=60_000) { await this.intakes.cleanupExpired(100); this.lastIntakeCleanupAt=Date.now(); }
     } catch (error) {
       this.logger.error('Queue worker cycle failed', error instanceof Error ? error.stack : undefined);
     } finally { this.working = false; }

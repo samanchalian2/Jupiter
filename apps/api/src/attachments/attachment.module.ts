@@ -4,5 +4,5 @@ import { AttachmentController } from './attachment.controller.js';
 import { AttachmentService } from './attachment.service.js';
 import { S3AttachmentStorageService } from './s3-attachment-storage.service.js';
 
-@Module({ imports: [TicketModule], controllers: [AttachmentController], providers: [AttachmentService, { provide: 'AttachmentStorage', useExisting: S3AttachmentStorageService }, S3AttachmentStorageService], exports: ['AttachmentStorage'] })
+@Module({ imports: [TicketModule], controllers: [AttachmentController], providers: [AttachmentService, { provide: 'AttachmentStorage', useExisting: S3AttachmentStorageService }, S3AttachmentStorageService], exports: ['AttachmentStorage',AttachmentService] })
 export class AttachmentModule {}

@@ -58,6 +58,17 @@ export class AttachmentService {
     });
   }
 
+  async attachAvailableWithClient(client: PoolClient, actor: TicketActor, ticketId: string, input: { storageKey:string; filename:string; contentType:string; byteSize:number }) {
+    const id = randomUUID();
+    const attachment = (await client.query(
+      `INSERT INTO ticket_attachments(id,organization_id,ticket_id,uploaded_by_user_id,storage_key,original_filename,content_type,byte_size,state,available_at)
+       VALUES($1,$2,$3,$4,$5,$6,$7,$8,'AVAILABLE',now()) RETURNING id,original_filename,content_type,byte_size,state,created_at,available_at`,
+      [id,actor.organizationId,ticketId,actor.userId,input.storageKey,input.filename,input.contentType,input.byteSize],
+    )).rows[0];
+    await client.query('INSERT INTO ticket_activities(organization_id,ticket_id,actor_user_id,activity_type,visibility,metadata) VALUES($1,$2,$3,\'ticket.attachment_available\',\'REQUESTER\',$4)', [actor.organizationId,ticketId,actor.userId,{ attachmentId:id, source:'ticket_intake' }]);
+    return attachment;
+  }
+
   private async pendingAttachment(client: PoolClient, ticketId: string, attachmentId: string) {
     const result = await client.query<{storage_key:string;byte_size:string;content_type:string}>('SELECT storage_key,byte_size,content_type FROM ticket_attachments WHERE id=$1 AND ticket_id=$2 AND state=\'PENDING\'', [attachmentId,ticketId]);
     if (!result.rows[0]) throw new NotFoundException('Pending attachment not found');

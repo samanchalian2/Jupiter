@@ -8,4 +8,5 @@
 5. Expert resolves a ticket; policy closes it or requester confirms/reopens it.
 6. Requester rates a resolved or closed ticket.
 7. Organization Admin manages members and organization-scoped catalogs.
-8. Platform Admin configures the shared AI provider and tenant entitlement.
+8. Platform Admin configures each organization's AI credential, models and
+   entitlement without exposing stored keys.
