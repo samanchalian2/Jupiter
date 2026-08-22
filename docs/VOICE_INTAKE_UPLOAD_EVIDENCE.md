@@ -61,3 +61,9 @@ intake-status polling loop. Status polling now has its own bounded allowance
 (default 240/minute), and authenticated callers are keyed by a one-way token
 hash instead of sharing an IP bucket. Anonymous and login abuse protection
 remain rate-limited.
+
+The composer also upgrades a WebM capture that was retained in an already-open
+page during a hot reload. On the next smart-completion or final submission it
+locally converts that capture to WAV, replaces the incompatible temporary
+object, and proceeds through the normal verified upload flow. No new recording
+is required for that in-memory capture.

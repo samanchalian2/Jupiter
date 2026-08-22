@@ -47,7 +47,7 @@ export function encodeWav(audio:DecodedAudio,targetSampleRate=16_000):Blob {
   return new Blob([buffer],{type:'audio/wav'});
 }
 
-async function prepareVoiceCapture(blob:Blob,durationSeconds:number):Promise<VoiceCapture> {
+export async function prepareVoiceCapture(blob:Blob,durationSeconds:number):Promise<VoiceCapture> {
   const Context=globalThis.AudioContext;
   if (!Context) throw new Error('voice_conversion_unsupported');
   const context=new Context();

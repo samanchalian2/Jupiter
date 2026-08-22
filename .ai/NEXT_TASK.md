@@ -12,7 +12,8 @@ composer converts the browser's WebM/Opus capture to provider-compatible WAV
 before upload because the real provider rejected WebM after successful upload
 verification. A generated-WAV run reached `SUCCEEDED` through the worker and
 provider; intake polling has its own bounded request budget so it cannot
-exhaust the normal application allowance. See
+exhaust the normal application allowance. An already-open composer upgrades a
+retained WebM capture locally on its next operation. See
 `docs/VOICE_INTAKE_UPLOAD_EVIDENCE.md`.
 
 ## Local object-storage recovery

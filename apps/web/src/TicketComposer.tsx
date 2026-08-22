@@ -4,7 +4,7 @@ import type { Actor } from './App';
 import { request } from './App';
 import { applyIntakeSuggestions, blocksManualSubmit, intakeFailureMessage, intakeFieldLabel, microphoneErrorMessage, pollIntake, processingStatuses, type IntakeSession, type TicketFormState, type TicketTag } from './ticketIntake';
 import { Button, Card } from './ui';
-import { beginVoiceRecording, type VoiceRecordingHandle } from './voiceRecording';
+import { beginVoiceRecording, prepareVoiceCapture, type VoiceRecordingHandle } from './voiceRecording';
 
 type Catalog = { id: string; name: string; category_id?: string };
 type CustomField = { field_key:string; label:string; field_type:'TEXT'|'NUMBER'|'DATE'|'SELECT'|'BOOLEAN'; options:unknown[]; is_required:boolean };
@@ -71,6 +71,12 @@ export function TicketComposer({ actor, onCreated }: { actor:Actor; onCreated:(t
   const discardRemoteVoice=async()=>{if(!intake?.voice)return;try{await request(`/ticket-intakes/${intake.id}/voice/discard`,actor.session,actor.organizationId,{method:'POST'});}catch{/* worker cleanup */}setIntake(null);};
   const removeRecording=async()=>{if(recordingActive)recorderRef.current?.stop();await discardRemoteVoice();setRecording(null);setRecordingSeconds(0);setPipeline('');setGuidance([]);markManual('description');};
   const stopRecording=()=>recorderRef.current?.stop();
+  const compatibleRecording=async(value:Recording)=>{
+    if(value.contentType==='audio/wav')return value;
+    const capture=await prepareVoiceCapture(value.blob,value.durationSeconds);
+    const next:Recording={...value,blob:capture.blob,url:URL.createObjectURL(capture.blob),durationSeconds:capture.durationSeconds,contentType:capture.contentType,filename:`voice-${Date.now()}.${extension(capture.contentType)}`};
+    URL.revokeObjectURL(value.url);setRecording(next);setRecordingSeconds(capture.durationSeconds);return next;
+  };
   const startRecording=async()=>{
     setError('');
     if(!navigator.mediaDevices?.getUserMedia||typeof MediaRecorder==='undefined'){setError('مرورگر شما از ضبط صدا پشتیبانی نمی‌کند؛ شرح درخواست را دستی بنویسید.');return;}
@@ -94,14 +100,19 @@ export function TicketComposer({ actor, onCreated }: { actor:Actor; onCreated:(t
     const put=await fetch(prepared.uploadUrl,{method:'PUT',headers:prepared.requiredHeaders,body:voice.blob});if(!put.ok)throw new Error('بارگذاری صدای ضبط‌شده ناموفق بود.');
     const completed=await request(`/ticket-intakes/${session.id}/voice/complete`,actor.session,actor.organizationId,{method:'POST'}) as IntakeSession;setIntake(completed);return completed;
   };
-  const ensureVoiceSession=async()=>{if(intake?.voice&&recording)return intake;const created=await createSession(form.description);setIntake(created);return recording?uploadVoice(created,recording):created;};
+  const ensureVoiceSession=async()=>{const voice=recording?await compatibleRecording(recording):null;if(intake?.voice&&voice&&intake.voice.contentType===voice.contentType)return intake;if(intake?.voice)await discardRemoteVoice();const created=await createSession(form.description);setIntake(created);return voice?uploadVoice(created,voice):created;};
 
   const runAi=async()=>{
     if(!form.description.trim()&&!recording){setError('ابتدا شرح درخواست را بنویسید یا صدای خود را ضبط کنید.');descriptionRef.current?.focus();return;}
     setError('');setGuidance([]);pollAbortRef.current?.abort();const controller=new AbortController();pollAbortRef.current=controller;
     try{
-      let session=intake;const canRetry=session?.status==='FAILED'&&session.description===form.description&&Boolean(session.voice)===Boolean(recording);
-      if(!canRetry){if(session?.voice)await discardRemoteVoice();session=await createSession(form.description);setIntake(session);if(recording)session=await uploadVoice(session,recording);}
+      let session=intake;let voice=recording?await compatibleRecording(recording):null;
+      // HMR can retain a pre-upgrade WebM capture in component state. Replace
+      // its old remote object instead of retrying an incompatible session.
+      const needsReplacement=Boolean(session?.voice&&voice&&session.voice.contentType!==voice.contentType);
+      if(needsReplacement){await discardRemoteVoice();session=null;}
+      const canRetry=session?.status==='FAILED'&&session.description===form.description&&Boolean(session.voice)===Boolean(voice);
+      if(!canRetry){if(session?.voice)await discardRemoteVoice();session=await createSession(form.description);setIntake(session);if(voice)session=await uploadVoice(session,voice);}
       const queued=await request(`/ticket-intakes/${session!.id}/analyze`,actor.session,actor.organizationId,{method:'POST'}) as IntakeSession;setIntake(queued);setPipeline(queued.status==='TRANSCRIBING'?'TRANSCRIBING':'ANALYZING');
       const completed=await pollIntake(()=>request(`/ticket-intakes/${session!.id}`,actor.session,actor.organizationId) as Promise<IntakeSession>,{signal:controller.signal,onUpdate:value=>{setIntake(value);if(value.status==='TRANSCRIBING'||value.status==='ANALYZING')setPipeline(value.status);}});setIntake(completed);
       if(completed.status==='SUCCEEDED'){

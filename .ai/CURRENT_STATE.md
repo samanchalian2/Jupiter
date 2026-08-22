@@ -10,7 +10,9 @@ in place. A full generated-WAV intake run reached `SUCCEEDED` through upload,
 worker transcription and structured analysis, then cleaned up its temporary
 object. Intake polling now has a separate bounded rate-limit allowance and
 authenticated callers no longer share one IP bucket. Evidence:
-`docs/VOICE_INTAKE_UPLOAD_EVIDENCE.md`.
+`docs/VOICE_INTAKE_UPLOAD_EVIDENCE.md`. An already-open composer upgrades its
+retained pre-change WebM capture locally on the next operation, so it does not
+need a re-recording.
 
 **Voice-intake upload recovery (complete, 2026-08-22):** Recorded audio was
 reaching the browser but MinIO rejected the presigned upload because the
