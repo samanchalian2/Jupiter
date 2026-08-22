@@ -1,5 +1,14 @@
 # Current State
 
+**Voice-intake upload recovery (complete, 2026-08-22):** Recorded audio was
+reaching the browser but MinIO rejected the presigned upload because the
+required duration metadata header was not signed. All caller-provided S3
+metadata headers are now explicitly preserved in the signature. A real
+WebM-style PUT plus S3 HEAD metadata verification passed, and the saved
+organization configuration successfully transcribed a synthetic silent WAV
+sample. API typecheck, all 51 API tests, Web typecheck and production Web build
+pass. Evidence: `docs/VOICE_INTAKE_UPLOAD_EVIDENCE.md`.
+
 **Local object-storage recovery (complete, 2026-08-22):** Local branding and
 attachment uploads now have a startup prerequisite: `pnpm dev:storage` validates
 the loopback S3 configuration, starts local MinIO when necessary, waits for its

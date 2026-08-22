@@ -1,5 +1,15 @@
 # Next Task
 
+## Voice-intake upload recovery
+
+**Status:** COMPLETE (local verification, 2026-08-22)
+
+The recorded-voice presigned upload now signs its required duration metadata
+header, so MinIO accepts the browser PUT and the session can advance from
+`UPLOADING` to verification, transcription and analysis. A real metadata-bearing
+WebM-style PUT and a synthetic non-personal transcription request passed. See
+`docs/VOICE_INTAKE_UPLOAD_EVIDENCE.md`.
+
 ## Local object-storage recovery
 
 **Status:** COMPLETE (local verification, 2026-08-22)

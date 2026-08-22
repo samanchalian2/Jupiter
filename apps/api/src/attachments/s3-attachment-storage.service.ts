@@ -16,7 +16,8 @@ export class S3AttachmentStorageService implements AttachmentStorage {
 
   async createUploadUrl(key: string, contentType: string, expiresInSeconds: number, metadata?: Record<string,string>) {
     this.assertConfigured();
-    return getSignedUrl(this.client, new PutObjectCommand({ Bucket: this.config.bucket, Key: key, ContentType: contentType, Metadata: metadata }), { expiresIn: expiresInSeconds });
+    const unhoistableHeaders = new Set(Object.keys(metadata ?? {}).map((name) => `x-amz-meta-${name.toLowerCase()}`));
+    return getSignedUrl(this.client, new PutObjectCommand({ Bucket: this.config.bucket, Key: key, ContentType: contentType, Metadata: metadata }), { expiresIn: expiresInSeconds, unhoistableHeaders });
   }
 
   async createDownloadUrl(key: string, filename: string, expiresInSeconds: number) {
