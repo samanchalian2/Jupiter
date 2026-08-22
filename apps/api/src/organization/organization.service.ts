@@ -7,8 +7,20 @@ import { randomUUID } from 'node:crypto';
 type Actor = { userId: string; organizationId: string; roles: string[] };
 type MemberInput = { email: string; username?: string; displayName: string; password?: string; roles: string[] };
 const catalogTables = new Set(['departments', 'locations', 'disciplines', 'categories']);
+const suggestionKinds = new Set(['category','subcategory','department','location','discipline']);
 const roleCodes = new Set(['ORG_ADMIN', 'SUPERVISOR', 'EXPERT', 'REQUESTER']);
 const usernamePattern = /^[a-z0-9][a-z0-9._-]{1,62}$/;
+const enterpriseItTemplate = [
+  ['HARDWARE','سخت‌افزار و تجهیزات',['COMPUTER','لپ‌تاپ و رایانه'],['PERIPHERAL','تجهیزات جانبی']],
+  ['PRINT','چاپ و اسناد',['PRINTER','پرینتر'],['SCANNER','اسکنر'],['PRINT-ERROR','خطاهای چاپ']],
+  ['NETWORK','شبکه و ارتباطات',['WIRED','شبکه کابلی'],['WIFI','شبکه بی‌سیم'],['INTERNET','اینترنت و VPN']],
+  ['SOFTWARE','نرم‌افزار و سامانه‌ها',['OS','سیستم‌عامل'],['BUSINESS-APP','سامانه‌های سازمانی'],['APP-INSTALL','نصب و به‌روزرسانی']],
+  ['ACCESS','حساب و دسترسی',['PASSWORD','رمز عبور'],['PERMISSION','مجوز دسترسی'],['ONBOARDING','حساب کاربری جدید']],
+  ['SECURITY','امنیت اطلاعات',['PHISHING','ایمیل مشکوک'],['MALWARE','بدافزار'],['SECURITY-ACCESS','دسترسی امنیتی']],
+  ['MEETING','تجهیزات جلسات',['VIDEO','ویدئوکنفرانس'],['PROJECTOR','ویدئوپروژکتور'],['AUDIO','صوت جلسه']],
+  ['TELEPHONY','تلفن و ارتباطات',['PHONE','تلفن سازمانی'],['MOBILE','ارتباطات همراه']],
+  ['FACILITIES','خدمات و تأسیسات',['OFFICE','تجهیزات اداری'],['MAINTENANCE','نگهداری و تعمیرات']],
+] as const;
 
 @Injectable()
 export class OrganizationService {
@@ -102,6 +114,59 @@ export class OrganizationService {
     });
   }
 
+  async catalogReadiness(actor: Actor) {
+    this.admin(actor);
+    return this.database.withOrganization(actor.organizationId, async c => {
+      const counts = (await c.query<{categories:number;subcategories:number;departments:number;locations:number;disciplines:number;custom_fields:number;template_installed:boolean}>(`SELECT
+        (SELECT count(*)::int FROM categories) categories,(SELECT count(*)::int FROM subcategories) subcategories,
+        (SELECT count(*)::int FROM departments) departments,(SELECT count(*)::int FROM locations) locations,
+        (SELECT count(*)::int FROM disciplines) disciplines,(SELECT count(*)::int FROM ticket_custom_field_definitions WHERE is_active=true) custom_fields,
+        EXISTS(SELECT 1 FROM organization_catalog_template_installs WHERE template_code='it-enterprise') template_installed`)).rows[0];
+      return { ...counts, aiReady: counts.categories > 0 && counts.subcategories > 0 };
+    });
+  }
+
+  async catalogTemplate(actor: Actor) {
+    this.admin(actor);
+    return this.database.withOrganization(actor.organizationId, async c => ({
+      code:'it-enterprise', name:'خدمات IT و پشتیبانی سازمانی',
+      installed:Boolean((await c.query("SELECT 1 FROM organization_catalog_template_installs WHERE template_code='it-enterprise'")).rowCount),
+      categories:enterpriseItTemplate.map(([code,name,...subcategories])=>({code,name,subcategories:subcategories.map(([subcode,subname])=>({code:subcode,name:subname}))})),
+    }));
+  }
+
+  async installCatalogTemplate(actor: Actor) {
+    this.admin(actor);
+    return this.database.withOrganization(actor.organizationId, async c => {
+      let subcategoryCount=0;
+      for(const [code,name,...subcategories] of enterpriseItTemplate){
+        const category=(await c.query<{id:string}>(`INSERT INTO categories(organization_id,code,name) VALUES($1,$2,$3) ON CONFLICT(organization_id,code) DO UPDATE SET name=EXCLUDED.name RETURNING id`,[actor.organizationId,code,name])).rows[0];
+        for(const [subcode,subname] of subcategories){ await c.query(`INSERT INTO subcategories(organization_id,category_id,code,name) VALUES($1,$2,$3,$4) ON CONFLICT(organization_id,code) DO UPDATE SET category_id=EXCLUDED.category_id,name=EXCLUDED.name`,[actor.organizationId,category.id,`${code}-${subcode}`,subname]); subcategoryCount+=1; }
+      }
+      await c.query(`INSERT INTO organization_catalog_template_installs(organization_id,template_code,installed_by_user_id) VALUES($1,'it-enterprise',$2) ON CONFLICT(organization_id,template_code) DO UPDATE SET installed_by_user_id=EXCLUDED.installed_by_user_id,installed_at=now()`,[actor.organizationId,actor.userId]);
+      await this.audit(c,actor,'catalog.template_installed','organization',actor.organizationId,{templateCode:'it-enterprise',categoryCount:enterpriseItTemplate.length,subcategoryCount});
+      return {templateCode:'it-enterprise',categoryCount:enterpriseItTemplate.length,subcategoryCount};
+    });
+  }
+
+  async catalogSuggestions(actor: Actor) { this.admin(actor); return this.database.withOrganization(actor.organizationId,async c=>(await c.query(`SELECT id,kind,name,parent_category_id,status,source,confidence,created_at FROM catalog_suggestions WHERE status='PENDING' ORDER BY created_at DESC LIMIT 100`)).rows); }
+
+  async reviewCatalogSuggestion(actor: Actor,id:string,input:{decision:'APPROVED'|'REJECTED';code?:string;name?:string;parentCategoryId?:string}) {
+    this.admin(actor); if(!['APPROVED','REJECTED'].includes(input.decision)) throw new BadRequestException('Invalid catalog suggestion decision.');
+    return this.database.withOrganization(actor.organizationId,async c=>{
+      const suggestion=(await c.query<{id:string;kind:string;name:string;parent_category_id:string|null}>("SELECT id,kind,name,parent_category_id FROM catalog_suggestions WHERE id=$1 AND status='PENDING' FOR UPDATE",[id])).rows[0];
+      if(!suggestion) throw new NotFoundException('Catalog suggestion not found.');
+      if(input.decision==='APPROVED'){
+        const code=input.code?.trim();const name=input.name?.trim()||suggestion.name;
+        if(!/^[A-Za-z0-9_-]{2,64}$/.test(code??'')||!name) throw new BadRequestException('Catalog code and name are required to approve a suggestion.');
+        if(suggestion.kind==='subcategory') { const parentCategoryId=input.parentCategoryId??suggestion.parent_category_id; if(!parentCategoryId || !(await c.query('SELECT 1 FROM categories WHERE id=$1',[parentCategoryId])).rowCount) throw new BadRequestException('A category is required for a subcategory suggestion.'); await c.query(`INSERT INTO subcategories(organization_id,category_id,code,name) VALUES($1,$2,$3,$4) ON CONFLICT(organization_id,code) DO UPDATE SET category_id=EXCLUDED.category_id,name=EXCLUDED.name`,[actor.organizationId,parentCategoryId,code,name]); }
+        else { const table=this.suggestionTable(suggestion.kind); await c.query(`INSERT INTO ${table}(organization_id,code,name) VALUES($1,$2,$3) ON CONFLICT(organization_id,code) DO UPDATE SET name=EXCLUDED.name`,[actor.organizationId,code,name]); }
+      }
+      const result=(await c.query(`UPDATE catalog_suggestions SET status=$2,reviewed_by_user_id=$3,reviewed_at=now() WHERE id=$1 RETURNING id,status`,[id,input.decision,actor.userId])).rows[0];
+      await this.audit(c,actor,'catalog.suggestion_reviewed','catalog_suggestion',id,{decision:input.decision}); return result;
+    });
+  }
+
   async teams(actor: Actor) {
     this.admin(actor);
     return this.database.withOrganization(actor.organizationId, async (client) => (await client.query(
@@ -174,6 +239,7 @@ export class OrganizationService {
   async saveEmailIntegration(actor: Actor, input:{inboundAddress:string;senderName:string;enabled:boolean}) { this.admin(actor); if(!/^\S+@\S+\.\S+$/.test(input.inboundAddress??'')||!input.senderName?.trim()) throw new BadRequestException('Email integration settings are invalid.'); return this.database.withOrganization(actor.organizationId,async c=>{const row=(await c.query('INSERT INTO email_integration_settings(organization_id,inbound_address,sender_name,enabled) VALUES($1,$2,$3,$4) ON CONFLICT(organization_id) DO UPDATE SET inbound_address=EXCLUDED.inbound_address,sender_name=EXCLUDED.sender_name,enabled=EXCLUDED.enabled,updated_at=now() RETURNING inbound_address,sender_name,enabled,updated_at',[actor.organizationId,input.inboundAddress.toLowerCase(),input.senderName.trim(),input.enabled])).rows[0]; await this.audit(c,actor,'email_integration.saved','organization',actor.organizationId,{enabled:input.enabled,inboundAddress:input.inboundAddress}); return row;}); }
 
   private catalogKind(kind: string) { if (!catalogTables.has(kind)) throw new NotFoundException('Unknown catalog.'); }
+  private suggestionTable(kind:string) { if(!suggestionKinds.has(kind)||kind==='subcategory') throw new BadRequestException('Invalid suggestion kind.'); return `${kind}s`; }
   private async replaceRoles(client: { query(query: string, values?: unknown[]): Promise<unknown> }, membershipId: string, roles: string[]) { await client.query('DELETE FROM membership_roles WHERE membership_id=$1',[membershipId]); await client.query('INSERT INTO membership_roles(membership_id,role_id) SELECT $1,id FROM roles WHERE code=ANY($2::text[])',[membershipId,roles]); }
   private async platform(userId:string) { const user=(await this.database.query<{is_platform_admin:boolean}>('SELECT is_platform_admin FROM users WHERE id=$1 AND is_active=true',[userId])).rows[0]; if(!user?.is_platform_admin) throw new ForbiddenException(); }
   async platformOrganizations(userId:string) { await this.platform(userId); return (await this.database.query('SELECT id,slug,name,status,created_at FROM organizations ORDER BY created_at DESC')).rows; }

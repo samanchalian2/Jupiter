@@ -1,16 +1,15 @@
 # Next Task
 
-## GOAL-016 — Saved AI settings connection diagnosis
+## GOAL-018 — Tenant title library and typed ticket-tag vocabulary
 
-**Status:** COMPLETE (local verification, 2026-08-22)
+**Status:** READY
 
-Platform Administration offers a Platform Admin-only «آزمون اتصال» button
-after saved AI configuration. It tests only the stored organization Base URL,
-API key and analysis model with a fixed, non-sensitive request. It reports a
-safe Persian diagnosis and audits only success/category. The local Jupiter Demo
-Organization is configured for the GapGPT OpenAI-compatible endpoint and the
-in-product test now returns success. A direct non-sensitive `ticket-intake.v1`
-structured-analysis test also returned a valid title and NORMAL priority.
+Implement the approved title library and typed tag vocabulary without changing
+the existing ticket lifecycle. Add an ADR before changing the AI intake contract
+from v1 to v2. Only active tenant-scoped titles/tags may be supplied to the
+provider; new titles/tags remain pending until Organization Admin review. Final
+ticket submission, not analysis alone, may record a candidate. Preserve old
+flat tags safely and keep all manual ticket paths working.
 
 ## GOAL-015 — Smart ticket composer and acceptance E2E
 

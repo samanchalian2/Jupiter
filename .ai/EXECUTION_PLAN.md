@@ -206,3 +206,25 @@ verified through the in-product endpoint against the GapGPT OpenAI-compatible
 service, followed by a direct `ticket-intake.v1` structured-analysis request
 that returned a valid title and NORMAL priority. API/web typechecks and the
 production build pass.
+
+## GOAL-017 — Catalog governance and IT/service starter template
+
+**Status:** DONE
+
+**Scope:** an Organization Admin-approved, idempotent IT and organizational
+support catalog template; catalog readiness; a tenant-RLS pending suggestion
+queue and auditable review paths. The template must not invent organization
+departments or locations.
+
+**Validation:** migration 028 applied; the API integration test verifies
+administrator-only access, repeatable installation, ready category/subcategory
+counts and cross-tenant suggestion isolation. API typecheck, all API tests,
+Web tests and production Web build pass.
+
+## GOAL-018 — Tenant title library and typed ticket-tag vocabulary
+
+**Status:** READY
+
+**Depends on:** GOAL-017/014. **Scope:** approved title reuse, pending title
+and typed tag candidates, safe legacy-tag migration, `ticket-intake.v2`, and
+server validation/provenance. An ADR is required before the contract change.

@@ -16,6 +16,11 @@ export class OrganizationController {
 
   @Get('catalog/:kind') catalog(@Param('kind') kind:string,@Headers('authorization') a?:string,@Headers('x-organization-id') o?:string) { return this.actor(a,o).then(actor=>this.organizations.catalog(actor,kind)); }
   @Post('catalog/:kind') addCatalog(@Param('kind') kind:string,@Body() body:{code:string;name:string},@Headers('authorization') a?:string,@Headers('x-organization-id') o?:string) { return this.actor(a,o).then(actor=>this.organizations.addCatalog(actor,kind,body)); }
+  @Get('catalog-readiness') catalogReadiness(@Headers('authorization') a?:string,@Headers('x-organization-id') o?:string) { return this.actor(a,o).then(actor=>this.organizations.catalogReadiness(actor)); }
+  @Get('catalog-template') catalogTemplate(@Headers('authorization') a?:string,@Headers('x-organization-id') o?:string) { return this.actor(a,o).then(actor=>this.organizations.catalogTemplate(actor)); }
+  @Post('catalog-template/install') installCatalogTemplate(@Headers('authorization') a?:string,@Headers('x-organization-id') o?:string) { return this.actor(a,o).then(actor=>this.organizations.installCatalogTemplate(actor)); }
+  @Get('catalog-suggestions') catalogSuggestions(@Headers('authorization') a?:string,@Headers('x-organization-id') o?:string) { return this.actor(a,o).then(actor=>this.organizations.catalogSuggestions(actor)); }
+  @Post('catalog-suggestions/:id/review') reviewCatalogSuggestion(@Param('id') id:string,@Body() body:{decision:'APPROVED'|'REJECTED';code?:string;name?:string;parentCategoryId?:string},@Headers('authorization') a?:string,@Headers('x-organization-id') o?:string) { return this.actor(a,o).then(actor=>this.organizations.reviewCatalogSuggestion(actor,id,body)); }
   @Get('teams') teams(@Headers('authorization') a?:string,@Headers('x-organization-id') o?:string) { return this.actor(a,o).then(actor=>this.organizations.teams(actor)); }
   @Post('teams') saveTeam(@Body() body:{id?:string;name:string;memberIds:string[];isActive?:boolean},@Headers('authorization') a?:string,@Headers('x-organization-id') o?:string) { return this.actor(a,o).then(actor=>this.organizations.saveTeam(actor,body)); }
 

@@ -1,5 +1,15 @@
 # Current State
 
+**GOAL-017 — Catalog governance and approved IT starter template (2026-08-22):**
+Organization Administrators can review catalog readiness for smart intake and
+install the idempotent «IT and organizational support» template. Migration 028
+adds tenant-RLS-protected installation records and a pending suggestion queue;
+the queue intentionally does not let AI activate a category, subcategory,
+department, location or discipline. The administrator API supports review and
+audits template installation/review without request content. The local
+migration, 48 API tests (including cross-tenant queue isolation), Web tests,
+API typecheck and production Web build pass. GOAL-018 is next.
+
 **GOAL-016 — Saved AI settings connection diagnosis (2026-08-22):** Platform
 Administration provides an «آزمون اتصال» control for each saved organization AI
 configuration. The Platform Admin-only endpoint uses the encrypted stored key

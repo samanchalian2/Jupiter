@@ -16,3 +16,9 @@ acceptance suite.
 
 Post-MVP operational hardening adds (16) a Platform Admin-only, safe
 connection diagnosis for saved AI settings before a requester uses smart intake.
+
+The approved smart-classification enhancement progresses through: (17) an
+Organization Admin-approved IT/service catalog starter template and pending
+catalog governance; (18) tenant title-library and typed tag vocabulary with a
+versioned intake contract; and (19) composer, search/report and acceptance
+integration.
