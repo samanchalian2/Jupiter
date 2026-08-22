@@ -9,6 +9,7 @@
     "dev:api": "pnpm --filter @jupiter/api dev",
     "dev:web": "pnpm --filter @jupiter/web dev",
     "dev:worker": "pnpm --filter @jupiter/api worker",
+    "dev:storage": "node apps/api/scripts/local-storage.mjs",
     "dev:ai-fake": "node scripts/fake-openai-provider.mjs",
     "lint": "pnpm -r lint",
     "test": "pnpm -r test",

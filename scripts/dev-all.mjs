@@ -3,6 +3,9 @@ import { resolve } from 'node:path';
 
 const root=resolve(import.meta.dirname,'..');
 const api=resolve(root,'apps/api'); const web=resolve(root,'apps/web');
+const storage=spawn(process.execPath,[resolve(api,'scripts/local-storage.mjs')],{cwd:root,stdio:'inherit'});
+const storageExit=await new Promise((resolveExit)=>storage.once('exit',(code)=>resolveExit(code??1)));
+if(storageExit!==0)process.exit(storageExit);
 const typeScriptCompiler=resolve(api,'node_modules/typescript/bin/tsc');
 const build=spawn(process.execPath,[typeScriptCompiler,'-p','tsconfig.build.json'],{cwd:api,stdio:'inherit'});
 const buildExit=await new Promise((resolveExit)=>build.once('exit',(code)=>resolveExit(code??1)));

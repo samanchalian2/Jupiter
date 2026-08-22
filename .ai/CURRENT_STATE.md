@@ -1,5 +1,15 @@
 # Current State
 
+**Local object-storage recovery (complete, 2026-08-22):** Local branding and
+attachment uploads now have a startup prerequisite: `pnpm dev:storage` validates
+the loopback S3 configuration, starts local MinIO when necessary, waits for its
+liveness endpoint and ensures the configured bucket exists. Root `pnpm dev`
+runs it before the API, Web and Worker. A real signed logo-style PNG upload,
+metadata verification and cleanup passed against the recovered store; API and
+Web typechecks plus all 51 API tests pass. Failed uploads made while the object
+store was offline were not persisted and must be selected again in the UI.
+Evidence: `docs/LOCAL_OBJECT_STORAGE_EVIDENCE.md`.
+
 **GOAL-019 — Smart composer, vocabulary management, search and reporting
 (complete, 2026-08-22):**
 The requester composer now supports up to five typed tags in «جزئیات بیشتر»

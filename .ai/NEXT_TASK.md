@@ -1,5 +1,16 @@
 # Next Task
 
+## Local object-storage recovery
+
+**Status:** COMPLETE (local verification, 2026-08-22)
+
+`pnpm dev` now establishes local S3-compatible storage before the application
+processes start. MinIO liveness, bucket availability and an actual signed
+PNG-style upload/metadata/cleanup path were verified. A logo whose earlier
+browser upload failed while storage was unavailable must be uploaded again;
+the failed operation deliberately did not replace the prior logo. See
+`docs/LOCAL_OBJECT_STORAGE_EVIDENCE.md`.
+
 ## GOAL-019 — Smart composer, vocabulary management, search and reporting
 
 **Status:** COMPLETE (local verification, 2026-08-22)
