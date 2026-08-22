@@ -1,5 +1,20 @@
 # Current State
 
+**GOAL-016 — Saved AI settings connection diagnosis (2026-08-22):** Platform
+Administration provides an «آزمون اتصال» control for each saved organization AI
+configuration. The Platform Admin-only endpoint uses the encrypted stored key
+and configured analysis model for one fixed, non-sensitive Chat Completions
+request, then returns a Persian safe result for success, invalid key,
+billing/quota, rate limit, endpoint/model access or provider availability.
+No credential, provider response body or user request is returned, logged or
+audited; audit metadata carries only a success flag and diagnostic category.
+The diagnostic separates provider communication from audit recording so an
+internal audit failure cannot be mislabeled as a provider outage. The local
+Jupiter Demo Organization was verified with the GapGPT OpenAI-compatible Base
+URL and `gpt-4o`: the in-product endpoint returned success, and the complete
+`ticket-intake.v1` structured output contract returned a title and NORMAL
+priority from a non-sensitive test request.
+
 **GOAL-015 — Smart ticket composer and acceptance E2E (2026-08-19):** The
 requester composer is now description-first with initial focus, a directly
 adjacent AI/microphone toolbar, one-minute MediaRecorder controller, secure

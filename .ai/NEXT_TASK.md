@@ -1,5 +1,17 @@
 # Next Task
 
+## GOAL-016 — Saved AI settings connection diagnosis
+
+**Status:** COMPLETE (local verification, 2026-08-22)
+
+Platform Administration offers a Platform Admin-only «آزمون اتصال» button
+after saved AI configuration. It tests only the stored organization Base URL,
+API key and analysis model with a fixed, non-sensitive request. It reports a
+safe Persian diagnosis and audits only success/category. The local Jupiter Demo
+Organization is configured for the GapGPT OpenAI-compatible endpoint and the
+in-product test now returns success. A direct non-sensitive `ticket-intake.v1`
+structured-analysis test also returned a valid title and NORMAL priority.
+
 ## GOAL-015 — Smart ticket composer and acceptance E2E
 
 **Status:** COMPLETE (local verification, 2026-08-19)

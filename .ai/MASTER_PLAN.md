@@ -13,3 +13,6 @@ The approved post-MVP smart-intake extension progresses through: (13) secure
 per-organization OpenAI-compatible credentials, (14) a tenant-scoped pre-ticket
 text/voice pipeline, and (15) the responsive smart composer and browser
 acceptance suite.
+
+Post-MVP operational hardening adds (16) a Platform Admin-only, safe
+connection diagnosis for saved AI settings before a requester uses smart intake.

@@ -189,3 +189,20 @@ AI success/failure behavior, manual editability, low-confidence guidance,
 microphone permission state and zero overflow at 375, 768 and 1440 px. The
 deterministic loopback provider was removed from active configuration after the
 test. Evidence is recorded in `docs/GOAL_015_EVIDENCE.md`.
+
+## GOAL-016 — Saved AI settings connection diagnosis
+
+**Status:** DONE
+
+**Depends on:** GOAL-013. **Scope:** a Platform Admin-only test of the saved
+organization credential, Base URL and analysis model; safe diagnostic outcomes,
+audit trail, platform UI feedback and automated coverage. No requester ticket,
+intake session, configuration value or raw provider message may be exposed or
+changed by the test.
+
+**Validation:** successful, invalid-key, billing/quota and unauthorized paths
+are unit-tested. The local saved Jupiter Demo Organization configuration was
+verified through the in-product endpoint against the GapGPT OpenAI-compatible
+service, followed by a direct `ticket-intake.v1` structured-analysis request
+that returned a valid title and NORMAL priority. API/web typechecks and the
+production build pass.

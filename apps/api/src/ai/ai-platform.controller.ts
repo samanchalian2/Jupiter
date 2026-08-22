@@ -1,10 +1,11 @@
 import { Body, Controller, Get, Headers, Param, Post, Put, UnauthorizedException } from '@nestjs/common';
 import { AuthService } from '../auth/auth.service.js';
 import { AiGatewayService } from './ai-gateway.service.js';
+import { AiConnectionTestService } from './ai-connection-test.service.js';
 
 @Controller('platform/ai-settings')
 export class AiPlatformController {
-  constructor(private readonly auth: AuthService, private readonly ai: AiGatewayService) {}
+  constructor(private readonly auth: AuthService, private readonly ai: AiGatewayService, private readonly connectionTests: AiConnectionTestService) {}
 
   private async actor(authorization?: string, organizationId?: string) {
     const token = authorization?.replace(/^Bearer\s+/i, '');
@@ -31,6 +32,13 @@ export class AiPlatformController {
     const token = authorization?.replace(/^Bearer\s+/i, '');
     if (!token) throw new UnauthorizedException();
     return this.ai.configurePlatform((await this.auth.verify(token)).sub, body);
+  }
+
+  @Post('test')
+  async test(@Headers('authorization') authorization: string | undefined, @Body() body: { organizationId: string }) {
+    const token = authorization?.replace(/^Bearer\s+/i, '');
+    if (!token) throw new UnauthorizedException();
+    return this.connectionTests.testPlatform((await this.auth.verify(token)).sub, body.organizationId);
   }
 
   @Post('requests/:ticketId')

@@ -65,3 +65,14 @@ attachment conversion and session consumption share one PostgreSQL transaction;
 the already tenant-scoped object becomes persistent without copying. Unconsumed
 expired objects are deleted by the worker. The additive REST contract is
 documented in `docs/TICKET_INTAKE_API.md`.
+
+## DEC-009 — Platform-admin AI connection diagnosis
+
+Platform administrators may run a short, organization-scoped connection test
+after saving AI settings. It uses the encrypted stored credential and the
+configured analysis model to call Chat Completions with a fixed non-sensitive
+prompt. The response exposes only a safe diagnostic category and Persian
+operator guidance; credentials, provider response bodies and request content
+are never returned, logged or audited. Each test is audited using only its
+success flag and category. This endpoint is diagnostic only and cannot create
+or modify a ticket, intake session or provider configuration.
