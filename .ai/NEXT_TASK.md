@@ -10,7 +10,9 @@ header, so MinIO accepts the browser PUT and the session can advance from
 WebM-style PUT and a synthetic non-personal transcription request passed. The
 composer converts the browser's WebM/Opus capture to provider-compatible WAV
 before upload because the real provider rejected WebM after successful upload
-verification. See
+verification. A generated-WAV run reached `SUCCEEDED` through the worker and
+provider; intake polling has its own bounded request budget so it cannot
+exhaust the normal application allowance. See
 `docs/VOICE_INTAKE_UPLOAD_EVIDENCE.md`.
 
 ## Local object-storage recovery

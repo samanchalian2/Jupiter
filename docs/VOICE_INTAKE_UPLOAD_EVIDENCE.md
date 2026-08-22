@@ -46,3 +46,18 @@ converts the local recording to a compact 16 kHz mono PCM WAV before any upload.
 This preserves the one-minute/10 MB limits and uses an already supported voice
 media type. The recorded user object was inspected only for safe headers and
 was not replayed to a third party for diagnosis.
+
+## Full synthetic voice-path verification (2026-08-22)
+
+The complete local intake path was then exercised with a generated one-second
+16 kHz mono WAV and a non-personal description: temporary session creation,
+presigned upload, S3 metadata verification, worker transcription, structured
+analysis and suggestion validation all reached `SUCCEEDED`. The temporary
+voice object was discarded after the test. This confirms the configured
+provider accepts the same WAV media type now produced by the composer.
+
+The generic per-IP request limiter also shared its budget with the 90-second
+intake-status polling loop. Status polling now has its own bounded allowance
+(default 240/minute), and authenticated callers are keyed by a one-way token
+hash instead of sharing an IP bucket. Anonymous and login abuse protection
+remain rate-limited.

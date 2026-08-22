@@ -6,7 +6,11 @@ upload and metadata verification. The composer now converts the local capture
 to 16 kHz mono PCM WAV before upload; the provider had already accepted the
 same organization configuration's synthetic WAV. The user recording was not
 replayed externally while diagnosing. The prior signed metadata repair remains
-in place. Evidence: `docs/VOICE_INTAKE_UPLOAD_EVIDENCE.md`.
+in place. A full generated-WAV intake run reached `SUCCEEDED` through upload,
+worker transcription and structured analysis, then cleaned up its temporary
+object. Intake polling now has a separate bounded rate-limit allowance and
+authenticated callers no longer share one IP bucket. Evidence:
+`docs/VOICE_INTAKE_UPLOAD_EVIDENCE.md`.
 
 **Voice-intake upload recovery (complete, 2026-08-22):** Recorded audio was
 reaching the browser but MinIO rejected the presigned upload because the
