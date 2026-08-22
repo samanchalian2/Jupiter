@@ -2,7 +2,7 @@ import { ChangeEvent, FormEvent, useEffect, useRef, useState } from 'react';
 import { ChevronDown, FilePlus2, Mic, Pause, RotateCcw, Send, Sparkles, Trash2 } from 'lucide-react';
 import type { Actor } from './App';
 import { request } from './App';
-import { applyIntakeSuggestions, blocksManualSubmit, intakeFailureMessage, intakeFieldLabel, microphoneErrorMessage, pollIntake, processingStatuses, type IntakeSession, type TicketFormState } from './ticketIntake';
+import { applyIntakeSuggestions, blocksManualSubmit, intakeFailureMessage, intakeFieldLabel, microphoneErrorMessage, pollIntake, processingStatuses, type IntakeSession, type TicketFormState, type TicketTag } from './ticketIntake';
 import { Button, Card } from './ui';
 import { beginVoiceRecording, type VoiceRecordingHandle } from './voiceRecording';
 
@@ -11,7 +11,7 @@ type CustomField = { field_key:string; label:string; field_type:'TEXT'|'NUMBER'|
 type Recording = { id:string; blob:Blob; url:string; durationSeconds:number; contentType:string; filename:string };
 type PipelinePhase = ''|'UPLOADING'|'TRANSCRIBING'|'ANALYZING'|'SUCCEEDED'|'FAILED';
 
-const initialForm:TicketFormState={title:'',description:'',priority:'NORMAL',departmentId:'',categoryId:'',subcategoryId:'',locationId:'',disciplineId:'',customFields:{}};
+const initialForm:TicketFormState={title:'',description:'',priority:'NORMAL',departmentId:'',categoryId:'',subcategoryId:'',locationId:'',disciplineId:'',customFields:{},tags:[]};
 const phaseLabels:Record<Exclude<PipelinePhase,''>,string>={UPLOADING:'در حال بارگذاری امن صدا…',TRANSCRIBING:'در حال تبدیل صدا به متن…',ANALYZING:'در حال تکمیل فیلدها با AI…',SUCCEEDED:'پیشنهادهای معتبر اعمال شدند و قابل ویرایش‌اند.',FAILED:'تکمیل هوشمند انجام نشد؛ فرم دستی در دسترس است.'};
 
 function formatDuration(seconds:number) { const safe=Math.min(60,Math.max(0,Math.floor(seconds))); return `${String(Math.floor(safe/60)).padStart(2,'0')}:${String(safe%60).padStart(2,'0')}`; }
@@ -21,6 +21,7 @@ function idempotencyKey() { return globalThis.crypto?.randomUUID?.() ?? `${Date.
 export function TicketComposer({ actor, onCreated }: { actor:Actor; onCreated:(ticketId:string,notice?:string)=>void }) {
   const [catalogs,setCatalogs]=useState<{departments:Catalog[];categories:Catalog[];subcategories:Catalog[];locations:Catalog[];disciplines:Catalog[]}>({departments:[],categories:[],subcategories:[],locations:[],disciplines:[]});
   const [customFields,setCustomFields]=useState<CustomField[]>([]);
+  const [tagVocabulary,setTagVocabulary]=useState<TicketTag[]>([]);
   const [form,setForm]=useState<TicketFormState>(initialForm);
   const [file,setFile]=useState<File|null>(null);
   const [detailsOpen,setDetailsOpen]=useState(false);
@@ -45,10 +46,10 @@ export function TicketComposer({ actor, onCreated }: { actor:Actor; onCreated:(t
     request('/tickets/catalog/subcategories',actor.session,actor.organizationId),
     request('/tickets/catalog/locations',actor.session,actor.organizationId),
     request('/tickets/catalog/disciplines',actor.session,actor.organizationId),
-    request('/tickets/custom-fields',actor.session,actor.organizationId),
-  ]).then(([departments,categories,subcategories,locations,disciplines,fields])=>{
+    request('/tickets/custom-fields',actor.session,actor.organizationId),request('/tickets/tags',actor.session,actor.organizationId),
+  ]).then(([departments,categories,subcategories,locations,disciplines,fields,tags])=>{
     setCatalogs({departments:departments as Catalog[],categories:categories as Catalog[],subcategories:subcategories as Catalog[],locations:locations as Catalog[],disciplines:disciplines as Catalog[]});
-    setCustomFields(fields as CustomField[]);
+    setCustomFields(fields as CustomField[]);setTagVocabulary((tags as Array<TicketTag&{status?:string}>).filter(tag=>tag.status===undefined||tag.status==='ACTIVE'));
   }).catch(()=>setError('دریافت فهرست‌های سازمان کامل نشد؛ صفحه را دوباره بارگذاری کنید.'));},[actor.organizationId,actor.session.accessToken]);
   useEffect(()=>()=>{
     pollAbortRef.current?.abort();recorderRef.current?.destroy();
@@ -59,6 +60,7 @@ export function TicketComposer({ actor, onCreated }: { actor:Actor; onCreated:(t
   const updateField=<K extends keyof TicketFormState>(field:K,value:TicketFormState[K])=>{setForm(current=>({...current,[field]:value}));markManual(String(field));};
   const aiBadge=(field:string)=>aiFields.has(field)?<span className="ai-field-badge"><Sparkles size={12}/>تکمیل‌شده با AI</span>:null;
   const filteredSubcategories=catalogs.subcategories.filter(item=>!form.categoryId||item.category_id===form.categoryId);
+  const toggleTag=(tag:TicketTag)=>{setForm(current=>{const exists=current.tags.some(item=>(tag.id&&item.id===tag.id)||(!tag.id&&item.name===tag.name&&item.kind===tag.kind));return {...current,tags:exists?current.tags.filter(item=>!((tag.id&&item.id===tag.id)||(!tag.id&&item.name===tag.name&&item.kind===tag.kind))):[...current.tags,tag].slice(0,5)};});markManual('tags');};
 
   const upload=async(ticketId:string,attachment:File)=>{
     const response=await request(`/tickets/${ticketId}/attachments/upload-requests`,actor.session,actor.organizationId,{method:'POST',body:JSON.stringify({filename:attachment.name,contentType:attachment.type,byteSize:attachment.size})}) as {attachment:{id:string};uploadUrl:string};
@@ -153,6 +155,7 @@ export function TicketComposer({ actor, onCreated }: { actor:Actor; onCreated:(t
         <label><span className="field-label-row"><span>واحد مرتبط</span>{aiBadge('departmentId')}</span><select value={form.departmentId} onChange={event=>updateField('departmentId',event.target.value)}><option value="">انتخاب نشده</option>{catalogs.departments.map(item=><option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
         <label><span className="field-label-row"><span>مکان</span>{aiBadge('locationId')}</span><select value={form.locationId} onChange={event=>updateField('locationId',event.target.value)}><option value="">انتخاب نشده</option>{catalogs.locations.map(item=><option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
         <label><span className="field-label-row"><span>حوزه یا رشته</span>{aiBadge('disciplineId')}</span><select value={form.disciplineId} onChange={event=>updateField('disciplineId',event.target.value)}><option value="">انتخاب نشده</option>{catalogs.disciplines.map(item=><option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
+        <fieldset className="ticket-tag-field"><legend><span className="field-label-row"><span>هشتگ‌ها</span>{aiBadge('tags')}</span></legend><p className="hint">حداکثر ۵ هشتگ؛ معمولاً حوزه خدمت، تجهیز/خدمت و نوع مسئله.</p><div className="tag-picker">{tagVocabulary.map(tag=><button key={tag.id??`${tag.kind}-${tag.name}`} type="button" className={form.tags.some(item=>item.id===tag.id)?'selected':''} onClick={()=>toggleTag(tag)}>#{tag.name}</button>)}</div>{form.tags.length>0&&<div className="tag-list">{form.tags.map(tag=><button type="button" key={tag.id??`${tag.kind}-${tag.name}`} onClick={()=>toggleTag(tag)}>#{tag.name} ×</button>)}</div>}</fieldset>
         {customFields.map(customInput)}<label className="controlled-file"><FilePlus2 size={17}/><span>{file?`${file.name} · ${Math.ceil(file.size/1024)} KB`:'افزودن پیوست'}</span><input type="file" onChange={(event:ChangeEvent<HTMLInputElement>)=>setFile(event.target.files?.[0]??null)}/></label>
       </div>}
       {error&&<p className="error composer-error" role="alert">{error}{pipeline==='FAILED'&&<button type="button" onClick={()=>void runAi()}>تلاش دوباره</button>}</p>}

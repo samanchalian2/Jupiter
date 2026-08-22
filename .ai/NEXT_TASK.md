@@ -2,13 +2,14 @@
 
 ## GOAL-019 — Smart composer, vocabulary management, search and reporting
 
-**Status:** READY
+**Status:** IMPLEMENTED — awaiting authenticated browser acceptance
 
-Connect `ticket-intake.v2` suggestions to the requester composer: display and
-edit typed tags in «جزئیات بیشتر», retain manual fallback, and expose
-Organization Admin title/tag approval lists. Extend tenant-safe ticket search,
-queue filters and operational reporting by tag/type. Verify responsive browser
-acceptance with a concise generated title, classification and tags.
+`ticket-intake.v2` tag suggestions, manual typed-tag selection, Organization
+Admin title/tag review, tag-aware search/queue filters and reporting are
+implemented and covered by API/Web tests and production builds. Complete the
+remaining authenticated responsive browser check: submit a text request using
+the AI provider/fake, confirm concise non-copy title, category and typed tags,
+then update this file and `docs/GOAL_019_EVIDENCE.md`.
 
 ## GOAL-015 — Smart ticket composer and acceptance E2E
 

@@ -1,4 +1,5 @@
 export type TicketPriority = 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
+export type TicketTag = { id?: string; name: string; kind: 'DOMAIN'|'SERVICE_ASSET'|'ISSUE_TYPE'|'IMPACT_SCOPE'|'CONTEXT'|'OTHER' };
 
 export type TicketFormState = {
   title: string;
@@ -10,6 +11,7 @@ export type TicketFormState = {
   locationId: string;
   disciplineId: string;
   customFields: Record<string, unknown>;
+  tags: TicketTag[];
 };
 
 export type IntakeStatus =
@@ -68,6 +70,10 @@ export function applyIntakeSuggestions(current: TicketFormState, session: Intake
       changed.add(field);
     }
   }
+  if (Array.isArray(suggestions.tags)) {
+    const tags=suggestions.tags.filter((item):item is TicketTag=>Boolean(item&&typeof item==='object'&&typeof (item as TicketTag).name==='string'&&typeof (item as TicketTag).kind==='string')).slice(0,5);
+    if (JSON.stringify(tags)!==JSON.stringify(next.tags)) { next.tags=tags; changed.add('tags'); }
+  }
   if (suggestions.customFields && typeof suggestions.customFields === 'object') {
     for (const [key, value] of Object.entries(suggestions.customFields)) {
       if (next.customFields[key] !== value) {
@@ -91,6 +97,7 @@ const fieldLabels: Record<string, string> = {
   departmentId: 'واحد مرتبط',
   locationId: 'مکان',
   disciplineId: 'حوزه یا رشته',
+  tags: 'هشتگ‌ها',
 };
 
 export function intakeFieldLabel(field: string, customLabels: Record<string, string> = {}) {

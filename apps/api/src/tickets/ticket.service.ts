@@ -5,7 +5,7 @@ import { assertTransition, TicketStatus } from './ticket-lifecycle.js';
 import { addBusinessMinutes } from '../sla/business-time.js';
 
 type Actor = { userId: string; organizationId: string; roles: string[] };
-export type CreateDraftData = { title:string; description:string; priority?:string; departmentId?:string; categoryId?:string; subcategoryId?:string; locationId?:string; disciplineId?:string; customFields?:Record<string,unknown> };
+export type CreateDraftData = { title:string; description:string; priority?:string; departmentId?:string; categoryId?:string; subcategoryId?:string; locationId?:string; disciplineId?:string; customFields?:Record<string,unknown>; tags?:IntakeTagInput[] };
 export type IntakeTagInput = { id?:string; name?:string; kind?:'DOMAIN'|'SERVICE_ASSET'|'ISSUE_TYPE'|'IMPACT_SCOPE'|'CONTEXT'|'OTHER' };
 const managerRoles = new Set(['ORG_ADMIN', 'SUPERVISOR']);
 const workerRoles = new Set(['ORG_ADMIN', 'SUPERVISOR', 'EXPERT']);
@@ -16,7 +16,7 @@ export class TicketService {
   constructor(private readonly database: DatabaseService) {}
 
   async createDraft(actor: Actor, data: CreateDraftData) {
-    return this.database.withOrganization(actor.organizationId, (client) => this.createDraftWithClient(client, actor, data));
+    return this.database.withOrganization(actor.organizationId, async client => { const ticket=await this.createDraftWithClient(client,actor,data); await this.attachIntakeTagsWithClient(client,actor,ticket.id,data.tags??[]); return ticket; });
   }
 
   async createDraftWithClient(client: PoolClient, actor: Actor, data: CreateDraftData) {
@@ -118,9 +118,9 @@ export class TicketService {
     });
   }
 
-  async list(actor: Actor, filters: { status?: string; priority?: string; query?: string; sort?: string } = {}) {
+  async list(actor: Actor, filters: { status?: string; priority?: string; query?: string; tag?: string; sort?: string } = {}) {
     return this.database.withOrganization(actor.organizationId, async (client) => {
-      const conditions = '($1::uuid IS NOT NULL) AND ($2::text IS NULL OR t.status=ANY(string_to_array($2,\',\'))) AND ($3::text IS NULL OR t.priority=$3) AND ($4::text IS NULL OR t.title ILIKE \'%\'||$4||\'%\')';
+      const conditions = '($1::uuid IS NOT NULL) AND ($2::text IS NULL OR t.status=ANY(string_to_array($2,\',\'))) AND ($3::text IS NULL OR t.priority=$3) AND ($4::text IS NULL OR (t.title ILIKE \'%\'||$4||\'%\' OR t.description ILIKE \'%\'||$4||\'%\' OR EXISTS(SELECT 1 FROM ticket_tag_links search_link JOIN ticket_tags search_tag ON search_tag.id=search_link.tag_id WHERE search_link.ticket_id=t.id AND search_tag.name ILIKE \'%\'||$4||\'%\'))) AND ($5::uuid IS NULL OR EXISTS(SELECT 1 FROM ticket_tag_links filter_link WHERE filter_link.ticket_id=t.id AND filter_link.tag_id=$5))';
       const orderBy = filters.sort === 'oldest' ? 't.created_at ASC' : filters.sort === 'priority' ? "CASE t.priority WHEN 'URGENT' THEN 1 WHEN 'HIGH' THEN 2 WHEN 'NORMAL' THEN 3 ELSE 4 END, t.created_at DESC" : filters.sort === 'recent' ? 'last_activity_at DESC,t.created_at DESC' : 't.created_at DESC';
       const fields = `t.id,t.ticket_number,t.title,t.description,t.status,t.priority,t.requester_user_id,t.created_at,t.updated_at,
         GREATEST(t.updated_at,
@@ -129,18 +129,18 @@ export class TicketService {
         assignee.id AS assigned_to_user_id, assignee.display_name AS assignee_display_name,
         COALESCE((SELECT json_agg(json_build_object('id',tag.id,'name',tag.name,'color',tag.color) ORDER BY tag.name)
           FROM ticket_tag_links link JOIN ticket_tags tag ON tag.id=link.tag_id WHERE link.ticket_id=t.id), '[]'::json) AS tags`;
-      const values = [actor.userId, filters.status ?? null, filters.priority ?? null, filters.query?.trim() || null];
+      const values = [actor.userId, filters.status ?? null, filters.priority ?? null, filters.query?.trim() || null, filters.tag ?? null];
       if (actor.roles.some((role) => managerRoles.has(role))) return (await client.query(`SELECT ${fields} FROM tickets t LEFT JOIN ticket_assignments assignment ON assignment.ticket_id=t.id AND assignment.ended_at IS NULL LEFT JOIN users assignee ON assignee.id=assignment.assigned_to_user_id WHERE ${conditions} ORDER BY ${orderBy}`, values)).rows;
       if (actor.roles.includes('EXPERT')) return (await client.query(`SELECT ${fields} FROM tickets t JOIN ticket_assignments mine ON mine.ticket_id=t.id AND mine.ended_at IS NULL AND mine.assigned_to_user_id=$1 LEFT JOIN ticket_assignments assignment ON assignment.ticket_id=t.id AND assignment.ended_at IS NULL LEFT JOIN users assignee ON assignee.id=assignment.assigned_to_user_id WHERE ${conditions} ORDER BY ${orderBy}`, values)).rows;
       return (await client.query(`SELECT ${fields} FROM tickets t LEFT JOIN ticket_assignments assignment ON assignment.ticket_id=t.id AND assignment.ended_at IS NULL LEFT JOIN users assignee ON assignee.id=assignment.assigned_to_user_id WHERE t.requester_user_id=$1 AND ${conditions} ORDER BY ${orderBy}`, values)).rows;
     });
   }
 
-  async page(actor: Actor, filters: { status?: string; priority?: string; query?: string; sort?: string; page?: number; pageSize?: number } = {}) {
+  async page(actor: Actor, filters: { status?: string; priority?: string; query?: string; tag?: string; sort?: string; page?: number; pageSize?: number } = {}) {
     const page = Math.max(1, Math.floor(filters.page ?? 1));
     const pageSize = Math.min(100, Math.max(10, Math.floor(filters.pageSize ?? 20)));
     return this.database.withOrganization(actor.organizationId, async (client) => {
-      const base = '($1::uuid IS NOT NULL) AND ($2::text IS NULL OR t.status=ANY(string_to_array($2,\',\'))) AND ($3::text IS NULL OR t.priority=$3) AND ($4::text IS NULL OR t.title ILIKE \'%\'||$4||\'%\')';
+      const base = '($1::uuid IS NOT NULL) AND ($2::text IS NULL OR t.status=ANY(string_to_array($2,\',\'))) AND ($3::text IS NULL OR t.priority=$3) AND ($4::text IS NULL OR (t.title ILIKE \'%\'||$4||\'%\' OR t.description ILIKE \'%\'||$4||\'%\' OR EXISTS(SELECT 1 FROM ticket_tag_links search_link JOIN ticket_tags search_tag ON search_tag.id=search_link.tag_id WHERE search_link.ticket_id=t.id AND search_tag.name ILIKE \'%\'||$4||\'%\'))) AND ($5::uuid IS NULL OR EXISTS(SELECT 1 FROM ticket_tag_links filter_link WHERE filter_link.ticket_id=t.id AND filter_link.tag_id=$5))';
       const orderBy = filters.sort === 'oldest' ? 't.created_at ASC' : filters.sort === 'priority' ? "CASE t.priority WHEN 'URGENT' THEN 1 WHEN 'HIGH' THEN 2 WHEN 'NORMAL' THEN 3 ELSE 4 END, t.created_at DESC" : filters.sort === 'recent' ? 'last_activity_at DESC,t.created_at DESC' : 't.created_at DESC';
       const fields = `t.id,t.ticket_number,t.title,t.description,t.status,t.priority,t.requester_user_id,t.created_at,t.updated_at,
         GREATEST(t.updated_at,
@@ -149,15 +149,15 @@ export class TicketService {
         assignee.id AS assigned_to_user_id,assignee.display_name AS assignee_display_name,
         COALESCE((SELECT json_agg(json_build_object('id',tag.id,'name',tag.name,'color',tag.color) ORDER BY tag.name)
           FROM ticket_tag_links link JOIN ticket_tags tag ON tag.id=link.tag_id WHERE link.ticket_id=t.id), '[]'::json) AS tags`;
-      const values = [actor.userId, filters.status ?? null, filters.priority ?? null, filters.query?.trim() || null, pageSize, (page - 1) * pageSize];
+      const values = [actor.userId, filters.status ?? null, filters.priority ?? null, filters.query?.trim() || null, filters.tag ?? null, pageSize, (page - 1) * pageSize];
       const manager = actor.roles.some((role) => managerRoles.has(role));
       const expert = actor.roles.includes('EXPERT');
       const scope = manager ? '' : expert ? 'JOIN ticket_assignments mine ON mine.ticket_id=t.id AND mine.ended_at IS NULL AND mine.assigned_to_user_id=$1' : '';
       const requester = manager || expert ? '' : ' AND t.requester_user_id=$1';
       const joins = `${scope} LEFT JOIN ticket_assignments assignment ON assignment.ticket_id=t.id AND assignment.ended_at IS NULL LEFT JOIN users assignee ON assignee.id=assignment.assigned_to_user_id`;
       const [items,total] = await Promise.all([
-        client.query(`SELECT ${fields} FROM tickets t ${joins} WHERE ${base}${requester} ORDER BY ${orderBy} LIMIT $5 OFFSET $6`, values),
-        client.query<{total:number}>(`SELECT count(*)::int AS total FROM tickets t ${scope} WHERE ${base}${requester}`, values.slice(0, 4)),
+        client.query(`SELECT ${fields} FROM tickets t ${joins} WHERE ${base}${requester} ORDER BY ${orderBy} LIMIT $6 OFFSET $7`, values),
+        client.query<{total:number}>(`SELECT count(*)::int AS total FROM tickets t ${scope} WHERE ${base}${requester}`, values.slice(0, 5)),
       ]);
       return { items: items.rows, total: total.rows[0]?.total ?? 0, page, pageSize };
     });
@@ -183,7 +183,7 @@ export class TicketService {
     return this.database.withOrganization(actor.organizationId, async (client) => (await client.query('SELECT DISTINCT u.id,u.display_name,u.email FROM memberships m JOIN membership_roles mr ON mr.membership_id=m.id JOIN roles r ON r.id=mr.role_id JOIN users u ON u.id=m.user_id WHERE m.status=\'active\' AND r.code IN (\'EXPERT\',\'SUPERVISOR\',\'ORG_ADMIN\') ORDER BY u.display_name')).rows);
   }
 
-  async tags(actor: Actor) { return this.database.withOrganization(actor.organizationId, async (client) => (await client.query('SELECT id,name,color FROM ticket_tags ORDER BY name')).rows); }
+  async tags(actor: Actor) { return this.database.withOrganization(actor.organizationId, async (client) => (await client.query("SELECT id,name,color,kind FROM ticket_tags WHERE status='ACTIVE' ORDER BY kind,name")).rows); }
   async customFields(actor: Actor) { return this.database.withOrganization(actor.organizationId,async client=>(await client.query("SELECT field_key,label,field_type,options,is_required FROM ticket_custom_field_definitions WHERE is_active=true AND label !~ '[?]' AND position(chr(65533) IN label)=0 ORDER BY sort_order,label")).rows); }
 
   async catalog(actor: Actor, kind: string) {
@@ -194,7 +194,8 @@ export class TicketService {
 
   async createTag(actor: Actor, name: string, color = '#1769aa') {
     if (!actor.roles.some((role) => managerRoles.has(role))) throw new ForbiddenException();
-    return this.database.withOrganization(actor.organizationId, async (client) => (await client.query('INSERT INTO ticket_tags(organization_id,name,color) VALUES($1,$2,$3) ON CONFLICT(organization_id,name) DO UPDATE SET color=EXCLUDED.color RETURNING id,name,color', [actor.organizationId,name,color])).rows[0]);
+    const clean=name.trim().replace(/\s+/g,' '); const normalized=clean.toLocaleLowerCase('fa-IR');
+    return this.database.withOrganization(actor.organizationId, async (client) => (await client.query("INSERT INTO ticket_tags(organization_id,name,color,kind,status,normalized_name) VALUES($1,$2,$3,'OTHER','PENDING',$4) ON CONFLICT(organization_id,normalized_name) DO UPDATE SET name=ticket_tags.name RETURNING id,name,color,kind,status", [actor.organizationId,clean,color,normalized])).rows[0]);
   }
 
   async watch(actor: Actor, ticketId: string) {

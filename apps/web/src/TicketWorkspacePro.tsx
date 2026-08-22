@@ -17,9 +17,11 @@ type View = {
 type Filters = {
   status: string;
   priority: string;
+  tag: string;
   query: string;
   sort: string;
 };
+type Tag = { id: string; name: string; kind: string };
 const statusLabels: Record<string, string> = {
   OPEN: "باز",
   IN_PROGRESS: "در حال رسیدگی",
@@ -59,7 +61,7 @@ export function TicketWorkspacePro({
   };
   const [filters, setFilters] = useState<Filters>(
     () =>
-      savedFilters() ?? { status: "", priority: "", query: "", sort: "recent" },
+      savedFilters() ?? { status: "", priority: "", tag: "", query: "", sort: "recent" },
   );
   const [queue, setQueue] = useState<Queue>({
     items: [],
@@ -69,6 +71,7 @@ export function TicketWorkspacePro({
   });
   const [page, setPage] = useState(1);
   const [views, setViews] = useState<View[]>([]);
+  const [tags, setTags] = useState<Tag[]>([]);
   const [checked, setChecked] = useState<string[]>([]);
   const [selected, setSelected] = useState<Ticket | null>(null);
   const [loading, setLoading] = useState(false);
@@ -89,17 +92,20 @@ export function TicketWorkspacePro({
     });
     if (filters.status) query.set("status", filters.status);
     if (filters.priority) query.set("priority", filters.priority);
+    if (filters.tag) query.set("tag", filters.tag);
     if (filters.query.trim()) query.set("q", filters.query.trim());
     Promise.all([
       request(`/tickets/queue?${query}`, actor.session, actor.organizationId),
       staff
         ? request("/tickets/views", actor.session, actor.organizationId)
         : Promise.resolve([]),
+      request("/tickets/tags", actor.session, actor.organizationId),
     ])
-      .then(([next, nextViews]) => {
+      .then(([next, nextViews, nextTags]) => {
         const data = next as Queue;
         setQueue(data);
         setViews(nextViews as View[]);
+        setTags(nextTags as Tag[]);
         setChecked((current) =>
           current.filter((id) => data.items.some((ticket) => ticket.id === id)),
         );
@@ -133,6 +139,7 @@ export function TicketWorkspacePro({
     page,
     filters.status,
     filters.priority,
+    filters.tag,
     filters.sort,
   ]);
   useEffect(() => {
@@ -201,6 +208,7 @@ export function TicketWorkspacePro({
     setFilters({
       status: view.filters.status ?? "",
       priority: view.filters.priority ?? "",
+      tag: view.filters.tag ?? "",
       query: view.filters.query ?? "",
       sort: view.filters.sort ?? "recent",
     });
@@ -386,6 +394,13 @@ export function TicketWorkspacePro({
                           {label}
                         </option>
                       ))}
+                    </select>
+                  </label>
+                  <label>
+                    هشتگ
+                    <select value={filters.tag} onChange={(event) => { setPage(1); setFilters({ ...filters, tag: event.target.value }); }}>
+                      <option value="">همه هشتگ‌ها</option>
+                      {tags.map((tag) => <option key={tag.id} value={tag.id}>#{tag.name}</option>)}
                     </select>
                   </label>
                   <label>

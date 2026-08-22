@@ -210,7 +210,7 @@ export class TicketIntakeService {
       if (session.voice_storage_key && !session.voice_verified_at) throw new BadRequestException('Voice upload is not verified');
       if (session.voice_storage_key && !this.voiceObjectMatches(session,await this.storage.head(session.voice_storage_key))) throw new BadRequestException('Voice object metadata has changed');
       const ticket = await this.tickets.createDraftWithClient(client,actor,data);
-      const intakeTags=(session.analysis_result?.suggestions as {tags?:Array<{id?:string;name?:string;kind?:'DOMAIN'|'SERVICE_ASSET'|'ISSUE_TYPE'|'IMPACT_SCOPE'|'CONTEXT'|'OTHER'}>} | null)?.tags ?? [];
+      const intakeTags=data.tags ?? (session.analysis_result?.suggestions as {tags?:Array<{id?:string;name?:string;kind?:'DOMAIN'|'SERVICE_ASSET'|'ISSUE_TYPE'|'IMPACT_SCOPE'|'CONTEXT'|'OTHER'}>} | null)?.tags ?? [];
       await this.tickets.attachIntakeTagsWithClient(client,actor,ticket.id,intakeTags);
       await this.recordTitleCandidate(client,actor,ticket.id,data.title);
       if (session.voice_storage_key && session.voice_original_filename && session.voice_content_type && session.voice_byte_size && session.voice_verified_at) {

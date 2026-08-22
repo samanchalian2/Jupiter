@@ -37,7 +37,7 @@ export class TicketIntakeController {
   }
 
   @Post('tickets/drafts')
-  async draft(@Headers('authorization') authorization?:string,@Headers('x-organization-id') organizationId?:string,@Body() body:{title:string;description:string;priority?:string;departmentId?:string;categoryId?:string;subcategoryId?:string;locationId?:string;disciplineId?:string;customFields?:Record<string,unknown>;intakeSessionId?:string}={title:'',description:''}) {
+  async draft(@Headers('authorization') authorization?:string,@Headers('x-organization-id') organizationId?:string,@Body() body:{title:string;description:string;priority?:string;departmentId?:string;categoryId?:string;subcategoryId?:string;locationId?:string;disciplineId?:string;customFields?:Record<string,unknown>;tags?:Array<{id?:string;name?:string;kind?:'DOMAIN'|'SERVICE_ASSET'|'ISSUE_TYPE'|'IMPACT_SCOPE'|'CONTEXT'|'OTHER'}>;intakeSessionId?:string}={title:'',description:''}) {
     return this.intakes.createDraft(await this.actors.fromHeaders(authorization,organizationId),body);
   }
 }

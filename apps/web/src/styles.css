@@ -453,6 +453,31 @@ button.drawer-backdrop:focus-visible {
 .smart-ticket-composer .quick-ticket-more {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
+.ticket-tag-field {
+  grid-column: 1 / -1;
+  min-width: 0;
+  margin: 0;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+.ticket-tag-field legend { padding: 0 5px; }
+.ticket-tag-field .hint { margin: 0 0 9px; }
+.tag-picker,
+.ticket-tag-field .tag-list { display: flex; flex-wrap: wrap; gap: 7px; }
+.tag-picker button,
+.ticket-tag-field .tag-list button {
+  padding: 5px 9px;
+  color: var(--primary);
+  background: var(--primary-soft);
+  border: 1px solid var(--primary-border);
+  border-radius: 999px;
+  font-size: .78rem;
+}
+.tag-picker button.selected,
+.tag-picker button:hover,
+.ticket-tag-field .tag-list button:hover { color: #fff; background: var(--primary); border-color: var(--primary); }
+.ticket-tag-field .tag-list { margin-top: 9px; }
 .smart-ticket-composer .quick-ticket-actions .ui-button {
   flex: none;
 }

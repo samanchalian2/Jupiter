@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { applyIntakeSuggestions, blocksManualSubmit, intakeFailureMessage, maximumRecordingSeconds, microphoneErrorMessage, pollIntake, scheduleRecordingAutoStop, type IntakeSession, type TicketFormState } from './ticketIntake';
 
-const form: TicketFormState = { title:'عنوان دستی',description:'شرح اصلی',priority:'NORMAL',departmentId:'',categoryId:'',subcategoryId:'',locationId:'',disciplineId:'',customFields:{asset:'قدیمی'} };
+const form: TicketFormState = { title:'عنوان دستی',description:'شرح اصلی',priority:'NORMAL',departmentId:'',categoryId:'',subcategoryId:'',locationId:'',disciplineId:'',customFields:{asset:'قدیمی'},tags:[] };
 const session = (status:IntakeSession['status']):IntakeSession => ({ id:'intake-1',status,description:'شرح اصلی',transcript:null,combinedDescription:null,suggestions:null,missingFields:[],confidenceByField:{},rejectedFields:[],voice:null,attemptCount:0,lastErrorCode:null,expiresAt:new Date().toISOString() });
 
 describe('smart ticket intake helpers', () => {

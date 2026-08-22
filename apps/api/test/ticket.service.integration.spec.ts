@@ -24,6 +24,7 @@ afterAll(async () => {
   await database.query('DELETE FROM ticket_assignments WHERE organization_id=$1', [organizationId]);
   await database.query('DELETE FROM ticket_status_transitions WHERE organization_id=$1', [organizationId]);
   await database.query('DELETE FROM tickets WHERE organization_id=$1', [organizationId]);
+  await database.query('DELETE FROM ticket_tags WHERE organization_id=$1', [organizationId]);
   await database.query('DELETE FROM memberships WHERE organization_id=$1', [organizationId]);
   await database.query('DELETE FROM organizations WHERE id=$1', [organizationId]);
   await database.query('DELETE FROM users WHERE email IN($1,$2)', ['goal4-manager@jupiter.local','goal4-expert@jupiter.local']);
@@ -56,5 +57,15 @@ describe('TicketService integration', () => {
     const draft = await tickets.createDraft(actor(), { title:'Automatic assignment', description:'Exercise the assignment rule.' });
     const assignment = await database.query<{assigned_to_user_id:string}>('SELECT assigned_to_user_id FROM ticket_assignments WHERE ticket_id=$1 AND ended_at IS NULL', [draft.id]);
     expect(assignment.rows[0]?.assigned_to_user_id).toBe(expertId);
+  });
+
+  it('links approved tags at draft creation and filters/searches the tenant queue by tag', async () => {
+    const tag=(await database.query<{id:string}>("INSERT INTO ticket_tags(organization_id,name,color,kind,status,normalized_name) VALUES($1,'پرینتر','#6d5587','SERVICE_ASSET','ACTIVE','پرینتر') RETURNING id",[organizationId])).rows[0];
+    const draft=await tickets.createDraft(actor(),{title:'خطای چاپ پرینتر',description:'پرینتر اتاق جلسات چاپ نمی‌کند.',tags:[{id:tag.id,name:'پرینتر',kind:'SERVICE_ASSET'}]});
+    const byTag=await tickets.page(actor(),{tag:tag.id});
+    const bySearch=await tickets.list(actor(),{query:'پرینتر'});
+    expect(byTag.items.map(ticket=>ticket.id)).toContain(draft.id);
+    expect(bySearch.map(ticket=>ticket.id)).toContain(draft.id);
+    expect((await tickets.tags(actor())).map(item=>item.id)).toContain(tag.id);
   });
 });

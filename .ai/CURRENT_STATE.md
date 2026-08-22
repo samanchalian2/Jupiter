@@ -1,5 +1,19 @@
 # Current State
 
+**GOAL-019 — Smart composer, vocabulary management, search and reporting
+(implementation complete; browser sign-in verification pending, 2026-08-22):**
+The requester composer now supports up to five typed tags in «جزئیات بیشتر»
+and directly applies server-validated `ticket-intake.v2` tag suggestions with
+AI provenance. Organization Administration now has a pending title/tag review
+tab; active values alone are offered to future requests. Queue/list and global
+search include tag names, the queue can be filtered by an approved tag, and
+operational reports include typed-tag distribution. API typecheck, 51 API
+tests, Web typecheck, 9 Web tests and both production builds pass. The API is
+running locally and responds healthy. The remaining verification is an
+authenticated browser walkthrough, held only because action-time approval is
+required before entering the local account password. Evidence:
+`docs/GOAL_019_EVIDENCE.md`.
+
 **GOAL-018 — Governed titles and typed tags (2026-08-22):** Migration 029
 adds tenant-RLS-protected normalized title vocabulary and evolves existing tags
 without data loss into typed, status-controlled values. `ticket-intake.v2`

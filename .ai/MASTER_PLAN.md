@@ -21,4 +21,6 @@ The approved smart-classification enhancement progresses through: (17) an
 Organization Admin-approved IT/service catalog starter template and pending
 catalog governance; (18) tenant title-library and typed tag vocabulary with a
 versioned intake contract; and (19) composer, search/report and acceptance
-integration. Goals 017 and 018 are complete locally.
+integration. Goals 017 and 018 are complete locally; GOAL-019 implementation
+and automated verification are complete, with only its authenticated browser
+acceptance check pending.
