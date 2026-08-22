@@ -9,7 +9,9 @@ Admin title/tag review, tag-aware search/queue filters and reporting are
 implemented and covered by API/Web tests and production builds. Complete the
 remaining authenticated responsive browser check: submit a text request using
 the AI provider/fake, confirm concise non-copy title, category and typed tags,
-then update this file and `docs/GOAL_019_EVIDENCE.md`.
+then update this file and `docs/GOAL_019_EVIDENCE.md`. The local 5173 web/API
+proxy is running and its health/login requests pass; reopen the browser tab if
+the in-app Browser URL policy blocks the existing one.
 
 ## GOAL-015 — Smart ticket composer and acceptance E2E
 

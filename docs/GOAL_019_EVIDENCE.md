@@ -26,7 +26,12 @@ On 2026-08-22 the following completed successfully:
 - Web suite: 2 files / 9 tests.
 - API production build and Web production build.
 - `GET /api/v1/health` from the locally launched API returned `status: ok`.
+- The 5173 development server and its `/api/v1` proxy were restarted after
+  discovering they had stopped. Both a proxied health request and a proxied
+  local-login request returned successful HTTP status.
 
-The final authenticated browser walkthrough is intentionally not claimed in
-this evidence: it requires entering a local account password in the browser,
-which is awaiting explicit action-time confirmation from the owner.
+The owner authorized local sign-in. The in-app Browser tool then blocked
+further interaction with its current localhost tab under its URL policy, so
+the final interactive visual walkthrough is intentionally not claimed here.
+The running web-to-API path itself was independently verified through the
+local proxy.

@@ -9,9 +9,11 @@ tab; active values alone are offered to future requests. Queue/list and global
 search include tag names, the queue can be filtered by an approved tag, and
 operational reports include typed-tag distribution. API typecheck, 51 API
 tests, Web typecheck, 9 Web tests and both production builds pass. The API is
-running locally and responds healthy. The remaining verification is an
-authenticated browser walkthrough, held only because action-time approval is
-required before entering the local account password. Evidence:
+running locally and responds healthy. The web server/proxy has been restarted
+and proxied health/login calls pass. The remaining verification is an
+authenticated browser walkthrough; it could not be completed because the
+in-app Browser tool blocks its existing localhost tab under its URL policy.
+Evidence:
 `docs/GOAL_019_EVIDENCE.md`.
 
 **GOAL-018 — Governed titles and typed tags (2026-08-22):** Migration 029
