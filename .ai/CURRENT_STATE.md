@@ -1,5 +1,13 @@
 # Current State
 
+**Voice-intake provider compatibility recovery (complete, 2026-08-22):** Chrome
+records WebM/Opus, which the configured provider rejected despite a successful
+upload and metadata verification. The composer now converts the local capture
+to 16 kHz mono PCM WAV before upload; the provider had already accepted the
+same organization configuration's synthetic WAV. The user recording was not
+replayed externally while diagnosing. The prior signed metadata repair remains
+in place. Evidence: `docs/VOICE_INTAKE_UPLOAD_EVIDENCE.md`.
+
 **Voice-intake upload recovery (complete, 2026-08-22):** Recorded audio was
 reaching the browser but MinIO rejected the presigned upload because the
 required duration metadata header was not signed. All caller-provided S3

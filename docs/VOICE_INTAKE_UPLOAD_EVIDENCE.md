@@ -34,3 +34,15 @@ organization-logo uploads, retain their existing behavior.
 
 The API was rebuilt and restarted after the fix. A newly recorded voice can now
 be uploaded, verified and passed into the normal transcription/analysis worker.
+
+## Provider media compatibility repair (2026-08-22)
+
+After upload recovery, a real browser-recorded WebM/Opus object completed
+metadata verification but the configured provider rejected it at the
+transcription stage with its safe `invalid_request` category. The same saved
+organization configuration successfully transcribed a synthetic WAV sample,
+so storage, credentials and the worker were not the cause. The application now
+converts the local recording to a compact 16 kHz mono PCM WAV before any upload.
+This preserves the one-minute/10 MB limits and uses an already supported voice
+media type. The recorded user object was inspected only for safe headers and
+was not replayed to a third party for diagnosis.

@@ -15,7 +15,7 @@ const initialForm:TicketFormState={title:'',description:'',priority:'NORMAL',dep
 const phaseLabels:Record<Exclude<PipelinePhase,''>,string>={UPLOADING:'در حال بارگذاری امن صدا…',TRANSCRIBING:'در حال تبدیل صدا به متن…',ANALYZING:'در حال تکمیل فیلدها با AI…',SUCCEEDED:'پیشنهادهای معتبر اعمال شدند و قابل ویرایش‌اند.',FAILED:'تکمیل هوشمند انجام نشد؛ فرم دستی در دسترس است.'};
 
 function formatDuration(seconds:number) { const safe=Math.min(60,Math.max(0,Math.floor(seconds))); return `${String(Math.floor(safe/60)).padStart(2,'0')}:${String(safe%60).padStart(2,'0')}`; }
-function extension(contentType:string) { return contentType==='audio/ogg'?'ogg':contentType==='audio/mp4'?'mp4':'webm'; }
+function extension(contentType:string) { return contentType==='audio/wav'?'wav':contentType==='audio/ogg'?'ogg':contentType==='audio/mp4'?'mp4':'webm'; }
 function idempotencyKey() { return globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(16).slice(2)}`; }
 
 export function TicketComposer({ actor, onCreated }: { actor:Actor; onCreated:(ticketId:string,notice?:string)=>void }) {
@@ -77,7 +77,7 @@ export function TicketComposer({ actor, onCreated }: { actor:Actor; onCreated:(t
     if(recording)await removeRecording();
     try{
       setMicRequesting(true);setPipeline('');setGuidance([]);
-      recorderRef.current=await beginVoiceRecording({onTick:setRecordingSeconds,onError:()=>{setRecordingActive(false);setError('ضبط صدا کامل نشد؛ دوباره تلاش کنید.');},onReady:({blob,durationSeconds,contentType})=>{
+      recorderRef.current=await beginVoiceRecording({onTick:setRecordingSeconds,onError:()=>{setRecordingActive(false);setError('آماده‌سازی صدای ضبط‌شده کامل نشد؛ دوباره تلاش کنید یا شرح درخواست را دستی بنویسید.');},onReady:({blob,durationSeconds,contentType})=>{
         setRecordingActive(false);if(blob.size>10*1024*1024){setError('حجم صدای ضبط‌شده بیشتر از ۱۰ مگابایت است؛ دوباره کوتاه‌تر ضبط کنید.');return;}
         setRecording({id:idempotencyKey(),blob,url:URL.createObjectURL(blob),durationSeconds,contentType,filename:`voice-${Date.now()}.${extension(contentType)}`});setRecordingSeconds(durationSeconds);
       }});
