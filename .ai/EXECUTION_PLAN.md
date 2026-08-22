@@ -236,14 +236,16 @@ production Web build pass.
 
 ## GOAL-019 — Smart composer, vocabulary management, search and reporting
 
-**Status:** IMPLEMENTED — browser acceptance pending
+**Status:** DONE
 
 **Depends on:** GOAL-018/015. **Scope:** requester tag control and provenance,
 Organization Admin vocabulary review UI, tag-aware queue/search/reporting and
 responsive end-to-end acceptance.
 
-**Implementation validation:** API typecheck, 51 API tests (including typed
-tag draft/search/filter integration), Web typecheck, 9 Web tests, and API/Web
-production builds pass. The local API health endpoint is healthy. The final
-authenticated browser walkthrough remains pending owner approval for password
-entry; see `docs/GOAL_019_EVIDENCE.md`.
+**Validation:** API typecheck, 51 API tests (including typed tag
+draft/search/filter integration), Web typecheck, 9 Web tests, and API/Web
+production builds pass. An authenticated browser walkthrough at 375/768/1440
+px confirmed no horizontal overflow, responsive controls and a real provider's
+concise non-copy title. The empty demo organization correctly withheld category
+and tag suggestions; its approved starter-template installation remains a
+tenant configuration action. See `docs/GOAL_019_EVIDENCE.md`.

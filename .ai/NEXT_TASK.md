@@ -2,16 +2,17 @@
 
 ## GOAL-019 — Smart composer, vocabulary management, search and reporting
 
-**Status:** IMPLEMENTED — awaiting authenticated browser acceptance
+**Status:** COMPLETE (local verification, 2026-08-22)
 
 `ticket-intake.v2` tag suggestions, manual typed-tag selection, Organization
 Admin title/tag review, tag-aware search/queue filters and reporting are
-implemented and covered by API/Web tests and production builds. Complete the
-remaining authenticated responsive browser check: submit a text request using
-the AI provider/fake, confirm concise non-copy title, category and typed tags,
-then update this file and `docs/GOAL_019_EVIDENCE.md`. The local 5173 web/API
-proxy is running and its health/login requests pass; reopen the browser tab if
-the in-app Browser URL policy blocks the existing one.
+implemented and covered by API/Web tests and production builds. An
+authenticated browser run confirmed a non-copy AI title plus the responsive
+composer/tag interface at 375/768/1440 px without horizontal overflow. The
+demo organization currently has no approved catalog or tag vocabulary, so the
+available «نصب الگوی اولیه» action (or manual Organization Admin governance)
+must be used before category/tag suggestions can be selected in that tenant.
+See `docs/GOAL_019_EVIDENCE.md`.
 
 ## GOAL-015 — Smart ticket composer and acceptance E2E
 

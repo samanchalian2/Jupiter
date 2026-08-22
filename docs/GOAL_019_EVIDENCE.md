@@ -30,8 +30,23 @@ On 2026-08-22 the following completed successfully:
   discovering they had stopped. Both a proxied health request and a proxied
   local-login request returned successful HTTP status.
 
-The owner authorized local sign-in. The in-app Browser tool then blocked
-further interaction with its current localhost tab under its URL policy, so
-the final interactive visual walkthrough is intentionally not claimed here.
-The running web-to-API path itself was independently verified through the
-local proxy.
+The owner authorized local sign-in. An authenticated browser walkthrough then
+confirmed the description-first form, initial focus, the responsive AI/voice
+toolbar, expandable typed-tag area and queue tag filter at 375, 768 and 1440
+px. The document width exactly matched the viewport at all three widths.
+
+A real saved-provider run for «سلام پرینترم خراب است» returned the concise
+AI-provenance title «خرابی و اختلال در عملکرد پرینتر» rather than copying the
+description. The first attempt visibly fell back because the directly launched
+API and Web processes did not include the separate queue Worker; after starting
+that Worker with `JUPITER_WORKER_ENABLED=true`, retrying completed successfully.
+The root `pnpm dev` command already launches API, Web and Worker together.
+
+The authenticated organization deliberately has zero categories,
+subcategories, departments, locations and active tags. Category and typed-tag
+suggestions were therefore correctly withheld. The Organization Admin's
+idempotent «نصب الگوی اولیه» action is available to create the approved IT
+categories/subcategories, but was not invoked during this non-destructive run.
+
+**Status:** DONE — implementation and authenticated browser acceptance pass;
+tenant starter-data installation remains an administrator configuration action.

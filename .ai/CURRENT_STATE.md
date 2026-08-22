@@ -1,19 +1,21 @@
 # Current State
 
 **GOAL-019 — Smart composer, vocabulary management, search and reporting
-(implementation complete; browser sign-in verification pending, 2026-08-22):**
+(complete, 2026-08-22):**
 The requester composer now supports up to five typed tags in «جزئیات بیشتر»
 and directly applies server-validated `ticket-intake.v2` tag suggestions with
 AI provenance. Organization Administration now has a pending title/tag review
 tab; active values alone are offered to future requests. Queue/list and global
 search include tag names, the queue can be filtered by an approved tag, and
 operational reports include typed-tag distribution. API typecheck, 51 API
-tests, Web typecheck, 9 Web tests and both production builds pass. The API is
-running locally and responds healthy. The web server/proxy has been restarted
-and proxied health/login calls pass. The remaining verification is an
-authenticated browser walkthrough; it could not be completed because the
-in-app Browser tool blocks its existing localhost tab under its URL policy.
-Evidence:
+tests, Web typecheck, 9 Web tests and both production builds pass. An
+authenticated browser walkthrough confirmed a real concise, non-copy AI title
+and the smart composer/tag UI at 375, 768 and 1440 px with no horizontal
+overflow. The local demo organization has no approved catalog or tag data, so
+category/tag suggestions are correctly withheld until an Organization Admin
+installs the available starter template or governs values manually. A direct
+local API/Web launch must also start the separate Worker with
+`JUPITER_WORKER_ENABLED=true`; root `pnpm dev` already does this. Evidence:
 `docs/GOAL_019_EVIDENCE.md`.
 
 **GOAL-018 — Governed titles and typed tags (2026-08-22):** Migration 029
