@@ -1,4 +1,4 @@
-# Ticket Intake API — `ticket-intake.v1`
+# Ticket Intake API — `ticket-intake.v2`
 
 All routes are under `/api/v1`, require a bearer access token and
 `X-Organization-Id`, and enforce both organization RLS and session ownership.
@@ -43,8 +43,12 @@ upload, immediately before transcription and before final attachment transfer.
 ## Structured analysis
 
 The provider receives redacted combined text and the current organization's
-category, subcategory, department, location, discipline and active custom-field
-catalog. Output carries `contractVersion`, title, taxonomy IDs, priority,
-custom fields, missing fields and confidence by field. Only values at or above
-0.75 that validate against that catalog are returned in `suggestions`; rejected
-field names are reported without persisting invalid values.
+category, subcategory, department, location, discipline, active custom-field,
+active title-library and active typed-tag catalog. Output carries
+`contractVersion`, a concise title with an optional reused title-library ID,
+taxonomy IDs, priority, up to five typed tag proposals, custom fields, missing
+fields and confidence by field. Only values at or above 0.75 that validate
+against that catalog are returned in `suggestions`; rejected field names are
+reported without persisting invalid values. New title/tag candidates are saved
+only when the user explicitly creates the final draft and remain pending for
+Organization Admin review.

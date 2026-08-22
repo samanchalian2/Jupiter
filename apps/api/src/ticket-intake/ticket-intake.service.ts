@@ -188,9 +188,9 @@ export class TicketIntakeService {
       const validated = this.validateAnalysis(answer.output,context);
       await this.database.withOrganization(organizationId, async (client) => {
         await client.query(
-          `UPDATE ticket_intake_sessions SET status='SUCCEEDED',analysis_result=$2,provider_usage=$3,missing_fields=$4,
-           confidence_by_field=$5,rejected_fields=$6,attempt_count=0,processing_started_at=NULL,next_attempt_at=NULL,last_error_code=NULL,updated_at=now()
-           WHERE id=$1`, [id,validated.result,answer.usage,JSON.stringify(validated.missingFields),validated.confidenceByField,JSON.stringify(validated.rejectedFields)],
+          `UPDATE ticket_intake_sessions SET status='SUCCEEDED',analysis_contract_version=$2,analysis_result=$3,provider_usage=$4,missing_fields=$5,
+           confidence_by_field=$6,rejected_fields=$7,attempt_count=0,processing_started_at=NULL,next_attempt_at=NULL,last_error_code=NULL,updated_at=now()
+           WHERE id=$1`, [id,TICKET_INTAKE_CONTRACT_VERSION,validated.result,answer.usage,JSON.stringify(validated.missingFields),validated.confidenceByField,JSON.stringify(validated.rejectedFields)],
         );
         await client.query("UPDATE outbox_events SET processed_at=now() WHERE topic='ticket_intake.process' AND payload->>'sessionId'=$1 AND processed_at IS NULL",[id]);
         await this.audit(client,{userId:'',organizationId},'ticket_intake.succeeded',id,{contractVersion:TICKET_INTAKE_CONTRACT_VERSION});
@@ -210,6 +210,9 @@ export class TicketIntakeService {
       if (session.voice_storage_key && !session.voice_verified_at) throw new BadRequestException('Voice upload is not verified');
       if (session.voice_storage_key && !this.voiceObjectMatches(session,await this.storage.head(session.voice_storage_key))) throw new BadRequestException('Voice object metadata has changed');
       const ticket = await this.tickets.createDraftWithClient(client,actor,data);
+      const intakeTags=(session.analysis_result?.suggestions as {tags?:Array<{id?:string;name?:string;kind?:'DOMAIN'|'SERVICE_ASSET'|'ISSUE_TYPE'|'IMPACT_SCOPE'|'CONTEXT'|'OTHER'}>} | null)?.tags ?? [];
+      await this.tickets.attachIntakeTagsWithClient(client,actor,ticket.id,intakeTags);
+      await this.recordTitleCandidate(client,actor,ticket.id,data.title);
       if (session.voice_storage_key && session.voice_original_filename && session.voice_content_type && session.voice_byte_size && session.voice_verified_at) {
         await this.attachments.attachAvailableWithClient(client,actor,ticket.id,{storageKey:session.voice_storage_key,filename:session.voice_original_filename,contentType:session.voice_content_type,byteSize:Number(session.voice_byte_size)});
       }
@@ -259,7 +262,9 @@ export class TicketIntakeService {
       const customFields=(await client.query<{field_key:string;label:string;field_type:string;options:unknown[];is_required:boolean}>(
         'SELECT field_key,label,field_type,options,is_required FROM ticket_custom_field_definitions WHERE is_active=true ORDER BY sort_order,label',
       )).rows.map<IntakeCustomFieldDefinition>((item)=>({key:item.field_key,label:item.label,type:item.field_type,options:item.options??[],required:item.is_required}));
-      return {description:redactForAi(description),categories,subcategories,departments,locations,disciplines,customFields};
+      const titleLibrary=(await client.query<{id:string;title:string}>('SELECT id,title FROM ticket_title_library WHERE status=\'ACTIVE\' ORDER BY usage_count DESC,title LIMIT 20')).rows;
+      const tags=(await client.query<{id:string;name:string;kind:'DOMAIN'|'SERVICE_ASSET'|'ISSUE_TYPE'|'IMPACT_SCOPE'|'CONTEXT'|'OTHER'}>('SELECT id,name,kind FROM ticket_tags WHERE status=\'ACTIVE\' ORDER BY usage_count DESC,name LIMIT 80')).rows;
+      return {description:redactForAi(description),categories,subcategories,departments,locations,disciplines,customFields,titleLibrary,tags};
     });
   }
 
@@ -269,6 +274,8 @@ export class TicketIntakeService {
     const suggestions:Record<string,unknown>={}; const rejectedFields:string[]=[];
     const accepted=(field:string)=>Number(confidenceByField[field])>=confidenceThreshold;
     if (accepted('title') && typeof output.title==='string' && output.title.trim().length>=3 && output.title.trim().length<=200) suggestions.title=output.title.trim(); else rejectedFields.push('title');
+    if (output.titleLibraryId!==null && (!accepted('title') || !context.titleLibrary.some(item=>item.id===output.titleLibraryId && item.title===output.title.trim()))) rejectedFields.push('titleLibraryId');
+    else if (output.titleLibraryId) suggestions.titleLibraryId=output.titleLibraryId;
     if (accepted('priority') && priorities.has(output.priority)) suggestions.priority=output.priority; else rejectedFields.push('priority');
     const catalogs = {categoryId:context.categories,subcategoryId:context.subcategories,departmentId:context.departments,locationId:context.locations,disciplineId:context.disciplines};
     for (const [field,items] of Object.entries(catalogs)) {
@@ -287,6 +294,17 @@ export class TicketIntakeService {
       if (definition && accepted(field) && normalized!==undefined) customFields[key]=normalized; else rejectedFields.push(field);
     }
     if (Object.keys(customFields).length) suggestions.customFields=customFields;
+    const tags:Array<{id?:string;name?:string;kind?:'DOMAIN'|'SERVICE_ASSET'|'ISSUE_TYPE'|'IMPACT_SCOPE'|'CONTEXT'|'OTHER'}>=[];
+    const acceptedKinds=new Set(['DOMAIN','SERVICE_ASSET','ISSUE_TYPE','IMPACT_SCOPE','CONTEXT','OTHER']);
+    if (accepted('tags') && Array.isArray(output.tags)) for(const proposal of output.tags.slice(0,5)) {
+      if (!proposal || !acceptedKinds.has(proposal.kind) || typeof proposal.name!=='string') { rejectedFields.push('tags'); continue; }
+      const existing=proposal.tagId ? context.tags.find(item=>item.id===proposal.tagId && item.kind===proposal.kind && item.name===proposal.name) : undefined;
+      const name=proposal.name.trim().replace(/\s+/g,' ');
+      if(existing) tags.push({id:existing.id,name:existing.name,kind:existing.kind});
+      else if(proposal.tagId===null && name.length>=2 && name.length<=50) tags.push({name,kind:proposal.kind});
+      else rejectedFields.push('tags');
+    } else if (Array.isArray(output.tags) && output.tags.length) rejectedFields.push('tags');
+    if(tags.length) suggestions.tags=tags;
     const missingFields=[...new Set([...(Array.isArray(output.missingFields)?output.missingFields.filter((item):item is string=>typeof item==='string'):[]),...rejectedFields])].slice(0,100);
     const rejected=[...new Set(rejectedFields)];
     return { result:{contractVersion:TICKET_INTAKE_CONTRACT_VERSION,suggestions,missingFields,confidenceByField,rejectedFields:rejected},missingFields,confidenceByField,rejectedFields:rejected };
@@ -300,6 +318,14 @@ export class TicketIntakeService {
     if (definition.type==='DATE') return typeof value==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(value)&&!Number.isNaN(Date.parse(`${value}T00:00:00Z`))?value:undefined;
     if (definition.type==='SELECT') return (definition.options??[]).includes(value)?value:undefined;
     return undefined;
+  }
+
+  private async recordTitleCandidate(client:{query:Function},actor:TicketActor,ticketId:string,title:string) {
+    const normalized=title.trim().replace(/\s+/g,' ').toLocaleLowerCase('fa-IR');
+    const existing=(await client.query('SELECT id,status FROM ticket_title_library WHERE normalized_title=$1',[normalized])).rows[0] as {id:string;status:string}|undefined;
+    if(existing?.status==='ACTIVE') { await client.query('UPDATE ticket_title_library SET usage_count=usage_count+1,updated_at=now() WHERE id=$1',[existing.id]); return; }
+    if(!existing) await client.query(`INSERT INTO ticket_title_library(organization_id,title,normalized_title,status,created_from_ticket_id,created_by_user_id)
+      VALUES($1,$2,$3,'PENDING',$4,$5)`,[actor.organizationId,title.trim(),normalized,ticketId,actor.userId]);
   }
 
   private async recordFailure(organizationId:string,id:string,stage:string,error:unknown) {

@@ -1,5 +1,15 @@
 # Current State
 
+**GOAL-018 — Governed titles and typed tags (2026-08-22):** Migration 029
+adds tenant-RLS-protected normalized title vocabulary and evolves existing tags
+without data loss into typed, status-controlled values. `ticket-intake.v2`
+supplies only active titles/tags to the provider, asks for concise non-copy
+titles and up to five typed tags, then validates confidence and tenant IDs.
+Final explicit draft creation links approved tags and records unseen titles or
+tags only as pending candidates; Organization Admin review APIs activate or
+disable them. DEC-010 records the contract decision. Migration, 50 API tests,
+Web tests, API typecheck and Web build pass. GOAL-019 is next.
+
 **GOAL-017 — Catalog governance and approved IT starter template (2026-08-22):**
 Organization Administrators can review catalog readiness for smart intake and
 install the idempotent «IT and organizational support» template. Migration 028

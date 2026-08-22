@@ -6,6 +6,7 @@ import { addBusinessMinutes } from '../sla/business-time.js';
 
 type Actor = { userId: string; organizationId: string; roles: string[] };
 export type CreateDraftData = { title:string; description:string; priority?:string; departmentId?:string; categoryId?:string; subcategoryId?:string; locationId?:string; disciplineId?:string; customFields?:Record<string,unknown> };
+export type IntakeTagInput = { id?:string; name?:string; kind?:'DOMAIN'|'SERVICE_ASSET'|'ISSUE_TYPE'|'IMPACT_SCOPE'|'CONTEXT'|'OTHER' };
 const managerRoles = new Set(['ORG_ADMIN', 'SUPERVISOR']);
 const workerRoles = new Set(['ORG_ADMIN', 'SUPERVISOR', 'EXPERT']);
 const readableCatalogs = new Set(['departments', 'categories', 'subcategories', 'locations', 'disciplines']);
@@ -31,6 +32,23 @@ export class TicketService {
       if (assignmentRule) { await client.query('INSERT INTO ticket_assignments(organization_id,ticket_id,assigned_to_user_id,assigned_by_user_id) VALUES($1,$2,$3,$4)',[actor.organizationId,result.rows[0].id,assignmentRule.assignee_user_id,actor.userId]); await this.activity(client,actor,result.rows[0].id,'ticket.auto_assigned','STAFF',{assignedToUserId:assignmentRule.assignee_user_id}); }
       await this.activity(client, actor, result.rows[0].id, 'ticket.draft_created', 'REQUESTER');
       return result.rows[0];
+  }
+
+  async attachIntakeTagsWithClient(client: PoolClient, actor: Actor, ticketId: string, inputs: IntakeTagInput[]) {
+    const acceptedKinds = new Set(['DOMAIN','SERVICE_ASSET','ISSUE_TYPE','IMPACT_SCOPE','CONTEXT','OTHER']);
+    for (const input of inputs.slice(0,5)) {
+      let tag: {id:string;status:string}|undefined;
+      if (input.id) tag=(await client.query<{id:string;status:string}>('SELECT id,status FROM ticket_tags WHERE id=$1 AND status=\'ACTIVE\'',[input.id])).rows[0];
+      else if (input.name && input.kind && acceptedKinds.has(input.kind)) {
+        const name=input.name.trim().replace(/\s+/g,' '); if(name.length<2||name.length>50) continue;
+        const normalized=name.toLocaleLowerCase('fa-IR');
+        tag=(await client.query<{id:string;status:string}>(`INSERT INTO ticket_tags(organization_id,name,color,kind,status,normalized_name) VALUES($1,$2,'#6d5587',$3,'PENDING',$4)
+          ON CONFLICT(organization_id,normalized_name) DO UPDATE SET name=ticket_tags.name RETURNING id,status`,[actor.organizationId,name,input.kind,normalized])).rows[0];
+      }
+      if (!tag) continue;
+      const linked=await client.query('INSERT INTO ticket_tag_links(ticket_id,tag_id,organization_id) VALUES($1,$2,$3) ON CONFLICT DO NOTHING RETURNING tag_id',[ticketId,tag.id,actor.organizationId]);
+      if(linked.rowCount) await client.query('UPDATE ticket_tags SET usage_count=usage_count+1 WHERE id=$1',[tag.id]);
+    }
   }
 
   async submit(actor: Actor, ticketId: string) { return this.changeStatus(actor, ticketId, 'OPEN'); }

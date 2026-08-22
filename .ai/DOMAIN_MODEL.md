@@ -5,7 +5,9 @@ a user organization-scoped roles and permissions. `Department`, `Location`,
 `Discipline`, `Category`, and `Subcategory` form organization-scoped routing
 metadata.
 
-`Ticket` owns requester, lifecycle, classification, and priority. `Assignment`
+`Ticket` owns requester, lifecycle, classification, priority and typed tags.
+`TicketTitleLibrary` owns approved and pending normalized title vocabulary per
+organization. `Assignment`
 and `StatusTransition` are immutable history. `TicketMessage`, `InternalNote`,
 `Attachment`, `Activity`, and `Rating` attach to a ticket. `AIRequest`,
 `AIResult`, and `AIFeedback` provide traceability. `Notification` is delivery

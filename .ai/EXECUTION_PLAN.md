@@ -223,8 +223,21 @@ Web tests and production Web build pass.
 
 ## GOAL-018 — Tenant title library and typed ticket-tag vocabulary
 
-**Status:** READY
+**Status:** DONE
 
 **Depends on:** GOAL-017/014. **Scope:** approved title reuse, pending title
 and typed tag candidates, safe legacy-tag migration, `ticket-intake.v2`, and
 server validation/provenance. An ADR is required before the contract change.
+
+**Validation:** migration 029 applied; API integration coverage verifies active
+tenant vocabulary input, title reuse, pending new-tag creation only at final
+draft creation and admin review. All 50 API tests, API typecheck, Web tests and
+production Web build pass.
+
+## GOAL-019 — Smart composer, vocabulary management, search and reporting
+
+**Status:** READY
+
+**Depends on:** GOAL-018/015. **Scope:** requester tag control and provenance,
+Organization Admin vocabulary review UI, tag-aware queue/search/reporting and
+responsive end-to-end acceptance.

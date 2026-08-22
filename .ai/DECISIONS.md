@@ -76,3 +76,13 @@ operator guidance; credentials, provider response bodies and request content
 are never returned, logged or audited. Each test is audited using only its
 success flag and category. This endpoint is diagnostic only and cannot create
 or modify a ticket, intake session or provider configuration.
+
+## DEC-010 — Governed title and typed-tag intake contract
+
+`ticket-intake.v2` extends pre-ticket analysis with a tenant title library and
+typed ticket tags. The provider receives only active tenant values. It may
+reuse their IDs or propose concise new values, but cannot activate vocabulary.
+Only final explicit draft submission records a new candidate; Organization
+Admin approval is required before reuse. Existing flat tags remain active
+`OTHER` tags for compatibility. The lifecycle, original description and 0.75
+confidence threshold are unchanged.

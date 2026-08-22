@@ -25,11 +25,11 @@ process.env.AI_CREDENTIAL_ENCRYPTION_KEY=Buffer.alloc(32,12).toString('base64');
 const database=new DatabaseService(); const storage=new IntakeStorage(); const credentials=new AiCredentialService();
 const tickets=new TicketService(database); const attachments=new AttachmentService(database,storage);
 const intakes=new TicketIntakeService(database,tickets,attachments,credentials,storage);
-let orgA='';let orgB='';let userA='';let userB='';let category='';let subcategory='';let department='';let location='';let discipline='';
+let orgA='';let orgB='';let userA='';let userB='';let category='';let subcategory='';let department='';let location='';let discipline='';let titleLibraryId='';let tagId='';
 const actorA=()=>({organizationId:orgA,userId:userA,roles:['REQUESTER']}); const actorB=()=>({organizationId:orgB,userId:userB,roles:['REQUESTER']});
 
 function analysis(context?:{capture?:(value:TicketIntakeContext)=>void;disciplineConfidence?:number}):TicketIntakeProvider {
-  return {analyzeIntake:async(input)=>{context?.capture?.(input.context);return {output:{contractVersion:TICKET_INTAKE_CONTRACT_VERSION,title:'Printer is offline',categoryId:category,subcategoryId:'00000000-0000-0000-0000-000000000001',departmentId:department,locationId:location,disciplineId:discipline,priority:'HIGH',customFields:{device_type:'printer',asset_number:42},missingFields:[],confidenceByField:{title:.98,categoryId:.97,subcategoryId:.95,departmentId:.9,locationId:.88,disciplineId:context?.disciplineConfidence??.7,priority:.91,'customFields.device_type':.82,'customFields.asset_number':.5}},usage:{inputTokens:20,outputTokens:10}};}};
+  return {analyzeIntake:async(input)=>{context?.capture?.(input.context);return {output:{contractVersion:TICKET_INTAKE_CONTRACT_VERSION,title:'Printer is offline',titleLibraryId:null,categoryId:category,subcategoryId:'00000000-0000-0000-0000-000000000001',departmentId:department,locationId:location,disciplineId:discipline,priority:'HIGH',customFields:{device_type:'printer',asset_number:42},tags:[],missingFields:[],confidenceByField:{title:.98,categoryId:.97,subcategoryId:.95,departmentId:.9,locationId:.88,disciplineId:context?.disciplineConfidence??.7,priority:.91,'customFields.device_type':.82,'customFields.asset_number':.5,tags:.9}},usage:{inputTokens:20,outputTokens:10}};}};
 }
 const noVoice:TranscriptionProvider={transcribe:async()=>{throw new Error('unexpected transcription');}};
 
@@ -38,7 +38,7 @@ beforeAll(async()=>{
   orgA=orgs.rows.find(row=>row.slug==='goal14-a')!.id;orgB=orgs.rows.find(row=>row.slug==='goal14-b')!.id;
   const users=await database.query<{id:string;email:string}>("INSERT INTO users(email,display_name,password_hash) VALUES('goal14-a@jupiter.local','Goal 14 A','scrypt$AA$AA'),('goal14-b@jupiter.local','Goal 14 B','scrypt$AA$AA') ON CONFLICT(email) DO UPDATE SET display_name=EXCLUDED.display_name RETURNING id,email");
   userA=users.rows.find(row=>row.email==='goal14-a@jupiter.local')!.id;userB=users.rows.find(row=>row.email==='goal14-b@jupiter.local')!.id;
-  for(const table of ['ticket_intake_provenance','ticket_attachments','ticket_custom_field_values','ticket_sla_clocks','ticket_activities','ticket_assignments','ticket_status_transitions','tickets','ticket_intake_sessions','outbox_events','organization_ai_settings','audit_logs','ticket_custom_field_definitions','subcategories','categories','departments','locations','disciplines','memberships']) await database.query(`DELETE FROM ${table} WHERE organization_id IN($1,$2)`,[orgA,orgB]);
+  for(const table of ['ticket_intake_provenance','ticket_attachments','ticket_custom_field_values','ticket_sla_clocks','ticket_activities','ticket_assignments','ticket_status_transitions','ticket_tag_links','tickets','ticket_intake_sessions','outbox_events','organization_ai_settings','audit_logs','ticket_title_library','ticket_tags','ticket_custom_field_definitions','subcategories','categories','departments','locations','disciplines','memberships']) await database.query(`DELETE FROM ${table} WHERE organization_id IN($1,$2)`,[orgA,orgB]);
   await database.query('INSERT INTO memberships(organization_id,user_id) VALUES($1,$2),($3,$4) ON CONFLICT DO NOTHING',[orgA,userA,orgB,userB]);
   await database.query("INSERT INTO membership_roles(membership_id,role_id) SELECT m.id,r.id FROM memberships m CROSS JOIN roles r WHERE m.organization_id IN($1,$2) AND r.code='REQUESTER' ON CONFLICT DO NOTHING",[orgA,orgB]);
   category=(await database.query<{id:string}>("INSERT INTO categories(organization_id,code,name) VALUES($1,'hardware','Hardware') RETURNING id",[orgA])).rows[0].id;
@@ -46,12 +46,14 @@ beforeAll(async()=>{
   department=(await database.query<{id:string}>("INSERT INTO departments(organization_id,code,name) VALUES($1,'it','IT') RETURNING id",[orgA])).rows[0].id;
   location=(await database.query<{id:string}>("INSERT INTO locations(organization_id,code,name) VALUES($1,'hq','HQ') RETURNING id",[orgA])).rows[0].id;
   discipline=(await database.query<{id:string}>("INSERT INTO disciplines(organization_id,code,name) VALUES($1,'support','Support') RETURNING id",[orgA])).rows[0].id;
+  titleLibraryId=(await database.query<{id:string}>("INSERT INTO ticket_title_library(organization_id,title,normalized_title,status) VALUES($1,'خطای چاپ پرینتر','خطای چاپ پرینتر','ACTIVE') RETURNING id",[orgA])).rows[0].id;
+  tagId=(await database.query<{id:string}>("INSERT INTO ticket_tags(organization_id,name,color,kind,status,normalized_name) VALUES($1,'پرینتر','#6d5587','SERVICE_ASSET','ACTIVE','پرینتر') RETURNING id",[orgA])).rows[0].id;
   await database.query("INSERT INTO ticket_custom_field_definitions(organization_id,field_key,label,field_type,options,is_required) VALUES($1,'device_type','Device type','SELECT','[\"printer\",\"scanner\"]',false),($1,'asset_number','Asset number','NUMBER','[]',false)",[orgA]);
   for(const org of [orgA,orgB]){const encrypted=credentials.encrypt(`key-${org}`);await database.query(`INSERT INTO organization_ai_settings(organization_id,enabled,model,analysis_model,transcription_model,provider_base_url,api_key_ciphertext,api_key_iv,api_key_auth_tag) VALUES($1,true,'analysis-test','analysis-test','transcription-test','https://ai.test/v1',$2,$3,$4) ON CONFLICT(organization_id) DO UPDATE SET enabled=true,analysis_model='analysis-test',transcription_model='transcription-test',api_key_ciphertext=$2,api_key_iv=$3,api_key_auth_tag=$4`,[org,encrypted.ciphertext,encrypted.iv,encrypted.authTag]);}
 });
 
 afterAll(async()=>{
-  for(const table of ['ticket_intake_provenance','ticket_attachments','ticket_custom_field_values','ticket_sla_clocks','ticket_activities','ticket_assignments','ticket_status_transitions','tickets','ticket_intake_sessions','outbox_events','organization_ai_settings','audit_logs','ticket_custom_field_definitions','subcategories','categories','departments','locations','disciplines','memberships']) await database.query(`DELETE FROM ${table} WHERE organization_id IN($1,$2)`,[orgA,orgB]);
+  for(const table of ['ticket_intake_provenance','ticket_attachments','ticket_custom_field_values','ticket_sla_clocks','ticket_activities','ticket_assignments','ticket_status_transitions','ticket_tag_links','tickets','ticket_intake_sessions','outbox_events','organization_ai_settings','audit_logs','ticket_title_library','ticket_tags','ticket_custom_field_definitions','subcategories','categories','departments','locations','disciplines','memberships']) await database.query(`DELETE FROM ${table} WHERE organization_id IN($1,$2)`,[orgA,orgB]);
   await database.query('DELETE FROM organizations WHERE id IN($1,$2)',[orgA,orgB]);await database.query("DELETE FROM users WHERE email IN('goal14-a@jupiter.local','goal14-b@jupiter.local')");await database.onModuleDestroy();
 });
 
@@ -67,6 +69,19 @@ describe('ticket intake pipeline',()=>{
     const result=await intakes.get(actorA(),first.id);expect(result.lastErrorCode).toBeNull();expect(result.status).toBe('SUCCEEDED');expect(result.description).toContain('user@example.com');expect(sentDescription).toContain('[email redacted]');
     expect(result.suggestions).toMatchObject({title:'Printer is offline',categoryId:category,departmentId:department,locationId:location,priority:'HIGH',customFields:{device_type:'printer'}});
     expect(result.suggestions).not.toHaveProperty('subcategoryId');expect(result.suggestions).not.toHaveProperty('disciplineId');expect(result.missingFields).toEqual(expect.arrayContaining(['subcategoryId','disciplineId','customFields.asset_number']));
+  });
+
+  it('supplies only active title/tag vocabulary and records new tag candidates only on final draft submission',async()=>{
+    const session=await intakes.create(actorA(),{description:'پرینتر اتاق جلسات خطای چاپ می‌دهد',idempotencyKey:'goal18-title-tag-001'}); await intakes.analyze(actorA(),session.id);
+    let context:TicketIntakeContext|undefined;
+    const provider:TicketIntakeProvider={analyzeIntake:async input=>{context=input.context;return {output:{contractVersion:TICKET_INTAKE_CONTRACT_VERSION,title:'خطای چاپ پرینتر',titleLibraryId,categoryId:category,subcategoryId:subcategory,departmentId:null,locationId:null,disciplineId:null,priority:'NORMAL',customFields:{},tags:[{tagId,name:'پرینتر',kind:'SERVICE_ASSET'},{tagId:null,name:'خطای چاپ',kind:'ISSUE_TYPE'}],missingFields:[],confidenceByField:{title:.96,titleLibraryId:.96,categoryId:.9,subcategoryId:.9,priority:.8,tags:.91}},usage:{}};}};
+    await intakes.process(orgA,session.id,provider,noVoice);
+    expect(context?.titleLibrary).toEqual(expect.arrayContaining([{id:titleLibraryId,title:'خطای چاپ پرینتر'}])); expect(context?.tags).toEqual(expect.arrayContaining([{id:tagId,name:'پرینتر',kind:'SERVICE_ASSET'}]));
+    const processed=await intakes.get(actorA(),session.id); expect(processed.suggestions).toMatchObject({title:'خطای چاپ پرینتر',titleLibraryId,tags:[{id:tagId,name:'پرینتر',kind:'SERVICE_ASSET'},{name:'خطای چاپ',kind:'ISSUE_TYPE'}]});
+    expect((await database.withOrganization(orgA,c=>c.query("SELECT count(*)::int AS count FROM ticket_tags WHERE name='خطای چاپ'"))).rows[0].count).toBe(0);
+    const draft=await intakes.createDraft(actorA(),{title:'خطای چاپ پرینتر',description:processed.description,intakeSessionId:session.id});
+    const evidence=await database.withOrganization(orgA,async c=>({tags:(await c.query('SELECT name,kind,status FROM ticket_tags ORDER BY name')).rows,links:(await c.query('SELECT count(*)::int AS count FROM ticket_tag_links WHERE ticket_id=$1',[draft.id])).rows[0],title:(await c.query('SELECT usage_count FROM ticket_title_library WHERE id=$1',[titleLibraryId])).rows[0]}));
+    expect(evidence.tags).toEqual(expect.arrayContaining([{name:'خطای چاپ',kind:'ISSUE_TYPE',status:'PENDING'}])); expect(evidence.links.count).toBe(2); expect(evidence.title.usage_count).toBe(1);
   });
 
   it('verifies voice metadata, transcribes before analysis, and atomically attaches provenance to the draft',async()=>{

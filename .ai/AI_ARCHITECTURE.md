@@ -22,10 +22,13 @@ department, discipline, optional location, priority, tags, missing fields,
 initial AI response, confidence, and metadata. Low confidence never causes a
 deterministic assignment.
 
-Pre-ticket analysis uses `ticket-intake.v1`. A worker first transcribes an
+Pre-ticket analysis uses `ticket-intake.v2`. A worker first transcribes an
 optional verified object through Audio Transcriptions, appends that text to the
 unchanged typed description, and calls Chat Completions structured output with
 only the current tenant catalog. Each proposed field carries confidence; the
 application validates IDs, custom-field types/options and the 0.75 threshold
-before persisting suggestions. Provider retries use a bounded lease and three
-attempts; a terminal failure retains all manual input.
+before persisting suggestions. Active tenant title-library and typed-tag values
+are additional optional context; new values remain pending until Organization
+Admin approval and are recorded only after final ticket submission. Provider
+retries use a bounded lease and three attempts; a terminal failure retains all
+manual input.

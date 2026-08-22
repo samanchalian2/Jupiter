@@ -30,20 +30,22 @@ const analysisSchema = {
 } as const;
 
 const ticketIntakeSchema = {
-  name: 'jupiter_ticket_intake_v1', strict: true,
+  name: 'jupiter_ticket_intake_v2', strict: true,
   schema: {
     type: 'object', additionalProperties: false,
     properties: {
       contractVersion: { type: 'string', enum: [TICKET_INTAKE_CONTRACT_VERSION] },
       title: { type: 'string' },
+      titleLibraryId: { type: ['string','null'] },
       categoryId: { type: ['string','null'] }, subcategoryId: { type: ['string','null'] },
       departmentId: { type: ['string','null'] }, locationId: { type: ['string','null'] }, disciplineId: { type: ['string','null'] },
       priority: { type: 'string', enum: ['LOW','NORMAL','HIGH','URGENT'] },
       customFields: { type: 'array', items: { type: 'object', additionalProperties: false, properties: { key: { type: 'string' }, value: { type: ['string','number','boolean','null'] } }, required: ['key','value'] } },
+      tags: { type: 'array', maxItems: 5, items: { type: 'object', additionalProperties: false, properties: { tagId: { type: ['string','null'] }, name: { type: 'string' }, kind: { type: 'string', enum: ['DOMAIN','SERVICE_ASSET','ISSUE_TYPE','IMPACT_SCOPE','CONTEXT','OTHER'] } }, required: ['tagId','name','kind'] } },
       missingFields: { type: 'array', items: { type: 'string' } },
       confidenceByField: { type: 'array', items: { type: 'object', additionalProperties: false, properties: { field: { type: 'string' }, confidence: { type: 'number', minimum: 0, maximum: 1 } }, required: ['field','confidence'] } },
     },
-    required: ['contractVersion','title','categoryId','subcategoryId','departmentId','locationId','disciplineId','priority','customFields','missingFields','confidenceByField'],
+    required: ['contractVersion','title','titleLibraryId','categoryId','subcategoryId','departmentId','locationId','disciplineId','priority','customFields','tags','missingFields','confidenceByField'],
   },
 } as const;
 
@@ -69,7 +71,7 @@ export class HttpAiProvider implements AiProvider, TicketIntakeProvider {
     const response = await checkedFetch(`${input.configuration.baseUrl.replace(/\/$/, '')}/chat/completions`, {
       method: 'POST', headers: { authorization: `Bearer ${input.configuration.apiKey}`, 'content-type': 'application/json' },
       body: JSON.stringify({ model: input.configuration.model, messages: [
-        { role: 'system', content: 'Classify a help-desk request using only IDs and custom-field options present in the supplied tenant catalog. Never rewrite the user description. Return confidence for every proposed field.' },
+        { role: 'system', content: 'You classify a help-desk request using only IDs and options in the supplied tenant context. Never rewrite the user description. The title must be a concise Persian problem label of 4–12 words, not a copy of the description and without dates or generic prefixes. If an active titleLibrary entry is the same request, return its exact ID and title; otherwise set titleLibraryId to null and create a precise new title. Tags target three core dimensions: DOMAIN, SERVICE_ASSET and ISSUE_TYPE; add at most two IMPACT_SCOPE or CONTEXT tags only when supported. Reuse only supplied active tag IDs; new tags use null tagId. Return confidence for every proposed field.' },
         { role: 'user', content: JSON.stringify(input.context) },
       ], response_format: { type: 'json_schema', json_schema: ticketIntakeSchema } }),
     });
@@ -78,7 +80,7 @@ export class HttpAiProvider implements AiProvider, TicketIntakeProvider {
     if (!content) throw new Error('AI provider response is invalid');
     let raw: Omit<TicketIntakeProviderOutput,'customFields'|'confidenceByField'> & { customFields:Array<{key:string;value:unknown}>; confidenceByField:Array<{field:string;confidence:number}> };
     try { raw = JSON.parse(content) as typeof raw; } catch { throw new Error('AI provider response is invalid'); }
-    if (raw.contractVersion !== TICKET_INTAKE_CONTRACT_VERSION || !Array.isArray(raw.customFields) || !Array.isArray(raw.confidenceByField)) throw new Error('AI provider response is invalid');
+    if (raw.contractVersion !== TICKET_INTAKE_CONTRACT_VERSION || !Array.isArray(raw.customFields) || !Array.isArray(raw.tags) || !Array.isArray(raw.confidenceByField)) throw new Error('AI provider response is invalid');
     const customFields = Object.fromEntries(raw.customFields.filter((item) => item && typeof item.key === 'string').map((item) => [item.key,item.value]));
     const confidenceByField = Object.fromEntries(raw.confidenceByField.filter((item) => item && typeof item.field === 'string' && typeof item.confidence === 'number').map((item) => [item.field,Math.max(0,Math.min(1,item.confidence))]));
     return { output: { ...raw, customFields, confidenceByField } as TicketIntakeProviderOutput, usage: { inputTokens: result.usage?.prompt_tokens, outputTokens: result.usage?.completion_tokens } };

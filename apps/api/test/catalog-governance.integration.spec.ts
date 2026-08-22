@@ -29,6 +29,9 @@ beforeAll(async () => {
 
 afterAll(async()=>{
   await database.query('DELETE FROM audit_logs WHERE organization_id IN($1,$2)',[organizationId,otherOrganizationId]);
+  await database.query('DELETE FROM ticket_tag_links WHERE organization_id IN($1,$2)',[organizationId,otherOrganizationId]);
+  await database.query('DELETE FROM ticket_title_library WHERE organization_id IN($1,$2)',[organizationId,otherOrganizationId]);
+  await database.query('DELETE FROM ticket_tags WHERE organization_id IN($1,$2)',[organizationId,otherOrganizationId]);
   await database.query('DELETE FROM catalog_suggestions WHERE organization_id IN($1,$2)',[organizationId,otherOrganizationId]);
   await database.query('DELETE FROM organization_catalog_template_installs WHERE organization_id IN($1,$2)',[organizationId,otherOrganizationId]);
   await database.query('DELETE FROM subcategories WHERE organization_id IN($1,$2)',[organizationId,otherOrganizationId]);
@@ -56,5 +59,13 @@ describe('catalog governance',()=>{
     await database.query("INSERT INTO catalog_suggestions(organization_id,kind,name,source) VALUES($1,'category','دسته محرمانه','AI_INTAKE')",[otherOrganizationId]);
     const own=await organizations.catalogSuggestions(actor(adminId,organizationId,['ORG_ADMIN']));
     expect(own.find(item=>(item as {name:string}).name==='دسته محرمانه')).toBeUndefined();
+  });
+
+  it('keeps pending title and typed-tag candidates out of the active vocabulary until administrator approval',async()=>{
+    const title=(await database.query<{id:string}>("INSERT INTO ticket_title_library(organization_id,title,normalized_title,status) VALUES($1,'خطای چاپ پرینتر','خطای چاپ پرینتر','PENDING') RETURNING id",[organizationId])).rows[0];
+    const tag=(await database.query<{id:string}>("INSERT INTO ticket_tags(organization_id,name,color,kind,status,normalized_name) VALUES($1,'خطای چاپ','#6d5587','ISSUE_TYPE','PENDING','خطای چاپ') RETURNING id",[organizationId])).rows[0];
+    expect(await organizations.titleLibrary(actor(adminId,organizationId,['ORG_ADMIN']))).toEqual(expect.arrayContaining([expect.objectContaining({id:title.id,status:'PENDING'})]));
+    await organizations.reviewTitle(actor(adminId,organizationId,['ORG_ADMIN']),title.id,'ACTIVE'); await organizations.reviewTag(actor(adminId,organizationId,['ORG_ADMIN']),tag.id,'ACTIVE');
+    expect(await organizations.tagVocabulary(actor(adminId,organizationId,['ORG_ADMIN']),'ACTIVE')).toEqual(expect.arrayContaining([expect.objectContaining({id:tag.id,kind:'ISSUE_TYPE',status:'ACTIVE'})]));
   });
 });

@@ -17,5 +17,8 @@
   and never silently replaces it.
 - Intake suggestions below 0.75 confidence or outside the active tenant
   taxonomy/custom-field catalog are rejected rather than applied.
+- Only active tenant title and tag vocabulary is supplied to AI. New title/tag
+  candidates are recorded only after explicit final ticket submission and stay
+  pending until Organization Admin approval.
 - Intake voice is limited to 60 seconds and 10 MB, must pass post-upload
   metadata verification, and expires with an unconsumed session after 24 hours.

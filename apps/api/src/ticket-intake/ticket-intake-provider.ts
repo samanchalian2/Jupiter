@@ -1,8 +1,11 @@
 import type { AiProviderConfiguration } from '../ai/ai-provider.js';
 
-export const TICKET_INTAKE_CONTRACT_VERSION = 'ticket-intake.v1' as const;
+export const TICKET_INTAKE_CONTRACT_VERSION = 'ticket-intake.v2' as const;
 export type TicketPriority = 'LOW'|'NORMAL'|'HIGH'|'URGENT';
 export type CatalogOption = { id: string; name: string; categoryId?: string };
+export type IntakeTitleOption = { id:string; title:string };
+export type IntakeTagKind = 'DOMAIN'|'SERVICE_ASSET'|'ISSUE_TYPE'|'IMPACT_SCOPE'|'CONTEXT'|'OTHER';
+export type IntakeTagOption = { id:string; name:string; kind:IntakeTagKind };
 export type IntakeCustomFieldDefinition = { key: string; label: string; type: string; options: unknown[]; required: boolean };
 export type TicketIntakeContext = {
   description: string;
@@ -12,10 +15,14 @@ export type TicketIntakeContext = {
   locations: CatalogOption[];
   disciplines: CatalogOption[];
   customFields: IntakeCustomFieldDefinition[];
+  titleLibrary: IntakeTitleOption[];
+  tags: IntakeTagOption[];
 };
+export type IntakeTagProposal = { tagId:string|null; name:string; kind:IntakeTagKind };
 export type TicketIntakeProviderOutput = {
   contractVersion: typeof TICKET_INTAKE_CONTRACT_VERSION;
   title: string;
+  titleLibraryId: string|null;
   categoryId: string|null;
   subcategoryId: string|null;
   departmentId: string|null;
@@ -23,10 +30,10 @@ export type TicketIntakeProviderOutput = {
   disciplineId: string|null;
   priority: TicketPriority;
   customFields: Record<string,unknown>;
+  tags: IntakeTagProposal[];
   missingFields: string[];
   confidenceByField: Record<string,number>;
 };
 export interface TicketIntakeProvider {
   analyzeIntake(input: { context: TicketIntakeContext; configuration: AiProviderConfiguration }): Promise<{ output: TicketIntakeProviderOutput; usage: { inputTokens?: number; outputTokens?: number } }>;
 }
-

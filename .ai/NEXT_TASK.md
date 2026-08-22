@@ -1,15 +1,14 @@
 # Next Task
 
-## GOAL-018 — Tenant title library and typed ticket-tag vocabulary
+## GOAL-019 — Smart composer, vocabulary management, search and reporting
 
 **Status:** READY
 
-Implement the approved title library and typed tag vocabulary without changing
-the existing ticket lifecycle. Add an ADR before changing the AI intake contract
-from v1 to v2. Only active tenant-scoped titles/tags may be supplied to the
-provider; new titles/tags remain pending until Organization Admin review. Final
-ticket submission, not analysis alone, may record a candidate. Preserve old
-flat tags safely and keep all manual ticket paths working.
+Connect `ticket-intake.v2` suggestions to the requester composer: display and
+edit typed tags in «جزئیات بیشتر», retain manual fallback, and expose
+Organization Admin title/tag approval lists. Extend tenant-safe ticket search,
+queue filters and operational reporting by tag/type. Verify responsive browser
+acceptance with a concise generated title, classification and tags.
 
 ## GOAL-015 — Smart ticket composer and acceptance E2E
 

@@ -38,10 +38,10 @@ describe('OpenAI-compatible HTTP provider', () => {
   });
 
   it('requests the versioned ticket-intake schema and normalizes array maps', async () => {
-    const fetchMock=vi.fn(async(_url:string|URL|Request,_init?:RequestInit)=>new Response(JSON.stringify({choices:[{message:{content:JSON.stringify({contractVersion:'ticket-intake.v1',title:'Printer issue',categoryId:null,subcategoryId:null,departmentId:null,locationId:null,disciplineId:null,priority:'NORMAL',customFields:[{key:'asset',value:12}],missingFields:['locationId'],confidenceByField:[{field:'title',confidence:.9},{field:'customFields.asset',confidence:.8}]})}}],usage:{prompt_tokens:15,completion_tokens:8}}),{status:200,headers:{'content-type':'application/json'}}));
+    const fetchMock=vi.fn(async(_url:string|URL|Request,_init?:RequestInit)=>new Response(JSON.stringify({choices:[{message:{content:JSON.stringify({contractVersion:'ticket-intake.v2',title:'Printer issue',titleLibraryId:null,categoryId:null,subcategoryId:null,departmentId:null,locationId:null,disciplineId:null,priority:'NORMAL',customFields:[{key:'asset',value:12}],tags:[],missingFields:['locationId'],confidenceByField:[{field:'title',confidence:.9},{field:'customFields.asset',confidence:.8}]})}}],usage:{prompt_tokens:15,completion_tokens:8}}),{status:200,headers:{'content-type':'application/json'}}));
     vi.stubGlobal('fetch',fetchMock);
-    const result=await new HttpAiProvider().analyzeIntake({context:{description:'Printer issue',categories:[],subcategories:[],departments:[],locations:[],disciplines:[],customFields:[]},configuration:{baseUrl:'https://ai.example.test/v1',apiKey:'organization-key',model:'analysis-model'}});
-    expect(result.output.contractVersion).toBe('ticket-intake.v1');expect(result.output.customFields).toEqual({asset:12});expect(result.output.confidenceByField).toEqual({title:.9,'customFields.asset':.8});
-    const body=JSON.parse(String(fetchMock.mock.calls[0]![1]!.body));expect(body.response_format.json_schema.name).toBe('jupiter_ticket_intake_v1');expect(body.response_format.json_schema.strict).toBe(true);
+    const result=await new HttpAiProvider().analyzeIntake({context:{description:'Printer issue',categories:[],subcategories:[],departments:[],locations:[],disciplines:[],customFields:[],titleLibrary:[],tags:[]},configuration:{baseUrl:'https://ai.example.test/v1',apiKey:'organization-key',model:'analysis-model'}});
+    expect(result.output.contractVersion).toBe('ticket-intake.v2');expect(result.output.customFields).toEqual({asset:12});expect(result.output.confidenceByField).toEqual({title:.9,'customFields.asset':.8});
+    const body=JSON.parse(String(fetchMock.mock.calls[0]![1]!.body));expect(body.response_format.json_schema.name).toBe('jupiter_ticket_intake_v2');expect(body.response_format.json_schema.strict).toBe(true);
   });
 });
