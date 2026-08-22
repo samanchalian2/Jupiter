@@ -42,6 +42,6 @@ describe('OpenAI-compatible HTTP provider', () => {
     vi.stubGlobal('fetch',fetchMock);
     const result=await new HttpAiProvider().analyzeIntake({context:{description:'Printer issue',categories:[],subcategories:[],departments:[],locations:[],disciplines:[],customFields:[],titleLibrary:[],tags:[]},configuration:{baseUrl:'https://ai.example.test/v1',apiKey:'organization-key',model:'analysis-model'}});
     expect(result.output.contractVersion).toBe('ticket-intake.v2');expect(result.output.customFields).toEqual({asset:12});expect(result.output.confidenceByField).toEqual({title:.9,'customFields.asset':.8});
-    const body=JSON.parse(String(fetchMock.mock.calls[0]![1]!.body));expect(body.response_format.json_schema.name).toBe('jupiter_ticket_intake_v2');expect(body.response_format.json_schema.strict).toBe(true);
+    const body=JSON.parse(String(fetchMock.mock.calls[0]![1]!.body));expect(body.response_format.json_schema.name).toBe('jupiter_ticket_intake_v2');expect(body.response_format.json_schema.strict).toBe(true);expect(body.messages[0].content).toContain('exactly one concise tag for each core dimension');expect(body.messages[0].content).toContain('do not omit core tags merely because the vocabulary is empty');
   });
 });

@@ -11,11 +11,13 @@ operational reports include typed-tag distribution. API typecheck, 51 API
 tests, Web typecheck, 9 Web tests and both production builds pass. An
 authenticated browser walkthrough confirmed a real concise, non-copy AI title
 and the smart composer/tag UI at 375, 768 and 1440 px with no horizontal
-overflow. The local demo organization has no approved catalog or tag data, so
-category/tag suggestions are correctly withheld until an Organization Admin
-installs the available starter template or governs values manually. A direct
-local API/Web launch must also start the separate Worker with
-`JUPITER_WORKER_ENABLED=true`; root `pnpm dev` already does this. Evidence:
+overflow. The Jupiter Demo Organization now has the approved template's nine
+categories and 24 subcategories; a real provider run applied «چاپ و اسناد»,
+«خطاهای چاپ», priority HIGH and five typed tag candidates to a printer
+request. The provider-specific per-tag confidence spellings are normalized
+without lowering the 0.75 gate. A direct local API/Web launch must also start
+the separate Worker with `JUPITER_WORKER_ENABLED=true`; root `pnpm dev` already
+does this. Evidence:
 `docs/GOAL_019_EVIDENCE.md`.
 
 **GOAL-018 — Governed titles and typed tags (2026-08-22):** Migration 029

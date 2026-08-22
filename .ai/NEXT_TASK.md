@@ -9,9 +9,10 @@ Admin title/tag review, tag-aware search/queue filters and reporting are
 implemented and covered by API/Web tests and production builds. An
 authenticated browser run confirmed a non-copy AI title plus the responsive
 composer/tag interface at 375/768/1440 px without horizontal overflow. The
-demo organization currently has no approved catalog or tag vocabulary, so the
-available «نصب الگوی اولیه» action (or manual Organization Admin governance)
-must be used before category/tag suggestions can be selected in that tenant.
+approved starter template is installed in Jupiter Demo Organization (nine
+categories and 24 subcategories); a real provider run applied category,
+subcategory, priority and five typed tag candidates. New candidates remain
+subject to the existing final-submit and Organization Admin review workflow.
 See `docs/GOAL_019_EVIDENCE.md`.
 
 ## GOAL-015 — Smart ticket composer and acceptance E2E

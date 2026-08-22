@@ -296,14 +296,20 @@ export class TicketIntakeService {
     if (Object.keys(customFields).length) suggestions.customFields=customFields;
     const tags:Array<{id?:string;name?:string;kind?:'DOMAIN'|'SERVICE_ASSET'|'ISSUE_TYPE'|'IMPACT_SCOPE'|'CONTEXT'|'OTHER'}>=[];
     const acceptedKinds=new Set(['DOMAIN','SERVICE_ASSET','ISSUE_TYPE','IMPACT_SCOPE','CONTEXT','OTHER']);
-    if (accepted('tags') && Array.isArray(output.tags)) for(const proposal of output.tags.slice(0,5)) {
+    const tagConfidenceFields:Record<string,string>={DOMAIN:'domainTag',SERVICE_ASSET:'serviceAssetTag',ISSUE_TYPE:'issueTypeTag',IMPACT_SCOPE:'impactScopeTag',CONTEXT:'contextTag',OTHER:'otherTag'};
+    const acceptedTag=(proposal:{kind:string},index:number)=>{
+      const confidence=confidenceByField.tags ?? confidenceByField[`tags.${proposal.kind}`] ?? confidenceByField[`tag:${proposal.kind}`] ?? confidenceByField[tagConfidenceFields[proposal.kind] ?? ''] ?? confidenceByField[`tags.${index}`];
+      return Number(confidence)>=confidenceThreshold;
+    };
+    if (Array.isArray(output.tags)) for(const [index,proposal] of output.tags.slice(0,5).entries()) {
       if (!proposal || !acceptedKinds.has(proposal.kind) || typeof proposal.name!=='string') { rejectedFields.push('tags'); continue; }
+      if (!acceptedTag(proposal,index)) { rejectedFields.push('tags'); continue; }
       const existing=proposal.tagId ? context.tags.find(item=>item.id===proposal.tagId && item.kind===proposal.kind && item.name===proposal.name) : undefined;
       const name=proposal.name.trim().replace(/\s+/g,' ');
       if(existing) tags.push({id:existing.id,name:existing.name,kind:existing.kind});
       else if(proposal.tagId===null && name.length>=2 && name.length<=50) tags.push({name,kind:proposal.kind});
       else rejectedFields.push('tags');
-    } else if (Array.isArray(output.tags) && output.tags.length) rejectedFields.push('tags');
+    }
     if(tags.length) suggestions.tags=tags;
     const missingFields=[...new Set([...(Array.isArray(output.missingFields)?output.missingFields.filter((item):item is string=>typeof item==='string'):[]),...rejectedFields])].slice(0,100);
     const rejected=[...new Set(rejectedFields)];
