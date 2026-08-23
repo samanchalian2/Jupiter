@@ -41,6 +41,7 @@ export function TicketComposer({ actor, onCreated }: { actor:Actor; onCreated:(t
   const [secondaryProposalIds,setSecondaryProposalIds]=useState<string[]>([]);
   const [confirmBatchOpen,setConfirmBatchOpen]=useState(false);
   const [clarificationFor,setClarificationFor]=useState<{id:string;title:string}|null>(null);
+  const [smartIntakeEnabled,setSmartIntakeEnabled]=useState(false);
   const descriptionRef=useRef<HTMLTextAreaElement>(null);
   const recorderRef=useRef<VoiceRecordingHandle|null>(null);
   const pollAbortRef=useRef<AbortController|null>(null);
@@ -52,10 +53,10 @@ export function TicketComposer({ actor, onCreated }: { actor:Actor; onCreated:(t
     request('/tickets/catalog/subcategories',actor.session,actor.organizationId),
     request('/tickets/catalog/locations',actor.session,actor.organizationId),
     request('/tickets/catalog/disciplines',actor.session,actor.organizationId),
-    request('/tickets/custom-fields',actor.session,actor.organizationId),request('/tickets/tags',actor.session,actor.organizationId),
-  ]).then(([departments,categories,subcategories,locations,disciplines,fields,tags])=>{
+    request('/tickets/custom-fields',actor.session,actor.organizationId),request('/tickets/tags',actor.session,actor.organizationId),request('/ticket-intakes/capabilities',actor.session,actor.organizationId),
+  ]).then(([departments,categories,subcategories,locations,disciplines,fields,tags,capabilities])=>{
     setCatalogs({departments:departments as Catalog[],categories:categories as Catalog[],subcategories:subcategories as Catalog[],locations:locations as Catalog[],disciplines:disciplines as Catalog[]});
-    setCustomFields(fields as CustomField[]);setTagVocabulary((tags as Array<TicketTag&{status?:string}>).filter(tag=>tag.status===undefined||tag.status==='ACTIVE'));
+    setCustomFields(fields as CustomField[]);setTagVocabulary((tags as Array<TicketTag&{status?:string}>).filter(tag=>tag.status===undefined||tag.status==='ACTIVE'));setSmartIntakeEnabled(Boolean((capabilities as {smartIntakeEnabled?:boolean}).smartIntakeEnabled));
   }).catch(()=>setError('دریافت فهرست‌های سازمان کامل نشد؛ صفحه را دوباره بارگذاری کنید.'));},[actor.organizationId,actor.session.accessToken]);
   useEffect(()=>()=>{
     pollAbortRef.current?.abort();recorderRef.current?.destroy();
@@ -154,11 +155,24 @@ export function TicketComposer({ actor, onCreated }: { actor:Actor; onCreated:(t
     }
   };
 
+  const sendMessage=async()=>{
+    if(smartIntakeEnabled){await runAi();return;}
+    if(!messageDraft.trim()&&!recording){setError('ابتدا یک پیام متنی بنویسید یا صدای خود را ضبط کنید.');descriptionRef.current?.focus();return;}
+    setError('');setPipeline('');
+    try {
+      let session=await sendTextMessage();
+      if(!session)session=await ensureConversation();
+      const voice=recording?await compatibleRecording(recording):null;
+      if(voice)await uploadConversationVoice(session,voice);
+      setPipeline('');setClarificationFor(null);
+    } catch(cause) { setPipeline('');setError(cause instanceof Error?cause.message:'ارسال پیام ناموفق بود؛ دوباره تلاش کنید.'); }
+  };
+
   const saveTicket=async()=>{
     if(recordingActive){setError('ابتدا ضبط صدا را متوقف کنید.');return;}setSubmitBusy(true);setError('');
     try{
       const usableIntake=intake&&!processingStatuses.has(intake.status)?intake.id:undefined;
-      if(recording)throw new Error('برای ثبت صدای ضبط‌شده، ابتدا «تکمیل هوشمند» را بزنید یا صدا را حذف کنید.');
+      if(recording)throw new Error('برای ثبت صدای ضبط‌شده، ابتدا پیام را ارسال کنید یا صدا را حذف کنید.');
       const finalDescription=form.description.trim()||intake?.description||messageDraft.trim();
       const payload={...form,description:finalDescription,departmentId:form.departmentId||undefined,categoryId:form.categoryId||undefined,subcategoryId:form.subcategoryId||undefined,locationId:form.locationId||undefined,disciplineId:form.disciplineId||undefined,intakeSessionId:usableIntake};
       if(secondaryProposalIds.length){const result=await request('/tickets/intake-batches',actor.session,actor.organizationId,{method:'POST',body:JSON.stringify({...payload,secondaryProposalIds})}) as {primary:{id:string;ticketNumber:number};secondary:Array<{ticketNumber:number}>};let notice=`${1+result.secondary.length} درخواست با موفقیت ثبت شد.`;if(file){try{await upload(result.primary.id,file);}catch{notice+=' پیوست فقط برای درخواست اصلی بارگذاری نشد.';}}onCreated(result.primary.id,notice);}
@@ -191,7 +205,7 @@ export function TicketComposer({ actor, onCreated }: { actor:Actor; onCreated:(t
     <form className="quick-ticket-form" onSubmit={submit}>
       {hasConversation? <section className="intake-conversation" aria-label="گفتگوی تکمیل درخواست">{intake?.messages?.map(message=><article key={message.id} className={`intake-message ${message.role==='ASSISTANT'?'assistant':'requester'}`}><strong>{message.role==='ASSISTANT'?'ژوپیتر':'شما'}</strong><p>{message.contentType==='VOICE'?(message.transcript??'در حال آماده‌سازی متن صوت…'):(message.text??'')}</p>{message.contentType==='VOICE'&&message.voice&&<small>پیام صوتی · {formatDuration(message.voice.durationSeconds)}</small>}</article>)}</section>:null}
       <section className={`message-composer${hasConversation?' conversation-composer':''}`} aria-label="نوشتن پیام درخواست">{clarificationFor&&<p className="clarification-context" role="status">توضیح دربارهٔ: <strong>{clarificationFor.title}</strong></p>}<label className="ticket-description-field"><span className="field-label-row"><span>{hasConversation?'پیام جدید':'شرح درخواست'}</span>{aiBadge('description')}</span><textarea ref={descriptionRef} maxLength={10000} value={messageDraft} onChange={event=>setMessageDraft(event.target.value)} placeholder={hasConversation?'توضیح یا اطلاعات جدیدی اضافه کنید…':'مشکل، زمان شروع و نتیجه‌ای که انتظار دارید را توضیح دهید…'}/></label>
-        <div className="smart-intake-toolbar" aria-label="ابزارهای هوشمند گفتگوی درخواست"><div className="smart-intake-actions"><label className="message-utility-button" title="افزودن پیوست"><Paperclip size={19}/><span className="sr-only">افزودن پیوست</span><input type="file" disabled={pipelineBusy} onChange={(event:ChangeEvent<HTMLInputElement>)=>setFile(event.target.files?.[0]??null)}/></label><button className={`message-utility-button ${recordingActive?'recording':''}`} type="button" onClick={recordingActive?stopRecording:()=>void startRecording()} disabled={pipelineBusy||micRequesting} aria-label={recordingActive?'توقف ضبط صدا':recording?'ضبط مجدد صدا':'ضبط صدا'} title={recordingActive?'توقف ضبط صدا':recording?'ضبط مجدد صدا':'ضبط صدا'}>{recordingActive?<Pause size={19}/>:<Mic size={19}/>}</button><Button type="button" className="message-ai-button" onClick={()=>void runAi()} disabled={pipelineBusy||recordingActive||micRequesting}>{pipelineBusy?<><span className="status-spinner"/> {pipeline==='UPLOADING'?'در حال بارگذاری…':pipeline==='TRANSCRIBING'?'در حال تبدیل صدا…':'در حال تحلیل…'}</>:<><Sparkles size={17}/>{clarificationFor?'ارسال و تحلیل دوباره':'تکمیل هوشمند'}</>}</Button><button className="message-send-button" type="button" onClick={()=>clarificationFor?void runAi():void sendTextMessage()} disabled={(!messageDraft.trim()&&!recording)||pipelineBusy||recordingActive||micRequesting} aria-label={clarificationFor?'ارسال و تحلیل دوباره':'افزودن پیام'} title={clarificationFor?'ارسال و تحلیل دوباره':'افزودن پیام'}><Send size={19}/></button></div>
+        <div className="smart-intake-toolbar" aria-label="ابزارهای گفتگوی درخواست"><div className="smart-intake-actions"><label className="message-utility-button" title="افزودن پیوست"><Paperclip size={19}/><span className="sr-only">افزودن پیوست</span><input type="file" disabled={pipelineBusy} onChange={(event:ChangeEvent<HTMLInputElement>)=>setFile(event.target.files?.[0]??null)}/></label><button className={`message-utility-button ${recordingActive?'recording':''}`} type="button" onClick={recordingActive?stopRecording:()=>void startRecording()} disabled={pipelineBusy||micRequesting} aria-label={recordingActive?'توقف ضبط صدا':recording?'ضبط مجدد صدا':'ضبط صدا'} title={recordingActive?'توقف ضبط صدا':recording?'ضبط مجدد صدا':'ضبط صدا'}>{recordingActive?<Pause size={19}/>:<Mic size={19}/>}</button><Button type="button" className="message-send-button" onClick={()=>void sendMessage()} disabled={(!messageDraft.trim()&&!recording)||pipelineBusy||recordingActive||micRequesting} aria-label={smartIntakeEnabled?(clarificationFor?'ارسال و تحلیل دوباره':'ارسال و تکمیل هوشمند'):'ارسال پیام'} title={smartIntakeEnabled?(clarificationFor?'ارسال و تحلیل دوباره':'ارسال و تکمیل هوشمند'):'ارسال پیام'}>{pipelineBusy?<><span className="status-spinner"/> {pipeline==='UPLOADING'?'در حال بارگذاری…':pipeline==='TRANSCRIBING'?'در حال تبدیل صدا…':'در حال تحلیل…'}</>:<><Send size={18}/>{smartIntakeEnabled&&<Sparkles size={15}/>}<span>{smartIntakeEnabled?(clarificationFor?'ارسال و تحلیل دوباره':'ارسال و تکمیل هوشمند'):'ارسال پیام'}</span></>}</Button></div>
         {file&&<p className="selected-attachment"><Paperclip size={15}/>{file.name}<button type="button" onClick={()=>setFile(null)} aria-label="حذف پیوست"><Trash2 size={14}/></button></p>}
         {micRequesting&&<p className="intake-status" role="status" aria-live="polite"><span className="status-spinner"/>در انتظار اجازه دسترسی به میکروفن…</p>}
         {recordingActive&&<div className="voice-recorder recording" role="status"><span className="recording-dot"/><strong>{formatDuration(recordingSeconds)} / 01:00</strong><Button type="button" variant="secondary" onClick={stopRecording}><Pause size={16}/>توقف ضبط</Button></div>}
@@ -212,7 +226,7 @@ export function TicketComposer({ actor, onCreated }: { actor:Actor; onCreated:(t
         <fieldset className="ticket-tag-field"><legend><span className="field-label-row"><span>هشتگ‌ها</span>{aiBadge('tags')}</span></legend><p className="hint">حداکثر ۵ هشتگ؛ معمولاً حوزه خدمت، تجهیز/خدمت و نوع مسئله.</p><div className="tag-picker">{tagVocabulary.map(tag=><button key={tag.id??`${tag.kind}-${tag.name}`} type="button" className={form.tags.some(item=>item.id===tag.id)?'selected':''} onClick={()=>toggleTag(tag)}>#{tag.name}</button>)}</div><div className="custom-tag-entry"><label className="sr-only" htmlFor="custom-ticket-tag">افزودن هشتگ جدید</label><input id="custom-ticket-tag" maxLength={51} value={customTagDraft} onChange={event=>{setCustomTagDraft(event.target.value);setCustomTagError('');}} onKeyDown={event=>{if(event.key==='Enter'){event.preventDefault();addCustomTag();}}} placeholder="افزودن هشتگ جدید…"/><button type="button" onClick={addCustomTag} disabled={!customTagDraft.trim()||form.tags.length>=5}>افزودن</button></div><p className="custom-tag-hint">هشتگ جدید فقط به همین درخواست افزوده می‌شود و برای استفادهٔ عمومی، نیازمند تأیید مدیر سازمان است.</p>{customTagError&&<p className="custom-tag-error" role="alert">{customTagError}</p>}{form.tags.length>0&&<div className="tag-list">{form.tags.map(tag=><button type="button" key={tag.id??`${tag.kind}-${tag.name}`} onClick={()=>toggleTag(tag)}>#{tag.name} ×</button>)}</div>}</fieldset>
         {customFields.map(customInput)}
       </div>}
-      {error&&<p className="error composer-error" role="alert">{error}{pipeline==='FAILED'&&<button type="button" onClick={()=>void runAi()}>تلاش دوباره</button>}</p>}
+      {error&&<p className="error composer-error" role="alert">{error}{pipeline==='FAILED'&&smartIntakeEnabled&&<button type="button" onClick={()=>void runAi()}>تلاش دوباره</button>}</p>}
       <div className="quick-ticket-actions"><Button type="submit" loading={submitBusy} disabled={blocksManualSubmit(pipelineBusy,Boolean(recording),recordingActive)}><Send size={17}/>{secondaryProposalIds.length?`ثبت ${secondaryProposalIds.length+1} درخواست`:'ثبت درخواست'}</Button><span>{pipelineBusy&&!recording?'می‌توانید بدون انتظار برای AI، عنوان را دستی وارد و درخواست را ثبت کنید.':'AI هرگز درخواست را خودکار ثبت نمی‌کند؛ پیش از ارسال همه فیلدها قابل ویرایش‌اند.'}</span></div>
     </form>
     <ConfirmDialog open={confirmBatchOpen} title="تأیید ثبت درخواست‌ها" body={confirmBatchBody} confirmLabel={`ثبت ${secondaryProposalIds.length+1} درخواست`} onClose={()=>setConfirmBatchOpen(false)} onConfirm={()=>{setConfirmBatchOpen(false);void saveTicket();}}/>

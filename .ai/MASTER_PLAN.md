@@ -35,3 +35,7 @@ creation of validated, privacy-preserving secondary tickets.
 The approved intake-experience refinement adds (23) a persistent compact
 messenger-style follow-up composer after the first requester message, with
 collapsible structured ticket details. GOAL-023 is complete locally.
+
+The organization-control refinement adds (24) a separately governed Smart
+Intake policy and one contextual send action. GOAL-024 is complete locally;
+GOAL-025 continues the deferred navigation interaction polish.

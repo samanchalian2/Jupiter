@@ -512,19 +512,19 @@ button.drawer-backdrop:focus-visible {
 .message-utility-button.recording { background: var(--danger); }
 .message-utility-button:disabled,
 .message-send-button:disabled { opacity: .45; cursor: not-allowed; }
-.message-ai-button.ui-button {
+.message-send-button.ui-button {
+  display: inline-flex;
+  width: auto;
   min-height: 38px;
   margin-inline-start: auto;
   padding: 7px 12px;
   font-size: .82rem;
-}
-.message-ai-button .status-spinner { width:14px; height:14px; border-color:rgba(255,255,255,.45); border-top-color:#fff; }
-.message-send-button {
   color: #fff;
   background: var(--primary);
 }
-.message-send-button:hover:not(:disabled),
-.message-send-button:focus-visible { color: #fff; background: var(--primary-dark); }
+.message-send-button.ui-button:hover:not(:disabled),
+.message-send-button.ui-button:focus-visible { color: #fff; background: var(--primary-dark); }
+.message-send-button .status-spinner { width:14px; height:14px; border-color:rgba(255,255,255,.45); border-top-color:#fff; }
 .selected-attachment {
   display: flex;
   align-items: center;
@@ -701,7 +701,7 @@ button.drawer-backdrop:focus-visible {
     width: 100%;
   }
   .smart-intake-actions { gap: 6px; }
-  .message-ai-button.ui-button { padding-inline: 9px; font-size: .76rem; }
+  .message-send-button.ui-button { padding-inline: 9px; font-size: .76rem; }
   .voice-recorder.recording {
     justify-content: space-between;
   }

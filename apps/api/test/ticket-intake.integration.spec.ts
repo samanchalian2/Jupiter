@@ -49,7 +49,7 @@ beforeAll(async()=>{
   titleLibraryId=(await database.query<{id:string}>("INSERT INTO ticket_title_library(organization_id,title,normalized_title,status) VALUES($1,'خطای چاپ پرینتر','خطای چاپ پرینتر','ACTIVE') RETURNING id",[orgA])).rows[0].id;
   tagId=(await database.query<{id:string}>("INSERT INTO ticket_tags(organization_id,name,color,kind,status,normalized_name) VALUES($1,'پرینتر','#6d5587','SERVICE_ASSET','ACTIVE','پرینتر') RETURNING id",[orgA])).rows[0].id;
   await database.query("INSERT INTO ticket_custom_field_definitions(organization_id,field_key,label,field_type,options,is_required) VALUES($1,'device_type','Device type','SELECT','[\"printer\",\"scanner\"]',false),($1,'asset_number','Asset number','NUMBER','[]',false)",[orgA]);
-  for(const org of [orgA,orgB]){const encrypted=credentials.encrypt(`key-${org}`);await database.query(`INSERT INTO organization_ai_settings(organization_id,enabled,model,analysis_model,transcription_model,provider_base_url,api_key_ciphertext,api_key_iv,api_key_auth_tag) VALUES($1,true,'analysis-test','analysis-test','transcription-test','https://ai.test/v1',$2,$3,$4) ON CONFLICT(organization_id) DO UPDATE SET enabled=true,analysis_model='analysis-test',transcription_model='transcription-test',api_key_ciphertext=$2,api_key_iv=$3,api_key_auth_tag=$4`,[org,encrypted.ciphertext,encrypted.iv,encrypted.authTag]);}
+  for(const org of [orgA,orgB]){const encrypted=credentials.encrypt(`key-${org}`);await database.query(`INSERT INTO organization_ai_settings(organization_id,enabled,smart_intake_enabled,model,analysis_model,transcription_model,provider_base_url,api_key_ciphertext,api_key_iv,api_key_auth_tag) VALUES($1,true,true,'analysis-test','analysis-test','transcription-test','https://ai.test/v1',$2,$3,$4) ON CONFLICT(organization_id) DO UPDATE SET enabled=true,smart_intake_enabled=true,analysis_model='analysis-test',transcription_model='transcription-test',api_key_ciphertext=$2,api_key_iv=$3,api_key_auth_tag=$4`,[org,encrypted.ciphertext,encrypted.iv,encrypted.authTag]);}
 });
 
 afterAll(async()=>{
@@ -58,6 +58,21 @@ afterAll(async()=>{
 });
 
 describe('ticket intake pipeline',()=>{
+  it('keeps manual intake available when organization smart intake is disabled',async()=>{
+    await database.withOrganization(orgA,client=>client.query('UPDATE organization_ai_settings SET smart_intake_enabled=false WHERE organization_id=$1',[orgA]));
+    expect(await intakes.capabilities(actorA())).toEqual({smartIntakeEnabled:false});
+    const session=await intakes.create(actorA(),{description:'درخواست دستی بدون تحلیل',idempotencyKey:'goal24-manual-001'});
+    const voice=await intakes.requestMessageVoiceUpload(actorA(),session.id,{filename:'manual.wav',contentType:'audio/wav',byteSize:5,durationSeconds:2});
+    storage.objects.set(storage.lastUpload!.key,{contentType:'audio/wav',contentLength:5,metadata:{'duration-seconds':'2'},bytes:new Uint8Array([1,2,3,4,5])});
+    await intakes.completeMessageVoiceUpload(actorA(),session.id,voice.message.id);
+    await expect(intakes.analyze(actorA(),session.id)).rejects.toMatchObject({message:'AI is not configured for this organization'});
+    const draft=await intakes.createDraft(actorA(),{title:'درخواست دستی',description:'درخواست دستی بدون تحلیل',intakeSessionId:session.id});
+    expect(draft.id).toBeTruthy();
+    expect((await database.withOrganization(orgA,client=>client.query('SELECT count(*)::int AS count FROM ticket_attachments WHERE ticket_id=$1',[draft.id]))).rows[0].count).toBe(1);
+    await database.withOrganization(orgA,client=>client.query('UPDATE organization_ai_settings SET smart_intake_enabled=true WHERE organization_id=$1',[orgA]));
+    expect(await intakes.capabilities(actorA())).toEqual({smartIntakeEnabled:true});
+  });
+
   it('is tenant/user scoped, idempotent and applies only valid high-confidence suggestions',async()=>{
     const first=await intakes.create(actorA(),{description:'Contact me at user@example.com about the printer.',idempotencyKey:'goal14-text-0001'});
     const repeated=await intakes.create(actorA(),{description:'different text',idempotencyKey:'goal14-text-0001'});expect(repeated.id).toBe(first.id);expect(repeated.description).toBe(first.description);

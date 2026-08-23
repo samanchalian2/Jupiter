@@ -1,5 +1,16 @@
 # Next Task
 
+## GOAL-024 — Organization Smart Intake control and unified send
+
+**Status:** COMPLETE (local verification, 2026-08-24)
+
+Migration 032 adds an Organization Admin-controlled Smart Intake toggle. It is
+available only after Platform Admin has configured and enabled an AI key and
+analysis model; requester clients receive only the effective feature boolean.
+The composer now exposes one contextual send action, and disabling Smart Intake
+retains manual text, attachment and verified voice flows. API typecheck, 56 API
+tests, Web typecheck, 11 Web tests and both production builds pass.
+
 ## GOAL-023 — Persistent conversational intake layout
 
 **Status:** COMPLETE (local verification, 2026-08-24)
@@ -277,7 +288,7 @@ change. It requires at least 10 characters, revokes active refresh sessions,
 and does not record passwords in audit metadata. API/web typechecks, 31 API
 tests, the web production build, and local API health/readiness checks pass.
 
-## Next Goal — GOAL-024 navigation interaction polish
+## Next Goal — GOAL-025 navigation interaction polish
 
 Correct desktop sidebar-toggle placement/direction, remove unintended mobile
 drawer hover tint outside the menu, and ensure hover foregrounds are white on

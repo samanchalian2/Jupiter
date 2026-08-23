@@ -1,5 +1,16 @@
 # Current State
 
+**GOAL-024 — Organization Smart Intake control and unified send (complete,
+2026-08-24):** Migration 032 adds tenant-scoped `smart_intake_enabled` while
+preserving enabled existing configured organizations. Platform Admin remains
+the only credential/model authority; Organization Admin can toggle the ticket
+form capability only when a valid platform AI configuration exists. Requesters
+receive only an effective boolean capability, and the server independently
+blocks intake analysis when it is off. The conversation composer now has one
+send CTA: it sends and analyzes when enabled, and sends text/verified voice
+manually when disabled. API typecheck, 56 API tests, Web typecheck, 11 Web
+tests and both production builds pass.
+
 **GOAL-023 — Persistent conversational intake layout (complete, 2026-08-24):**
 After the first requester text or voice message, the large description-first
 composer transitions into a compact messenger-style conversation surface rather

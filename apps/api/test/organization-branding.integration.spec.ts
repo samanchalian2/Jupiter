@@ -33,6 +33,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await database.query('DELETE FROM audit_logs WHERE organization_id=$1', [organizationId]);
+  await database.query('DELETE FROM organization_ai_settings WHERE organization_id=$1', [organizationId]);
   await database.query('DELETE FROM membership_roles WHERE membership_id IN (SELECT id FROM memberships WHERE organization_id=$1)', [organizationId]);
   await database.query('DELETE FROM memberships WHERE organization_id=$1', [organizationId]);
   await database.query('DELETE FROM organization_settings WHERE organization_id=$1', [organizationId]);
@@ -42,6 +43,18 @@ afterAll(async () => {
 });
 
 describe('Organization branding', () => {
+  it('lets only the organization administrator enable smart intake after platform AI configuration', async () => {
+    const admin=actor(adminId,['ORG_ADMIN']);
+    const initial=await organizations.settings(admin) as {smart_intake_available:boolean;smart_intake_enabled:boolean};
+    expect(initial.smart_intake_available).toBe(false); expect(initial.smart_intake_enabled).toBe(false);
+    await expect(organizations.saveSettings(admin,{closurePolicy:'STAFF_ONLY',reopenWindowDays:7,businessTimezone:'Asia/Tehran',smartIntakeEnabled:true})).rejects.toBeInstanceOf(BadRequestException);
+    await database.query(`INSERT INTO organization_ai_settings(organization_id,enabled,smart_intake_enabled,model,analysis_model,transcription_model,provider_base_url,api_key_ciphertext,api_key_iv,api_key_auth_tag)
+      VALUES($1,true,false,'analysis-test','analysis-test','transcription-test','https://ai.test/v1',$2,$3,$4)`,[organizationId,Buffer.from('cipher'),Buffer.from('iv'),Buffer.from('tag')]);
+    const enabled=await organizations.saveSettings(admin,{closurePolicy:'STAFF_ONLY',reopenWindowDays:7,businessTimezone:'Asia/Tehran',smartIntakeEnabled:true}) as {smart_intake_available:boolean;smart_intake_enabled:boolean};
+    expect(enabled).toMatchObject({smart_intake_available:true,smart_intake_enabled:true});
+    await expect(organizations.saveSettings(actor(requesterId,['REQUESTER']),{closurePolicy:'STAFF_ONLY',reopenWindowDays:7,businessTimezone:'Asia/Tehran',smartIntakeEnabled:false})).rejects.toBeInstanceOf(ForbiddenException);
+  });
+
   it('allows only organization administrators to complete a size- and media-validated logo upload', async () => {
     await expect(organizations.requestBrandingUpload(actor(adminId, ['ORG_ADMIN']), { filename: 'logo.svg', contentType: 'image/svg+xml', byteSize: 100 })).rejects.toBeInstanceOf(BadRequestException);
     await expect(organizations.requestBrandingUpload(actor(requesterId, ['REQUESTER']), { filename: 'logo.png', contentType: 'image/png', byteSize: 100 })).rejects.toBeInstanceOf(ForbiddenException);

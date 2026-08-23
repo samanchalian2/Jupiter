@@ -16,6 +16,8 @@ be submitted manually.
 
 ## Routes
 
+- `GET /ticket-intakes/capabilities` — returns the requester-visible effective
+  `{ "smartIntakeEnabled": boolean }` policy for the current organization.
 - `POST /ticket-intakes` — create/idempotently recover a session. Optional
   legacy body: `{ "description": "..." }`; optional `Idempotency-Key` header.
 - `POST /ticket-intakes/:id/messages` — add a raw requester text message:
@@ -53,6 +55,12 @@ is 10 MiB. MIME, content length and signed duration metadata are rechecked after
 upload, immediately before transcription and before final attachment transfer.
 
 ## Guided structured analysis
+
+Smart Intake is controlled separately from the platform-managed provider
+credential. When it is disabled by the Organization Admin, text, file and
+voice intake remain available and verified voice remains eligible for transfer
+to the primary ticket, but either analysis route returns `403` and no
+transcription or provider call is queued.
 
 The provider receives redacted ordered requester messages and the current organization's
 category, subcategory, department, location, discipline, active custom-field,

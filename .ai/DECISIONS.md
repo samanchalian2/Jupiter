@@ -136,3 +136,14 @@ later clarification enriches a secondary proposal; only an explicit requester
 correction or replacement can change it. Adding a message clears stale
 secondary suggestions but preserves this anchor until the next analysis writes
 the refreshed interpretation.
+
+## DEC-015 — Organization-controlled Smart Intake policy
+
+Provider credentials, Base URL and model selection remain Platform Admin-only
+configuration. `smart_intake_enabled` is a distinct tenant-scoped policy that
+an Organization Admin may toggle only when platform AI is enabled and has an
+encrypted API key plus a valid analysis model. The requester-visible capability
+contains only the effective boolean; it never exposes credentials or provider
+configuration. Smart Intake gates only pre-ticket transcription and analysis:
+manual text, file and verified voice attachment flows remain usable, and the
+legacy ticket AI gateway remains governed by the platform AI setting.

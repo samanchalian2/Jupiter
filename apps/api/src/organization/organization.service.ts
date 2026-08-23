@@ -201,8 +201,35 @@ export class OrganizationService {
     });
   }
 
-  async settings(actor: Actor) { this.admin(actor); return this.database.withOrganization(actor.organizationId,async c=>(await c.query('SELECT closure_policy,reopen_window_days,business_timezone FROM organization_settings WHERE organization_id=$1',[actor.organizationId])).rows[0] ?? {closure_policy:'STAFF_ONLY',reopen_window_days:7,business_timezone:'Asia/Tehran'}); }
-  async saveSettings(actor: Actor, input:{closurePolicy:'STAFF_ONLY'|'REQUESTER_CONFIRMATION'|'AUTO_EXPIRE';reopenWindowDays:number;businessTimezone:string}) { this.admin(actor); if(!Number.isInteger(input.reopenWindowDays)||input.reopenWindowDays<0||input.reopenWindowDays>90) throw new BadRequestException('Reopen window must be between 0 and 90 days.'); return this.database.withOrganization(actor.organizationId,async c=>{const result=(await c.query('INSERT INTO organization_settings(organization_id,closure_policy,reopen_window_days,business_timezone) VALUES($1,$2,$3,$4) ON CONFLICT(organization_id) DO UPDATE SET closure_policy=EXCLUDED.closure_policy,reopen_window_days=EXCLUDED.reopen_window_days,business_timezone=EXCLUDED.business_timezone,updated_at=now() RETURNING closure_policy,reopen_window_days,business_timezone',[actor.organizationId,input.closurePolicy,input.reopenWindowDays,input.businessTimezone])).rows[0] as { organization_id?: string }; await this.audit(c,actor,'organization.settings_saved','organization',actor.organizationId); return result;}); }
+  async settings(actor: Actor) {
+    this.admin(actor);
+    return this.database.withOrganization(actor.organizationId, async c => {
+      const settings=(await c.query('SELECT closure_policy,reopen_window_days,business_timezone FROM organization_settings WHERE organization_id=$1',[actor.organizationId])).rows[0] ?? {closure_policy:'STAFF_ONLY',reopen_window_days:7,business_timezone:'Asia/Tehran'};
+      const ai=(await c.query<{enabled:boolean;has_api_key:boolean;analysis_model:string|null;smart_intake_enabled:boolean}>(`SELECT enabled,api_key_ciphertext IS NOT NULL AS has_api_key,
+        COALESCE(NULLIF(btrim(analysis_model),''),NULLIF(btrim(model),'')) AS analysis_model,smart_intake_enabled
+        FROM organization_ai_settings WHERE organization_id=$1`,[actor.organizationId])).rows[0];
+      const smartIntakeAvailable=Boolean(ai?.enabled&&ai.has_api_key&&ai.analysis_model);
+      return {...settings,smart_intake_enabled:Boolean(ai?.smart_intake_enabled&&smartIntakeAvailable),smart_intake_available:smartIntakeAvailable,
+        smart_intake_reason:smartIntakeAvailable?null:'برای فعال‌سازی، مدیر پلتفرم باید AI، کلید API و مدل تحلیل را برای این سازمان تنظیم کند.'};
+    });
+  }
+  async saveSettings(actor: Actor, input:{closurePolicy:'STAFF_ONLY'|'REQUESTER_CONFIRMATION'|'AUTO_EXPIRE';reopenWindowDays:number;businessTimezone:string;smartIntakeEnabled?:boolean}) {
+    this.admin(actor);
+    if(!Number.isInteger(input.reopenWindowDays)||input.reopenWindowDays<0||input.reopenWindowDays>90) throw new BadRequestException('Reopen window must be between 0 and 90 days.');
+    await this.database.withOrganization(actor.organizationId,async c=>{
+      const result=(await c.query('INSERT INTO organization_settings(organization_id,closure_policy,reopen_window_days,business_timezone) VALUES($1,$2,$3,$4) ON CONFLICT(organization_id) DO UPDATE SET closure_policy=EXCLUDED.closure_policy,reopen_window_days=EXCLUDED.reopen_window_days,business_timezone=EXCLUDED.business_timezone,updated_at=now() RETURNING closure_policy,reopen_window_days,business_timezone',[actor.organizationId,input.closurePolicy,input.reopenWindowDays,input.businessTimezone])).rows[0] as { organization_id?: string };
+      if(input.smartIntakeEnabled!==undefined){
+        const ai=(await c.query<{enabled:boolean;has_api_key:boolean;analysis_model:string|null}>(`SELECT enabled,api_key_ciphertext IS NOT NULL AS has_api_key,
+          COALESCE(NULLIF(btrim(analysis_model),''),NULLIF(btrim(model),'')) AS analysis_model FROM organization_ai_settings WHERE organization_id=$1`,[actor.organizationId])).rows[0];
+        if(input.smartIntakeEnabled&&!(ai?.enabled&&ai.has_api_key&&ai.analysis_model)) throw new BadRequestException('Smart intake requires a platform-configured AI key and analysis model.');
+        await c.query(`UPDATE organization_ai_settings SET smart_intake_enabled=$2,updated_by_user_id=$3,updated_at=now()
+          WHERE organization_id=$1`,[actor.organizationId,input.smartIntakeEnabled,actor.userId]);
+        await this.audit(c,actor,'organization.smart_intake_changed','organization',actor.organizationId,{enabled:input.smartIntakeEnabled});
+      }
+      await this.audit(c,actor,'organization.settings_saved','organization',actor.organizationId);
+    });
+    return this.settings(actor);
+  }
   async branding(actor: Actor) {
     return this.database.withOrganization(actor.organizationId, async (client) => {
       const row = (await client.query<{ logo_storage_key: string | null }>('SELECT logo_storage_key FROM organization_settings WHERE organization_id=$1', [actor.organizationId])).rows[0];

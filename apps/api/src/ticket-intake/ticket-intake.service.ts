@@ -71,6 +71,16 @@ export class TicketIntakeService {
     });
   }
 
+  async capabilities(actor: TicketActor) {
+    return this.database.withOrganization(actor.organizationId, async client => {
+      const row=(await client.query<{smart_intake_enabled:boolean}>(`SELECT enabled AND smart_intake_enabled
+        AND api_key_ciphertext IS NOT NULL
+        AND COALESCE(NULLIF(btrim(analysis_model),''),NULLIF(btrim(model),'')) IS NOT NULL AS smart_intake_enabled
+        FROM organization_ai_settings WHERE organization_id=$1`,[actor.organizationId])).rows[0];
+      return { smartIntakeEnabled: Boolean(row?.smart_intake_enabled) };
+    });
+  }
+
   async addTextMessage(actor:TicketActor,id:string,input:{text:string}) {
     const text=input.text?.trim();
     if(!text || text.length>10_000) throw new BadRequestException('Message text is invalid');
@@ -187,7 +197,9 @@ export class TicketIntakeService {
       if (session.voice_storage_key && !session.voice_verified_at) throw new BadRequestException('Voice upload must be verified first');
       if (!session.source_description.trim() && !session.voice_storage_key) throw new BadRequestException('Text or voice input is required');
       const configured = (await client.query<{configured:boolean}>(
-        'SELECT enabled AND api_key_ciphertext IS NOT NULL AS configured FROM organization_ai_settings WHERE organization_id=$1', [actor.organizationId],
+        `SELECT enabled AND smart_intake_enabled AND api_key_ciphertext IS NOT NULL
+          AND COALESCE(NULLIF(btrim(analysis_model),''),NULLIF(btrim(model),'')) IS NOT NULL AS configured
+         FROM organization_ai_settings WHERE organization_id=$1`, [actor.organizationId],
       )).rows[0]?.configured;
       if (!configured) throw new ForbiddenException('AI is not configured for this organization');
       const status = session.voice_storage_key && !session.transcript ? 'TRANSCRIBING' : 'ANALYZING';
@@ -211,7 +223,9 @@ export class TicketIntakeService {
       if(!userMessages.length)throw new BadRequestException('A text or voice message is required');
       const pending=userMessages.filter(message=>message.content_type==='VOICE'&&!message.voice_verified_at);
       if(pending.length)throw new BadRequestException('Voice upload must be verified first');
-      const configured=(await client.query<{configured:boolean}>('SELECT enabled AND api_key_ciphertext IS NOT NULL AS configured FROM organization_ai_settings WHERE organization_id=$1',[actor.organizationId])).rows[0]?.configured;
+      const configured=(await client.query<{configured:boolean}>(`SELECT enabled AND smart_intake_enabled AND api_key_ciphertext IS NOT NULL
+        AND COALESCE(NULLIF(btrim(analysis_model),''),NULLIF(btrim(model),'')) IS NOT NULL AS configured
+        FROM organization_ai_settings WHERE organization_id=$1`,[actor.organizationId])).rows[0]?.configured;
       if(!configured)throw new ForbiddenException('AI is not configured for this organization');
       const needsTranscription=userMessages.some(message=>message.content_type==='VOICE'&&!message.transcript);
       const updated=(await client.query<IntakeRow>(`UPDATE ticket_intake_sessions SET status=$2,attempt_count=0,last_error_code=NULL,processing_started_at=NULL,next_attempt_at=now(),

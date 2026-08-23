@@ -11,6 +11,11 @@ export class TicketIntakeController {
     return this.intakes.create(await this.actors.fromHeaders(authorization,organizationId),{description:body.description,idempotencyKey});
   }
 
+  @Get('ticket-intakes/capabilities')
+  async capabilities(@Headers('authorization') authorization?:string,@Headers('x-organization-id') organizationId?:string) {
+    return this.intakes.capabilities(await this.actors.fromHeaders(authorization,organizationId));
+  }
+
   @Post('ticket-intakes/:id/voice/upload-request')
   async uploadRequest(@Param('id') id:string,@Headers('authorization') authorization?:string,@Headers('x-organization-id') organizationId?:string,@Body() body:{filename:string;contentType:string;byteSize:number;durationSeconds:number}={filename:'',contentType:'',byteSize:0,durationSeconds:0}) {
     return this.intakes.requestVoiceUpload(await this.actors.fromHeaders(authorization,organizationId),id,body);

@@ -312,4 +312,20 @@ clarifications visible once in the conversation stream.
 
 **Validation:** Web typecheck, 11 Web tests and the Web production build pass.
 
-**Next Goal:** GOAL-024 — navigation interaction polish.
+**Next Goal:** GOAL-025 — navigation interaction polish.
+
+## GOAL-024 — Organization Smart Intake control and unified send
+
+**Status:** DONE
+
+**Scope:** a separate tenant Smart Intake policy controlled by Organization
+Admin, with platform-only model/key configuration retained; one explicit
+composer send control that optionally invokes analysis; and manual text/voice
+continuity when the policy is disabled.
+
+**Validation:** Migration 032 applied locally. API integration coverage verifies
+Org Admin authorization, unavailable configuration rejection, effective intake
+capability and manual draft fallback. API typecheck, 56 API tests, Web
+typecheck, 11 Web tests, and API/Web production builds pass.
+
+**Next Goal:** GOAL-025 — navigation interaction polish.
