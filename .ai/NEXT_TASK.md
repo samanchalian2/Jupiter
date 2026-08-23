@@ -12,6 +12,12 @@ run again. The composer remains visible while analysis is running and only
 collapses after success. API typecheck, 53 API tests, Web typecheck, 11 Web
 tests, production builds and local browser acceptance passed.
 
+**Follow-up refinement (2026-08-24):** Incomplete legacy or invalid secondary
+cards retain their disabled checkbox, but now always expose the explicit
+«تکمیل جزئیات و تحلیل دوباره» route. This opens a topic-bound new message;
+the requester may provide text or voice and obtain a fresh v5 proposal without
+editing the immutable historical message.
+
 ## GOAL-021 — Confirmed AI secondary-ticket batches
 
 **Status:** COMPLETE (local verification, 2026-08-23)
