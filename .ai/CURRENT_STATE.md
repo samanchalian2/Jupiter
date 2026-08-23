@@ -10,6 +10,17 @@ return their requester identity to the in-transaction submit guard. API typechec
 52 API tests, Web typecheck/build and an authenticated non-personal browser
 submission of a primary plus secondary ticket passed locally.
 
+**Conversation composer and controlled custom tags (complete, 2026-08-24):**
+After a first text or voice message is sent, the large message composer is
+collapsed behind «افزودن توضیح یا پیام دیگر», keeping the intake screen focused
+on the conversation and structured ticket fields. The additional-message action
+restores focus to the composer. Requesters may add up to five normalized custom
+tags; a new tag is linked only to the current ticket as `PENDING` and is not
+made available in the organization vocabulary until an Organization Admin
+reviews it. The existing tenant-safe pending-tag workflow is reused without an
+API or schema change. Web typecheck, 11 Web tests, Web production build and 52
+API tests pass; the live form displays the custom-tag input and governance hint.
+
 **GOAL-020 — Multimodal guided ticket-intake conversation (complete,
 2026-08-23):** `ticket-intake.v3` stores up to five ordered requester text or
 voice messages per tenant- and owner-scoped intake. Raw typed text and each

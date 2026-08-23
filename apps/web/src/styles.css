@@ -363,6 +363,23 @@ button.drawer-backdrop:focus-visible {
   border-color: var(--primary-border);
   box-shadow: 0 0 0 3px rgba(109, 85, 135, .16);
 }
+.add-message-button {
+  grid-column: 1 / -1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  justify-self: start;
+  gap: 8px;
+  min-height: 42px;
+  padding: 9px 14px;
+  color: var(--primary);
+  background: var(--primary-soft);
+  border: 1px dashed var(--primary-border);
+  border-radius: var(--radius-sm);
+  font-weight: 700;
+}
+.add-message-button:hover,
+.add-message-button:focus-visible { color: #fff; background: var(--primary); border-color: var(--primary); }
 .intake-conversation {
   display: grid;
   gap: 10px;
@@ -611,6 +628,17 @@ button.drawer-backdrop:focus-visible {
 .tag-picker button:hover,
 .ticket-tag-field .tag-list button:hover { color: #fff; background: var(--primary); border-color: var(--primary); }
 .ticket-tag-field .tag-list { margin-top: 9px; }
+.custom-tag-entry {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+.custom-tag-entry input { min-width: 0; flex: 1; }
+.custom-tag-entry button { flex: none; }
+.custom-tag-hint,
+.custom-tag-error { margin: 7px 0 0; font-size: .82rem; }
+.custom-tag-hint { color: var(--text-muted); }
+.custom-tag-error { color: var(--danger); }
 .smart-ticket-composer .quick-ticket-actions .ui-button {
   flex: none;
 }
