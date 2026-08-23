@@ -365,15 +365,18 @@ button.drawer-backdrop:focus-visible {
 .intake-message.assistant { justify-self: end; background: #fff; border: 1px solid #e6e3ea; }
 .ai-interpretation {
   padding: 14px;
-  background: linear-gradient(135deg, #fff, var(--primary-soft));
-  border: 1px solid var(--primary-border);
-  border-inline-start: 4px solid var(--primary);
+  color: #1F4E8C;
+  background: linear-gradient(135deg, #f5faff, #e3f1ff);
+  border: 1px solid #a9cbed;
+  border-inline-start: 4px solid #1F4E8C;
   border-radius: var(--radius);
 }
-.ai-interpretation .eyebrow { display: flex; align-items: center; gap: 5px; color: var(--primary); }
+.ai-interpretation .eyebrow { display: flex; align-items: center; gap: 5px; color: #1F4E8C; }
+.ai-interpretation p,
+.ai-interpretation strong { color: #1F4E8C; }
 .ai-interpretation p { margin: 6px 0; }
-.ai-interpretation span { color: var(--text-muted); font-size: .86em; }
-.clarification-question { color: var(--text); }
+.ai-interpretation span { color: #3d6c9f; font-size: .86em; }
+.clarification-question { color: #1F4E8C; }
 .field-label-row {
   display: flex;
   align-items: center;
