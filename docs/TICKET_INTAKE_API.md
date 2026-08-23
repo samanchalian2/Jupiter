@@ -1,4 +1,4 @@
-# Ticket Intake API — `ticket-intake.v3`
+# Ticket Intake API — `ticket-intake.v4`
 
 All routes are under `/api/v1`, require a bearer access token and
 `X-Organization-Id`, and enforce both organization RLS and session ownership.
@@ -42,6 +42,8 @@ be submitted manually.
 - `POST /tickets/drafts` — existing draft payload plus optional
   `intakeSessionId`; atomically creates the draft, provenance and voice
   attachment, then consumes the session.
+- `POST /tickets/intake-batches` — primary draft plus `intakeSessionId` and
+  selected `secondaryProposalIds`; submits all selected valid proposals in one transaction.
 
 ## Voice policy
 
@@ -60,8 +62,9 @@ taxonomy IDs, priority, up to five typed tag proposals, custom fields, missing
 fields and confidence by field. `v3` additionally returns a separate
 interpretation, one primary issue, up to two secondary issues and an optional
 concise clarification question. These fields never replace raw requester text.
-A secondary issue is only a non-blocking proposal; the application never
-creates another ticket without a separate requester action. Only values at or above 0.75 that validate
+A secondary issue is a server-owned, privacy-preserving ticket proposal. It is
+created only after explicit selection and batch confirmation with the primary ticket.
+Voice, files, raw messages and transcripts never transfer to it. Only values at or above 0.75 that validate
 against that catalog are returned in `suggestions`; rejected field names are
 reported without persisting invalid values. New title/tag candidates are saved
 only when the user explicitly creates the final draft and remain pending for

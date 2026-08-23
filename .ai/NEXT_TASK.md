@@ -1,5 +1,12 @@
 # Next Task
 
+## GOAL-021 — Confirmed AI secondary-ticket batches
+
+**Status:** COMPLETE (local verification, 2026-08-23)
+
+The v4 provider contract, server-generated secondary proposal IDs, atomic batch
+submission and requester confirmation UI are complete. See DEC-012.
+
 ## GOAL-020 — Multimodal guided ticket-intake conversation
 
 **Status:** COMPLETE (local verification, 2026-08-23)

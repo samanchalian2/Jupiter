@@ -268,3 +268,10 @@ attachment paths preserve tenant/owner isolation.
 raw text/voice separation, a voice transcript, separate interpretation, primary
 and secondary issue, optional clarification and final voice attachment handoff.
 All 52 API tests, 11 Web tests, API/Web typechecks and production builds pass.
+
+## GOAL-021 — Confirmed AI secondary-ticket batches
+
+**Status:** DONE
+
+**Scope:** v4 proposals, server-owned identifiers, requester confirmation,
+atomic primary-plus-secondary submission, link auditing and source isolation.

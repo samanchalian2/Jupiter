@@ -53,6 +53,15 @@ export class TicketService {
 
   async submit(actor: Actor, ticketId: string) { return this.changeStatus(actor, ticketId, 'OPEN'); }
 
+  async submitWithClient(client:PoolClient, actor:Actor, ticket:{id:string;status:TicketStatus;requester_user_id:string}) {
+    if (ticket.status !== 'DRAFT' || ticket.requester_user_id !== actor.userId) throw new ForbiddenException();
+    assertTransition(ticket.status,'OPEN');
+    await client.query('UPDATE tickets SET status=\'OPEN\',updated_at=now() WHERE id=$1',[ticket.id]);
+    await client.query('INSERT INTO ticket_status_transitions(organization_id,ticket_id,from_status,to_status,changed_by_user_id) VALUES($1,$2,\'DRAFT\',\'OPEN\',$3)',[actor.organizationId,ticket.id,actor.userId]);
+    await this.activity(client,actor,ticket.id,'ticket.status_changed','REQUESTER',{from:'DRAFT',to:'OPEN'});
+    return {...ticket,status:'OPEN' as TicketStatus};
+  }
+
   async changeStatus(actor: Actor, ticketId: string, to: TicketStatus, reason?: string) {
     return this.database.withOrganization(actor.organizationId, async (client) => {
       const ticket = await this.ticket(client, ticketId);

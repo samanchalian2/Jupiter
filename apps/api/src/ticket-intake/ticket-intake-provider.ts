@@ -1,6 +1,6 @@
 import type { AiProviderConfiguration } from '../ai/ai-provider.js';
 
-export const TICKET_INTAKE_CONTRACT_VERSION = 'ticket-intake.v3' as const;
+export const TICKET_INTAKE_CONTRACT_VERSION = 'ticket-intake.v4' as const;
 export type TicketPriority = 'LOW'|'NORMAL'|'HIGH'|'URGENT';
 export type CatalogOption = { id: string; name: string; categoryId?: string };
 export type IntakeTitleOption = { id:string; title:string };
@@ -20,6 +20,11 @@ export type TicketIntakeContext = {
   tags: IntakeTagOption[];
 };
 export type IntakeTagProposal = { tagId:string|null; name:string; kind:IntakeTagKind };
+export type SecondaryTicketProposal = {
+  summary:string; confidence:number; title?:string; description?:string; categoryId?:string|null; subcategoryId?:string|null;
+  departmentId?:string|null; locationId?:string|null; disciplineId?:string|null; priority?:TicketPriority;
+  customFields?:Record<string,unknown>; tags?:IntakeTagProposal[]; confidenceByField?:Record<string,number>;
+};
 export type TicketIntakeProviderOutput = {
   contractVersion: typeof TICKET_INTAKE_CONTRACT_VERSION;
   title: string;
@@ -36,7 +41,7 @@ export type TicketIntakeProviderOutput = {
   confidenceByField: Record<string,number>;
   interpretation?: string;
   primaryIssue?: { summary:string; serviceAsset:string|null; issueType:string|null; confidence:number };
-  secondaryIssues?: Array<{ summary:string; confidence:number }>;
+  secondaryIssues?: SecondaryTicketProposal[];
   clarificationQuestion?: string|null;
   clarificationConfidence?: number|null;
 };

@@ -3,7 +3,7 @@ import { ChevronDown, Mic, Paperclip, Pause, RotateCcw, Send, Sparkles, Trash2 }
 import type { Actor } from './App';
 import { request } from './App';
 import { applyIntakeSuggestions, blocksManualSubmit, intakeFailureMessage, intakeFieldLabel, microphoneErrorMessage, pollIntake, processingStatuses, removeIntakeTranscript, type IntakeSession, type TicketFormState, type TicketTag } from './ticketIntake';
-import { Button, Card } from './ui';
+import { Button, Card, ConfirmDialog } from './ui';
 import { beginVoiceRecording, prepareVoiceCapture, type VoiceRecordingHandle } from './voiceRecording';
 
 type Catalog = { id: string; name: string; category_id?: string };
@@ -36,6 +36,8 @@ export function TicketComposer({ actor, onCreated }: { actor:Actor; onCreated:(t
   const [recordingActive,setRecordingActive]=useState(false);
   const [micRequesting,setMicRequesting]=useState(false);
   const [recordingSeconds,setRecordingSeconds]=useState(0);
+  const [secondaryProposalIds,setSecondaryProposalIds]=useState<string[]>([]);
+  const [confirmBatchOpen,setConfirmBatchOpen]=useState(false);
   const descriptionRef=useRef<HTMLTextAreaElement>(null);
   const recorderRef=useRef<VoiceRecordingHandle|null>(null);
   const pollAbortRef=useRef<AbortController|null>(null);
@@ -139,17 +141,18 @@ export function TicketComposer({ actor, onCreated }: { actor:Actor; onCreated:(t
     }
   };
 
-  const submit=async(event:FormEvent)=>{
-    event.preventDefault();if(recordingActive){setError('ابتدا ضبط صدا را متوقف کنید.');return;}setSubmitBusy(true);setError('');
+  const saveTicket=async()=>{
+    if(recordingActive){setError('ابتدا ضبط صدا را متوقف کنید.');return;}setSubmitBusy(true);setError('');
     try{
       const usableIntake=intake&&!processingStatuses.has(intake.status)?intake.id:undefined;
       if(recording)throw new Error('برای ثبت صدای ضبط‌شده، ابتدا «تکمیل هوشمند» را بزنید یا صدا را حذف کنید.');
       const finalDescription=form.description.trim()||intake?.description||messageDraft.trim();
-      const draft=await request('/tickets/drafts',actor.session,actor.organizationId,{method:'POST',body:JSON.stringify({...form,description:finalDescription,departmentId:form.departmentId||undefined,categoryId:form.categoryId||undefined,subcategoryId:form.subcategoryId||undefined,locationId:form.locationId||undefined,disciplineId:form.disciplineId||undefined,intakeSessionId:usableIntake})}) as {id:string};
-      await request(`/tickets/${draft.id}/submit`,actor.session,actor.organizationId,{method:'POST'});let notice='درخواست شما با موفقیت ثبت شد.';
-      if(file){try{await upload(draft.id,file);}catch{notice='درخواست ثبت شد، اما پیوست بارگذاری نشد؛ می‌توانید آن را در جزئیات تیکت دوباره اضافه کنید.';}}onCreated(draft.id,notice);
+      const payload={...form,description:finalDescription,departmentId:form.departmentId||undefined,categoryId:form.categoryId||undefined,subcategoryId:form.subcategoryId||undefined,locationId:form.locationId||undefined,disciplineId:form.disciplineId||undefined,intakeSessionId:usableIntake};
+      if(secondaryProposalIds.length){const result=await request('/tickets/intake-batches',actor.session,actor.organizationId,{method:'POST',body:JSON.stringify({...payload,secondaryProposalIds})}) as {primary:{id:string;ticketNumber:number};secondary:Array<{ticketNumber:number}>};let notice=`${1+result.secondary.length} درخواست با موفقیت ثبت شد.`;if(file){try{await upload(result.primary.id,file);}catch{notice+=' پیوست فقط برای درخواست اصلی بارگذاری نشد.';}}onCreated(result.primary.id,notice);}
+      else {const draft=await request('/tickets/drafts',actor.session,actor.organizationId,{method:'POST',body:JSON.stringify(payload)}) as {id:string};await request(`/tickets/${draft.id}/submit`,actor.session,actor.organizationId,{method:'POST'});let notice='درخواست شما با موفقیت ثبت شد.';if(file){try{await upload(draft.id,file);}catch{notice='درخواست ثبت شد، اما پیوست بارگذاری نشد؛ می‌توانید آن را در جزئیات تیکت دوباره اضافه کنید.';}}onCreated(draft.id,notice);}
     }catch(cause){setError(cause instanceof Error?cause.message:'ثبت درخواست ناموفق بود.');}finally{setSubmitBusy(false);}
   };
+  const submit=(event:FormEvent)=>{event.preventDefault();if(secondaryProposalIds.length){setConfirmBatchOpen(true);return;}void saveTicket();};
 
   const customInput=(field:CustomField)=>{
     const key=`customFields.${field.field_key}`;const value=form.customFields[field.field_key];const change=(next:unknown)=>{setForm(current=>({...current,customFields:{...current.customFields,[field.field_key]:next}}));markManual(key);};
@@ -171,7 +174,7 @@ export function TicketComposer({ actor, onCreated }: { actor:Actor; onCreated:(t
         {recording&&!recordingActive&&<div className="voice-recorder ready"><audio src={recording.url} controls preload="metadata" aria-label="پخش صدای ضبط‌شده"/><span>{formatDuration(recording.durationSeconds)} · {Math.ceil(recording.blob.size/1024).toLocaleString('fa-IR')} کیلوبایت</span><Button type="button" variant="ghost" onClick={()=>void removeRecording()}><Trash2 size={16}/>حذف</Button><Button type="button" variant="secondary" onClick={()=>void startRecording()}><RotateCcw size={16}/>ضبط مجدد</Button></div>}
         {pipeline&&<p className={`intake-status ${pipeline.toLowerCase()}`} role="status" aria-live="polite">{pipeline==='SUCCEEDED'?<Sparkles size={16}/>:pipeline==='FAILED'?null:<span className="status-spinner"/>}{phaseLabels[pipeline]}</p>}
         </div></section>
-      {(intake?.interpretation||intake?.primaryIssue||intake?.clarificationQuestion||intake?.secondaryIssues?.length)?<section className="ai-interpretation" aria-label="برداشت هوش مصنوعی"><p className="eyebrow"><Sparkles size={14}/>برداشت AI از درخواست</p>{intake.primaryIssue&&<p><strong>موضوع اصلی:</strong> {intake.primaryIssue.summary}</p>}{intake.interpretation&&<p>{intake.interpretation}</p>}{intake.secondaryIssues?.length?<p className="secondary-issues"><strong>مورد ثانویه:</strong> {intake.secondaryIssues.map(issue=>issue.summary).join('، ')} <span>در صورت نیاز می‌توانید برای آن درخواست جداگانه ثبت کنید.</span></p>:null}{intake.clarificationQuestion&&<p className="clarification-question"><strong>سؤال ژوپیتر:</strong> {intake.clarificationQuestion}<span> پاسخ اختیاری است؛ می‌توانید پیام جدید بفرستید یا درخواست اصلی را ثبت کنید.</span></p>}</section>:null}
+      {(intake?.interpretation||intake?.primaryIssue||intake?.clarificationQuestion||intake?.secondaryIssues?.length)?<section className="ai-interpretation" aria-label="برداشت هوش مصنوعی"><p className="eyebrow"><Sparkles size={14}/>برداشت AI از درخواست</p>{intake.primaryIssue&&<p><strong>موضوع اصلی:</strong> {intake.primaryIssue.summary}</p>}{intake.interpretation&&<p>{intake.interpretation}</p>}{intake.secondaryIssues?.length?<section className="secondary-ticket-proposals" aria-label="پیشنهاد تیکت‌های جداگانه"><strong>پیشنهادهای جداگانه</strong>{intake.secondaryIssues.map(issue=><label key={issue.id} className={!issue.eligible?'unavailable':''}><input type="checkbox" disabled={!issue.eligible} checked={secondaryProposalIds.includes(issue.id)} onChange={()=>setSecondaryProposalIds(current=>current.includes(issue.id)?current.filter(id=>id!==issue.id):[...current,issue.id])}/><span><b>{issue.ticket?.title??issue.summary}</b><small>{issue.summary} · {issue.eligible?'قابل ثبت پس از تأیید شما':'اطمینان کافی برای ثبت خودکار ندارد'}</small></span></label>)}</section>:null}{intake.clarificationQuestion&&<p className="clarification-question"><strong>سؤال ژوپیتر:</strong> {intake.clarificationQuestion}<span> پاسخ اختیاری است؛ می‌توانید پیام جدید بفرستید یا درخواست اصلی را ثبت کنید.</span></p>}</section>:null}
       <label><span className="field-label-row"><span>عنوان درخواست</span>{aiBadge('title')}</span><input minLength={3} maxLength={200} value={form.title} onChange={event=>updateField('title',event.target.value)} placeholder="مثلاً دسترسی به سامانه مالی" required/></label>
       <label><span className="field-label-row"><span>دسته‌بندی</span>{aiBadge('categoryId')}</span><select value={form.categoryId} onChange={event=>{updateField('categoryId',event.target.value);updateField('subcategoryId','');}}><option value="">انتخاب نشده</option>{catalogs.categories.map(item=><option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
       {guidance.length>0&&<p className="ai-guidance" role="status">برای اطمینان بیشتر، این موارد را دستی بررسی کنید: {guidance.join('، ')}.</p>}
@@ -186,7 +189,8 @@ export function TicketComposer({ actor, onCreated }: { actor:Actor; onCreated:(t
         {customFields.map(customInput)}
       </div>}
       {error&&<p className="error composer-error" role="alert">{error}{pipeline==='FAILED'&&<button type="button" onClick={()=>void runAi()}>تلاش دوباره</button>}</p>}
-      <div className="quick-ticket-actions"><Button type="submit" loading={submitBusy} disabled={blocksManualSubmit(pipelineBusy,Boolean(recording),recordingActive)}><Send size={17}/>ثبت درخواست</Button><span>{pipelineBusy&&!recording?'می‌توانید بدون انتظار برای AI، عنوان را دستی وارد و درخواست را ثبت کنید.':'AI هرگز درخواست را خودکار ثبت نمی‌کند؛ پیش از ارسال همه فیلدها قابل ویرایش‌اند.'}</span></div>
+      <div className="quick-ticket-actions"><Button type="submit" loading={submitBusy} disabled={blocksManualSubmit(pipelineBusy,Boolean(recording),recordingActive)}><Send size={17}/>{secondaryProposalIds.length?`ثبت ${secondaryProposalIds.length+1} درخواست`:'ثبت درخواست'}</Button><span>{pipelineBusy&&!recording?'می‌توانید بدون انتظار برای AI، عنوان را دستی وارد و درخواست را ثبت کنید.':'AI هرگز درخواست را خودکار ثبت نمی‌کند؛ پیش از ارسال همه فیلدها قابل ویرایش‌اند.'}</span></div>
     </form>
+    <ConfirmDialog open={confirmBatchOpen} title="تأیید ثبت درخواست‌ها" body={`درخواست اصلی و ${secondaryProposalIds.length} درخواست جداگانه ثبت می‌شوند. پیوست‌ها و پیام‌های صوتی فقط به درخواست اصلی منتقل خواهند شد.`} confirmLabel={`ثبت ${secondaryProposalIds.length+1} درخواست`} onClose={()=>setConfirmBatchOpen(false)} onConfirm={()=>{setConfirmBatchOpen(false);void saveTicket();}}/>
   </Card>;
 }

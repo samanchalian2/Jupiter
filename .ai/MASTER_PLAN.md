@@ -28,3 +28,6 @@ before AI can suggest tenant-specific categories and typed tags.
 The approved multimodal guided-intake extension adds (20) ordered text/voice
 conversation, separate AI interpretation and non-blocking clarification before
 the final explicit ticket submission.
+
+The approved secondary-ticket extension adds (21) requester-confirmed atomic
+creation of validated, privacy-preserving secondary tickets.

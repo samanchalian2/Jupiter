@@ -259,7 +259,7 @@ export class TicketIntakeService {
         const completeMessages=await this.database.withOrganization(organizationId,client=>client.query<IntakeMessageRow>('SELECT * FROM ticket_intake_messages WHERE intake_session_id=$1 AND discarded_at IS NULL ORDER BY sequence_number',[id]).then(result=>result.rows));
         const description=this.combineConversation(completeMessages);const context=await this.context(organizationId,description,completeMessages);
         const answer=await aiProvider.analyzeIntake({context,configuration:{baseUrl:configuration.provider_base_url,apiKey:configuration.apiKey,model:configuration.analysis_model}});const validated=this.validateAnalysis(answer.output,context);
-        const interpretation=this.safeText(answer.output.interpretation,2_000);const primary=this.validIssue(answer.output.primaryIssue);const secondary=this.validIssues(answer.output.secondaryIssues);const question=this.safeText(answer.output.clarificationQuestion,500);const questionConfidence=typeof answer.output.clarificationConfidence==='number'&&Number.isFinite(answer.output.clarificationConfidence)?Math.max(0,Math.min(1,answer.output.clarificationConfidence)):null;
+        const interpretation=this.safeText(answer.output.interpretation,2_000);const primary=this.validIssue(answer.output.primaryIssue);const secondary=this.secondaryProposals(answer.output,context);const question=this.safeText(answer.output.clarificationQuestion,500);const questionConfidence=typeof answer.output.clarificationConfidence==='number'&&Number.isFinite(answer.output.clarificationConfidence)?Math.max(0,Math.min(1,answer.output.clarificationConfidence)):null;
         await this.database.withOrganization(organizationId,async client=>{
           await client.query(`UPDATE ticket_intake_sessions SET status='SUCCEEDED',source_description=$2,combined_description=$2,analysis_contract_version=$3,analysis_result=$4,provider_usage=$5,missing_fields=$6,confidence_by_field=$7,rejected_fields=$8,conversation_summary=$9,primary_issue=$10,secondary_issues=$11,clarification_question=$12,clarification_confidence=$13,attempt_count=0,processing_started_at=NULL,next_attempt_at=NULL,last_error_code=NULL,updated_at=now() WHERE id=$1`,[id,description,TICKET_INTAKE_CONTRACT_VERSION,validated.result,answer.usage,JSON.stringify(validated.missingFields),validated.confidenceByField,JSON.stringify(validated.rejectedFields),interpretation,primary,JSON.stringify(secondary),question,questionConfidence]);
           await client.query("DELETE FROM ticket_intake_messages WHERE intake_session_id=$1 AND role='ASSISTANT'",[id]);
@@ -335,6 +335,30 @@ export class TicketIntakeService {
       await client.query("UPDATE ticket_intake_sessions SET status='CONSUMED',ticket_id=$2,consumed_at=now(),updated_at=now() WHERE id=$1",[session.id,ticket.id]);
       await this.audit(client,actor,'ticket_intake.consumed',session.id,{ticketId:ticket.id,voiceAttached:Boolean(session.voice_storage_key&&session.voice_verified_at),conversationVoiceCount:conversationVoices.length});
       return {...ticket,intakeSessionId:session.id};
+    });
+  }
+
+  async createBatch(actor:TicketActor,data:CreateDraftData & {intakeSessionId:string;secondaryProposalIds?:string[]}) {
+    if (!data.intakeSessionId) throw new BadRequestException('Ticket intake is required');
+    if (!data.title?.trim() || data.title.trim().length<3 || data.title.trim().length>200 || !data.description?.trim() || data.description.length>10_000) throw new BadRequestException('Title and description are required');
+    const selected=[...new Set((data.secondaryProposalIds??[]).filter((id):id is string=>typeof id==='string'))].slice(0,2);
+    return this.database.withOrganization(actor.organizationId,async client=>{
+      const session=await this.owned(client,actor,data.intakeSessionId,true);this.assertMutable(session);
+      if(session.status!=='SUCCEEDED')throw new BadRequestException('Ticket intake must finish before batch creation');
+      const proposals=(session.secondary_issues??[]) as Array<{id?:string;eligible?:boolean;ticket?:CreateDraftData;summary?:string}>;
+      const chosen=selected.map(id=>proposals.find(proposal=>proposal.id===id)).filter((proposal):proposal is {id:string;eligible:true;ticket:CreateDraftData;summary:string}=>Boolean(proposal?.id&&proposal.eligible&&proposal.ticket&&proposal.summary));
+      if(chosen.length!==selected.length)throw new BadRequestException('Selected secondary proposal is unavailable');
+      const primary=await this.tickets.createDraftWithClient(client,actor,data);await this.tickets.attachIntakeTagsWithClient(client,actor,primary.id,data.tags??[]);await this.recordTitleCandidate(client,actor,primary.id,data.title);
+      if(session.voice_storage_key&&session.voice_original_filename&&session.voice_content_type&&session.voice_byte_size&&session.voice_verified_at){if(!this.voiceObjectMatches(session,await this.storage.head(session.voice_storage_key)))throw new BadRequestException('Voice object metadata has changed');await this.attachments.attachAvailableWithClient(client,actor,primary.id,{storageKey:session.voice_storage_key,filename:session.voice_original_filename,contentType:session.voice_content_type,byteSize:Number(session.voice_byte_size)});}
+      const voices=(await client.query<IntakeMessageRow>("SELECT * FROM ticket_intake_messages WHERE intake_session_id=$1 AND content_type='VOICE' AND discarded_at IS NULL ORDER BY sequence_number",[session.id])).rows;
+      for(const voice of voices){if(!voice.voice_storage_key||!voice.voice_original_filename||!voice.voice_content_type||!voice.voice_byte_size||!voice.voice_verified_at||!this.voiceMessageMatches(voice,await this.storage.head(voice.voice_storage_key)))throw new BadRequestException('Voice upload is not verified');await this.attachments.attachAvailableWithClient(client,actor,primary.id,{storageKey:voice.voice_storage_key,filename:voice.voice_original_filename,contentType:voice.voice_content_type,byteSize:Number(voice.voice_byte_size)});}
+      await this.tickets.submitWithClient(client,actor,primary);
+      const secondary=[] as Array<{id:string;ticketNumber:number;title:string}>;
+      for(const proposal of chosen){const ticket=await this.tickets.createDraftWithClient(client,actor,proposal.ticket);await this.tickets.attachIntakeTagsWithClient(client,actor,ticket.id,proposal.ticket.tags??[]);await this.recordTitleCandidate(client,actor,ticket.id,proposal.ticket.title);await this.tickets.submitWithClient(client,actor,ticket);await client.query('INSERT INTO ticket_intake_secondary_ticket_links(organization_id,intake_session_id,proposal_id,primary_ticket_id,secondary_ticket_id) VALUES($1,$2,$3,$4,$5)',[actor.organizationId,session.id,proposal.id,primary.id,ticket.id]);secondary.push({id:ticket.id,ticketNumber:ticket.ticket_number,title:ticket.title});}
+      await client.query(`INSERT INTO ticket_intake_provenance(organization_id,ticket_id,intake_session_id,analysis_contract_version,analysis_result,confidence_by_field) VALUES($1,$2,$3,$4,$5,$6)`,[actor.organizationId,primary.id,session.id,session.analysis_contract_version,session.analysis_result,session.confidence_by_field]);
+      await client.query("UPDATE ticket_intake_sessions SET status='CONSUMED',ticket_id=$2,consumed_at=now(),updated_at=now() WHERE id=$1",[session.id,primary.id]);
+      await this.audit(client,actor,'ticket_intake.batch_consumed',session.id,{primaryTicketId:primary.id,secondaryTicketIds:secondary.map(item=>item.id),secondaryProposalIds:selected,conversationVoiceCount:voices.length});
+      return {primary:{id:primary.id,ticketNumber:primary.ticket_number,title:primary.title},secondary,intakeSessionId:session.id};
     });
   }
 
@@ -507,6 +531,15 @@ export class TicketIntakeService {
   private safeText(value:unknown,max:number) { return typeof value==='string'&&value.trim()?value.trim().slice(0,max):null; }
   private validIssue(value:unknown) { if(!value||typeof value!=='object')return null;const item=value as {summary?:unknown;serviceAsset?:unknown;issueType?:unknown;confidence?:unknown};const summary=this.safeText(item.summary,500);if(!summary||typeof item.confidence!=='number'||!Number.isFinite(item.confidence))return null;return {summary,serviceAsset:this.safeText(item.serviceAsset,100),issueType:this.safeText(item.issueType,100),confidence:Math.max(0,Math.min(1,item.confidence))}; }
   private validIssues(value:unknown) { return Array.isArray(value)?value.map(item=>{const issue=this.validIssue({...item,serviceAsset:null,issueType:null});return issue?{summary:issue.summary,confidence:issue.confidence}:null;}).filter((item):item is {summary:string;confidence:number}=>Boolean(item)).slice(0,2):[]; }
+  private secondaryProposals(output:TicketIntakeProviderOutput,context:TicketIntakeContext) {
+    return (output.secondaryIssues??[]).slice(0,2).map(issue=>{
+      const summary=this.safeText(issue.summary,500);const description=this.safeText(issue.description,10_000);const confidence=typeof issue.confidence==='number'&&Number.isFinite(issue.confidence)?Math.max(0,Math.min(1,issue.confidence)):0;
+      if(!summary||!description||description.length<3)return {id:randomUUID(),summary:summary??'مورد ثانویه',confidence,eligible:false};
+      const validated=this.validateAnalysis({...output,...issue,contractVersion:TICKET_INTAKE_CONTRACT_VERSION,titleLibraryId:null,customFields:issue.customFields??{},tags:issue.tags??[],confidenceByField:issue.confidenceByField??{},missingFields:[],interpretation:undefined,primaryIssue:undefined,secondaryIssues:[],clarificationQuestion:null,clarificationConfidence:null},context);
+      const suggestions=validated.result.suggestions as CreateDraftData;const eligible=confidence>=confidenceThreshold&&typeof suggestions.title==='string'&&typeof suggestions.priority==='string';
+      return {id:randomUUID(),summary,confidence,eligible,ticket:eligible?{...suggestions,description}:undefined};
+    }).filter(Boolean) as Array<{id:string;summary:string;confidence:number;eligible:boolean;ticket?:CreateDraftData}>;
+  }
   private assertMutable(row:IntakeRow) {
     if (row.status==='CONSUMED') throw new BadRequestException('Ticket intake has already been consumed');
     if (row.status==='EXPIRED'||new Date(row.expires_at).getTime()<=Date.now()) throw new BadRequestException('Ticket intake has expired');

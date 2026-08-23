@@ -1,5 +1,11 @@
 # Current State
 
+**GOAL-021 — Confirmed AI secondary-ticket batches (complete, 2026-08-23):**
+`ticket-intake.v4` supplies up to two server-identified, tenant-validated and
+privacy-preserving secondary ticket proposals. A requester selects none by
+default and confirms one atomic submission with the primary ticket; attachments,
+voice and raw/transcribed source content remain solely on the primary ticket.
+
 **GOAL-020 — Multimodal guided ticket-intake conversation (complete,
 2026-08-23):** `ticket-intake.v3` stores up to five ordered requester text or
 voice messages per tenant- and owner-scoped intake. Raw typed text and each

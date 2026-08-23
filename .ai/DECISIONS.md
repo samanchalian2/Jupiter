@@ -100,3 +100,13 @@ creation is a non-blocking explicit action and never occurs by default. All
 verified voice messages transfer to the final ticket as attachments. This
 extends DEC-008 without changing ticket lifecycle, credential policy, tenant
 isolation, the 0.75 assignment gate or the 24-hour intake expiry.
+
+## DEC-012 — Confirmed secondary-ticket batch creation
+
+`ticket-intake.v4` may return up to two server-validated, privacy-preserving
+secondary ticket proposals. They are never created by AI or selected by
+default. A requester explicitly selects proposals and confirms a single batch
+submission with the primary ticket. The tenant- and owner-scoped intake is
+locked and consumed in the same transaction as every ticket; proposal IDs are
+server-generated and client payloads cannot alter their ticket content. Voice,
+files, raw messages and transcripts remain attached only to the primary ticket.
