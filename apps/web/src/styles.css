@@ -329,6 +329,7 @@ button.drawer-backdrop:focus-visible {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 .smart-ticket-composer .ticket-description-field,
+.smart-ticket-composer .message-composer,
 .smart-ticket-composer .smart-intake-toolbar,
 .smart-ticket-composer .intake-conversation,
 .smart-ticket-composer .ai-interpretation,
@@ -342,6 +343,25 @@ button.drawer-backdrop:focus-visible {
 .smart-ticket-composer .ticket-description-field textarea {
   min-height: 128px;
   line-height: 1.85;
+}
+.message-composer {
+  display: grid;
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid var(--primary-border);
+  border-radius: var(--radius);
+}
+.message-composer .ticket-description-field {
+  padding: 13px 13px 8px;
+}
+.message-composer .ticket-description-field textarea {
+  min-height: 118px;
+  border-color: transparent;
+  box-shadow: none;
+}
+.message-composer .ticket-description-field textarea:focus {
+  border-color: var(--primary-border);
+  box-shadow: 0 0 0 3px rgba(109, 85, 135, .16);
 }
 .intake-conversation {
   display: grid;
@@ -400,10 +420,11 @@ button.drawer-backdrop:focus-visible {
 .smart-intake-toolbar {
   display: grid;
   gap: 11px;
-  padding: 13px;
-  background: linear-gradient(135deg, var(--primary-soft), #fff 72%);
-  border: 1px solid var(--primary-border);
-  border-radius: var(--radius);
+  padding: 9px 12px;
+  background: #faf9fb;
+  border: 0;
+  border-top: 1px solid var(--primary-border);
+  border-radius: 0;
 }
 .smart-intake-actions,
 .voice-recorder,
@@ -415,6 +436,76 @@ button.drawer-backdrop:focus-visible {
 .smart-intake-actions {
   justify-content: flex-start;
 }
+.message-utility-button,
+.message-send-button {
+  position: relative;
+  display: grid;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  place-items: center;
+  color: var(--primary);
+  background: transparent;
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.message-utility-button input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+.message-utility-button:hover:not(:has(input:disabled)),
+.message-utility-button:focus-visible,
+.message-utility-button.recording {
+  color: #fff;
+  background: var(--primary);
+}
+.message-utility-button.recording { background: var(--danger); }
+.message-utility-button:disabled,
+.message-send-button:disabled { opacity: .45; cursor: not-allowed; }
+.message-ai-button.ui-button {
+  min-height: 38px;
+  margin-inline-start: auto;
+  padding: 7px 12px;
+  font-size: .82rem;
+}
+.message-send-button {
+  color: #fff;
+  background: var(--primary);
+}
+.message-send-button:hover:not(:disabled),
+.message-send-button:focus-visible { color: #fff; background: var(--primary-dark); }
+.selected-attachment {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  margin: 0;
+  padding: 7px 10px;
+  color: var(--primary-text);
+  background: var(--primary-soft);
+  border-radius: var(--radius-sm);
+  font-size: .78rem;
+}
+.selected-attachment svg { flex: none; }
+.selected-attachment button {
+  display: grid;
+  width: 25px;
+  height: 25px;
+  margin-inline-start: auto;
+  padding: 0;
+  place-items: center;
+  color: var(--primary-text);
+  background: transparent;
+  border: 0;
+  border-radius: 999px;
+}
+.selected-attachment button:hover,
+.selected-attachment button:focus-visible { color: #fff; background: var(--primary); }
 .voice-recorder {
   flex-wrap: wrap;
   min-width: 0;
@@ -541,16 +632,16 @@ button.drawer-backdrop:focus-visible {
   .smart-ticket-composer .ticket-description-field textarea {
     min-height: 155px;
   }
-  .smart-intake-actions,
   .voice-recorder.ready {
     align-items: stretch;
     flex-direction: column;
   }
-  .smart-intake-actions .ui-button,
   .voice-recorder.ready .ui-button,
   .voice-recorder.ready audio {
     width: 100%;
   }
+  .smart-intake-actions { gap: 6px; }
+  .message-ai-button.ui-button { padding-inline: 9px; font-size: .76rem; }
   .voice-recorder.recording {
     justify-content: space-between;
   }
