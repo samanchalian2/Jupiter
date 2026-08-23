@@ -1,5 +1,11 @@
 # Current State
 
+**Voice re-record replacement (complete, 2026-08-23):** Starting a new voice
+capture now removes only the transcript section appended by the prior successful
+voice intake, while preserving any text the requester typed before or after it.
+The new recording can therefore replace the former voice-derived description
+instead of accumulating it.
+
 **Voice-intake provider compatibility recovery (complete, 2026-08-22):** Chrome
 records WebM/Opus, which the configured provider rejected despite a successful
 upload and metadata verification. The composer now converts the local capture

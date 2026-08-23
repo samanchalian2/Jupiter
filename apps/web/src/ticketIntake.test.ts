@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { applyIntakeSuggestions, blocksManualSubmit, intakeFailureMessage, maximumRecordingSeconds, microphoneErrorMessage, pollIntake, scheduleRecordingAutoStop, type IntakeSession, type TicketFormState } from './ticketIntake';
+import { applyIntakeSuggestions, blocksManualSubmit, intakeFailureMessage, maximumRecordingSeconds, microphoneErrorMessage, pollIntake, removeIntakeTranscript, scheduleRecordingAutoStop, type IntakeSession, type TicketFormState } from './ticketIntake';
 
 const form: TicketFormState = { title:'عنوان دستی',description:'شرح اصلی',priority:'NORMAL',departmentId:'',categoryId:'',subcategoryId:'',locationId:'',disciplineId:'',customFields:{asset:'قدیمی'},tags:[] };
 const session = (status:IntakeSession['status']):IntakeSession => ({ id:'intake-1',status,description:'شرح اصلی',transcript:null,combinedDescription:null,suggestions:null,missingFields:[],confidenceByField:{},rejectedFields:[],voice:null,attemptCount:0,lastErrorCode:null,expiresAt:new Date().toISOString() });
@@ -16,6 +16,11 @@ describe('smart ticket intake helpers', () => {
     expect(result.form.description).toContain('شرح اصلی');
     expect(result.form.description).toContain('متن صدا');
     expect(result.changedFields.has('description')).toBe(true);
+  });
+
+  it('removes only the previous voice transcript before a re-recording', () => {
+    const successful={...session('SUCCEEDED'),description:'شرح تایپ‌شده',transcript:'متن صدای قبلی',combinedDescription:'شرح تایپ‌شده\n\nمتن پیاده‌سازی‌شده صدا:\nمتن صدای قبلی'};
+    expect(removeIntakeTranscript(`${successful.combinedDescription}\nیادداشت دستی بعدی`,successful)).toBe('شرح تایپ‌شده\nیادداشت دستی بعدی');
   });
 
   it('polls through processing states to success', async () => {

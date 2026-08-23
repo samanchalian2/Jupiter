@@ -89,6 +89,20 @@ export function applyIntakeSuggestions(current: TicketFormState, session: Intake
   return { form: next, changedFields: changed };
 }
 
+/**
+ * Removes only the transcript section that this intake session appended. This
+ * lets a new voice capture replace an earlier one without discarding text the
+ * requester typed before or after the previous transcript.
+ */
+export function removeIntakeTranscript(currentDescription: string, session: Pick<IntakeSession, 'description'|'transcript'|'combinedDescription'>) {
+  if (!session.transcript || !session.combinedDescription || !session.combinedDescription.startsWith(session.description)) return currentDescription;
+  const transcriptSection = session.combinedDescription.slice(session.description.length);
+  if (!transcriptSection || !currentDescription.startsWith(session.description)) return currentDescription;
+  const afterSource = currentDescription.slice(session.description.length);
+  if (!afterSource.startsWith(transcriptSection)) return currentDescription;
+  return `${session.description}${afterSource.slice(transcriptSection.length)}`;
+}
+
 const fieldLabels: Record<string, string> = {
   title: 'عنوان',
   priority: 'اولویت',

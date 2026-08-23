@@ -1,5 +1,13 @@
 # Next Task
 
+## Voice re-record replacement
+
+**Status:** COMPLETE (local verification, 2026-08-23)
+
+A re-record operation removes the precisely tracked prior intake transcript
+from the composer description while retaining surrounding typed content. The
+next voice analysis therefore appends only the fresh transcript.
+
 ## Voice-intake upload recovery
 
 **Status:** COMPLETE (local verification, 2026-08-22)

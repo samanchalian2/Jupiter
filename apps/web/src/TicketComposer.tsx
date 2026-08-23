@@ -2,7 +2,7 @@ import { ChangeEvent, FormEvent, useEffect, useRef, useState } from 'react';
 import { ChevronDown, FilePlus2, Mic, Pause, RotateCcw, Send, Sparkles, Trash2 } from 'lucide-react';
 import type { Actor } from './App';
 import { request } from './App';
-import { applyIntakeSuggestions, blocksManualSubmit, intakeFailureMessage, intakeFieldLabel, microphoneErrorMessage, pollIntake, processingStatuses, type IntakeSession, type TicketFormState, type TicketTag } from './ticketIntake';
+import { applyIntakeSuggestions, blocksManualSubmit, intakeFailureMessage, intakeFieldLabel, microphoneErrorMessage, pollIntake, processingStatuses, removeIntakeTranscript, type IntakeSession, type TicketFormState, type TicketTag } from './ticketIntake';
 import { Button, Card } from './ui';
 import { beginVoiceRecording, prepareVoiceCapture, type VoiceRecordingHandle } from './voiceRecording';
 
@@ -69,7 +69,11 @@ export function TicketComposer({ actor, onCreated }: { actor:Actor; onCreated:(t
     await request(`/tickets/${ticketId}/attachments/${response.attachment.id}/complete`,actor.session,actor.organizationId,{method:'POST'});
   };
   const discardRemoteVoice=async()=>{if(!intake?.voice)return;try{await request(`/ticket-intakes/${intake.id}/voice/discard`,actor.session,actor.organizationId,{method:'POST'});}catch{/* worker cleanup */}setIntake(null);};
-  const removeRecording=async()=>{if(recordingActive)recorderRef.current?.stop();await discardRemoteVoice();setRecording(null);setRecordingSeconds(0);setPipeline('');setGuidance([]);markManual('description');};
+  const removeRecording=async({ clearTranscript=false }:{clearTranscript?:boolean}={})=>{
+    if(recordingActive)recorderRef.current?.stop();
+    if(clearTranscript&&intake?.transcript)setForm(current=>({...current,description:removeIntakeTranscript(current.description,intake)}));
+    await discardRemoteVoice();setRecording(null);setRecordingSeconds(0);setPipeline('');setGuidance([]);markManual('description');
+  };
   const stopRecording=()=>recorderRef.current?.stop();
   const compatibleRecording=async(value:Recording)=>{
     if(value.contentType==='audio/wav')return value;
@@ -80,7 +84,7 @@ export function TicketComposer({ actor, onCreated }: { actor:Actor; onCreated:(t
   const startRecording=async()=>{
     setError('');
     if(!navigator.mediaDevices?.getUserMedia||typeof MediaRecorder==='undefined'){setError('مرورگر شما از ضبط صدا پشتیبانی نمی‌کند؛ شرح درخواست را دستی بنویسید.');return;}
-    if(recording)await removeRecording();
+    if(recording)await removeRecording({clearTranscript:true});
     try{
       setMicRequesting(true);setPipeline('');setGuidance([]);
       recorderRef.current=await beginVoiceRecording({onTick:setRecordingSeconds,onError:()=>{setRecordingActive(false);setError('آماده‌سازی صدای ضبط‌شده کامل نشد؛ دوباره تلاش کنید یا شرح درخواست را دستی بنویسید.');},onReady:({blob,durationSeconds,contentType})=>{
