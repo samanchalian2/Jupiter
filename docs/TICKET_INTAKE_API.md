@@ -1,4 +1,4 @@
-# Ticket Intake API — `ticket-intake.v4`
+# Ticket Intake API — `ticket-intake.v5`
 
 All routes are under `/api/v1`, require a bearer access token and
 `X-Organization-Id`, and enforce both organization RLS and session ownership.
@@ -64,8 +64,14 @@ interpretation, one primary issue, up to two secondary issues and an optional
 concise clarification question. These fields never replace raw requester text.
 A secondary issue is a server-owned, privacy-preserving ticket proposal. It is
 created only after explicit selection and batch confirmation with the primary ticket.
-Voice, files, raw messages and transcripts never transfer to it. Only values at or above 0.75 that validate
-against that catalog are returned in `suggestions`; rejected field names are
+Voice, files, raw messages and transcripts never transfer to it. A proposal is
+selectable only when its server-validated title, standalone description,
+priority and supplied taxonomy values are structurally valid for the tenant.
+Its `requiresReview` flag is true below confidence `0.75`; the UI must show a
+warning and repeat it in the final confirmation, but an explicit requester
+selection may still submit it. Incomplete, invalid or foreign-tenant proposals
+remain unavailable. Only values at or above 0.75 that validate against that
+catalog are returned in primary-ticket `suggestions`; rejected field names are
 reported without persisting invalid values. New title/tag candidates are saved
 only when the user explicitly creates the final draft and remain pending for
 Organization Admin review.

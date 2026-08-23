@@ -30,7 +30,7 @@ const analysisSchema = {
 } as const;
 
 const ticketIntakeSchema = {
-  name: 'jupiter_ticket_intake_v4', strict: true,
+  name: 'jupiter_ticket_intake_v5', strict: true,
   schema: {
     type: 'object', additionalProperties: false,
     properties: {
@@ -85,7 +85,7 @@ export class HttpAiProvider implements AiProvider, TicketIntakeProvider {
     if (!content) throw new Error('AI provider response is invalid');
     let raw: Omit<TicketIntakeProviderOutput,'customFields'|'confidenceByField'> & { customFields:Array<{key:string;value:unknown}>; confidenceByField:Array<{field:string;confidence:number}> };
     try { raw = JSON.parse(content) as typeof raw; } catch { throw new Error('AI provider response is invalid'); }
-    if ((raw.contractVersion !== TICKET_INTAKE_CONTRACT_VERSION && raw.contractVersion !== 'ticket-intake.v3') || !Array.isArray(raw.customFields) || !Array.isArray(raw.tags) || !Array.isArray(raw.confidenceByField)) throw new Error('AI provider response is invalid');
+    if ((raw.contractVersion !== TICKET_INTAKE_CONTRACT_VERSION && raw.contractVersion !== 'ticket-intake.v4' && raw.contractVersion !== 'ticket-intake.v3') || !Array.isArray(raw.customFields) || !Array.isArray(raw.tags) || !Array.isArray(raw.confidenceByField)) throw new Error('AI provider response is invalid');
     const customFields = Object.fromEntries(raw.customFields.filter((item) => item && typeof item.key === 'string').map((item) => [item.key,item.value]));
     const confidenceByField = Object.fromEntries(raw.confidenceByField.filter((item) => item && typeof item.field === 'string' && typeof item.confidence === 'number').map((item) => [item.field,Math.max(0,Math.min(1,item.confidence))]));
     const secondaryIssues=(raw.secondaryIssues??[]).map((item:any)=>({...item,customFields:Object.fromEntries((item.customFields??[]).filter((field:any)=>field&&typeof field.key==='string').map((field:any)=>[field.key,field.value])),confidenceByField:Object.fromEntries((item.confidenceByField??[]).filter((field:any)=>field&&typeof field.field==='string'&&typeof field.confidence==='number').map((field:any)=>[field.field,Math.max(0,Math.min(1,field.confidence))]))}));

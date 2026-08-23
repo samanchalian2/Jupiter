@@ -41,7 +41,7 @@ export type IntakeSession = {
   expiresAt: string;
   interpretation?: string | null;
   primaryIssue?: { summary:string; serviceAsset:string|null; issueType:string|null; confidence:number } | null;
-  secondaryIssues?: Array<{ id:string; summary:string; confidence:number; eligible:boolean; ticket?: Partial<TicketFormState> & {description?:string} }>;
+  secondaryIssues?: Array<{ id:string; summary:string; confidence:number; selectable?:boolean; eligible?:boolean; requiresReview?:boolean; ticket?: Partial<TicketFormState> & {description?:string} }>;
   clarificationQuestion?: string | null;
   clarificationConfidence?: number | null;
   messages?: Array<{id:string;sequence:number;role:'USER'|'ASSISTANT';contentType:'TEXT'|'VOICE'|'CLARIFICATION';text:string|null;transcript:string|null;voice:{filename:string;contentType:string;byteSize:number;durationSeconds:number;verified:boolean}|null;createdAt:string}>;

@@ -38,7 +38,7 @@ beforeAll(async()=>{
   orgA=orgs.rows.find(row=>row.slug==='goal14-a')!.id;orgB=orgs.rows.find(row=>row.slug==='goal14-b')!.id;
   const users=await database.query<{id:string;email:string}>("INSERT INTO users(email,display_name,password_hash) VALUES('goal14-a@jupiter.local','Goal 14 A','scrypt$AA$AA'),('goal14-b@jupiter.local','Goal 14 B','scrypt$AA$AA') ON CONFLICT(email) DO UPDATE SET display_name=EXCLUDED.display_name RETURNING id,email");
   userA=users.rows.find(row=>row.email==='goal14-a@jupiter.local')!.id;userB=users.rows.find(row=>row.email==='goal14-b@jupiter.local')!.id;
-  for(const table of ['ticket_intake_provenance','ticket_attachments','ticket_custom_field_values','ticket_sla_clocks','ticket_activities','ticket_assignments','ticket_status_transitions','ticket_tag_links','tickets','ticket_intake_messages','ticket_intake_sessions','outbox_events','organization_ai_settings','audit_logs','ticket_title_library','ticket_tags','ticket_custom_field_definitions','subcategories','categories','departments','locations','disciplines','memberships']) await database.query(`DELETE FROM ${table} WHERE organization_id IN($1,$2)`,[orgA,orgB]);
+  for(const table of ['ticket_intake_secondary_ticket_links','ticket_intake_provenance','ticket_attachments','ticket_custom_field_values','ticket_sla_clocks','ticket_activities','ticket_assignments','ticket_status_transitions','ticket_tag_links','tickets','ticket_intake_messages','ticket_intake_sessions','outbox_events','organization_ai_settings','audit_logs','ticket_title_library','ticket_tags','ticket_custom_field_definitions','subcategories','categories','departments','locations','disciplines','memberships']) await database.query(`DELETE FROM ${table} WHERE organization_id IN($1,$2)`,[orgA,orgB]);
   await database.query('INSERT INTO memberships(organization_id,user_id) VALUES($1,$2),($3,$4) ON CONFLICT DO NOTHING',[orgA,userA,orgB,userB]);
   await database.query("INSERT INTO membership_roles(membership_id,role_id) SELECT m.id,r.id FROM memberships m CROSS JOIN roles r WHERE m.organization_id IN($1,$2) AND r.code='REQUESTER' ON CONFLICT DO NOTHING",[orgA,orgB]);
   category=(await database.query<{id:string}>("INSERT INTO categories(organization_id,code,name) VALUES($1,'hardware','Hardware') RETURNING id",[orgA])).rows[0].id;
@@ -53,7 +53,7 @@ beforeAll(async()=>{
 });
 
 afterAll(async()=>{
-  for(const table of ['ticket_intake_provenance','ticket_attachments','ticket_custom_field_values','ticket_sla_clocks','ticket_activities','ticket_assignments','ticket_status_transitions','ticket_tag_links','tickets','ticket_intake_messages','ticket_intake_sessions','outbox_events','organization_ai_settings','audit_logs','ticket_title_library','ticket_tags','ticket_custom_field_definitions','subcategories','categories','departments','locations','disciplines','memberships']) await database.query(`DELETE FROM ${table} WHERE organization_id IN($1,$2)`,[orgA,orgB]);
+  for(const table of ['ticket_intake_secondary_ticket_links','ticket_intake_provenance','ticket_attachments','ticket_custom_field_values','ticket_sla_clocks','ticket_activities','ticket_assignments','ticket_status_transitions','ticket_tag_links','tickets','ticket_intake_messages','ticket_intake_sessions','outbox_events','organization_ai_settings','audit_logs','ticket_title_library','ticket_tags','ticket_custom_field_definitions','subcategories','categories','departments','locations','disciplines','memberships']) await database.query(`DELETE FROM ${table} WHERE organization_id IN($1,$2)`,[orgA,orgB]);
   await database.query('DELETE FROM organizations WHERE id IN($1,$2)',[orgA,orgB]);await database.query("DELETE FROM users WHERE email IN('goal14-a@jupiter.local','goal14-b@jupiter.local')");await database.onModuleDestroy();
 });
 
@@ -124,6 +124,18 @@ describe('ticket intake pipeline',()=>{
     expect(result.interpretation).toContain('اسکن');expect(result.primaryIssue.summary).toContain('اسکن');expect(result.secondaryIssues[0].summary).toContain('پرینتر');expect(result.clarificationQuestion).toContain('درخواست جداگانه');
     const draft=await intakes.createDraft(actorA(),{title:'اختلال در اسکن سند',description:result.description,intakeSessionId:session.id});
     const attachments=(await database.withOrganization(orgA,client=>client.query('SELECT count(*)::int AS count FROM ticket_attachments WHERE ticket_id=$1',[draft.id]))).rows[0] as {count:number};expect(attachments.count).toBe(2);
+  });
+
+  it('allows a structurally valid low-confidence secondary proposal only after explicit batch confirmation',async()=>{
+    const session=await intakes.create(actorA(),{description:'اتصال اینترنت کند است و پرینتر هم کار نمی‌کند.',idempotencyKey:'goal22-low-confidence-001'});
+    await intakes.addTextMessage(actorA(),session.id,{text:'مشکل پرینتر را هم جداگانه ثبت کنید.'});await intakes.analyzeConversation(actorA(),session.id);
+    const provider:TicketIntakeProvider={analyzeIntake:async()=>({output:{contractVersion:TICKET_INTAKE_CONTRACT_VERSION,title:'کندی اتصال اینترنت',titleLibraryId:null,categoryId:category,subcategoryId:subcategory,departmentId:null,locationId:null,disciplineId:null,priority:'NORMAL',customFields:{},tags:[],missingFields:[],confidenceByField:{title:.95,categoryId:.95,subcategoryId:.95,priority:.95},interpretation:'کندی اینترنت موضوع اصلی و اختلال پرینتر موضوع ثانویه است.',primaryIssue:{summary:'کندی اتصال اینترنت',serviceAsset:'شبکه',issueType:'کندی',confidence:.95},secondaryIssues:[{summary:'اختلال در عملکرد پرینتر',title:'اختلال در عملکرد پرینتر',description:'پرینتر کاربر کار نمی‌کند و نیاز به بررسی دارد.',categoryId:category,subcategoryId:subcategory,departmentId:null,locationId:null,disciplineId:null,priority:'NORMAL',customFields:{},tags:[],confidenceByField:{title:.62,categoryId:.62,subcategoryId:.62,priority:.62},confidence:.62}],clarificationQuestion:null,clarificationConfidence:null},usage:{}})};
+    await intakes.process(orgA,session.id,provider,noVoice);
+    const processed=await intakes.get(actorA(),session.id) as unknown as {secondaryIssues:Array<{id:string;selectable:boolean;requiresReview:boolean;ticket:{title:string}}>};
+    expect(processed.secondaryIssues[0]).toMatchObject({selectable:true,requiresReview:true,ticket:{title:'اختلال در عملکرد پرینتر'}});
+    const batch=await intakes.createBatch(actorA(),{title:'کندی اتصال اینترنت',description:'اتصال اینترنت کند است.',priority:'NORMAL',intakeSessionId:session.id,secondaryProposalIds:[processed.secondaryIssues[0].id]});
+    expect(batch.secondary).toHaveLength(1);expect(batch.secondary[0].title).toBe('اختلال در عملکرد پرینتر');
+    const links=await database.withOrganization(orgA,client=>client.query('SELECT primary_ticket_id,secondary_ticket_id FROM ticket_intake_secondary_ticket_links WHERE intake_session_id=$1',[session.id]));expect(links.rows).toHaveLength(1);
   });
 
   it('retries provider failures, preserves manual input, and expires orphaned voice objects',async()=>{

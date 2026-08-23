@@ -420,6 +420,9 @@ button.drawer-backdrop:focus-visible {
 .secondary-ticket-proposals input { width:18px; height:18px; margin-top:2px; accent-color:#1F4E8C; }
 .secondary-ticket-proposals b,.secondary-ticket-proposals small { display:block; }
 .secondary-ticket-proposals small { margin-top:3px; color:#3d6c9f; }
+.proposal-clarify { margin-top:7px; padding:0; color:#1F4E8C; background:transparent; border:0; border-bottom:1px solid currentColor; font:inherit; font-size:.82rem; font-weight:700; cursor:pointer; }
+.proposal-clarify:hover,.proposal-clarify:focus-visible { color:#123967; }
+.clarification-context { margin:12px 13px 0; padding:8px 10px; color:#1F4E8C; background:#eef7ff; border:1px solid #a9cbed; border-radius:var(--radius-sm); font-size:.85rem; }
 .clarification-question { color: #1F4E8C; }
 .field-label-row {
   display: flex;
@@ -497,6 +500,7 @@ button.drawer-backdrop:focus-visible {
   padding: 7px 12px;
   font-size: .82rem;
 }
+.message-ai-button .status-spinner { width:14px; height:14px; border-color:rgba(255,255,255,.45); border-top-color:#fff; }
 .message-send-button {
   color: #fff;
   background: var(--primary);

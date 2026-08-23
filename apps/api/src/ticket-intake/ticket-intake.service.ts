@@ -345,8 +345,8 @@ export class TicketIntakeService {
     return this.database.withOrganization(actor.organizationId,async client=>{
       const session=await this.owned(client,actor,data.intakeSessionId,true);this.assertMutable(session);
       if(session.status!=='SUCCEEDED')throw new BadRequestException('Ticket intake must finish before batch creation');
-      const proposals=(session.secondary_issues??[]) as Array<{id?:string;eligible?:boolean;ticket?:CreateDraftData;summary?:string}>;
-      const chosen=selected.map(id=>proposals.find(proposal=>proposal.id===id)).filter((proposal):proposal is {id:string;eligible:true;ticket:CreateDraftData;summary:string}=>Boolean(proposal?.id&&proposal.eligible&&proposal.ticket&&proposal.summary));
+      const proposals=(session.secondary_issues??[]) as Array<{id?:string;selectable?:boolean;eligible?:boolean;ticket?:CreateDraftData;summary?:string}>;
+      const chosen=selected.map(id=>proposals.find(proposal=>proposal.id===id)).filter((proposal):proposal is {id:string;ticket:CreateDraftData;summary:string}=>Boolean(proposal?.id&&(proposal.selectable??proposal.eligible)&&proposal.ticket&&proposal.summary));
       if(chosen.length!==selected.length)throw new BadRequestException('Selected secondary proposal is unavailable');
       const primary=await this.tickets.createDraftWithClient(client,actor,data);await this.tickets.attachIntakeTagsWithClient(client,actor,primary.id,data.tags??[]);await this.recordTitleCandidate(client,actor,primary.id,data.title);
       if(session.voice_storage_key&&session.voice_original_filename&&session.voice_content_type&&session.voice_byte_size&&session.voice_verified_at){if(!this.voiceObjectMatches(session,await this.storage.head(session.voice_storage_key)))throw new BadRequestException('Voice object metadata has changed');await this.attachments.attachAvailableWithClient(client,actor,primary.id,{storageKey:session.voice_storage_key,filename:session.voice_original_filename,contentType:session.voice_content_type,byteSize:Number(session.voice_byte_size)});}
@@ -406,11 +406,11 @@ export class TicketIntakeService {
     });
   }
 
-  private validateAnalysis(output:TicketIntakeProviderOutput, context:TicketIntakeContext) {
+  private validateAnalysis(output:TicketIntakeProviderOutput, context:TicketIntakeContext, allowLowConfidence=false) {
     if (output.contractVersion !== TICKET_INTAKE_CONTRACT_VERSION) throw new Error('analysis_contract_invalid');
     const confidenceByField=Object.fromEntries(Object.entries(output.confidenceByField??{}).filter(([,value])=>typeof value==='number'&&Number.isFinite(value)).map(([key,value])=>[key,Math.max(0,Math.min(1,value))]));
     const suggestions:Record<string,unknown>={}; const rejectedFields:string[]=[];
-    const accepted=(field:string)=>Number(confidenceByField[field])>=confidenceThreshold;
+    const accepted=(field:string)=>allowLowConfidence||Number(confidenceByField[field])>=confidenceThreshold;
     if (accepted('title') && typeof output.title==='string' && output.title.trim().length>=3 && output.title.trim().length<=200) suggestions.title=output.title.trim(); else rejectedFields.push('title');
     if (output.titleLibraryId!==null && (!accepted('title') || !context.titleLibrary.some(item=>item.id===output.titleLibraryId && item.title===output.title.trim()))) rejectedFields.push('titleLibraryId');
     else if (output.titleLibraryId) suggestions.titleLibraryId=output.titleLibraryId;
@@ -437,7 +437,7 @@ export class TicketIntakeService {
     const tagConfidenceFields:Record<string,string>={DOMAIN:'domainTag',SERVICE_ASSET:'serviceAssetTag',ISSUE_TYPE:'issueTypeTag',IMPACT_SCOPE:'impactScopeTag',CONTEXT:'contextTag',OTHER:'otherTag'};
     const acceptedTag=(proposal:{kind:string},index:number)=>{
       const confidence=confidenceByField.tags ?? confidenceByField[`tags.${proposal.kind}`] ?? confidenceByField[`tag:${proposal.kind}`] ?? confidenceByField[tagConfidenceFields[proposal.kind] ?? ''] ?? confidenceByField[`tags.${index}`];
-      return Number(confidence)>=confidenceThreshold;
+      return allowLowConfidence||Number(confidence)>=confidenceThreshold;
     };
     if (Array.isArray(output.tags)) for(const [index,proposal] of output.tags.slice(0,5).entries()) {
       if (!proposal || !acceptedKinds.has(proposal.kind) || typeof proposal.name!=='string') { rejectedFields.push('tags'); continue; }
@@ -534,11 +534,11 @@ export class TicketIntakeService {
   private secondaryProposals(output:TicketIntakeProviderOutput,context:TicketIntakeContext) {
     return (output.secondaryIssues??[]).slice(0,2).map(issue=>{
       const summary=this.safeText(issue.summary,500);const description=this.safeText(issue.description,10_000);const confidence=typeof issue.confidence==='number'&&Number.isFinite(issue.confidence)?Math.max(0,Math.min(1,issue.confidence)):0;
-      if(!summary||!description||description.length<3)return {id:randomUUID(),summary:summary??'مورد ثانویه',confidence,eligible:false};
-      const validated=this.validateAnalysis({...output,...issue,contractVersion:TICKET_INTAKE_CONTRACT_VERSION,titleLibraryId:null,customFields:issue.customFields??{},tags:issue.tags??[],confidenceByField:issue.confidenceByField??{},missingFields:[],interpretation:undefined,primaryIssue:undefined,secondaryIssues:[],clarificationQuestion:null,clarificationConfidence:null},context);
-      const suggestions=validated.result.suggestions as CreateDraftData;const eligible=confidence>=confidenceThreshold&&typeof suggestions.title==='string'&&typeof suggestions.priority==='string';
-      return {id:randomUUID(),summary,confidence,eligible,ticket:eligible?{...suggestions,description}:undefined};
-    }).filter(Boolean) as Array<{id:string;summary:string;confidence:number;eligible:boolean;ticket?:CreateDraftData}>;
+       if(!summary||!description||description.length<3)return {id:randomUUID(),summary:summary??'مورد ثانویه',confidence,selectable:false,requiresReview:true};
+       const validated=this.validateAnalysis({...output,...issue,contractVersion:TICKET_INTAKE_CONTRACT_VERSION,titleLibraryId:null,customFields:issue.customFields??{},tags:issue.tags??[],confidenceByField:issue.confidenceByField??{},missingFields:[],interpretation:undefined,primaryIssue:undefined,secondaryIssues:[],clarificationQuestion:null,clarificationConfidence:null},context,true);
+       const suggestions=validated.result.suggestions as CreateDraftData;const taxonomyFields=new Set(['categoryId','subcategoryId','departmentId','locationId','disciplineId']);const hasInvalidTaxonomy=validated.rejectedFields.some(field=>taxonomyFields.has(field));const selectable=!hasInvalidTaxonomy&&typeof suggestions.title==='string'&&typeof suggestions.priority==='string';
+       return {id:randomUUID(),summary,confidence,selectable,requiresReview:confidence<confidenceThreshold,ticket:selectable?{...suggestions,description}:undefined};
+     }).filter(Boolean) as Array<{id:string;summary:string;confidence:number;selectable:boolean;requiresReview:boolean;ticket?:CreateDraftData}>;
   }
   private assertMutable(row:IntakeRow) {
     if (row.status==='CONSUMED') throw new BadRequestException('Ticket intake has already been consumed');

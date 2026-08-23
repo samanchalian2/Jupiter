@@ -1,5 +1,17 @@
 # Next Task
 
+## GOAL-022 — Reviewable AI secondary proposals and stable smart completion
+
+**Status:** COMPLETE (local verification, 2026-08-24)
+
+`ticket-intake.v5` keeps primary-field auto-apply at
+the 0.75 confidence gate, permits only structurally valid low-confidence
+secondary proposals to be selected with an explicit final warning, and lets a
+requester add a context-bound text or voice clarification before analysis is
+run again. The composer remains visible while analysis is running and only
+collapses after success. API typecheck, 53 API tests, Web typecheck, 11 Web
+tests, production builds and local browser acceptance passed.
+
 ## GOAL-021 — Confirmed AI secondary-ticket batches
 
 **Status:** COMPLETE (local verification, 2026-08-23)

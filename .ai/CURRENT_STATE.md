@@ -1,5 +1,21 @@
 # Current State
 
+**GOAL-022 — Reviewable AI secondary proposals and stable smart completion
+(complete, 2026-08-24):** `ticket-intake.v5` retains the 0.75 threshold for
+automatic primary-field application while allowing a requester to explicitly
+select a structurally valid, server-owned secondary proposal below that score.
+Such proposals are labelled «نیازمند بررسی», are repeated in the final batch
+confirmation, and still create tickets only atomically with the primary ticket.
+Incomplete or taxonomy-invalid proposals remain unavailable. A proposal's
+«توضیح و تحلیل دوباره» action opens a context-labelled composer without
+changing earlier source messages; the fresh text or voice contribution triggers
+analysis again and clears stale proposal selections. During processing, the
+smart-complete button remains in place with its current stage and competing
+controls are disabled; the composer collapses only after a successful result.
+DEC-013 and `docs/TICKET_INTAKE_API.md` record the contract. API typecheck,
+53 API tests, Web typecheck, 11 Web tests, both production builds and a live
+local browser check at desktop and 375px passed.
+
 **GOAL-021 — Confirmed AI secondary-ticket batches (complete, 2026-08-23):**
 `ticket-intake.v4` supplies up to two server-identified, tenant-validated and
 privacy-preserving secondary ticket proposals. A requester selects none by

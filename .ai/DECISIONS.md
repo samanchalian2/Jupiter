@@ -110,3 +110,20 @@ submission with the primary ticket. The tenant- and owner-scoped intake is
 locked and consumed in the same transaction as every ticket; proposal IDs are
 server-generated and client payloads cannot alter their ticket content. Voice,
 files, raw messages and transcripts remain attached only to the primary ticket.
+
+## DEC-013 — Reviewable low-confidence secondary proposals
+
+`ticket-intake.v5` preserves the `0.75` confidence threshold for automatically
+applying primary ticket fields, but separates it from a requester's explicit
+choice to create a secondary ticket. A secondary proposal is selectable when
+the server has independently validated its title, standalone description,
+priority and any supplied tenant taxonomy values. A lower confidence score
+marks it as requiring review; it never silently creates a ticket and is
+repeated in the final confirmation. Incomplete or taxonomy-invalid proposals
+remain unavailable. The API accepts only the server-issued proposal ID, locks
+the owner-scoped intake and creates all selected tickets atomically.
+
+When a requester needs to clarify a proposal, the client records a new text or
+voice message rather than editing historical source evidence, then re-runs the
+same conversation analysis. This invalidates prior proposal selections because
+their server IDs and interpretation are no longer current.

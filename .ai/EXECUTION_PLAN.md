@@ -275,3 +275,22 @@ All 52 API tests, 11 Web tests, API/Web typechecks and production builds pass.
 
 **Scope:** v4 proposals, server-owned identifiers, requester confirmation,
 atomic primary-plus-secondary submission, link auditing and source isolation.
+
+## GOAL-022 — Reviewable secondary proposals and stable smart completion
+
+**Status:** DONE
+
+**Scope:** `ticket-intake.v5` distinguishes a low-confidence secondary
+proposal from an invalid one. A server-validated title, standalone description,
+priority and taxonomy make it explicitly selectable, with a review warning in
+the card and final confirmation. A context-bound follow-up message or voice
+capture triggers a fresh conversation analysis and invalidates older proposal
+selections. The smart-complete control remains in place with a processing state;
+the composer only collapses after successful analysis.
+
+**Validation:** API integration coverage creates a low-confidence but
+structurally-valid secondary ticket atomically with the primary ticket. All 53
+API tests, Web tests, API/Web typechecks and production builds pass. Browser
+acceptance confirms the persistent in-place processing control, disabled
+competing controls and the post-success collapsed composer at desktop and 375px
+with no horizontal overflow.

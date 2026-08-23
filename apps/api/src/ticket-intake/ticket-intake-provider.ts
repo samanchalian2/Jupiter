@@ -1,6 +1,6 @@
 import type { AiProviderConfiguration } from '../ai/ai-provider.js';
 
-export const TICKET_INTAKE_CONTRACT_VERSION = 'ticket-intake.v4' as const;
+export const TICKET_INTAKE_CONTRACT_VERSION = 'ticket-intake.v5' as const;
 export type TicketPriority = 'LOW'|'NORMAL'|'HIGH'|'URGENT';
 export type CatalogOption = { id: string; name: string; categoryId?: string };
 export type IntakeTitleOption = { id:string; title:string };
