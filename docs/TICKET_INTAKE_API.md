@@ -1,4 +1,4 @@
-# Ticket Intake API — `ticket-intake.v2`
+# Ticket Intake API — `ticket-intake.v3`
 
 All routes are under `/api/v1`, require a bearer access token and
 `X-Organization-Id`, and enforce both organization RLS and session ownership.
@@ -7,7 +7,7 @@ values.
 
 ## Session lifecycle
 
-`CREATED → UPLOADING → READY → TRANSCRIBING → ANALYZING → SUCCEEDED`
+`CREATED → TRANSCRIBING → ANALYZING → SUCCEEDED`
 
 Provider errors stay in the active stage for bounded retry and become `FAILED`
 after three attempts. Final draft creation changes the state to `CONSUMED`.
@@ -17,7 +17,17 @@ be submitted manually.
 ## Routes
 
 - `POST /ticket-intakes` — create/idempotently recover a session. Optional
-  body: `{ "description": "..." }`; optional `Idempotency-Key` header.
+  legacy body: `{ "description": "..." }`; optional `Idempotency-Key` header.
+- `POST /ticket-intakes/:id/messages` — add a raw requester text message:
+  `{ "text": "..." }`.
+- `POST /ticket-intakes/:id/messages/voice/upload-request` — create a new
+  requester voice message and return its signed upload URL.
+- `POST /ticket-intakes/:id/messages/:messageId/voice/complete` — verify one
+  uploaded voice message.
+- `POST /ticket-intakes/:id/messages/:messageId/discard` — discard an intake
+  message and its temporary voice object when applicable.
+- `POST /ticket-intakes/:id/conversation/analyze` — queue analysis of every
+  retained requester message. Text and voice share this route.
 - `POST /ticket-intakes/:id/voice/upload-request` — body contains `filename`,
   `contentType`, `byteSize`, and `durationSeconds`. Returns a five-minute signed
   URL plus required `Content-Type` and `x-amz-meta-duration-seconds` headers.
@@ -25,8 +35,8 @@ be submitted manually.
   marks the object ready.
 - `POST /ticket-intakes/:id/voice/discard` — deletes the temporary object and
   resets voice-derived state.
-- `POST /ticket-intakes/:id/analyze` — idempotently queues transcription and/or
-  analysis.
+- Legacy single-voice routes remain available for existing sessions; all new
+  requester UI uses the multi-message routes above.
 - `GET /ticket-intakes/:id` — returns pipeline state, original/combined text,
   accepted suggestions, missing/rejected field names and per-field confidence.
 - `POST /tickets/drafts` — existing draft payload plus optional
@@ -40,14 +50,18 @@ Allowed formats are WebM/Opus (`audio/webm`), OGG, WAV, MP3 and MP4
 is 10 MiB. MIME, content length and signed duration metadata are rechecked after
 upload, immediately before transcription and before final attachment transfer.
 
-## Structured analysis
+## Guided structured analysis
 
-The provider receives redacted combined text and the current organization's
+The provider receives redacted ordered requester messages and the current organization's
 category, subcategory, department, location, discipline, active custom-field,
 active title-library and active typed-tag catalog. Output carries
 `contractVersion`, a concise title with an optional reused title-library ID,
 taxonomy IDs, priority, up to five typed tag proposals, custom fields, missing
-fields and confidence by field. Only values at or above 0.75 that validate
+fields and confidence by field. `v3` additionally returns a separate
+interpretation, one primary issue, up to two secondary issues and an optional
+concise clarification question. These fields never replace raw requester text.
+A secondary issue is only a non-blocking proposal; the application never
+creates another ticket without a separate requester action. Only values at or above 0.75 that validate
 against that catalog are returned in `suggestions`; rejected field names are
 reported without persisting invalid values. New title/tag candidates are saved
 only when the user explicitly creates the final draft and remain pending for

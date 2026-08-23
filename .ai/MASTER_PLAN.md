@@ -24,3 +24,7 @@ versioned intake contract; and (19) composer, search/report and acceptance
 integration. Goals 017 through 019 are complete locally. Each organization
 must still install the approved starter catalog or govern its own vocabulary
 before AI can suggest tenant-specific categories and typed tags.
+
+The approved multimodal guided-intake extension adds (20) ordered text/voice
+conversation, separate AI interpretation and non-blocking clarification before
+the final explicit ticket submission.

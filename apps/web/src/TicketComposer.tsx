@@ -23,6 +23,7 @@ export function TicketComposer({ actor, onCreated }: { actor:Actor; onCreated:(t
   const [customFields,setCustomFields]=useState<CustomField[]>([]);
   const [tagVocabulary,setTagVocabulary]=useState<TicketTag[]>([]);
   const [form,setForm]=useState<TicketFormState>(initialForm);
+  const [messageDraft,setMessageDraft]=useState('');
   const [file,setFile]=useState<File|null>(null);
   const [detailsOpen,setDetailsOpen]=useState(false);
   const [submitBusy,setSubmitBusy]=useState(false);
@@ -97,7 +98,19 @@ export function TicketComposer({ actor, onCreated }: { actor:Actor; onCreated:(t
     }
   };
 
-  const createSession=async(description:string)=>request('/ticket-intakes',actor.session,actor.organizationId,{method:'POST',headers:{'idempotency-key':idempotencyKey()},body:JSON.stringify({description})}) as Promise<IntakeSession>;
+  const createSession=async(description:string='')=>request('/ticket-intakes',actor.session,actor.organizationId,{method:'POST',headers:{'idempotency-key':idempotencyKey()},body:JSON.stringify({description})}) as Promise<IntakeSession>;
+  const loadConversation=async(id:string)=>request(`/ticket-intakes/${id}`,actor.session,actor.organizationId) as Promise<IntakeSession>;
+  const ensureConversation=async()=>{if(intake)return intake;const created=await createSession();setIntake(created);return created;};
+  const sendTextMessage=async()=>{
+    const text=messageDraft.trim();if(!text)return intake;
+    const session=await ensureConversation();await request(`/ticket-intakes/${session.id}/messages`,actor.session,actor.organizationId,{method:'POST',body:JSON.stringify({text})});
+    const updated=await loadConversation(session.id);setIntake(updated);setForm(current=>({...current,description:updated.description}));setMessageDraft('');return updated;
+  };
+  const uploadConversationVoice=async(session:IntakeSession,voice:Recording)=>{
+    setPipeline('UPLOADING');const prepared=await request(`/ticket-intakes/${session.id}/messages/voice/upload-request`,actor.session,actor.organizationId,{method:'POST',body:JSON.stringify({filename:voice.filename,contentType:voice.contentType,byteSize:voice.blob.size,durationSeconds:voice.durationSeconds})}) as {message:{id:string};uploadUrl:string;requiredHeaders:Record<string,string>};
+    const put=await fetch(prepared.uploadUrl,{method:'PUT',headers:prepared.requiredHeaders,body:voice.blob});if(!put.ok)throw new Error('بارگذاری صدای ضبط‌شده ناموفق بود.');
+    await request(`/ticket-intakes/${session.id}/messages/${prepared.message.id}/voice/complete`,actor.session,actor.organizationId,{method:'POST'});const updated=await loadConversation(session.id);setIntake(updated);setRecording(null);setRecordingSeconds(0);return updated;
+  };
   const uploadVoice=async(session:IntakeSession,voice:Recording)=>{
     setPipeline('UPLOADING');
     const prepared=await request(`/ticket-intakes/${session.id}/voice/upload-request`,actor.session,actor.organizationId,{method:'POST',body:JSON.stringify({filename:voice.filename,contentType:voice.contentType,byteSize:voice.blob.size,durationSeconds:voice.durationSeconds})}) as {session:IntakeSession;uploadUrl:string;requiredHeaders:Record<string,string>};
@@ -107,20 +120,15 @@ export function TicketComposer({ actor, onCreated }: { actor:Actor; onCreated:(t
   const ensureVoiceSession=async()=>{const voice=recording?await compatibleRecording(recording):null;if(intake?.voice&&voice&&intake.voice.contentType===voice.contentType)return intake;if(intake?.voice)await discardRemoteVoice();const created=await createSession(form.description);setIntake(created);return voice?uploadVoice(created,voice):created;};
 
   const runAi=async()=>{
-    if(!form.description.trim()&&!recording){setError('ابتدا شرح درخواست را بنویسید یا صدای خود را ضبط کنید.');descriptionRef.current?.focus();return;}
+    if(!messageDraft.trim()&&!recording&&!intake?.messages?.some(message=>message.role==='USER')){setError('ابتدا یک پیام متنی بنویسید یا صدای خود را ضبط کنید.');descriptionRef.current?.focus();return;}
     setError('');setGuidance([]);pollAbortRef.current?.abort();const controller=new AbortController();pollAbortRef.current=controller;
     try{
-      let session=intake;let voice=recording?await compatibleRecording(recording):null;
-      // HMR can retain a pre-upgrade WebM capture in component state. Replace
-      // its old remote object instead of retrying an incompatible session.
-      const needsReplacement=Boolean(session?.voice&&voice&&session.voice.contentType!==voice.contentType);
-      if(needsReplacement){await discardRemoteVoice();session=null;}
-      const canRetry=session?.status==='FAILED'&&session.description===form.description&&Boolean(session.voice)===Boolean(voice);
-      if(!canRetry){if(session?.voice)await discardRemoteVoice();session=await createSession(form.description);setIntake(session);if(voice)session=await uploadVoice(session,voice);}
-      const queued=await request(`/ticket-intakes/${session!.id}/analyze`,actor.session,actor.organizationId,{method:'POST'}) as IntakeSession;setIntake(queued);setPipeline(queued.status==='TRANSCRIBING'?'TRANSCRIBING':'ANALYZING');
-      const completed=await pollIntake(()=>request(`/ticket-intakes/${session!.id}`,actor.session,actor.organizationId) as Promise<IntakeSession>,{signal:controller.signal,onUpdate:value=>{setIntake(value);if(value.status==='TRANSCRIBING'||value.status==='ANALYZING')setPipeline(value.status);}});setIntake(completed);
+      let session=await sendTextMessage();if(!session)session=await ensureConversation();
+      const voice=recording?await compatibleRecording(recording):null;if(voice)session=await uploadConversationVoice(session,voice);
+      const queued=await request(`/ticket-intakes/${session.id}/conversation/analyze`,actor.session,actor.organizationId,{method:'POST'}) as IntakeSession;setIntake(queued);setPipeline(queued.status==='TRANSCRIBING'?'TRANSCRIBING':'ANALYZING');
+      const completed=await pollIntake(()=>loadConversation(session.id),{signal:controller.signal,onUpdate:value=>{setIntake(value);if(value.status==='TRANSCRIBING'||value.status==='ANALYZING')setPipeline(value.status);}});setIntake(completed);
       if(completed.status==='SUCCEEDED'){
-        const applied=applyIntakeSuggestions(form,completed);setForm(applied.form);setAiFields(applied.changedFields);setPipeline('SUCCEEDED');
+        const applied=applyIntakeSuggestions(form,completed);setForm({...applied.form,description:completed.description});setAiFields(applied.changedFields);setPipeline('SUCCEEDED');
         const labels=completed.rejectedFields.map(field=>intakeFieldLabel(field,Object.fromEntries(customFields.map(item=>[item.field_key,item.label]))));setGuidance([...new Set(labels)]);
         if([...applied.changedFields].some(field=>!['title','description','categoryId'].includes(field)))setDetailsOpen(true);
       }else{setPipeline('FAILED');setError(intakeFailureMessage(completed.lastErrorCode));}
@@ -134,9 +142,10 @@ export function TicketComposer({ actor, onCreated }: { actor:Actor; onCreated:(t
   const submit=async(event:FormEvent)=>{
     event.preventDefault();if(recordingActive){setError('ابتدا ضبط صدا را متوقف کنید.');return;}setSubmitBusy(true);setError('');
     try{
-      let finalIntake=intake;if(recording&&!finalIntake?.voice)finalIntake=await ensureVoiceSession();const usableIntake=finalIntake&&!processingStatuses.has(finalIntake.status)?finalIntake.id:undefined;
-      if(recording&&!usableIntake)throw new Error('پردازش صدا هنوز تمام نشده است؛ چند لحظه صبر کنید یا صدا را حذف کنید.');
-      const draft=await request('/tickets/drafts',actor.session,actor.organizationId,{method:'POST',body:JSON.stringify({...form,departmentId:form.departmentId||undefined,categoryId:form.categoryId||undefined,subcategoryId:form.subcategoryId||undefined,locationId:form.locationId||undefined,disciplineId:form.disciplineId||undefined,intakeSessionId:usableIntake})}) as {id:string};
+      const usableIntake=intake&&!processingStatuses.has(intake.status)?intake.id:undefined;
+      if(recording)throw new Error('برای ثبت صدای ضبط‌شده، ابتدا «تکمیل هوشمند» را بزنید یا صدا را حذف کنید.');
+      const finalDescription=form.description.trim()||intake?.description||messageDraft.trim();
+      const draft=await request('/tickets/drafts',actor.session,actor.organizationId,{method:'POST',body:JSON.stringify({...form,description:finalDescription,departmentId:form.departmentId||undefined,categoryId:form.categoryId||undefined,subcategoryId:form.subcategoryId||undefined,locationId:form.locationId||undefined,disciplineId:form.disciplineId||undefined,intakeSessionId:usableIntake})}) as {id:string};
       await request(`/tickets/${draft.id}/submit`,actor.session,actor.organizationId,{method:'POST'});let notice='درخواست شما با موفقیت ثبت شد.';
       if(file){try{await upload(draft.id,file);}catch{notice='درخواست ثبت شد، اما پیوست بارگذاری نشد؛ می‌توانید آن را در جزئیات تیکت دوباره اضافه کنید.';}}onCreated(draft.id,notice);
     }catch(cause){setError(cause instanceof Error?cause.message:'ثبت درخواست ناموفق بود.');}finally{setSubmitBusy(false);}
@@ -153,13 +162,15 @@ export function TicketComposer({ actor, onCreated }: { actor:Actor; onCreated:(t
   const pipelineBusy=pipeline==='UPLOADING'||pipeline==='TRANSCRIBING'||pipeline==='ANALYZING';
   return <Card className="quick-ticket-card smart-ticket-composer"><div className="quick-ticket-heading"><div><p className="eyebrow">درخواست جدید</p><h2>درخواستتان را با زبان خودتان توضیح دهید</h2><p>ژوپیتر می‌تواند از روی متن یا صدای شما سایر فیلدها را پیشنهاد کند.</p></div><Sparkles aria-hidden="true"/></div>
     <form className="quick-ticket-form" onSubmit={submit}>
-      <label className="ticket-description-field"><span className="field-label-row"><span>شرح درخواست</span>{aiBadge('description')}</span><textarea ref={descriptionRef} maxLength={10000} value={form.description} onChange={event=>updateField('description',event.target.value)} placeholder="مشکل، زمان شروع و نتیجه‌ای که انتظار دارید را توضیح دهید…" required/></label>
-      <section className="smart-intake-toolbar" aria-label="ابزارهای هوشمند شرح درخواست"><div className="smart-intake-actions"><Button type="button" onClick={()=>void runAi()} disabled={pipelineBusy||recordingActive||micRequesting}><Sparkles size={17}/>تکمیل هوشمند</Button><Button type="button" variant="secondary" onClick={()=>void startRecording()} disabled={pipelineBusy||recordingActive||micRequesting}><Mic size={17}/>{recording?'ضبط مجدد':'ضبط صدا'}</Button></div>
+      {intake?.messages?.length? <section className="intake-conversation" aria-label="گفتگوی تکمیل درخواست">{intake.messages.map(message=><article key={message.id} className={`intake-message ${message.role==='ASSISTANT'?'assistant':'requester'}`}><strong>{message.role==='ASSISTANT'?'ژوپیتر':'شما'}</strong><p>{message.contentType==='VOICE'?(message.transcript??'در حال آماده‌سازی متن صوت…'):(message.text??'')}</p>{message.contentType==='VOICE'&&message.voice&&<small>پیام صوتی · {formatDuration(message.voice.durationSeconds)}</small>}</article>)}</section>:null}
+      <label className="ticket-description-field"><span className="field-label-row"><span>پیام شما</span>{aiBadge('description')}</span><textarea ref={descriptionRef} maxLength={10000} value={messageDraft} onChange={event=>setMessageDraft(event.target.value)} placeholder="مشکل، زمان شروع و نتیجه‌ای که انتظار دارید را توضیح دهید…"/></label>
+      <section className="smart-intake-toolbar" aria-label="ابزارهای هوشمند گفتگوی درخواست"><div className="smart-intake-actions"><Button type="button" variant="secondary" onClick={()=>void sendTextMessage()} disabled={!messageDraft.trim()||pipelineBusy||recordingActive||micRequesting}><Send size={17}/>افزودن پیام</Button><Button type="button" onClick={()=>void runAi()} disabled={pipelineBusy||recordingActive||micRequesting}><Sparkles size={17}/>تکمیل هوشمند</Button><Button type="button" variant="secondary" onClick={()=>void startRecording()} disabled={pipelineBusy||recordingActive||micRequesting}><Mic size={17}/>{recording?'ضبط مجدد':'ضبط صدا'}</Button></div>
         {micRequesting&&<p className="intake-status" role="status" aria-live="polite"><span className="status-spinner"/>در انتظار اجازه دسترسی به میکروفن…</p>}
         {recordingActive&&<div className="voice-recorder recording" role="status"><span className="recording-dot"/><strong>{formatDuration(recordingSeconds)} / 01:00</strong><Button type="button" variant="secondary" onClick={stopRecording}><Pause size={16}/>توقف ضبط</Button></div>}
         {recording&&!recordingActive&&<div className="voice-recorder ready"><audio src={recording.url} controls preload="metadata" aria-label="پخش صدای ضبط‌شده"/><span>{formatDuration(recording.durationSeconds)} · {Math.ceil(recording.blob.size/1024).toLocaleString('fa-IR')} کیلوبایت</span><Button type="button" variant="ghost" onClick={()=>void removeRecording()}><Trash2 size={16}/>حذف</Button><Button type="button" variant="secondary" onClick={()=>void startRecording()}><RotateCcw size={16}/>ضبط مجدد</Button></div>}
         {pipeline&&<p className={`intake-status ${pipeline.toLowerCase()}`} role="status" aria-live="polite">{pipeline==='SUCCEEDED'?<Sparkles size={16}/>:pipeline==='FAILED'?null:<span className="status-spinner"/>}{phaseLabels[pipeline]}</p>}
       </section>
+      {(intake?.interpretation||intake?.primaryIssue||intake?.clarificationQuestion||intake?.secondaryIssues?.length)?<section className="ai-interpretation" aria-label="برداشت هوش مصنوعی"><p className="eyebrow"><Sparkles size={14}/>برداشت AI از درخواست</p>{intake.primaryIssue&&<p><strong>موضوع اصلی:</strong> {intake.primaryIssue.summary}</p>}{intake.interpretation&&<p>{intake.interpretation}</p>}{intake.secondaryIssues?.length?<p className="secondary-issues"><strong>مورد ثانویه:</strong> {intake.secondaryIssues.map(issue=>issue.summary).join('، ')} <span>در صورت نیاز می‌توانید برای آن درخواست جداگانه ثبت کنید.</span></p>:null}{intake.clarificationQuestion&&<p className="clarification-question"><strong>سؤال ژوپیتر:</strong> {intake.clarificationQuestion}<span> پاسخ اختیاری است؛ می‌توانید پیام جدید بفرستید یا درخواست اصلی را ثبت کنید.</span></p>}</section>:null}
       <label><span className="field-label-row"><span>عنوان درخواست</span>{aiBadge('title')}</span><input minLength={3} maxLength={200} value={form.title} onChange={event=>updateField('title',event.target.value)} placeholder="مثلاً دسترسی به سامانه مالی" required/></label>
       <label><span className="field-label-row"><span>دسته‌بندی</span>{aiBadge('categoryId')}</span><select value={form.categoryId} onChange={event=>{updateField('categoryId',event.target.value);updateField('subcategoryId','');}}><option value="">انتخاب نشده</option>{catalogs.categories.map(item=><option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
       {guidance.length>0&&<p className="ai-guidance" role="status">برای اطمینان بیشتر، این موارد را دستی بررسی کنید: {guidance.join('، ')}.</p>}

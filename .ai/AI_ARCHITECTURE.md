@@ -32,3 +32,10 @@ are additional optional context; new values remain pending until Organization
 Admin approval and are recorded only after final ticket submission. Provider
 retries use a bounded lease and three attempts; a terminal failure retains all
 manual input.
+
+`ticket-intake.v3` additionally accepts an ordered short conversation of text
+and voice messages. Raw requester messages and transcripts remain separate
+from the AI interpretation. The provider resolves corrections, negation and
+multi-issue statements before proposing one primary issue, optional secondary
+issues and an optional clarification question. It cannot create a secondary
+ticket or block manual final submission.

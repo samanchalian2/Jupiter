@@ -38,7 +38,7 @@ beforeAll(async()=>{
   orgA=orgs.rows.find(row=>row.slug==='goal14-a')!.id;orgB=orgs.rows.find(row=>row.slug==='goal14-b')!.id;
   const users=await database.query<{id:string;email:string}>("INSERT INTO users(email,display_name,password_hash) VALUES('goal14-a@jupiter.local','Goal 14 A','scrypt$AA$AA'),('goal14-b@jupiter.local','Goal 14 B','scrypt$AA$AA') ON CONFLICT(email) DO UPDATE SET display_name=EXCLUDED.display_name RETURNING id,email");
   userA=users.rows.find(row=>row.email==='goal14-a@jupiter.local')!.id;userB=users.rows.find(row=>row.email==='goal14-b@jupiter.local')!.id;
-  for(const table of ['ticket_intake_provenance','ticket_attachments','ticket_custom_field_values','ticket_sla_clocks','ticket_activities','ticket_assignments','ticket_status_transitions','ticket_tag_links','tickets','ticket_intake_sessions','outbox_events','organization_ai_settings','audit_logs','ticket_title_library','ticket_tags','ticket_custom_field_definitions','subcategories','categories','departments','locations','disciplines','memberships']) await database.query(`DELETE FROM ${table} WHERE organization_id IN($1,$2)`,[orgA,orgB]);
+  for(const table of ['ticket_intake_provenance','ticket_attachments','ticket_custom_field_values','ticket_sla_clocks','ticket_activities','ticket_assignments','ticket_status_transitions','ticket_tag_links','tickets','ticket_intake_messages','ticket_intake_sessions','outbox_events','organization_ai_settings','audit_logs','ticket_title_library','ticket_tags','ticket_custom_field_definitions','subcategories','categories','departments','locations','disciplines','memberships']) await database.query(`DELETE FROM ${table} WHERE organization_id IN($1,$2)`,[orgA,orgB]);
   await database.query('INSERT INTO memberships(organization_id,user_id) VALUES($1,$2),($3,$4) ON CONFLICT DO NOTHING',[orgA,userA,orgB,userB]);
   await database.query("INSERT INTO membership_roles(membership_id,role_id) SELECT m.id,r.id FROM memberships m CROSS JOIN roles r WHERE m.organization_id IN($1,$2) AND r.code='REQUESTER' ON CONFLICT DO NOTHING",[orgA,orgB]);
   category=(await database.query<{id:string}>("INSERT INTO categories(organization_id,code,name) VALUES($1,'hardware','Hardware') RETURNING id",[orgA])).rows[0].id;
@@ -53,7 +53,7 @@ beforeAll(async()=>{
 });
 
 afterAll(async()=>{
-  for(const table of ['ticket_intake_provenance','ticket_attachments','ticket_custom_field_values','ticket_sla_clocks','ticket_activities','ticket_assignments','ticket_status_transitions','ticket_tag_links','tickets','ticket_intake_sessions','outbox_events','organization_ai_settings','audit_logs','ticket_title_library','ticket_tags','ticket_custom_field_definitions','subcategories','categories','departments','locations','disciplines','memberships']) await database.query(`DELETE FROM ${table} WHERE organization_id IN($1,$2)`,[orgA,orgB]);
+  for(const table of ['ticket_intake_provenance','ticket_attachments','ticket_custom_field_values','ticket_sla_clocks','ticket_activities','ticket_assignments','ticket_status_transitions','ticket_tag_links','tickets','ticket_intake_messages','ticket_intake_sessions','outbox_events','organization_ai_settings','audit_logs','ticket_title_library','ticket_tags','ticket_custom_field_definitions','subcategories','categories','departments','locations','disciplines','memberships']) await database.query(`DELETE FROM ${table} WHERE organization_id IN($1,$2)`,[orgA,orgB]);
   await database.query('DELETE FROM organizations WHERE id IN($1,$2)',[orgA,orgB]);await database.query("DELETE FROM users WHERE email IN('goal14-a@jupiter.local','goal14-b@jupiter.local')");await database.onModuleDestroy();
 });
 
@@ -103,6 +103,27 @@ describe('ticket intake pipeline',()=>{
     const draft=await intakes.createDraft(actorA(),{title:String(processed.suggestions!.title),description:processed.combinedDescription!,priority:'HIGH',categoryId:category,departmentId:department,locationId:location,disciplineId:discipline,customFields:{device_type:'printer'},intakeSessionId:session.id});
     const evidence=await database.withOrganization(orgA,async client=>({attachment:(await client.query("SELECT storage_key,state FROM ticket_attachments WHERE ticket_id=$1",[draft.id])).rows[0],provenance:(await client.query("SELECT analysis_contract_version FROM ticket_intake_provenance WHERE ticket_id=$1",[draft.id])).rows[0],session:(await client.query("SELECT status,ticket_id FROM ticket_intake_sessions WHERE id=$1",[session.id])).rows[0]}));
     expect(evidence.attachment).toMatchObject({storage_key:key,state:'AVAILABLE'});expect(evidence.provenance.analysis_contract_version).toBe(TICKET_INTAKE_CONTRACT_VERSION);expect(evidence.session).toMatchObject({status:'CONSUMED',ticket_id:draft.id});
+  });
+
+  it('keeps multimodal raw messages separate from the AI interpretation and makes clarification optional',async()=>{
+    const session=await intakes.create(actorA(),{idempotencyKey:'goal20-conversation-001'});
+    await intakes.addTextMessage(actorA(),session.id,{text:'می‌خواهم یک سند را اسکن کنم؛ ابتدا اشتباه گفتم پرینت.'});
+    const requested=await intakes.requestMessageVoiceUpload(actorA(),session.id,{filename:'detail.wav',contentType:'audio/wav',byteSize:5,durationSeconds:3});
+    storage.objects.set(storage.lastUpload!.key,{contentType:'audio/wav',contentLength:5,metadata:{'duration-seconds':'3'},bytes:new Uint8Array([1,2,3,4,5])});
+    await intakes.completeMessageVoiceUpload(actorA(),session.id,requested.message.id);
+    const secondVoice=await intakes.requestMessageVoiceUpload(actorA(),session.id,{filename:'detail-2.wav',contentType:'audio/wav',byteSize:5,durationSeconds:2});
+    storage.objects.set(storage.lastUpload!.key,{contentType:'audio/wav',contentLength:5,metadata:{'duration-seconds':'2'},bytes:new Uint8Array([5,4,3,2,1])});
+    await intakes.completeMessageVoiceUpload(actorA(),session.id,secondVoice.message.id);
+    await intakes.analyzeConversation(actorA(),session.id);
+    const provider:TicketIntakeProvider={analyzeIntake:async()=>({output:{contractVersion:TICKET_INTAKE_CONTRACT_VERSION,title:'اختلال در اسکن سند',titleLibraryId:null,categoryId:category,subcategoryId:subcategory,departmentId:null,locationId:null,disciplineId:null,priority:'NORMAL',customFields:{},tags:[],missingFields:[],confidenceByField:{title:.95,categoryId:.9,subcategoryId:.9,priority:.9},interpretation:'درخواست اصلی مربوط به اسکن سند است؛ خرابی پرینتر مورد ثانویه است.',primaryIssue:{summary:'عدم امکان اسکن سند',serviceAsset:'اسکنر',issueType:'خرابی',confidence:.94},secondaryIssues:[{summary:'خرابی احتمالی پرینتر',confidence:.62}],clarificationQuestion:'آیا خرابی پرینتر نیز درخواست جداگانه‌ای است؟',clarificationConfidence:.62},usage:{}})};
+    let transcriptCall=0;const transcription:TranscriptionProvider={transcribe:async()=>({text:++transcriptCall===1?'پرینتر هم کار نمی‌کند.':'مشکل اصلی اسکن سند است.'})};
+    await intakes.process(orgA,session.id,provider,transcription);
+    const result=await intakes.get(actorA(),session.id) as unknown as {status:string;description:string;messages:Array<{role:string;transcript:string|null}>;interpretation:string;primaryIssue:{summary:string};secondaryIssues:Array<{summary:string}>;clarificationQuestion:string};
+    expect(result.status).toBe('SUCCEEDED');expect(result.description).toContain('اسکن');expect(result.description).toContain('پرینتر هم کار نمی‌کند');
+    expect(result.messages).toEqual(expect.arrayContaining([expect.objectContaining({role:'USER',transcript:'پرینتر هم کار نمی‌کند.'}),expect.objectContaining({role:'ASSISTANT'})]));
+    expect(result.interpretation).toContain('اسکن');expect(result.primaryIssue.summary).toContain('اسکن');expect(result.secondaryIssues[0].summary).toContain('پرینتر');expect(result.clarificationQuestion).toContain('درخواست جداگانه');
+    const draft=await intakes.createDraft(actorA(),{title:'اختلال در اسکن سند',description:result.description,intakeSessionId:session.id});
+    const attachments=(await database.withOrganization(orgA,client=>client.query('SELECT count(*)::int AS count FROM ticket_attachments WHERE ticket_id=$1',[draft.id]))).rows[0] as {count:number};expect(attachments.count).toBe(2);
   });
 
   it('retries provider failures, preserves manual input, and expires orphaned voice objects',async()=>{

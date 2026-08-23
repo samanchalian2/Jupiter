@@ -1,6 +1,6 @@
 import type { AiProviderConfiguration } from '../ai/ai-provider.js';
 
-export const TICKET_INTAKE_CONTRACT_VERSION = 'ticket-intake.v2' as const;
+export const TICKET_INTAKE_CONTRACT_VERSION = 'ticket-intake.v3' as const;
 export type TicketPriority = 'LOW'|'NORMAL'|'HIGH'|'URGENT';
 export type CatalogOption = { id: string; name: string; categoryId?: string };
 export type IntakeTitleOption = { id:string; title:string };
@@ -9,6 +9,7 @@ export type IntakeTagOption = { id:string; name:string; kind:IntakeTagKind };
 export type IntakeCustomFieldDefinition = { key: string; label: string; type: string; options: unknown[]; required: boolean };
 export type TicketIntakeContext = {
   description: string;
+  messages?: Array<{role:'USER'|'ASSISTANT';contentType:'TEXT'|'VOICE'|'CLARIFICATION';text:string}>;
   categories: CatalogOption[];
   subcategories: CatalogOption[];
   departments: CatalogOption[];
@@ -33,6 +34,11 @@ export type TicketIntakeProviderOutput = {
   tags: IntakeTagProposal[];
   missingFields: string[];
   confidenceByField: Record<string,number>;
+  interpretation?: string;
+  primaryIssue?: { summary:string; serviceAsset:string|null; issueType:string|null; confidence:number };
+  secondaryIssues?: Array<{ summary:string; confidence:number }>;
+  clarificationQuestion?: string|null;
+  clarificationConfidence?: number|null;
 };
 export interface TicketIntakeProvider {
   analyzeIntake(input: { context: TicketIntakeContext; configuration: AiProviderConfiguration }): Promise<{ output: TicketIntakeProviderOutput; usage: { inputTokens?: number; outputTokens?: number } }>;

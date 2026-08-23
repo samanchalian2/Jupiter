@@ -22,3 +22,8 @@
   pending until Organization Admin approval.
 - Intake voice is limited to 60 seconds and 10 MB, must pass post-upload
   metadata verification, and expires with an unconsumed session after 24 hours.
+- An intake may contain up to five requester text or voice messages. Raw
+  requester text and voice transcripts are immutable source evidence; AI
+  interpretation is separate and never replaces them.
+- An AI clarification is optional and must not block final ticket creation.
+  A secondary issue only becomes another ticket after explicit requester action.

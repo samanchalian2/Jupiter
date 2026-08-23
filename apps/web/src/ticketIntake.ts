@@ -39,6 +39,12 @@ export type IntakeSession = {
   attemptCount: number;
   lastErrorCode: string | null;
   expiresAt: string;
+  interpretation?: string | null;
+  primaryIssue?: { summary:string; serviceAsset:string|null; issueType:string|null; confidence:number } | null;
+  secondaryIssues?: Array<{ summary:string; confidence:number }>;
+  clarificationQuestion?: string | null;
+  clarificationConfidence?: number | null;
+  messages?: Array<{id:string;sequence:number;role:'USER'|'ASSISTANT';contentType:'TEXT'|'VOICE'|'CLARIFICATION';text:string|null;transcript:string|null;voice:{filename:string;contentType:string;byteSize:number;durationSeconds:number;verified:boolean}|null;createdAt:string}>;
 };
 
 export const processingStatuses = new Set<IntakeStatus>(['UPLOADING', 'TRANSCRIBING', 'ANALYZING']);

@@ -86,3 +86,17 @@ Only final explicit draft submission records a new candidate; Organization
 Admin approval is required before reuse. Existing flat tags remain active
 `OTHER` tags for compatibility. The lifecycle, original description and 0.75
 confidence threshold are unchanged.
+
+## DEC-011 — Multimodal guided ticket-intake conversation
+
+`ticket-intake.v3` retains each requester text or voice contribution as an
+ordered, tenant- and owner-scoped intake message. Voice transcripts and raw
+typed text are immutable source evidence; neither the model nor the UI silently
+rewrites them. The model returns a separate structured interpretation, primary
+issue, optional secondary issues and one optional concise clarification question.
+It may only ask when ambiguity materially affects classification. A requester
+can always submit the primary ticket without answering; secondary-ticket
+creation is a non-blocking explicit action and never occurs by default. All
+verified voice messages transfer to the final ticket as attachments. This
+extends DEC-008 without changing ticket lifecycle, credential policy, tenant
+isolation, the 0.75 assignment gate or the 24-hour intake expiry.

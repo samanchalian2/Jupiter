@@ -23,6 +23,7 @@ type IntakeRow = {
   provider_usage:Record<string,unknown>; missing_fields:string[]; confidence_by_field:Record<string,number>; rejected_fields:string[];
   voice_storage_key:string|null; voice_original_filename:string|null; voice_content_type:string|null; voice_byte_size:string|null;
   voice_duration_seconds:string|null; voice_verified_at:Date|null; attempt_count:number; last_error_code:string|null; ticket_id:string|null;
+  conversation_summary:string|null; primary_issue:Record<string,unknown>|null; secondary_issues:Array<Record<string,unknown>>; clarification_question:string|null; clarification_confidence:string|null;
   expires_at:Date; consumed_at:Date|null; created_at:Date; updated_at:Date;
 };
 
@@ -30,6 +31,13 @@ type ProviderConfigurationRow = {
   provider_base_url:string; analysis_model:string; transcription_model:string;
   api_key_ciphertext:Buffer; api_key_iv:Buffer; api_key_auth_tag:Buffer;
 };
+
+type IntakeMessageRow = {
+  id:string; organization_id:string; intake_session_id:string; sequence_number:number; role:'USER'|'ASSISTANT'; content_type:'TEXT'|'VOICE'|'CLARIFICATION';
+  text_content:string|null; transcript:string|null; voice_storage_key:string|null; voice_original_filename:string|null; voice_content_type:string|null;
+  voice_byte_size:string|null; voice_duration_seconds:string|null; voice_verified_at:Date|null; discarded_at:Date|null; created_at:Date; updated_at:Date;
+};
+type ScopedClient = {query:(text:string,values?:unknown[])=>Promise<{rows:any[];rowCount:number|null}>};
 
 @Injectable()
 export class TicketIntakeService {
@@ -56,8 +64,62 @@ export class TicketIntakeService {
   }
 
   async get(actor: TicketActor, id: string) {
-    const row = await this.database.withOrganization(actor.organizationId, (client) => this.owned(client, actor, id));
-    return this.present(row);
+    return this.database.withOrganization(actor.organizationId, async (client) => {
+      const row = await this.owned(client, actor, id);
+      const messages=(await client.query<IntakeMessageRow>('SELECT * FROM ticket_intake_messages WHERE intake_session_id=$1 AND discarded_at IS NULL ORDER BY sequence_number',[id])).rows;
+      return {...this.present(row),messages:messages.map(message=>this.presentMessage(message))};
+    });
+  }
+
+  async addTextMessage(actor:TicketActor,id:string,input:{text:string}) {
+    const text=input.text?.trim();
+    if(!text || text.length>10_000) throw new BadRequestException('Message text is invalid');
+    return this.database.withOrganization(actor.organizationId,async client=>{
+      const session=await this.owned(client,actor,id,true);this.assertMutable(session);this.assertNotProcessing(session);
+      const sequence=await this.nextMessageSequence(client,id);
+      await client.query(`INSERT INTO ticket_intake_messages(organization_id,intake_session_id,sequence_number,role,content_type,text_content)
+        VALUES($1,$2,$3,'USER','TEXT',$4)`,[actor.organizationId,id,sequence,text]);
+      const source=await this.combinedUserMessageText(client,id);
+      const row=(await client.query<IntakeRow>(`UPDATE ticket_intake_sessions SET status='CREATED',source_description=$2,combined_description=$2,transcript=NULL,
+        analysis_result=NULL,provider_usage='{}'::jsonb,missing_fields='[]'::jsonb,confidence_by_field='{}'::jsonb,rejected_fields='[]'::jsonb,
+        conversation_summary=NULL,primary_issue=NULL,secondary_issues='[]'::jsonb,clarification_question=NULL,clarification_confidence=NULL,
+        attempt_count=0,last_error_code=NULL,processing_started_at=NULL,next_attempt_at=NULL,updated_at=now() WHERE id=$1 RETURNING *`,[id,source])).rows[0];
+      await this.audit(client,actor,'ticket_intake.message_added',id,{kind:'text'});return this.present(row);
+    });
+  }
+
+  async requestMessageVoiceUpload(actor:TicketActor,id:string,input:{filename:string;contentType:string;byteSize:number;durationSeconds:number}) {
+    this.validateVoice(input);const storageKey=`organizations/${actor.organizationId}/ticket-intakes/${id}/messages/${randomUUID()}.${voiceExtensions[input.contentType]}`;const durationMetadata=this.durationMetadata(input.durationSeconds);
+    const result=await this.database.withOrganization(actor.organizationId,async client=>{
+      const session=await this.owned(client,actor,id,true);this.assertMutable(session);this.assertNotProcessing(session);
+      const sequence=await this.nextMessageSequence(client,id);const uploadUrl=await this.storage.createUploadUrl(storageKey,input.contentType,300,{'duration-seconds':durationMetadata});
+      const message=(await client.query<IntakeMessageRow>(`INSERT INTO ticket_intake_messages(organization_id,intake_session_id,sequence_number,role,content_type,voice_storage_key,voice_original_filename,voice_content_type,voice_byte_size,voice_duration_seconds)
+       VALUES($1,$2,$3,'USER','VOICE',$4,$5,$6,$7,$8) RETURNING *`,[actor.organizationId,id,sequence,storageKey,input.filename.trim(),input.contentType,input.byteSize,input.durationSeconds])).rows[0];
+      return {message,uploadUrl};
+    });
+    return {message:this.presentMessage(result.message),uploadUrl:result.uploadUrl,expiresInSeconds:300,requiredHeaders:{'Content-Type':input.contentType,'x-amz-meta-duration-seconds':durationMetadata}};
+  }
+
+  async completeMessageVoiceUpload(actor:TicketActor,id:string,messageId:string) {
+    const result=await this.database.withOrganization(actor.organizationId,async client=>{
+      const session=await this.owned(client,actor,id,true);this.assertMutable(session);this.assertNotProcessing(session);
+      const message=await this.ownedMessage(client,id,messageId,true);if(message.content_type!=='VOICE'||!message.voice_storage_key)throw new BadRequestException('No pending voice upload exists');
+      if(!this.voiceMessageMatches(message,await this.storage.head(message.voice_storage_key)))return {bad:true as const,key:message.voice_storage_key};
+      const updated=(await client.query<IntakeMessageRow>('UPDATE ticket_intake_messages SET voice_verified_at=now(),updated_at=now() WHERE id=$1 RETURNING *',[messageId])).rows[0];
+      await client.query("UPDATE ticket_intake_sessions SET status='CREATED',updated_at=now() WHERE id=$1",[id]);return {bad:false as const,message:updated};
+    });
+    if(result.bad){await this.storage.delete(result.key).catch(()=>undefined);throw new BadRequestException('Uploaded voice does not match the approved metadata');}
+    return this.presentMessage(result.message);
+  }
+
+  async discardMessage(actor:TicketActor,id:string,messageId:string) {
+    const result=await this.database.withOrganization(actor.organizationId,async client=>{
+      const session=await this.owned(client,actor,id,true);this.assertMutable(session);this.assertNotProcessing(session);
+      const message=await this.ownedMessage(client,id,messageId,true);await client.query('UPDATE ticket_intake_messages SET discarded_at=now(),updated_at=now() WHERE id=$1',[messageId]);
+      const source=await this.combinedUserMessageText(client,id);await client.query("UPDATE ticket_intake_sessions SET status='CREATED',source_description=$2,combined_description=$2,analysis_result=NULL,conversation_summary=NULL,primary_issue=NULL,secondary_issues='[]'::jsonb,clarification_question=NULL,clarification_confidence=NULL,updated_at=now() WHERE id=$1",[id,source]);
+      return message.voice_storage_key;
+    });
+    if(result)await this.storage.delete(result).catch(()=>undefined);return this.get(actor,id);
   }
 
   async requestVoiceUpload(actor: TicketActor, id: string, input: { filename:string; contentType:string; byteSize:number; durationSeconds:number }) {
@@ -141,6 +203,26 @@ export class TicketIntakeService {
     return this.present(row);
   }
 
+  async analyzeConversation(actor:TicketActor,id:string) {
+    const row=await this.database.withOrganization(actor.organizationId,async client=>{
+      const session=await this.owned(client,actor,id,true);this.assertMutable(session);this.assertNotProcessing(session);
+      const messages=(await client.query<IntakeMessageRow>('SELECT * FROM ticket_intake_messages WHERE intake_session_id=$1 AND discarded_at IS NULL ORDER BY sequence_number',[id])).rows;
+      const userMessages=messages.filter(message=>message.role==='USER');
+      if(!userMessages.length)throw new BadRequestException('A text or voice message is required');
+      const pending=userMessages.filter(message=>message.content_type==='VOICE'&&!message.voice_verified_at);
+      if(pending.length)throw new BadRequestException('Voice upload must be verified first');
+      const configured=(await client.query<{configured:boolean}>('SELECT enabled AND api_key_ciphertext IS NOT NULL AS configured FROM organization_ai_settings WHERE organization_id=$1',[actor.organizationId])).rows[0]?.configured;
+      if(!configured)throw new ForbiddenException('AI is not configured for this organization');
+      const needsTranscription=userMessages.some(message=>message.content_type==='VOICE'&&!message.transcript);
+      const updated=(await client.query<IntakeRow>(`UPDATE ticket_intake_sessions SET status=$2,attempt_count=0,last_error_code=NULL,processing_started_at=NULL,next_attempt_at=now(),
+        analysis_result=NULL,provider_usage='{}'::jsonb,missing_fields='[]'::jsonb,confidence_by_field='{}'::jsonb,rejected_fields='[]'::jsonb,
+        conversation_summary=NULL,primary_issue=NULL,secondary_issues='[]'::jsonb,clarification_question=NULL,clarification_confidence=NULL,updated_at=now() WHERE id=$1 RETURNING *`,[id,needsTranscription?'TRANSCRIBING':'ANALYZING'])).rows[0];
+      await client.query("INSERT INTO outbox_events(organization_id,topic,payload) VALUES($1,'ticket_intake.process',$2)",[actor.organizationId,{sessionId:id}]);
+      await this.audit(client,actor,'ticket_intake.conversation_analysis_requested',id,{messageCount:userMessages.length,hasVoice:userMessages.some(message=>message.content_type==='VOICE')});return updated;
+    });
+    return this.present(row);
+  }
+
   async pending(limit=10) {
     return (await this.database.query<{id:string;organization_id:string}>(
       `SELECT id,organization_id FROM ticket_intake_sessions
@@ -162,6 +244,30 @@ export class TicketIntakeService {
       if (!claimed) return;
       stage = claimed.status;
       const configuration = await this.configuration(organizationId);
+      const conversationMessages=await this.database.withOrganization(organizationId,client=>client.query<IntakeMessageRow>('SELECT * FROM ticket_intake_messages WHERE intake_session_id=$1 AND discarded_at IS NULL ORDER BY sequence_number',[id]).then(result=>result.rows));
+      if(conversationMessages.length){
+        if(stage==='TRANSCRIBING'){
+          for(const message of conversationMessages.filter(item=>item.role==='USER'&&item.content_type==='VOICE'&&!item.transcript)){
+            if(!message.voice_storage_key||!message.voice_content_type||!message.voice_original_filename||!message.voice_verified_at)throw new Error('voice_unavailable');
+            if(!this.voiceMessageMatches(message,await this.storage.head(message.voice_storage_key)))throw new Error('voice_metadata_mismatch');
+            const bytes=await this.storage.read(message.voice_storage_key);if(!bytes.length||bytes.length>maximumVoiceBytes)throw new Error('voice_content_invalid');
+            const buffer=new ArrayBuffer(bytes.byteLength);new Uint8Array(buffer).set(bytes);
+            const transcription=await transcriptionProvider.transcribe({audio:new Blob([buffer],{type:message.voice_content_type}),filename:message.voice_original_filename,configuration:{baseUrl:configuration.provider_base_url,apiKey:configuration.apiKey,model:configuration.transcription_model}});
+            await this.database.withOrganization(organizationId,client=>client.query('UPDATE ticket_intake_messages SET transcript=$2,updated_at=now() WHERE id=$1',[message.id,transcription.text.trim().slice(0,20_000)]));
+          }
+        }
+        const completeMessages=await this.database.withOrganization(organizationId,client=>client.query<IntakeMessageRow>('SELECT * FROM ticket_intake_messages WHERE intake_session_id=$1 AND discarded_at IS NULL ORDER BY sequence_number',[id]).then(result=>result.rows));
+        const description=this.combineConversation(completeMessages);const context=await this.context(organizationId,description,completeMessages);
+        const answer=await aiProvider.analyzeIntake({context,configuration:{baseUrl:configuration.provider_base_url,apiKey:configuration.apiKey,model:configuration.analysis_model}});const validated=this.validateAnalysis(answer.output,context);
+        const interpretation=this.safeText(answer.output.interpretation,2_000);const primary=this.validIssue(answer.output.primaryIssue);const secondary=this.validIssues(answer.output.secondaryIssues);const question=this.safeText(answer.output.clarificationQuestion,500);const questionConfidence=typeof answer.output.clarificationConfidence==='number'&&Number.isFinite(answer.output.clarificationConfidence)?Math.max(0,Math.min(1,answer.output.clarificationConfidence)):null;
+        await this.database.withOrganization(organizationId,async client=>{
+          await client.query(`UPDATE ticket_intake_sessions SET status='SUCCEEDED',source_description=$2,combined_description=$2,analysis_contract_version=$3,analysis_result=$4,provider_usage=$5,missing_fields=$6,confidence_by_field=$7,rejected_fields=$8,conversation_summary=$9,primary_issue=$10,secondary_issues=$11,clarification_question=$12,clarification_confidence=$13,attempt_count=0,processing_started_at=NULL,next_attempt_at=NULL,last_error_code=NULL,updated_at=now() WHERE id=$1`,[id,description,TICKET_INTAKE_CONTRACT_VERSION,validated.result,answer.usage,JSON.stringify(validated.missingFields),validated.confidenceByField,JSON.stringify(validated.rejectedFields),interpretation,primary,JSON.stringify(secondary),question,questionConfidence]);
+          await client.query("DELETE FROM ticket_intake_messages WHERE intake_session_id=$1 AND role='ASSISTANT'",[id]);
+          if(question)await client.query(`INSERT INTO ticket_intake_messages(organization_id,intake_session_id,sequence_number,role,content_type,text_content) VALUES($1,$2,$3,'ASSISTANT','CLARIFICATION',$4)`,[organizationId,id,completeMessages.length+1,question]);
+          await client.query("UPDATE outbox_events SET processed_at=now() WHERE topic='ticket_intake.process' AND payload->>'sessionId'=$1 AND processed_at IS NULL",[id]);await this.audit(client,{userId:'',organizationId},'ticket_intake.conversation_succeeded',id,{contractVersion:TICKET_INTAKE_CONTRACT_VERSION,hasClarification:Boolean(question),secondaryIssueCount:secondary.length});
+        });
+        return;
+      }
       let description = claimed.combined_description ?? claimed.source_description;
       if (stage === 'TRANSCRIBING') {
         if (!claimed.voice_storage_key || !claimed.voice_content_type || !claimed.voice_original_filename || !claimed.voice_verified_at) throw new Error('voice_unavailable');
@@ -216,12 +322,18 @@ export class TicketIntakeService {
       if (session.voice_storage_key && session.voice_original_filename && session.voice_content_type && session.voice_byte_size && session.voice_verified_at) {
         await this.attachments.attachAvailableWithClient(client,actor,ticket.id,{storageKey:session.voice_storage_key,filename:session.voice_original_filename,contentType:session.voice_content_type,byteSize:Number(session.voice_byte_size)});
       }
+      const conversationVoices=(await client.query<IntakeMessageRow>(`SELECT * FROM ticket_intake_messages WHERE intake_session_id=$1 AND content_type='VOICE' AND discarded_at IS NULL ORDER BY sequence_number`,[session.id])).rows;
+      for(const voice of conversationVoices){
+        if(!voice.voice_storage_key||!voice.voice_original_filename||!voice.voice_content_type||!voice.voice_byte_size||!voice.voice_verified_at)throw new BadRequestException('Voice upload is not verified');
+        if(!this.voiceMessageMatches(voice,await this.storage.head(voice.voice_storage_key)))throw new BadRequestException('Voice object metadata has changed');
+        await this.attachments.attachAvailableWithClient(client,actor,ticket.id,{storageKey:voice.voice_storage_key,filename:voice.voice_original_filename,contentType:voice.voice_content_type,byteSize:Number(voice.voice_byte_size)});
+      }
       await client.query(
         `INSERT INTO ticket_intake_provenance(organization_id,ticket_id,intake_session_id,analysis_contract_version,analysis_result,confidence_by_field)
          VALUES($1,$2,$3,$4,$5,$6)`, [actor.organizationId,ticket.id,session.id,session.analysis_contract_version,session.analysis_result,session.confidence_by_field],
       );
       await client.query("UPDATE ticket_intake_sessions SET status='CONSUMED',ticket_id=$2,consumed_at=now(),updated_at=now() WHERE id=$1",[session.id,ticket.id]);
-      await this.audit(client,actor,'ticket_intake.consumed',session.id,{ticketId:ticket.id,voiceAttached:Boolean(session.voice_storage_key&&session.voice_verified_at)});
+      await this.audit(client,actor,'ticket_intake.consumed',session.id,{ticketId:ticket.id,voiceAttached:Boolean(session.voice_storage_key&&session.voice_verified_at),conversationVoiceCount:conversationVoices.length});
       return {...ticket,intakeSessionId:session.id};
     });
   }
@@ -235,6 +347,8 @@ export class TicketIntakeService {
     for (const row of rows) {
       try {
         if (row.voice_storage_key) await this.storage.delete(row.voice_storage_key);
+        const messageKeys=(await this.database.withOrganization(row.organization_id,client=>client.query<{voice_storage_key:string}>('SELECT voice_storage_key FROM ticket_intake_messages WHERE intake_session_id=$1 AND voice_storage_key IS NOT NULL',[row.id]).then(result=>result.rows))).map(message=>message.voice_storage_key);
+        for(const key of messageKeys)await this.storage.delete(key);
         cleaned += await this.database.withOrganization(row.organization_id, async (client) => (await client.query(
           "UPDATE ticket_intake_sessions SET status='EXPIRED',processing_started_at=NULL,next_attempt_at=NULL,updated_at=now() WHERE id=$1 AND expires_at<=now() AND status NOT IN ('CONSUMED','EXPIRED')",[row.id],
         )).rowCount ?? 0);
@@ -252,7 +366,7 @@ export class TicketIntakeService {
     return {...row,apiKey:this.credentials.decrypt({ciphertext:row.api_key_ciphertext,iv:row.api_key_iv,authTag:row.api_key_auth_tag})};
   }
 
-  private async context(organizationId:string,description:string):Promise<TicketIntakeContext> {
+  private async context(organizationId:string,description:string,messages: IntakeMessageRow[]=[]):Promise<TicketIntakeContext> {
     return this.database.withOrganization(organizationId, async (client) => {
       const categories=(await client.query<{id:string;name:string}>('SELECT id,name FROM categories ORDER BY name')).rows;
       const subcategories=(await client.query<{id:string;name:string;category_id:string}>('SELECT id,name,category_id FROM subcategories ORDER BY name')).rows.map((item)=>({id:item.id,name:item.name,categoryId:item.category_id}));
@@ -264,7 +378,7 @@ export class TicketIntakeService {
       )).rows.map<IntakeCustomFieldDefinition>((item)=>({key:item.field_key,label:item.label,type:item.field_type,options:item.options??[],required:item.is_required}));
       const titleLibrary=(await client.query<{id:string;title:string}>('SELECT id,title FROM ticket_title_library WHERE status=\'ACTIVE\' ORDER BY usage_count DESC,title LIMIT 20')).rows;
       const tags=(await client.query<{id:string;name:string;kind:'DOMAIN'|'SERVICE_ASSET'|'ISSUE_TYPE'|'IMPACT_SCOPE'|'CONTEXT'|'OTHER'}>('SELECT id,name,kind FROM ticket_tags WHERE status=\'ACTIVE\' ORDER BY usage_count DESC,name LIMIT 80')).rows;
-      return {description:redactForAi(description),categories,subcategories,departments,locations,disciplines,customFields,titleLibrary,tags};
+      return {description:redactForAi(description),messages:messages.map(message=>({role:message.role,contentType:message.content_type,text:redactForAi(message.content_type==='VOICE'?(message.transcript??''):(message.text_content??''))})),categories,subcategories,departments,locations,disciplines,customFields,titleLibrary,tags};
     });
   }
 
@@ -364,6 +478,11 @@ export class TicketIntakeService {
   }
 
   private durationMetadata(value:number) { return Number(value.toFixed(3)).toString(); }
+  private voiceMessageMatches(message:IntakeMessageRow,object:StoredObject|undefined) {
+    if(!object||!message.voice_content_type||!message.voice_byte_size||!message.voice_duration_seconds)return false;
+    const actualDuration=Number(object.metadata?.['duration-seconds']??object.metadata?.durationSeconds);
+    return object.contentType?.toLowerCase()===message.voice_content_type.toLowerCase()&&object.contentLength===Number(message.voice_byte_size)&&Number.isFinite(actualDuration)&&Math.abs(actualDuration-Number(message.voice_duration_seconds))<0.01;
+  }
   private voiceObjectMatches(session:IntakeRow,object:StoredObject|undefined) {
     if (!object||!session.voice_content_type||!session.voice_byte_size||!session.voice_duration_seconds) return false;
     const actualDuration=Number(object.metadata?.['duration-seconds']??object.metadata?.durationSeconds);
@@ -372,6 +491,22 @@ export class TicketIntakeService {
       && Math.abs(actualDuration-Number(session.voice_duration_seconds))<0.01;
   }
   private combine(source:string,transcript:string) { return (source.trim()?`${source.trim()}\n\nمتن پیاده‌سازی‌شده صدا:\n${transcript}`:transcript).slice(0,30_000); }
+  private combineConversation(messages:IntakeMessageRow[]) {
+    return messages.filter(message=>message.role==='USER').map((message,index)=>{
+      const text=message.content_type==='VOICE'?(message.transcript??''):message.text_content??'';
+      return `پیام کاربر ${index+1}${message.content_type==='VOICE'?' (متن پیاده‌سازی‌شده صوت)':''}:\n${text}`;
+    }).filter(Boolean).join('\n\n').slice(0,30_000);
+  }
+  private async nextMessageSequence(client:ScopedClient,intakeId:string) {
+    const result=(await client.query('SELECT count(*) FILTER (WHERE role=\'USER\')::int AS user_count,COALESCE(max(sequence_number),0)::int AS sequence FROM ticket_intake_messages WHERE intake_session_id=$1 AND discarded_at IS NULL',[intakeId])).rows[0] as {user_count:number;sequence:number}|undefined;
+    if((result?.user_count??0)>=5)throw new BadRequestException('An intake supports at most five requester messages');return (result?.sequence??0)+1;
+  }
+  private async combinedUserMessageText(client:ScopedClient,intakeId:string) { return this.combineConversation((await client.query('SELECT * FROM ticket_intake_messages WHERE intake_session_id=$1 AND discarded_at IS NULL ORDER BY sequence_number',[intakeId])).rows as IntakeMessageRow[]); }
+  private async ownedMessage(client:ScopedClient,intakeId:string,messageId:string,lock=false) { const row=(await client.query(`SELECT * FROM ticket_intake_messages WHERE id=$1 AND intake_session_id=$2${lock?' FOR UPDATE':''}`,[messageId,intakeId])).rows[0] as IntakeMessageRow|undefined;if(!row)throw new NotFoundException('Ticket intake message not found');return row; }
+  private assertNotProcessing(row:IntakeRow) { if(processingStates.has(row.status))throw new BadRequestException('Ticket intake is being processed'); }
+  private safeText(value:unknown,max:number) { return typeof value==='string'&&value.trim()?value.trim().slice(0,max):null; }
+  private validIssue(value:unknown) { if(!value||typeof value!=='object')return null;const item=value as {summary?:unknown;serviceAsset?:unknown;issueType?:unknown;confidence?:unknown};const summary=this.safeText(item.summary,500);if(!summary||typeof item.confidence!=='number'||!Number.isFinite(item.confidence))return null;return {summary,serviceAsset:this.safeText(item.serviceAsset,100),issueType:this.safeText(item.issueType,100),confidence:Math.max(0,Math.min(1,item.confidence))}; }
+  private validIssues(value:unknown) { return Array.isArray(value)?value.map(item=>{const issue=this.validIssue({...item,serviceAsset:null,issueType:null});return issue?{summary:issue.summary,confidence:issue.confidence}:null;}).filter((item):item is {summary:string;confidence:number}=>Boolean(item)).slice(0,2):[]; }
   private assertMutable(row:IntakeRow) {
     if (row.status==='CONSUMED') throw new BadRequestException('Ticket intake has already been consumed');
     if (row.status==='EXPIRED'||new Date(row.expires_at).getTime()<=Date.now()) throw new BadRequestException('Ticket intake has expired');
@@ -386,8 +521,10 @@ export class TicketIntakeService {
       contractVersion:row.analysis_contract_version,suggestions:(row.analysis_result?.suggestions as Record<string,unknown>|undefined)??null,
       missingFields:row.missing_fields,confidenceByField:row.confidence_by_field,rejectedFields:row.rejected_fields,
       voice:row.voice_original_filename?{filename:row.voice_original_filename,contentType:row.voice_content_type,byteSize:Number(row.voice_byte_size),durationSeconds:Number(row.voice_duration_seconds)}:null,
+      interpretation:row.conversation_summary,primaryIssue:row.primary_issue,secondaryIssues:row.secondary_issues??[],clarificationQuestion:row.clarification_question,clarificationConfidence:row.clarification_confidence===null?null:Number(row.clarification_confidence),
       attemptCount:row.attempt_count,lastErrorCode:row.last_error_code,ticketId:row.ticket_id,expiresAt:row.expires_at,createdAt:row.created_at,updatedAt:row.updated_at };
   }
+  private presentMessage(message:IntakeMessageRow) { return {id:message.id,sequence:message.sequence_number,role:message.role,contentType:message.content_type,text:message.text_content,transcript:message.transcript,voice:message.voice_original_filename?{filename:message.voice_original_filename,contentType:message.voice_content_type,byteSize:Number(message.voice_byte_size),durationSeconds:Number(message.voice_duration_seconds),verified:Boolean(message.voice_verified_at)}:null,createdAt:message.created_at}; }
   private async audit(client:{query:Function},actor:Pick<TicketActor,'userId'|'organizationId'>,action:string,targetId:string,metadata:object) {
     await client.query('INSERT INTO audit_logs(organization_id,actor_user_id,action,target_type,target_id,metadata) VALUES($1,NULLIF($2,\'\')::uuid,$3,\'ticket_intake\',$4,$5)',[actor.organizationId,actor.userId,action,targetId,metadata]);
   }

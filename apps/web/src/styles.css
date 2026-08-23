@@ -330,6 +330,8 @@ button.drawer-backdrop:focus-visible {
 }
 .smart-ticket-composer .ticket-description-field,
 .smart-ticket-composer .smart-intake-toolbar,
+.smart-ticket-composer .intake-conversation,
+.smart-ticket-composer .ai-interpretation,
 .smart-ticket-composer .ai-guidance,
 .smart-ticket-composer .composer-error {
   grid-column: 1 / -1;
@@ -338,9 +340,40 @@ button.drawer-backdrop:focus-visible {
   grid-row: auto;
 }
 .smart-ticket-composer .ticket-description-field textarea {
-  min-height: 180px;
+  min-height: 128px;
   line-height: 1.85;
 }
+.intake-conversation {
+  display: grid;
+  gap: 10px;
+  max-height: 360px;
+  overflow: auto;
+  padding: 12px;
+  background: #faf9fb;
+  border: 1px solid var(--primary-border);
+  border-radius: var(--radius);
+}
+.intake-message {
+  width: min(88%, 680px);
+  padding: 10px 13px;
+  border-radius: 14px;
+  line-height: 1.75;
+}
+.intake-message p { margin: 3px 0 0; white-space: pre-wrap; }
+.intake-message small { color: var(--text-muted); }
+.intake-message.requester { justify-self: start; background: var(--primary-soft); border: 1px solid var(--primary-border); }
+.intake-message.assistant { justify-self: end; background: #fff; border: 1px solid #e6e3ea; }
+.ai-interpretation {
+  padding: 14px;
+  background: linear-gradient(135deg, #fff, var(--primary-soft));
+  border: 1px solid var(--primary-border);
+  border-inline-start: 4px solid var(--primary);
+  border-radius: var(--radius);
+}
+.ai-interpretation .eyebrow { display: flex; align-items: center; gap: 5px; color: var(--primary); }
+.ai-interpretation p { margin: 6px 0; }
+.ai-interpretation span { color: var(--text-muted); font-size: .86em; }
+.clarification-question { color: var(--text); }
 .field-label-row {
   display: flex;
   align-items: center;

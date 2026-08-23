@@ -1,5 +1,17 @@
 # Current State
 
+**GOAL-020 — Multimodal guided ticket-intake conversation (complete,
+2026-08-23):** `ticket-intake.v3` stores up to five ordered requester text or
+voice messages per tenant- and owner-scoped intake. Raw typed text and each
+voice transcript remain distinct from the AI interpretation, primary issue,
+secondary issues and optional clarification. The model recognizes corrections,
+negation and multi-issue requests before producing title/taxonomy/tag
+suggestions. Clarification and secondary-ticket suggestions are non-blocking;
+the primary ticket can always be submitted manually and no second ticket is
+created automatically. All verified voice messages transfer to the final
+ticket as attachments. Migration 030 applied locally; 52 API tests, 11 Web
+tests, API/Web typechecks and both production builds pass.
+
 **Voice re-record replacement (complete, 2026-08-23):** Starting a new voice
 capture now removes only the transcript section appended by the prior successful
 voice intake, while preserving any text the requester typed before or after it.

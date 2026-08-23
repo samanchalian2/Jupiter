@@ -16,6 +16,26 @@ export class TicketIntakeController {
     return this.intakes.requestVoiceUpload(await this.actors.fromHeaders(authorization,organizationId),id,body);
   }
 
+  @Post('ticket-intakes/:id/messages')
+  async addTextMessage(@Param('id') id:string,@Headers('authorization') authorization?:string,@Headers('x-organization-id') organizationId?:string,@Body() body:{text?:string}={}) {
+    return this.intakes.addTextMessage(await this.actors.fromHeaders(authorization,organizationId),id,{text:body.text??''});
+  }
+
+  @Post('ticket-intakes/:id/messages/voice/upload-request')
+  async messageVoiceUpload(@Param('id') id:string,@Headers('authorization') authorization?:string,@Headers('x-organization-id') organizationId?:string,@Body() body:{filename:string;contentType:string;byteSize:number;durationSeconds:number}={filename:'',contentType:'',byteSize:0,durationSeconds:0}) {
+    return this.intakes.requestMessageVoiceUpload(await this.actors.fromHeaders(authorization,organizationId),id,body);
+  }
+
+  @Post('ticket-intakes/:id/messages/:messageId/voice/complete')
+  async completeMessageVoice(@Param('id') id:string,@Param('messageId') messageId:string,@Headers('authorization') authorization?:string,@Headers('x-organization-id') organizationId?:string) {
+    return this.intakes.completeMessageVoiceUpload(await this.actors.fromHeaders(authorization,organizationId),id,messageId);
+  }
+
+  @Post('ticket-intakes/:id/messages/:messageId/discard')
+  async discardMessage(@Param('id') id:string,@Param('messageId') messageId:string,@Headers('authorization') authorization?:string,@Headers('x-organization-id') organizationId?:string) {
+    return this.intakes.discardMessage(await this.actors.fromHeaders(authorization,organizationId),id,messageId);
+  }
+
   @Post('ticket-intakes/:id/voice/complete')
   async complete(@Param('id') id:string,@Headers('authorization') authorization?:string,@Headers('x-organization-id') organizationId?:string) {
     return this.intakes.completeVoiceUpload(await this.actors.fromHeaders(authorization,organizationId),id);
@@ -29,6 +49,11 @@ export class TicketIntakeController {
   @Post('ticket-intakes/:id/analyze')
   async analyze(@Param('id') id:string,@Headers('authorization') authorization?:string,@Headers('x-organization-id') organizationId?:string) {
     return this.intakes.analyze(await this.actors.fromHeaders(authorization,organizationId),id);
+  }
+
+  @Post('ticket-intakes/:id/conversation/analyze')
+  async analyzeConversation(@Param('id') id:string,@Headers('authorization') authorization?:string,@Headers('x-organization-id') organizationId?:string) {
+    return this.intakes.analyzeConversation(await this.actors.fromHeaders(authorization,organizationId),id);
   }
 
   @Get('ticket-intakes/:id')

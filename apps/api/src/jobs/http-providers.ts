@@ -30,7 +30,7 @@ const analysisSchema = {
 } as const;
 
 const ticketIntakeSchema = {
-  name: 'jupiter_ticket_intake_v2', strict: true,
+  name: 'jupiter_ticket_intake_v3', strict: true,
   schema: {
     type: 'object', additionalProperties: false,
     properties: {
@@ -44,8 +44,13 @@ const ticketIntakeSchema = {
       tags: { type: 'array', maxItems: 5, items: { type: 'object', additionalProperties: false, properties: { tagId: { type: ['string','null'] }, name: { type: 'string' }, kind: { type: 'string', enum: ['DOMAIN','SERVICE_ASSET','ISSUE_TYPE','IMPACT_SCOPE','CONTEXT','OTHER'] } }, required: ['tagId','name','kind'] } },
       missingFields: { type: 'array', items: { type: 'string' } },
       confidenceByField: { type: 'array', items: { type: 'object', additionalProperties: false, properties: { field: { type: 'string' }, confidence: { type: 'number', minimum: 0, maximum: 1 } }, required: ['field','confidence'] } },
+      interpretation: { type: ['string','null'] },
+      primaryIssue: { type: ['object','null'], additionalProperties: false, properties: { summary: { type: 'string' }, serviceAsset: { type: ['string','null'] }, issueType: { type: ['string','null'] }, confidence: { type: 'number', minimum: 0, maximum: 1 } }, required: ['summary','serviceAsset','issueType','confidence'] },
+      secondaryIssues: { type: 'array', maxItems: 2, items: { type: 'object', additionalProperties: false, properties: { summary: { type: 'string' }, confidence: { type: 'number', minimum: 0, maximum: 1 } }, required: ['summary','confidence'] } },
+      clarificationQuestion: { type: ['string','null'] },
+      clarificationConfidence: { type: ['number','null'], minimum: 0, maximum: 1 },
     },
-    required: ['contractVersion','title','titleLibraryId','categoryId','subcategoryId','departmentId','locationId','disciplineId','priority','customFields','tags','missingFields','confidenceByField'],
+    required: ['contractVersion','title','titleLibraryId','categoryId','subcategoryId','departmentId','locationId','disciplineId','priority','customFields','tags','missingFields','confidenceByField','interpretation','primaryIssue','secondaryIssues','clarificationQuestion','clarificationConfidence'],
   },
 } as const;
 
@@ -71,7 +76,7 @@ export class HttpAiProvider implements AiProvider, TicketIntakeProvider {
     const response = await checkedFetch(`${input.configuration.baseUrl.replace(/\/$/, '')}/chat/completions`, {
       method: 'POST', headers: { authorization: `Bearer ${input.configuration.apiKey}`, 'content-type': 'application/json' },
       body: JSON.stringify({ model: input.configuration.model, messages: [
-        { role: 'system', content: 'You classify a help-desk request using only IDs and options in the supplied tenant context. Never rewrite the user description. The title must be a concise Persian problem label of 4–12 words, not a copy of the description and without dates or generic prefixes. If an active titleLibrary entry is the same request, return its exact ID and title; otherwise set titleLibraryId to null and create a precise new title. For every support request, propose exactly one concise tag for each core dimension: DOMAIN, SERVICE_ASSET and ISSUE_TYPE. When the active tenant vocabulary has no suitable value, use null tagId and create the concise candidate name; do not omit core tags merely because the vocabulary is empty. Add at most two IMPACT_SCOPE or CONTEXT tags only when the description supports them. Reuse only supplied active tag IDs. Return confidence for every proposed field.' },
+        { role: 'system', content: 'You classify a Persian help-desk conversation using only IDs and options in the supplied tenant context. Raw requester messages are evidence: never rewrite them. Resolve self-corrections such as «ببخشید» and «اشتباه گفتم», negation and chronology before classifying. Return a concise separate interpretation and one primary issue. A statement about another device may be a secondary issue, not the primary issue; include it in secondaryIssues unless it clearly replaces the earlier issue. Ask one short Persian clarification only when ambiguity materially changes the primary classification, otherwise return null. The title must be a concise Persian problem label of 4–12 words, not a copy of the description and without dates or generic prefixes. If an active titleLibrary entry is the same request, return its exact ID and title; otherwise set titleLibraryId to null and create a precise new title. For every support request, propose exactly one concise tag for each core dimension: DOMAIN, SERVICE_ASSET and ISSUE_TYPE. When the active tenant vocabulary has no suitable value, use null tagId and create the concise candidate name; do not omit core tags merely because the vocabulary is empty. Add at most two IMPACT_SCOPE or CONTEXT tags only when the requester evidence supports them. Reuse only supplied active tag IDs. Return confidence for every proposed field.' },
         { role: 'user', content: JSON.stringify(input.context) },
       ], response_format: { type: 'json_schema', json_schema: ticketIntakeSchema } }),
     });

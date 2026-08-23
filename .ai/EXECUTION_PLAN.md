@@ -249,3 +249,22 @@ px confirmed no horizontal overflow, responsive controls and a real provider's
 concise non-copy title. The empty demo organization correctly withheld category
 and tag suggestions; its approved starter-template installation remains a
 tenant configuration action. See `docs/GOAL_019_EVIDENCE.md`.
+
+## GOAL-020 — Multimodal guided ticket-intake conversation
+
+**Status:** DONE
+
+**Scope:** ordered text and voice intake messages, immutable raw source text,
+separate AI interpretation/primary issue/secondary issue, non-blocking
+clarification, optional secondary-ticket proposal, multiple secure voice
+attachments, v3 provider contract and responsive requester conversation UI.
+
+**Acceptance:** text and voice share one guided conversation; ambiguity can
+produce a concise optional question; only explicit user action creates a second
+ticket; raw input and AI interpretation remain separate; all message and
+attachment paths preserve tenant/owner isolation.
+
+**Validation:** migration 030 applied locally. API integration coverage verifies
+raw text/voice separation, a voice transcript, separate interpretation, primary
+and secondary issue, optional clarification and final voice attachment handoff.
+All 52 API tests, 11 Web tests, API/Web typechecks and production builds pass.

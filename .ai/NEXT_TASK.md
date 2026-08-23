@@ -1,5 +1,13 @@
 # Next Task
 
+## GOAL-020 — Multimodal guided ticket-intake conversation
+
+**Status:** COMPLETE (local verification, 2026-08-23)
+
+The approved text/voice conversation, immutable raw messages, separate AI
+interpretation, optional clarification and multiple voice attachment handoff
+are complete. See `docs/TICKET_INTAKE_API.md`.
+
 ## Voice re-record replacement
 
 **Status:** COMPLETE (local verification, 2026-08-23)
