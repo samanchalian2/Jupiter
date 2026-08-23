@@ -1,5 +1,17 @@
 # Next Task
 
+## GOAL-023 — Persistent conversational intake layout
+
+**Status:** COMPLETE (local verification, 2026-08-24)
+
+After the first requester message, the initial large composer becomes a compact
+messenger-style conversation panel and stays available for follow-up text,
+voice and attachment input. AI clarifications are displayed in that stream;
+the structured AI interpretation does not repeat the same question. Ticket
+fields are grouped under the collapsible «جزئیات درخواست» section, which opens
+when required information needs manual completion. Web typecheck, 11 Web tests
+and the production Web build pass.
+
 ## GOAL-022 — Reviewable AI secondary proposals and stable smart completion
 
 **Status:** COMPLETE (local verification, 2026-08-24)
@@ -265,7 +277,7 @@ change. It requires at least 10 characters, revokes active refresh sessions,
 and does not record passwords in audit metadata. API/web typechecks, 31 API
 tests, the web production build, and local API health/readiness checks pass.
 
-## Next Goal — navigation interaction polish
+## Next Goal — GOAL-024 navigation interaction polish
 
 Correct desktop sidebar-toggle placement/direction, remove unintended mobile
 drawer hover tint outside the menu, and ensure hover foregrounds are white on

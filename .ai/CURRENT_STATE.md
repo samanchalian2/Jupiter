@@ -1,5 +1,17 @@
 # Current State
 
+**GOAL-023 — Persistent conversational intake layout (complete, 2026-08-24):**
+After the first requester text or voice message, the large description-first
+composer transitions into a compact messenger-style conversation surface rather
+than collapsing. The conversation history and compact text/voice/attachment
+toolbar stay visible for follow-up clarification; the final ticket-submit
+action remains separate. Title, category and advanced fields now live in the
+collapsible «جزئیات درخواست» section, which opens automatically when an AI
+result leaves required data unresolved and when a manual submit identifies a
+missing required value. The clarification question remains in the conversation
+without being duplicated in the AI interpretation card. Web typecheck, 11 Web
+tests and the production Web build pass.
+
 **GOAL-022 — Reviewable AI secondary proposals and stable smart completion
 (complete, 2026-08-24):** `ticket-intake.v5` retains the 0.75 threshold for
 automatic primary-field application while allowing a requester to explicitly

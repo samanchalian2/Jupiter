@@ -31,3 +31,7 @@ the final explicit ticket submission.
 
 The approved secondary-ticket extension adds (21) requester-confirmed atomic
 creation of validated, privacy-preserving secondary tickets.
+
+The approved intake-experience refinement adds (23) a persistent compact
+messenger-style follow-up composer after the first requester message, with
+collapsible structured ticket details. GOAL-023 is complete locally.

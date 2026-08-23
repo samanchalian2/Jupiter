@@ -299,3 +299,17 @@ with no horizontal overflow.
 as a context anchor through targeted secondary clarification. An API integration
 test verifies that the follow-up provider receives the anchor; 54 API tests and
 the production API build pass.
+
+## GOAL-023 — Persistent conversational intake layout
+
+**Status:** DONE
+
+**Scope:** after the first requester message, replace the collapsed follow-up
+composer with a persistent compact chat-style text/voice/attachment surface;
+retain the separate explicit ticket-submit path; move title, category and
+advanced fields into a collapsible request-details section; keep assistant
+clarifications visible once in the conversation stream.
+
+**Validation:** Web typecheck, 11 Web tests and the Web production build pass.
+
+**Next Goal:** GOAL-024 — navigation interaction polish.
