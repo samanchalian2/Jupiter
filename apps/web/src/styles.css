@@ -332,6 +332,7 @@ button.drawer-backdrop:focus-visible {
 .smart-ticket-composer .message-composer,
 .smart-ticket-composer .smart-intake-toolbar,
 .smart-ticket-composer .intake-conversation,
+.smart-ticket-composer > .quick-ticket-form > .intake-status,
 .smart-ticket-composer .ai-interpretation,
 .smart-ticket-composer .ai-guidance,
 .smart-ticket-composer .composer-error {
