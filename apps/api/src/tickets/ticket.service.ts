@@ -21,7 +21,7 @@ export class TicketService {
 
   async createDraftWithClient(client: PoolClient, actor: Actor, data: CreateDraftData) {
       const result = await client.query(
-        'INSERT INTO tickets(organization_id,requester_user_id,title,description,priority,department_id,category_id,subcategory_id,location_id,discipline_id) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING id,ticket_number,status,title,description,priority,created_at',
+        'INSERT INTO tickets(organization_id,requester_user_id,title,description,priority,department_id,category_id,subcategory_id,location_id,discipline_id) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING id,ticket_number,status,title,description,priority,requester_user_id,created_at',
         [actor.organizationId, actor.userId, data.title, data.description, data.priority ?? 'NORMAL', data.departmentId ?? null, data.categoryId ?? null, data.subcategoryId ?? null, data.locationId ?? null, data.disciplineId ?? null],
       );
       const definitions=(await client.query<{id:string;field_key:string;field_type:string;options:unknown[];is_required:boolean}>('SELECT id,field_key,field_type,options,is_required FROM ticket_custom_field_definitions WHERE is_active=true ORDER BY sort_order,label')).rows;

@@ -5,6 +5,10 @@
 privacy-preserving secondary ticket proposals. A requester selects none by
 default and confirms one atomic submission with the primary ticket; attachments,
 voice and raw/transcribed source content remain solely on the primary ticket.
+The post-release batch-submit ownership regression was corrected: drafts now
+return their requester identity to the in-transaction submit guard. API typecheck,
+52 API tests, Web typecheck/build and an authenticated non-personal browser
+submission of a primary plus secondary ticket passed locally.
 
 **GOAL-020 — Multimodal guided ticket-intake conversation (complete,
 2026-08-23):** `ticket-intake.v3` stores up to five ordered requester text or
