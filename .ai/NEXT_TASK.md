@@ -4,7 +4,7 @@
 
 **Status:** COMPLETE (local verification, 2026-08-24)
 
-`ticket-intake.v5` keeps primary-field auto-apply at
+`ticket-intake.v6` keeps primary-field auto-apply at
 the 0.75 confidence gate, permits only structurally valid low-confidence
 secondary proposals to be selected with an explicit final warning, and lets a
 requester add a context-bound text or voice clarification before analysis is
@@ -17,6 +17,11 @@ cards retain their disabled checkbox, but now always expose the explicit
 «تکمیل جزئیات و تحلیل دوباره» route. This opens a topic-bound new message;
 the requester may provide text or voice and obtain a fresh v5 proposal without
 editing the immutable historical message.
+
+**Primary-issue continuity refinement (2026-08-24):** A targeted clarification
+now preserves the established primary issue as an AI context anchor. Later
+messages enrich their selected secondary topic and cannot reorder the primary
+issue unless the requester explicitly corrects or replaces it. See DEC-014.
 
 ## GOAL-021 — Confirmed AI secondary-ticket batches
 

@@ -16,6 +16,13 @@ DEC-013 and `docs/TICKET_INTAKE_API.md` record the contract. API typecheck,
 53 API tests, Web typecheck, 11 Web tests, both production builds and a live
 local browser check at desktop and 375px passed.
 
+**Primary-issue continuity refinement (complete, 2026-08-24):**
+`ticket-intake.v6` retains the prior server-established primary issue while a
+requester clarifies a secondary suggestion. The refreshed model context uses
+that anchor, so a later message cannot silently reorder the ticket sequence;
+only an explicit correction or replacement may do so. API typecheck, 54 API
+tests and API production build pass. DEC-014 records the rule.
+
 **GOAL-021 — Confirmed AI secondary-ticket batches (complete, 2026-08-23):**
 `ticket-intake.v4` supplies up to two server-identified, tenant-validated and
 privacy-preserving secondary ticket proposals. A requester selects none by

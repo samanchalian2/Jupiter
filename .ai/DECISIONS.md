@@ -127,3 +127,12 @@ When a requester needs to clarify a proposal, the client records a new text or
 voice message rather than editing historical source evidence, then re-runs the
 same conversation analysis. This invalidates prior proposal selections because
 their server IDs and interpretation are no longer current.
+
+## DEC-014 — Preserve the established primary issue during clarification
+
+`ticket-intake.v6` carries the prior server-generated primary issue back into a
+follow-up analysis. The first distinct requester issue remains primary while a
+later clarification enriches a secondary proposal; only an explicit requester
+correction or replacement can change it. Adding a message clears stale
+secondary suggestions but preserves this anchor until the next analysis writes
+the refreshed interpretation.

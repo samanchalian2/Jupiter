@@ -29,7 +29,7 @@ let orgA='';let orgB='';let userA='';let userB='';let category='';let subcategor
 const actorA=()=>({organizationId:orgA,userId:userA,roles:['REQUESTER']}); const actorB=()=>({organizationId:orgB,userId:userB,roles:['REQUESTER']});
 
 function analysis(context?:{capture?:(value:TicketIntakeContext)=>void;disciplineConfidence?:number}):TicketIntakeProvider {
-  return {analyzeIntake:async(input)=>{context?.capture?.(input.context);return {output:{contractVersion:TICKET_INTAKE_CONTRACT_VERSION,title:'Printer is offline',titleLibraryId:null,categoryId:category,subcategoryId:'00000000-0000-0000-0000-000000000001',departmentId:department,locationId:location,disciplineId:discipline,priority:'HIGH',customFields:{device_type:'printer',asset_number:42},tags:[],missingFields:[],confidenceByField:{title:.98,categoryId:.97,subcategoryId:.95,departmentId:.9,locationId:.88,disciplineId:context?.disciplineConfidence??.7,priority:.91,'customFields.device_type':.82,'customFields.asset_number':.5,tags:.9}},usage:{inputTokens:20,outputTokens:10}};}};
+  return {analyzeIntake:async(input)=>{context?.capture?.(input.context);return {output:{contractVersion:TICKET_INTAKE_CONTRACT_VERSION,title:'Printer is offline',titleLibraryId:null,categoryId:category,subcategoryId:'00000000-0000-0000-0000-000000000001',departmentId:department,locationId:location,disciplineId:discipline,priority:'HIGH',customFields:{device_type:'printer',asset_number:42},tags:[],missingFields:[],confidenceByField:{title:.98,categoryId:.97,subcategoryId:.95,departmentId:.9,locationId:.88,disciplineId:context?.disciplineConfidence??.7,priority:.91,'customFields.device_type':.82,'customFields.asset_number':.5,tags:.9},primaryIssue:{summary:'Printer is offline',serviceAsset:'printer',issueType:'outage',confidence:.98}},usage:{inputTokens:20,outputTokens:10}};}};
 }
 const noVoice:TranscriptionProvider={transcribe:async()=>{throw new Error('unexpected transcription');}};
 
@@ -82,6 +82,13 @@ describe('ticket intake pipeline',()=>{
     const draft=await intakes.createDraft(actorA(),{title:'خطای چاپ پرینتر',description:processed.description,intakeSessionId:session.id});
     const evidence=await database.withOrganization(orgA,async c=>({tags:(await c.query('SELECT name,kind,status FROM ticket_tags ORDER BY name')).rows,links:(await c.query('SELECT count(*)::int AS count FROM ticket_tag_links WHERE ticket_id=$1',[draft.id])).rows[0],title:(await c.query('SELECT usage_count FROM ticket_title_library WHERE id=$1',[titleLibraryId])).rows[0]}));
     expect(evidence.tags).toEqual(expect.arrayContaining([{name:'خطای چاپ',kind:'ISSUE_TYPE',status:'PENDING'}])); expect(evidence.links.count).toBe(2); expect(evidence.title.usage_count).toBe(1);
+  });
+
+  it('preserves the established primary issue as context for a later clarification',async()=>{
+    const session=await intakes.create(actorA(),{idempotencyKey:'goal23-primary-anchor-001'});await intakes.addTextMessage(actorA(),session.id,{text:'پرینتر اتاق جلسات کار نمی‌کند.'});await intakes.analyzeConversation(actorA(),session.id);await intakes.process(orgA,session.id,analysis(),noVoice);
+    await intakes.addTextMessage(actorA(),session.id,{text:'نرم‌افزار پرگار هم اجرا نمی‌شود؛ درباره همین موضوع جزئیات بیشتری دارم.'});await intakes.analyzeConversation(actorA(),session.id);
+    let prior:TicketIntakeContext['previousPrimaryIssue'];await intakes.process(orgA,session.id,{analyzeIntake:async input=>{prior=input.context.previousPrimaryIssue;return analysis().analyzeIntake(input);}},noVoice);
+    expect(prior).toMatchObject({summary:'Printer is offline'});
   });
 
   it('verifies voice metadata, transcribes before analysis, and atomically attaches provenance to the draft',async()=>{

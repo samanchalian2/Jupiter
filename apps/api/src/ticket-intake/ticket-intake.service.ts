@@ -82,7 +82,7 @@ export class TicketIntakeService {
       const source=await this.combinedUserMessageText(client,id);
       const row=(await client.query<IntakeRow>(`UPDATE ticket_intake_sessions SET status='CREATED',source_description=$2,combined_description=$2,transcript=NULL,
         analysis_result=NULL,provider_usage='{}'::jsonb,missing_fields='[]'::jsonb,confidence_by_field='{}'::jsonb,rejected_fields='[]'::jsonb,
-        conversation_summary=NULL,primary_issue=NULL,secondary_issues='[]'::jsonb,clarification_question=NULL,clarification_confidence=NULL,
+        conversation_summary=NULL,secondary_issues='[]'::jsonb,clarification_question=NULL,clarification_confidence=NULL,
         attempt_count=0,last_error_code=NULL,processing_started_at=NULL,next_attempt_at=NULL,updated_at=now() WHERE id=$1 RETURNING *`,[id,source])).rows[0];
       await this.audit(client,actor,'ticket_intake.message_added',id,{kind:'text'});return this.present(row);
     });
@@ -116,7 +116,7 @@ export class TicketIntakeService {
     const result=await this.database.withOrganization(actor.organizationId,async client=>{
       const session=await this.owned(client,actor,id,true);this.assertMutable(session);this.assertNotProcessing(session);
       const message=await this.ownedMessage(client,id,messageId,true);await client.query('UPDATE ticket_intake_messages SET discarded_at=now(),updated_at=now() WHERE id=$1',[messageId]);
-      const source=await this.combinedUserMessageText(client,id);await client.query("UPDATE ticket_intake_sessions SET status='CREATED',source_description=$2,combined_description=$2,analysis_result=NULL,conversation_summary=NULL,primary_issue=NULL,secondary_issues='[]'::jsonb,clarification_question=NULL,clarification_confidence=NULL,updated_at=now() WHERE id=$1",[id,source]);
+      const source=await this.combinedUserMessageText(client,id);await client.query("UPDATE ticket_intake_sessions SET status='CREATED',source_description=$2,combined_description=$2,analysis_result=NULL,conversation_summary=NULL,secondary_issues='[]'::jsonb,clarification_question=NULL,clarification_confidence=NULL,updated_at=now() WHERE id=$1",[id,source]);
       return message.voice_storage_key;
     });
     if(result)await this.storage.delete(result).catch(()=>undefined);return this.get(actor,id);
@@ -216,7 +216,7 @@ export class TicketIntakeService {
       const needsTranscription=userMessages.some(message=>message.content_type==='VOICE'&&!message.transcript);
       const updated=(await client.query<IntakeRow>(`UPDATE ticket_intake_sessions SET status=$2,attempt_count=0,last_error_code=NULL,processing_started_at=NULL,next_attempt_at=now(),
         analysis_result=NULL,provider_usage='{}'::jsonb,missing_fields='[]'::jsonb,confidence_by_field='{}'::jsonb,rejected_fields='[]'::jsonb,
-        conversation_summary=NULL,primary_issue=NULL,secondary_issues='[]'::jsonb,clarification_question=NULL,clarification_confidence=NULL,updated_at=now() WHERE id=$1 RETURNING *`,[id,needsTranscription?'TRANSCRIBING':'ANALYZING'])).rows[0];
+        conversation_summary=NULL,secondary_issues='[]'::jsonb,clarification_question=NULL,clarification_confidence=NULL,updated_at=now() WHERE id=$1 RETURNING *`,[id,needsTranscription?'TRANSCRIBING':'ANALYZING'])).rows[0];
       await client.query("INSERT INTO outbox_events(organization_id,topic,payload) VALUES($1,'ticket_intake.process',$2)",[actor.organizationId,{sessionId:id}]);
       await this.audit(client,actor,'ticket_intake.conversation_analysis_requested',id,{messageCount:userMessages.length,hasVoice:userMessages.some(message=>message.content_type==='VOICE')});return updated;
     });
@@ -257,7 +257,7 @@ export class TicketIntakeService {
           }
         }
         const completeMessages=await this.database.withOrganization(organizationId,client=>client.query<IntakeMessageRow>('SELECT * FROM ticket_intake_messages WHERE intake_session_id=$1 AND discarded_at IS NULL ORDER BY sequence_number',[id]).then(result=>result.rows));
-        const description=this.combineConversation(completeMessages);const context=await this.context(organizationId,description,completeMessages);
+        const description=this.combineConversation(completeMessages);const context=await this.context(organizationId,description,completeMessages,this.validIssue(claimed.primary_issue)??undefined);
         const answer=await aiProvider.analyzeIntake({context,configuration:{baseUrl:configuration.provider_base_url,apiKey:configuration.apiKey,model:configuration.analysis_model}});const validated=this.validateAnalysis(answer.output,context);
         const interpretation=this.safeText(answer.output.interpretation,2_000);const primary=this.validIssue(answer.output.primaryIssue);const secondary=this.secondaryProposals(answer.output,context);const question=this.safeText(answer.output.clarificationQuestion,500);const questionConfidence=typeof answer.output.clarificationConfidence==='number'&&Number.isFinite(answer.output.clarificationConfidence)?Math.max(0,Math.min(1,answer.output.clarificationConfidence)):null;
         await this.database.withOrganization(organizationId,async client=>{
@@ -390,7 +390,7 @@ export class TicketIntakeService {
     return {...row,apiKey:this.credentials.decrypt({ciphertext:row.api_key_ciphertext,iv:row.api_key_iv,authTag:row.api_key_auth_tag})};
   }
 
-  private async context(organizationId:string,description:string,messages: IntakeMessageRow[]=[]):Promise<TicketIntakeContext> {
+  private async context(organizationId:string,description:string,messages: IntakeMessageRow[]=[],previousPrimaryIssue:TicketIntakeContext['previousPrimaryIssue']=undefined):Promise<TicketIntakeContext> {
     return this.database.withOrganization(organizationId, async (client) => {
       const categories=(await client.query<{id:string;name:string}>('SELECT id,name FROM categories ORDER BY name')).rows;
       const subcategories=(await client.query<{id:string;name:string;category_id:string}>('SELECT id,name,category_id FROM subcategories ORDER BY name')).rows.map((item)=>({id:item.id,name:item.name,categoryId:item.category_id}));
@@ -402,7 +402,7 @@ export class TicketIntakeService {
       )).rows.map<IntakeCustomFieldDefinition>((item)=>({key:item.field_key,label:item.label,type:item.field_type,options:item.options??[],required:item.is_required}));
       const titleLibrary=(await client.query<{id:string;title:string}>('SELECT id,title FROM ticket_title_library WHERE status=\'ACTIVE\' ORDER BY usage_count DESC,title LIMIT 20')).rows;
       const tags=(await client.query<{id:string;name:string;kind:'DOMAIN'|'SERVICE_ASSET'|'ISSUE_TYPE'|'IMPACT_SCOPE'|'CONTEXT'|'OTHER'}>('SELECT id,name,kind FROM ticket_tags WHERE status=\'ACTIVE\' ORDER BY usage_count DESC,name LIMIT 80')).rows;
-      return {description:redactForAi(description),messages:messages.map(message=>({role:message.role,contentType:message.content_type,text:redactForAi(message.content_type==='VOICE'?(message.transcript??''):(message.text_content??''))})),categories,subcategories,departments,locations,disciplines,customFields,titleLibrary,tags};
+      return {description:redactForAi(description),messages:messages.map(message=>({role:message.role,contentType:message.content_type,text:redactForAi(message.content_type==='VOICE'?(message.transcript??''):(message.text_content??''))})),previousPrimaryIssue,categories,subcategories,departments,locations,disciplines,customFields,titleLibrary,tags};
     });
   }
 

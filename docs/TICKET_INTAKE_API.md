@@ -1,4 +1,4 @@
-# Ticket Intake API — `ticket-intake.v5`
+# Ticket Intake API — `ticket-intake.v6`
 
 All routes are under `/api/v1`, require a bearer access token and
 `X-Organization-Id`, and enforce both organization RLS and session ownership.
@@ -62,6 +62,9 @@ taxonomy IDs, priority, up to five typed tag proposals, custom fields, missing
 fields and confidence by field. `v3` additionally returns a separate
 interpretation, one primary issue, up to two secondary issues and an optional
 concise clarification question. These fields never replace raw requester text.
+When a requester adds a clarification, the prior primary issue is supplied as
+an analysis anchor: the earliest distinct issue remains primary unless the
+requester explicitly corrects or replaces it.
 A secondary issue is a server-owned, privacy-preserving ticket proposal. It is
 created only after explicit selection and batch confirmation with the primary ticket.
 Voice, files, raw messages and transcripts never transfer to it. A proposal is

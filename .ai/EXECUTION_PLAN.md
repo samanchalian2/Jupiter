@@ -294,3 +294,8 @@ API tests, Web tests, API/Web typechecks and production builds pass. Browser
 acceptance confirms the persistent in-place processing control, disabled
 competing controls and the post-success collapsed composer at desktop and 375px
 with no horizontal overflow.
+
+**Follow-up:** `ticket-intake.v6` preserves the first established primary issue
+as a context anchor through targeted secondary clarification. An API integration
+test verifies that the follow-up provider receives the anchor; 54 API tests and
+the production API build pass.

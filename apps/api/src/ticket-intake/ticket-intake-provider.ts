@@ -1,6 +1,6 @@
 import type { AiProviderConfiguration } from '../ai/ai-provider.js';
 
-export const TICKET_INTAKE_CONTRACT_VERSION = 'ticket-intake.v5' as const;
+export const TICKET_INTAKE_CONTRACT_VERSION = 'ticket-intake.v6' as const;
 export type TicketPriority = 'LOW'|'NORMAL'|'HIGH'|'URGENT';
 export type CatalogOption = { id: string; name: string; categoryId?: string };
 export type IntakeTitleOption = { id:string; title:string };
@@ -10,6 +10,7 @@ export type IntakeCustomFieldDefinition = { key: string; label: string; type: st
 export type TicketIntakeContext = {
   description: string;
   messages?: Array<{role:'USER'|'ASSISTANT';contentType:'TEXT'|'VOICE'|'CLARIFICATION';text:string}>;
+  previousPrimaryIssue?: {summary:string;serviceAsset:string|null;issueType:string|null;confidence:number};
   categories: CatalogOption[];
   subcategories: CatalogOption[];
   departments: CatalogOption[];
