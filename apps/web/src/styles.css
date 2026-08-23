@@ -414,7 +414,7 @@ button.drawer-backdrop:focus-visible {
 .ai-interpretation p { margin: 6px 0; }
 .ai-interpretation span { color: #3d6c9f; font-size: .86em; }
 .secondary-ticket-proposals { display:grid; gap:8px; margin-top:12px; }
-.secondary-ticket-proposals > label { display:flex; align-items:flex-start; gap:9px; padding:10px; color:#1F4E8C; background:rgba(255,255,255,.62); border:1px solid #a9cbed; border-radius:var(--radius-sm); cursor:pointer; }
+.secondary-ticket-proposals > label { display:flex; align-items:flex-start; gap:9px; padding:10px; color:#1F4E8C; background:#fff; border:1px solid #a9cbed; border-radius:var(--radius-sm); cursor:pointer; }
 .secondary-ticket-proposals > label.unavailable { opacity:.68; cursor:not-allowed; }
 .secondary-ticket-proposals input { width:18px; height:18px; margin-top:2px; accent-color:#1F4E8C; }
 .secondary-ticket-proposals b,.secondary-ticket-proposals small { display:block; }
