@@ -14,6 +14,10 @@ after three attempts. Final draft creation changes the state to `CONSUMED`.
 Unconsumed sessions become `EXPIRED` after 24 hours. A failed session can still
 be submitted manually.
 
+Before final submission, the requester may explicitly destroy their own session
+with the cancellation route. This removes its raw messages, interpretation and
+temporary voice objects; it is not a ticket-lifecycle cancellation.
+
 ## Routes
 
 - `GET /ticket-intakes/capabilities` — returns the requester-visible effective
@@ -28,6 +32,10 @@ be submitted manually.
   uploaded voice message.
 - `POST /ticket-intakes/:id/messages/:messageId/discard` — discard an intake
   message and its temporary voice object when applicable.
+- `POST /ticket-intakes/:id/cancel` — explicitly destroy the owner's
+  unsubmitted intake. The server locks ownership, removes temporary audio,
+  clears pending processing work and deletes the session plus its messages. A
+  consumed session is rejected and the associated ticket is never changed.
 - `POST /ticket-intakes/:id/conversation/analyze` — queue analysis of every
   retained requester message. Text and voice share this route.
 - `POST /ticket-intakes/:id/voice/upload-request` — body contains `filename`,

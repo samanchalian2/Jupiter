@@ -147,3 +147,14 @@ contains only the effective boolean; it never exposes credentials or provider
 configuration. Smart Intake gates only pre-ticket transcription and analysis:
 manual text, file and verified voice attachment flows remain usable, and the
 legacy ticket AI gateway remains governed by the platform AI setting.
+
+## DEC-016 — Requester cancellation destroys an unsubmitted intake
+
+A requester may explicitly cancel only their own unconsumed `TicketIntakeSession`.
+The cancellation command locks the tenant- and owner-scoped session, removes all
+temporary session and conversation voice objects, marks pending processing
+outbox events complete, deletes the session and its cascading raw messages and
+AI result, then writes an audit record containing only counts and no request
+content. It cannot cancel or alter a ticket after final submission: a consumed
+session is rejected. Keeping the cancellation destructive avoids retaining a
+temporary conversation as an accidental ticket-history record.

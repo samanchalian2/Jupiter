@@ -39,3 +39,8 @@ collapsible structured ticket details. GOAL-023 is complete locally.
 The organization-control refinement adds (24) a separately governed Smart
 Intake policy and one contextual send action. GOAL-024 is complete locally;
 GOAL-025 continues the deferred navigation interaction polish.
+
+The requester-intake refinement adds (26) an explicit, confirmed cancellation
+path for an unsubmitted temporary intake. It deletes the pre-ticket session,
+raw conversation, AI interpretation and temporary audio without changing the
+fixed ticket lifecycle. GOAL-026 is complete locally.

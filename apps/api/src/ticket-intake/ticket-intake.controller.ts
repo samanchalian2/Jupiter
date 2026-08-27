@@ -41,6 +41,11 @@ export class TicketIntakeController {
     return this.intakes.discardMessage(await this.actors.fromHeaders(authorization,organizationId),id,messageId);
   }
 
+  @Post('ticket-intakes/:id/cancel')
+  async cancel(@Param('id') id:string,@Headers('authorization') authorization?:string,@Headers('x-organization-id') organizationId?:string) {
+    return this.intakes.cancel(await this.actors.fromHeaders(authorization,organizationId),id);
+  }
+
   @Post('ticket-intakes/:id/voice/complete')
   async complete(@Param('id') id:string,@Headers('authorization') authorization?:string,@Headers('x-organization-id') organizationId?:string) {
     return this.intakes.completeVoiceUpload(await this.actors.fromHeaders(authorization,organizationId),id);

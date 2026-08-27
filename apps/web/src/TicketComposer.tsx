@@ -18,7 +18,7 @@ function formatDuration(seconds:number) { const safe=Math.min(60,Math.max(0,Math
 function extension(contentType:string) { return contentType==='audio/wav'?'wav':contentType==='audio/ogg'?'ogg':contentType==='audio/mp4'?'mp4':'webm'; }
 function idempotencyKey() { return globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(16).slice(2)}`; }
 
-export function TicketComposer({ actor, onCreated }: { actor:Actor; onCreated:(ticketId:string,notice?:string)=>void }) {
+export function TicketComposer({ actor, onCreated, onCancelled }: { actor:Actor; onCreated:(ticketId:string,notice?:string)=>void; onCancelled:()=>void }) {
   const [catalogs,setCatalogs]=useState<{departments:Catalog[];categories:Catalog[];subcategories:Catalog[];locations:Catalog[];disciplines:Catalog[]}>({departments:[],categories:[],subcategories:[],locations:[],disciplines:[]});
   const [customFields,setCustomFields]=useState<CustomField[]>([]);
   const [tagVocabulary,setTagVocabulary]=useState<TicketTag[]>([]);
@@ -40,6 +40,8 @@ export function TicketComposer({ actor, onCreated }: { actor:Actor; onCreated:(t
   const [recordingSeconds,setRecordingSeconds]=useState(0);
   const [secondaryProposalIds,setSecondaryProposalIds]=useState<string[]>([]);
   const [confirmBatchOpen,setConfirmBatchOpen]=useState(false);
+  const [confirmCancelOpen,setConfirmCancelOpen]=useState(false);
+  const [cancelBusy,setCancelBusy]=useState(false);
   const [clarificationFor,setClarificationFor]=useState<{id:string;title:string}|null>(null);
   const [smartIntakeEnabled,setSmartIntakeEnabled]=useState(false);
   const descriptionRef=useRef<HTMLTextAreaElement>(null);
@@ -186,6 +188,19 @@ export function TicketComposer({ actor, onCreated }: { actor:Actor; onCreated:(t
     if(secondaryProposalIds.length){setConfirmBatchOpen(true);return;}void saveTicket();
   };
 
+  const cancelDraft=async()=>{
+    setCancelBusy(true);setError('');
+    try {
+      pollAbortRef.current?.abort();
+      recorderRef.current?.destroy();
+      if(intake)await request(`/ticket-intakes/${intake.id}/cancel`,actor.session,actor.organizationId,{method:'POST'});
+      setRecording(null);setRecordingSeconds(0);setMessageDraft('');setForm(initialForm);setIntake(null);setPipeline('');setGuidance([]);setAiFields(new Set());setSecondaryProposalIds([]);setClarificationFor(null);setFile(null);
+      onCancelled();
+    } catch (cause) {
+      setError(cause instanceof Error?cause.message:'انصراف از پیش‌نویس انجام نشد؛ دوباره تلاش کنید.');
+    } finally { setCancelBusy(false); }
+  };
+
   const customInput=(field:CustomField)=>{
     const key=`customFields.${field.field_key}`;const value=form.customFields[field.field_key];const change=(next:unknown)=>{setForm(current=>({...current,customFields:{...current.customFields,[field.field_key]:next}}));markManual(key);};
     const heading=<span className="field-label-row"><span>{field.label}</span>{aiBadge(key)}</span>;
@@ -227,8 +242,9 @@ export function TicketComposer({ actor, onCreated }: { actor:Actor; onCreated:(t
         {customFields.map(customInput)}
       </div>}
       {error&&<p className="error composer-error" role="alert">{error}{pipeline==='FAILED'&&smartIntakeEnabled&&<button type="button" onClick={()=>void runAi()}>تلاش دوباره</button>}</p>}
-      <div className="quick-ticket-actions"><Button type="submit" loading={submitBusy} disabled={blocksManualSubmit(pipelineBusy,Boolean(recording),recordingActive)}><Send size={17}/>{secondaryProposalIds.length?`ثبت ${secondaryProposalIds.length+1} درخواست`:'ثبت درخواست'}</Button><span>{pipelineBusy&&!recording?'می‌توانید بدون انتظار برای AI، عنوان را دستی وارد و درخواست را ثبت کنید.':'AI هرگز درخواست را خودکار ثبت نمی‌کند؛ پیش از ارسال همه فیلدها قابل ویرایش‌اند.'}</span></div>
+      <div className="quick-ticket-actions"><Button type="submit" loading={submitBusy} disabled={blocksManualSubmit(pipelineBusy,Boolean(recording),recordingActive)}><Send size={17}/>{secondaryProposalIds.length?`ثبت ${secondaryProposalIds.length+1} درخواست`:'ثبت درخواست'}</Button><Button type="button" variant="danger" className="cancel-intake-button" onClick={()=>setConfirmCancelOpen(true)} disabled={submitBusy||cancelBusy}><Trash2 size={17}/>انصراف از پیش‌نویس</Button><span>{pipelineBusy&&!recording?'می‌توانید بدون انتظار برای AI، عنوان را دستی وارد و درخواست را ثبت کنید.':'AI هرگز درخواست را خودکار ثبت نمی‌کند؛ پیش از ارسال همه فیلدها قابل ویرایش‌اند.'}</span></div>
     </form>
     <ConfirmDialog open={confirmBatchOpen} title="تأیید ثبت درخواست‌ها" body={confirmBatchBody} confirmLabel={`ثبت ${secondaryProposalIds.length+1} درخواست`} onClose={()=>setConfirmBatchOpen(false)} onConfirm={()=>{setConfirmBatchOpen(false);void saveTicket();}}/>
+    <ConfirmDialog open={confirmCancelOpen} title="انصراف از پیش‌نویس درخواست" body="پیام‌ها، پیشنهادهای هوشمند و فایل‌های صوتی یا پیوست‌های موقت این پیش‌نویس حذف می‌شوند. هیچ تیکتی ثبت نشده است." confirmLabel="حذف پیش‌نویس" danger onClose={()=>setConfirmCancelOpen(false)} onConfirm={()=>{setConfirmCancelOpen(false);void cancelDraft();}}/>
   </Card>;
 }

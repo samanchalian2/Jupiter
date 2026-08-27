@@ -283,13 +283,13 @@ export function TicketWorkspacePro({
             : "درخواست جدید ثبت کنید و روند رسیدگی درخواست‌های قبلی را ببینید."
         }
         action={
-          staff ? (
+          (staff || !composerOpen) ? (
             <Button
               type="button"
               onClick={() => setComposerOpen(!composerOpen)}
             >
               <Plus size={17} />
-              {composerOpen ? "بستن فرم" : "تیکت جدید"}
+              {composerOpen ? "بستن فرم" : staff ? "تیکت جدید" : "درخواست جدید"}
             </Button>
           ) : undefined
         }
@@ -299,7 +299,7 @@ export function TicketWorkspacePro({
           {notice}
         </p>
       )}
-      {composerOpen && <TicketComposer actor={actor} onCreated={onCreated} />}
+      {composerOpen && <TicketComposer actor={actor} onCreated={onCreated} onCancelled={()=>{setComposerOpen(false);setNotice('پیش‌نویس درخواست حذف شد؛ هیچ تیکتی ثبت نشد.');}} />}
       <section className="ticket-history-section">
         <div className="ticket-history-heading">
           <div>

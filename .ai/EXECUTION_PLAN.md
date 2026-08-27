@@ -329,3 +329,18 @@ capability and manual draft fallback. API typecheck, 56 API tests, Web
 typecheck, 11 Web tests, and API/Web production builds pass.
 
 **Next Goal:** GOAL-025 — navigation interaction polish.
+
+## GOAL-026 — Cancel an unsubmitted requester intake
+
+**Status:** DONE
+
+**Scope:** Provide a confirmed requester-facing «انصراف از پیش‌نویس» action
+that destroys only an owner-scoped, unconsumed temporary ticket-intake session.
+It must remove temporary voice objects, raw conversation and AI output, clear
+pending intake processing, preserve an audit without request content, and
+never cancel a submitted ticket.
+
+**Validation:** API integration coverage verifies owner isolation, removal of
+legacy and conversation voice objects, session/message deletion, pending event
+completion and safe audit metadata. Web typecheck/build cover the confirmation
+and return to requester history.

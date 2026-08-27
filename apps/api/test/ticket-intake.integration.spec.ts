@@ -73,6 +73,24 @@ describe('ticket intake pipeline',()=>{
     expect(await intakes.capabilities(actorA())).toEqual({smartIntakeEnabled:true});
   });
 
+  it('lets only the owner cancel an unsubmitted intake and removes every temporary voice object',async()=>{
+    const session=await intakes.create(actorA(),{description:'پیش‌نویس قابل انصراف',idempotencyKey:'goal26-cancel-001'});
+    await intakes.addTextMessage(actorA(),session.id,{text:'این درخواست را ثبت نمی‌کنم.'});
+    const messageVoice=await intakes.requestMessageVoiceUpload(actorA(),session.id,{filename:'cancel-message.wav',contentType:'audio/wav',byteSize:5,durationSeconds:2});
+    const messageKey=storage.lastUpload!.key;storage.objects.set(messageKey,{contentType:'audio/wav',contentLength:5,metadata:{'duration-seconds':'2'},bytes:new Uint8Array([1,2,3,4,5])});
+    await intakes.completeMessageVoiceUpload(actorA(),session.id,messageVoice.message.id);
+    const legacyVoice=await intakes.requestVoiceUpload(actorA(),session.id,{filename:'cancel-legacy.wav',contentType:'audio/wav',byteSize:5,durationSeconds:2});
+    const legacyKey=storage.lastUpload!.key;storage.objects.set(legacyKey,{contentType:'audio/wav',contentLength:5,metadata:{'duration-seconds':'2'},bytes:new Uint8Array([5,4,3,2,1])});
+    await intakes.completeVoiceUpload(actorA(),session.id);
+    await intakes.analyze(actorA(),session.id);
+    await expect(intakes.cancel(actorB(),session.id)).rejects.toBeInstanceOf(NotFoundException);
+    await expect(intakes.cancel(actorA(),session.id)).resolves.toEqual({cancelled:true});
+    expect(storage.deleted).toEqual(expect.arrayContaining([messageKey,legacyKey]));
+    await expect(intakes.get(actorA(),session.id)).rejects.toBeInstanceOf(NotFoundException);
+    const evidence=await database.withOrganization(orgA,async client=>({messages:(await client.query('SELECT count(*)::int AS count FROM ticket_intake_messages WHERE intake_session_id=$1',[session.id])).rows[0],events:(await client.query("SELECT count(*)::int AS count FROM outbox_events WHERE topic='ticket_intake.process' AND payload->>'sessionId'=$1 AND processed_at IS NULL",[session.id])).rows[0],audit:(await client.query("SELECT metadata FROM audit_logs WHERE action='ticket_intake.cancelled' AND target_id=$1",[session.id])).rows[0]}));
+    expect(evidence.messages.count).toBe(0);expect(evidence.events.count).toBe(0);expect(evidence.audit.metadata).toEqual({hadVoice:true,messageCount:2});
+  });
+
   it('is tenant/user scoped, idempotent and applies only valid high-confidence suggestions',async()=>{
     const first=await intakes.create(actorA(),{description:'Contact me at user@example.com about the printer.',idempotencyKey:'goal14-text-0001'});
     const repeated=await intakes.create(actorA(),{description:'different text',idempotencyKey:'goal14-text-0001'});expect(repeated.id).toBe(first.id);expect(repeated.description).toBe(first.description);

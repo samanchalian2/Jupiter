@@ -1,5 +1,16 @@
 # Current State
 
+**GOAL-026 — Requester cancellation of an unsubmitted intake (complete,
+2026-08-27):** The ticket form offers a Persian «انصراف از پیش‌نویس» action
+with an explicit destructive confirmation. It closes the requester form and
+returns to request history with a non-ticket notice. The new owner- and
+tenant-scoped cancellation route locks the session, deletes all temporary
+voice objects, clears queued intake work, deletes the session and its raw
+conversation/AI data, and records only non-content audit counts. A consumed
+session cannot be cancelled and no submitted ticket is changed. API integration
+coverage verifies ownership denial, object cleanup, message deletion, outbox
+completion and content-free audit metadata.
+
 **GOAL-024 — Organization Smart Intake control and unified send (complete,
 2026-08-24):** Migration 032 adds tenant-scoped `smart_intake_enabled` while
 preserving enabled existing configured organizations. Platform Admin remains

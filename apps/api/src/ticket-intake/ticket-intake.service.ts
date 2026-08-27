@@ -132,6 +132,26 @@ export class TicketIntakeService {
     if(result)await this.storage.delete(result).catch(()=>undefined);return this.get(actor,id);
   }
 
+  async cancel(actor:TicketActor,id:string) {
+    return this.database.withOrganization(actor.organizationId,async client=>{
+      const session=await this.owned(client,actor,id,true);
+      this.assertMutable(session);
+      const messages=(await client.query<IntakeMessageRow>('SELECT * FROM ticket_intake_messages WHERE intake_session_id=$1 FOR UPDATE',[id])).rows;
+      const storageKeys=[session.voice_storage_key,...messages.map(message=>message.voice_storage_key)]
+        .filter((key):key is string=>Boolean(key));
+
+      // Keep the ownership lock while deleting temporary objects. This prevents a
+      // concurrent final submission from transferring a voice attachment after
+      // the requester has confirmed cancellation. Object deletion is idempotent;
+      // if it fails the transaction rolls back and the requester can retry.
+      for(const key of new Set(storageKeys)) await this.storage.delete(key);
+      await client.query("UPDATE outbox_events SET processed_at=now() WHERE topic='ticket_intake.process' AND payload->>'sessionId'=$1 AND processed_at IS NULL",[id]);
+      await client.query('DELETE FROM ticket_intake_sessions WHERE id=$1',[id]);
+      await this.audit(client,actor,'ticket_intake.cancelled',id,{hadVoice:storageKeys.length>0,messageCount:messages.filter(message=>message.role==='USER').length});
+      return {cancelled:true};
+    });
+  }
+
   async requestVoiceUpload(actor: TicketActor, id: string, input: { filename:string; contentType:string; byteSize:number; durationSeconds:number }) {
     this.validateVoice(input);
     const storageKey = `organizations/${actor.organizationId}/ticket-intakes/${id}/${randomUUID()}.${voiceExtensions[input.contentType]}`;
