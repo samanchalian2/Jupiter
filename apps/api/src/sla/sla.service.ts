@@ -9,7 +9,7 @@ const managers = new Set(['ORG_ADMIN','SUPERVISOR']);
 export class SlaService implements OnModuleInit, OnModuleDestroy {
   private timer?: ReturnType<typeof setInterval>;
   constructor(private readonly database:DatabaseService, private readonly notifications:NotificationService) {}
-  onModuleInit() { this.timer=setInterval(()=>void this.evaluateAll(),60_000); }
+  onModuleInit() { this.timer=setInterval(()=>void this.evaluateAll().catch((cause: unknown)=>console.error(JSON.stringify({event:'sla.evaluation_failed',message:cause instanceof Error?cause.message:'Unknown error'}))),60_000); }
   onModuleDestroy() { if(this.timer) clearInterval(this.timer); }
   private manager(actor:Actor) { if(!actor.roles.some(role=>managers.has(role))) throw new ForbiddenException(); }
   async policies(actor:Actor) { this.manager(actor); return this.database.withOrganization(actor.organizationId,async c=>(await c.query('SELECT id,name,priority,first_response_minutes,resolution_minutes,warning_minutes,escalation_role,is_active FROM sla_policies ORDER BY priority')).rows); }

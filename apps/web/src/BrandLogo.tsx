@@ -22,6 +22,6 @@ export function BrandLogo({ compact = false }: { compact?: boolean }) {
   }, [source]);
   return <span className="brand-logo" aria-label="Jupiter">
     <img src={source} alt="" onError={() => { try { localStorage.removeItem('jupiter.brand-logo'); } catch { /* ignored */ } setSource(defaultLogo); }} />
-    {!compact && <span><strong>JUPITER</strong><small>مرکز خدمات پشتیبانی سازمانی</small></span>}
+    {!compact && <span><strong>JUPITER</strong><small>مرکز خدمات پشتیبانی</small></span>}
   </span>;
 }
