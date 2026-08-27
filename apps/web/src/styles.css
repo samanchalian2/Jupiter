@@ -2854,6 +2854,22 @@ summary:focus-visible {
   color: var(--text-muted);
   font-size: 0.82rem;
 }
+.quick-ticket-actions .cancel-intake-button.ui-button {
+  min-height: 36px;
+  padding: 7px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--danger);
+  font-size: 0.82rem;
+  font-weight: 600;
+  box-shadow: none;
+}
+.quick-ticket-actions .cancel-intake-button.ui-button:hover:not(:disabled),
+.quick-ticket-actions .cancel-intake-button.ui-button:focus-visible {
+  background: color-mix(in srgb, var(--danger) 10%, transparent);
+  color: var(--danger);
+}
 .ticket-history-section {
   overflow: hidden;
   background: #fff;
@@ -3490,6 +3506,11 @@ summary:focus-visible {
   }
   .quick-ticket-actions .ui-button {
     width: 100%;
+  }
+  .quick-ticket-actions .cancel-intake-button.ui-button {
+    width: auto;
+    min-height: 40px;
+    align-self: center;
   }
   .ticket-history-heading {
     padding: 18px 15px 12px;

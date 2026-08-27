@@ -11,6 +11,12 @@ session cannot be cancelled and no submitted ticket is changed. API integration
 coverage verifies ownership denial, object cleanup, message deletion, outbox
 completion and content-free audit metadata.
 
+**GOAL-026 visual refinement (complete, 2026-08-27):** The destructive
+secondary action is now the compact, text-like «انصراف» control with a small
+trash icon and a subtle focus/hover surface. It no longer competes visually
+with the primary «ثبت درخواست» CTA; on narrow screens it keeps a reachable
+40px target without becoming full-width.
+
 **GOAL-024 — Organization Smart Intake control and unified send (complete,
 2026-08-24):** Migration 032 adds tenant-scoped `smart_intake_enabled` while
 preserving enabled existing configured organizations. Platform Admin remains
