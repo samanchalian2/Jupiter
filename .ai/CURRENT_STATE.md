@@ -1,5 +1,45 @@
 # Current State
 
+**GOAL-029 — Organization Administration Workspace & Information Architecture
+(complete, 2026-08-29):** Organization Administration no longer uses a long
+horizontal tab strip. Its existing panels are available through grouped,
+route-addressable sub-navigation: users and roles; catalog, vocabulary and
+teams; SLA and assignment; request/appearance settings; and custom fields/
+email. `/admin` resolves to members, while each section supports a stable
+`/admin/<section>` deep link and browser back/forward. Desktop uses a compact
+vertical navigation; mobile uses a labelled grouped selector. No API,
+permission, tenant, ticket or AI behavior changed. Authenticated browser checks
+verified all seven direct routes, back navigation, no legacy tab list and no
+horizontal overflow at 375, 768, 1024 and 1440px. Web typecheck, 11 web tests
+and production build pass. DEC-017 records the durable IA decision.
+
+**GOAL-028 — Product shell and navigation refinement (complete, 2026-08-29):**
+The desktop shell now uses a quiet 232px sidebar and a compact 56px contextual
+header, with a 64px collapsed state that retains accessible icon labels and
+native tooltips. Active navigation relies on a restrained brand surface,
+border and inline accent rather than heavy weight. The header distinguishes
+platform/organization context without a banner; one-organization memberships
+now receive a non-interactive organization label instead of a redundant
+selector. Mobile retains the existing drawer pattern, adds predictable initial
+focus and focus return, and keeps 44px navigation targets. No routes,
+authorization, API contracts or product workflows changed. Web typecheck,
+11 web tests and the production build pass. An authenticated Platform Admin
+browser check passed at 375, 768, 1024 and 1440px with no document overflow;
+the mobile header remains 59px, desktop header 63px, and the collapsed-route
+labels/tooltips were verified.
+
+**GOAL-027 — Design System V2 foundation (complete, 2026-08-29):** Added a
+semantic token layer in `apps/web/src/design-system.css`, keeping legacy aliases
+only for staged screen migration. The shared UI entrypoint now provides compact
+enterprise primitives for sections, alerts, loading, status badges, tables and
+help triggers, in addition to the existing controls and accessible confirmation
+dialog. The Dashboard now demonstrates the common error/retry/loading pattern:
+a failed overview no longer renders an endless loading message alongside the
+error, and operational statuses use semantic badges. Login was refined to a
+quiet neutral sign-in surface. Web typecheck, 11 web tests, and the production
+web build pass; the live login screen passed document-overflow checks at 375,
+768, 1024 and 1440px. `.ai/DESIGN_SYSTEM.md` is now the V2 reference.
+
 **GOAL-026 — Requester cancellation of an unsubmitted intake (complete,
 2026-08-27):** The ticket form offers a Persian «انصراف از پیش‌نویس» action
 with an explicit destructive confirmation. It closes the requester form and

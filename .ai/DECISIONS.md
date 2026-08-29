@@ -158,3 +158,17 @@ AI result, then writes an audit record containing only counts and no request
 content. It cannot cancel or alter a ticket after final submission: a consumed
 session is rejected. Keeping the cancellation destructive avoids retaining a
 temporary conversation as an accidental ticket-history record.
+
+## DEC-017 — Organization administration uses a route-addressable workspace
+
+Organization Administration is organized as a presentational workspace with
+grouped section navigation and one route per existing management capability:
+members, catalog, vocabulary, teams, SLA/assignment, request/appearance
+settings, and custom fields/email. This replaces the local in-page tab state
+so deep links and browser back/forward preserve the selected section.
+
+The change is frontend-only: the same panels, API requests, permissions,
+tenant context and business rules remain in place. Desktop uses grouped
+vertical navigation; mobile uses a compact labelled selector rather than a
+horizontal tab strip. Future commercial or directory features have no
+placeholder entry until a separately approved capability exists.

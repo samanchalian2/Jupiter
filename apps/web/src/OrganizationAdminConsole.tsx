@@ -1,4 +1,6 @@
 import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from 'react';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { BookOpenCheck, Clock3, Mail, Settings2, Tags, UsersRound, Wrench } from 'lucide-react';
 import type { Actor } from './App';
 import { request } from './App';
 
@@ -6,6 +8,8 @@ type Member = { id: string; user_id: string; email: string; username?: string; d
 type CatalogItem = { id: string; code: string; name: string };
 type Team = { id: string; name: string; is_active: boolean; members: { user_id: string; display_name: string }[] };
 type Rule = { id: string; department_id: string | null; assignee_user_id: string; is_active: boolean };
+type AdministrationKey = 'members' | 'catalog' | 'vocabulary' | 'teams' | 'automation' | 'settings' | 'extensions';
+type AdministrationItem = { key: AdministrationKey; label: string; path: string; icon: typeof UsersRound };
 
 const roles = [
   ['REQUESTER', 'درخواست‌کننده'], ['EXPERT', 'کارشناس'], ['SUPERVISOR', 'سرپرست'], ['ORG_ADMIN', 'مدیر سازمان'],
@@ -14,22 +18,57 @@ const catalogs = [
   ['departments', 'واحدها'], ['categories', 'دسته‌بندی‌ها'], ['locations', 'مکان‌ها'], ['disciplines', 'رشته‌ها'],
 ] as const;
 
+const administrationGroups: { label: string; items: AdministrationItem[] }[] = [
+  { label: 'کاربران', items: [{ key: 'members', label: 'کاربران و نقش‌ها', path: '/admin/members', icon: UsersRound }] },
+  { label: 'خدمات و ساختار', items: [
+    { key: 'catalog', label: 'کاتالوگ خدمات', path: '/admin/catalog', icon: BookOpenCheck },
+    { key: 'vocabulary', label: 'عنوان‌ها و برچسب‌ها', path: '/admin/vocabulary', icon: Tags },
+    { key: 'teams', label: 'تیم‌ها', path: '/admin/teams', icon: Wrench },
+  ] },
+  { label: 'عملیات', items: [{ key: 'automation', label: 'SLA و تخصیص', path: '/admin/automation', icon: Clock3 }] },
+  { label: 'تنظیمات', items: [
+    { key: 'settings', label: 'درخواست و ظاهر سازمان', path: '/admin/settings', icon: Settings2 },
+    { key: 'extensions', label: 'فیلدهای سفارشی و ایمیل', path: '/admin/extensions', icon: Mail },
+  ] },
+] ;
+
+const administrationItems = administrationGroups.flatMap((group) => group.items);
+
 export function OrganizationAdminConsole({ actor }: { actor: Actor }) {
-  const [tab, setTab] = useState<'members' | 'catalog' | 'vocabulary' | 'teams' | 'automation' | 'settings' | 'extensions'>('members');
+  const location = useLocation();
+  const navigate = useNavigate();
   const [notice, setNotice] = useState('');
+  const activeItem = administrationItems.find((item) => item.path === location.pathname) ?? administrationItems[0];
+  const tab = activeItem.key as AdministrationKey;
+
+  useEffect(() => {
+    if (location.pathname !== activeItem.path) navigate(activeItem.path, { replace: true });
+  }, [activeItem.path, location.pathname, navigate]);
+
   return <section className="page admin-console">
-    <div className="page-intro"><div><p className="eyebrow">مدیریت سازمان</p><h2>عملیات و تنظیمات</h2><p>اعضا، کاتالوگ خدمات، تیم‌ها و اتوماسیون را بدون نیاز به دسترسی مستقیم به دیتابیس اداره کنید.</p></div></div>
-    <div className="admin-tabs" role="tablist" aria-label="بخش‌های مدیریت سازمان">
-      {([['members', 'کاربران و نقش‌ها'], ['catalog', 'کاتالوگ خدمات'], ['vocabulary', 'عنوان‌ها و هشتگ‌ها'], ['teams', 'تیم‌ها'], ['automation', 'SLA و تخصیص'], ['settings', 'تنظیمات و قالب‌ها'], ['extensions','فیلدها و ایمیل']] as const).map(([value, label]) => <button type="button" role="tab" aria-selected={tab === value} className={tab === value ? 'active-tab' : 'secondary'} key={value} onClick={() => { setTab(value); setNotice(''); }}>{label}</button>)}
+    <div className="page-intro admin-workspace-intro"><div><p className="eyebrow">مدیریت سازمان</p><h2>{activeItem.label}</h2><p>تنظیمات و عملیات سازمان را در بخش مرتبط مدیریت کنید.</p></div></div>
+    <div className="admin-mobile-selector">
+      <label>بخش مدیریت سازمان
+        <select value={activeItem.path} onChange={(event) => { setNotice(''); navigate(event.target.value); }}>
+          {administrationGroups.map((group) => <optgroup key={group.label} label={group.label}>{group.items.map((item) => <option key={item.key} value={item.path}>{item.label}</option>)}</optgroup>)}
+        </select>
+      </label>
     </div>
-    {notice && <p className="notice" role="status">{notice}</p>}
-    {tab === 'members' && <MembersPanel actor={actor} onNotice={setNotice}/>} 
-    {tab === 'catalog' && <CatalogPanel actor={actor} onNotice={setNotice}/>} 
-    {tab === 'vocabulary' && <VocabularyPanel actor={actor} onNotice={setNotice}/>}
-    {tab === 'teams' && <TeamsPanel actor={actor} onNotice={setNotice}/>} 
-    {tab === 'automation' && <AutomationPanel actor={actor} onNotice={setNotice}/>} 
-    {tab === 'settings' && <SettingsPanel actor={actor} onNotice={setNotice}/>} 
-    {tab === 'extensions' && <ExtensionsPanel actor={actor} onNotice={setNotice}/>} 
+    <div className="admin-workspace">
+      <nav className="admin-section-nav" aria-label="بخش‌های مدیریت سازمان">
+        {administrationGroups.map((group) => <section key={group.label}><p>{group.label}</p>{group.items.map((item) => { const Icon = item.icon; return <NavLink key={item.key} to={item.path} onClick={() => setNotice('')}><Icon size={17} aria-hidden="true"/><span>{item.label}</span></NavLink>; })}</section>)}
+      </nav>
+      <div className="admin-workspace-content">
+        {notice && <p className="notice" role="status">{notice}</p>}
+        {tab === 'members' && <MembersPanel actor={actor} onNotice={setNotice}/>}
+        {tab === 'catalog' && <CatalogPanel actor={actor} onNotice={setNotice}/>}
+        {tab === 'vocabulary' && <VocabularyPanel actor={actor} onNotice={setNotice}/>}
+        {tab === 'teams' && <TeamsPanel actor={actor} onNotice={setNotice}/>}
+        {tab === 'automation' && <AutomationPanel actor={actor} onNotice={setNotice}/>}
+        {tab === 'settings' && <SettingsPanel actor={actor} onNotice={setNotice}/>}
+        {tab === 'extensions' && <ExtensionsPanel actor={actor} onNotice={setNotice}/>}
+      </div>
+    </div>
   </section>;
 }
 

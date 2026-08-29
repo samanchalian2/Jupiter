@@ -1,5 +1,26 @@
 # Changelog
 
+## 2026-08-29
+
+- Replaced Organization Administration's horizontal tab strip with grouped,
+  deep-linkable workspace navigation; added compact mobile section selection,
+  browser-history support and DEC-017 without changing any management API or
+  permission behavior.
+
+## 2026-08-29
+
+- Refined the product shell and navigation: compact desktop/sidebar dimensions,
+  restrained active states, contextual platform/organization labels, a
+  non-interactive single-organization context, accessible collapsed-route
+  tooltips, and predictable mobile drawer focus behavior.
+
+## 2026-08-29
+
+- Added Design System V2 semantic tokens, reusable UI foundations, Persian
+  terminology registry, governed future appearance rules, and the first shared
+  dashboard error/loading/status treatment.
+- Prepared GOAL-028 for product-shell and navigation refinement.
+
 ## 2026-08-03
 
 - Added the canonical Jupiter architecture and execution documentation baseline.
