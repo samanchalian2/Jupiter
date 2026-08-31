@@ -1,5 +1,11 @@
 # Changelog
 
+## GOAL-051 — پوشش کامل metering برای AI Smart Actions
+
+- `AI_TICKET_REVIEW` و `AI_SMART_INTAKE` اکنون یک مسیر مشترک رزرو، telemetry امن، تحویل معتبر و تسویهٔ idempotent دارند.
+- migration 049 ارجاع actor/subject و telemetry tenant-scoped را افزوده است؛ prompt، متن تیکت، transcript، فایل و secret ذخیره نمی‌شوند.
+- داشبورد مالک جمع مجاز مصرف را نشان می‌دهد و Platform گزارش عملیاتیِ غیرحساس دارد؛ تبدیل مستقل صوت تجاری نشده است.
+
 ## GOAL-050 — چرخهٔ عمر اشتراک تجاری
 
 - وضعیت‌های رسمی اشتراک، گذارهای کنترل‌شدهٔ Platform، مهلت تجاری قابل تنظیم، worker انقضا، اعلان dedupe و نمایش RTL مالک/پلتفرم افزوده شد.

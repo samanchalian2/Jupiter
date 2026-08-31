@@ -7,6 +7,7 @@ import { DatabaseService } from '../src/database/database.service.js';
 import { TicketIntakeService } from '../src/ticket-intake/ticket-intake.service.js';
 import { TICKET_INTAKE_CONTRACT_VERSION, type TicketIntakeContext, type TicketIntakeProvider } from '../src/ticket-intake/ticket-intake-provider.js';
 import { TicketService } from '../src/tickets/ticket.service.js';
+import { CommercialService } from '../src/commercial/commercial.service.js';
 import type { TranscriptionProvider } from '../src/transcription/transcription-provider.js';
 
 type FakeObject=StoredObject&{bytes?:Uint8Array};
@@ -24,7 +25,7 @@ class IntakeStorage implements AttachmentStorage {
 process.env.AI_CREDENTIAL_ENCRYPTION_KEY=Buffer.alloc(32,12).toString('base64');
 const database=new DatabaseService(); const storage=new IntakeStorage(); const credentials=new AiCredentialService();
 const tickets=new TicketService(database); const attachments=new AttachmentService(database,storage);
-const intakes=new TicketIntakeService(database,tickets,attachments,credentials,storage);
+const commercial=new CommercialService(database); const intakes=new TicketIntakeService(database,tickets,attachments,credentials,commercial,storage);
 let orgA='';let orgB='';let userA='';let userB='';let category='';let subcategory='';let department='';let location='';let discipline='';let titleLibraryId='';let tagId='';
 const actorA=()=>({organizationId:orgA,userId:userA,roles:['REQUESTER']}); const actorB=()=>({organizationId:orgB,userId:userB,roles:['REQUESTER']});
 
@@ -38,7 +39,7 @@ beforeAll(async()=>{
   orgA=orgs.rows.find(row=>row.slug==='goal14-a')!.id;orgB=orgs.rows.find(row=>row.slug==='goal14-b')!.id;
   const users=await database.query<{id:string;email:string}>("INSERT INTO users(email,display_name,password_hash) VALUES('goal14-a@jupiter.local','Goal 14 A','scrypt$AA$AA'),('goal14-b@jupiter.local','Goal 14 B','scrypt$AA$AA') ON CONFLICT(email) DO UPDATE SET display_name=EXCLUDED.display_name RETURNING id,email");
   userA=users.rows.find(row=>row.email==='goal14-a@jupiter.local')!.id;userB=users.rows.find(row=>row.email==='goal14-b@jupiter.local')!.id;
-  for(const table of ['ticket_intake_secondary_ticket_links','ticket_intake_provenance','ticket_attachments','ticket_custom_field_values','ticket_sla_clocks','ticket_activities','ticket_assignments','ticket_status_transitions','ticket_tag_links','tickets','ticket_intake_messages','ticket_intake_sessions','outbox_events','organization_ai_settings','audit_logs','ticket_title_library','ticket_tags','ticket_custom_field_definitions','subcategories','categories','departments','locations','disciplines','memberships']) await database.query(`DELETE FROM ${table} WHERE organization_id IN($1,$2)`,[orgA,orgB]);
+  for(const table of ['ai_operation_telemetry','commercial_usage_ledger','commercial_smart_actions','commercial_usage_allowances','commercial_entitlements','organization_feature_settings','ticket_intake_secondary_ticket_links','ticket_intake_provenance','ticket_attachments','ticket_custom_field_values','ticket_sla_clocks','ticket_activities','ticket_assignments','ticket_status_transitions','ticket_tag_links','tickets','ticket_intake_messages','ticket_intake_sessions','outbox_events','organization_ai_settings','audit_logs','ticket_title_library','ticket_tags','ticket_custom_field_definitions','subcategories','categories','departments','locations','disciplines','memberships']) await database.query(`DELETE FROM ${table} WHERE organization_id IN($1,$2)`,[orgA,orgB]);
   await database.query('INSERT INTO memberships(organization_id,user_id) VALUES($1,$2),($3,$4) ON CONFLICT DO NOTHING',[orgA,userA,orgB,userB]);
   await database.query("INSERT INTO membership_roles(membership_id,role_id) SELECT m.id,r.id FROM memberships m CROSS JOIN roles r WHERE m.organization_id IN($1,$2) AND r.code='REQUESTER' ON CONFLICT DO NOTHING",[orgA,orgB]);
   category=(await database.query<{id:string}>("INSERT INTO categories(organization_id,code,name) VALUES($1,'hardware','Hardware') RETURNING id",[orgA])).rows[0].id;
@@ -50,17 +51,23 @@ beforeAll(async()=>{
   tagId=(await database.query<{id:string}>("INSERT INTO ticket_tags(organization_id,name,color,kind,status,normalized_name) VALUES($1,'پرینتر','#6d5587','SERVICE_ASSET','ACTIVE','پرینتر') RETURNING id",[orgA])).rows[0].id;
   await database.query("INSERT INTO ticket_custom_field_definitions(organization_id,field_key,label,field_type,options,is_required) VALUES($1,'device_type','Device type','SELECT','[\"printer\",\"scanner\"]',false),($1,'asset_number','Asset number','NUMBER','[]',false)",[orgA]);
   for(const org of [orgA,orgB]){const encrypted=credentials.encrypt(`key-${org}`);await database.query(`INSERT INTO organization_ai_settings(organization_id,enabled,smart_intake_enabled,model,analysis_model,transcription_model,provider_base_url,api_key_ciphertext,api_key_iv,api_key_auth_tag) VALUES($1,true,true,'analysis-test','analysis-test','transcription-test','https://ai.test/v1',$2,$3,$4) ON CONFLICT(organization_id) DO UPDATE SET enabled=true,smart_intake_enabled=true,analysis_model='analysis-test',transcription_model='transcription-test',api_key_ciphertext=$2,api_key_iv=$3,api_key_auth_tag=$4`,[org,encrypted.ciphertext,encrypted.iv,encrypted.authTag]);}
+  await database.query("INSERT INTO platform_capability_availability(capability_code,is_available) VALUES('AI_SMART_INTAKE',true) ON CONFLICT(capability_code) DO UPDATE SET is_available=true");
+  for(const org of [orgA,orgB]) await database.withOrganization(org,async client=>{
+    await client.query("INSERT INTO commercial_entitlements(organization_id,capability_code,status,starts_at) VALUES($1,'AI_SMART_INTAKE','ACTIVE',now()) ON CONFLICT(organization_id,capability_code) DO UPDATE SET status='ACTIVE',starts_at=now(),ends_at=NULL",[org]);
+    await client.query("INSERT INTO organization_feature_settings(organization_id,capability_code,enabled) VALUES($1,'AI_SMART_INTAKE',true) ON CONFLICT(organization_id,capability_code) DO UPDATE SET enabled=true",[org]);
+    await client.query("INSERT INTO commercial_usage_allowances(organization_id,capability_code,period_starts_at,period_ends_at,granted_units,allocation_type) VALUES($1,'AI_SMART_INTAKE',now()-interval '1 day',now()+interval '1 day',100,'PERIODIC')",[org]);
+  });
 });
 
 afterAll(async()=>{
-  for(const table of ['ticket_intake_secondary_ticket_links','ticket_intake_provenance','ticket_attachments','ticket_custom_field_values','ticket_sla_clocks','ticket_activities','ticket_assignments','ticket_status_transitions','ticket_tag_links','tickets','ticket_intake_messages','ticket_intake_sessions','outbox_events','organization_ai_settings','audit_logs','ticket_title_library','ticket_tags','ticket_custom_field_definitions','subcategories','categories','departments','locations','disciplines','memberships']) await database.query(`DELETE FROM ${table} WHERE organization_id IN($1,$2)`,[orgA,orgB]);
+  for(const table of ['ai_operation_telemetry','commercial_usage_ledger','commercial_smart_actions','commercial_usage_allowances','commercial_entitlements','organization_feature_settings','ticket_intake_secondary_ticket_links','ticket_intake_provenance','ticket_attachments','ticket_custom_field_values','ticket_sla_clocks','ticket_activities','ticket_assignments','ticket_status_transitions','ticket_tag_links','tickets','ticket_intake_messages','ticket_intake_sessions','outbox_events','organization_ai_settings','audit_logs','ticket_title_library','ticket_tags','ticket_custom_field_definitions','subcategories','categories','departments','locations','disciplines','memberships']) await database.query(`DELETE FROM ${table} WHERE organization_id IN($1,$2)`,[orgA,orgB]);
   await database.query('DELETE FROM organizations WHERE id IN($1,$2)',[orgA,orgB]);await database.query("DELETE FROM users WHERE email IN('goal14-a@jupiter.local','goal14-b@jupiter.local')");await database.onModuleDestroy();
 });
 
 describe('ticket intake pipeline',()=>{
   it('keeps manual intake available when organization smart intake is disabled',async()=>{
     await database.withOrganization(orgA,client=>client.query('UPDATE organization_ai_settings SET smart_intake_enabled=false WHERE organization_id=$1',[orgA]));
-    expect(await intakes.capabilities(actorA())).toEqual({smartIntakeEnabled:false});
+    expect(await intakes.capabilities(actorA())).toMatchObject({smartIntakeEnabled:false});
     const session=await intakes.create(actorA(),{description:'درخواست دستی بدون تحلیل',idempotencyKey:'goal24-manual-001'});
     const voice=await intakes.requestMessageVoiceUpload(actorA(),session.id,{filename:'manual.wav',contentType:'audio/wav',byteSize:5,durationSeconds:2});
     storage.objects.set(storage.lastUpload!.key,{contentType:'audio/wav',contentLength:5,metadata:{'duration-seconds':'2'},bytes:new Uint8Array([1,2,3,4,5])});
@@ -70,7 +77,7 @@ describe('ticket intake pipeline',()=>{
     expect(draft.id).toBeTruthy();
     expect((await database.withOrganization(orgA,client=>client.query('SELECT count(*)::int AS count FROM ticket_attachments WHERE ticket_id=$1',[draft.id]))).rows[0].count).toBe(1);
     await database.withOrganization(orgA,client=>client.query('UPDATE organization_ai_settings SET smart_intake_enabled=true WHERE organization_id=$1',[orgA]));
-    expect(await intakes.capabilities(actorA())).toEqual({smartIntakeEnabled:true});
+    expect(await intakes.capabilities(actorA())).toMatchObject({smartIntakeEnabled:true});
   });
 
   it('lets only the owner cancel an unsubmitted intake and removes every temporary voice object',async()=>{
@@ -102,6 +109,7 @@ describe('ticket intake pipeline',()=>{
     const result=await intakes.get(actorA(),first.id);expect(result.lastErrorCode).toBeNull();expect(result.status).toBe('SUCCEEDED');expect(result.description).toContain('user@example.com');expect(sentDescription).toContain('[email redacted]');
     expect(result.suggestions).toMatchObject({title:'Printer is offline',categoryId:category,departmentId:department,locationId:location,priority:'HIGH',customFields:{device_type:'printer'}});
     expect(result.suggestions).not.toHaveProperty('subcategoryId');expect(result.suggestions).not.toHaveProperty('disciplineId');expect(result.missingFields).toEqual(expect.arrayContaining(['subcategoryId','disciplineId','customFields.asset_number']));
+    const metering=await database.withOrganization(orgA,c=>c.query<{status:string;telemetry:number}>("SELECT a.status,(SELECT count(*)::int FROM ai_operation_telemetry t WHERE t.commercial_smart_action_id=a.id) telemetry FROM commercial_smart_actions a WHERE a.subject_id=$1",[first.id]));expect(metering.rows).toEqual([{status:'SETTLED',telemetry:1}]);
   });
 
   it('supplies only active title/tag vocabulary and records new tag candidates only on final draft submission',async()=>{

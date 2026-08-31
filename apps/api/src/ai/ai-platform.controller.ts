@@ -42,8 +42,8 @@ export class AiPlatformController {
   }
 
   @Post('requests/:ticketId')
-  async request(@Param('ticketId') ticketId: string, @Headers('authorization') authorization: string | undefined, @Headers('x-organization-id') organizationId: string | undefined, @Body() body: { text: string }) {
-    return this.ai.enqueue(await this.actor(authorization, organizationId), ticketId, body.text);
+  async request(@Param('ticketId') ticketId: string, @Headers('authorization') authorization: string | undefined, @Headers('x-organization-id') organizationId: string | undefined, @Headers('idempotency-key') idempotencyKey: string | undefined, @Body() body: { text: string }) {
+    return this.ai.enqueue(await this.actor(authorization, organizationId), ticketId, body.text,idempotencyKey);
   }
 
   @Get('requests/ticket/:ticketId')

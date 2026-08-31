@@ -14,22 +14,25 @@ const priorities = new Set(['LOW', 'NORMAL', 'HIGH', 'URGENT']);
 export class AiGatewayService {
   constructor(private readonly database: DatabaseService, private readonly credentials: AiCredentialService, private readonly commercial?: CommercialService) {}
 
-  async enqueue(actor: Actor, ticketId: string, text: string) {
+  async enqueue(actor: Actor, ticketId: string, text: string, idempotencyKey?: string) {
     if (text.trim().length < 3 || text.length > 20_000) throw new BadRequestException('AI input is invalid');
-    const requestId = randomUUID();
-    await this.commercial?.reserveSmartAction({ ...actor, roles: actor.roles ?? [] }, 'AI_TICKET_REVIEW', requestId);
+    const requestId = idempotencyKey && /^[0-9a-f-]{36}$/i.test(idempotencyKey) ? idempotencyKey : randomUUID();
+    await this.commercial?.reserveSmartAction({ ...actor, roles: actor.roles ?? [] }, 'AI_TICKET_REVIEW', requestId,{type:'ticket',id:ticketId});
     try { return await this.database.withOrganization(actor.organizationId, async (client) => {
       const ticket = await client.query('SELECT 1 FROM tickets WHERE id=$1 AND requester_user_id=$2', [ticketId, actor.userId]);
       if (!ticket.rowCount) throw new NotFoundException('Ticket not found');
       const enabled = (await client.query<{ enabled: boolean }>('SELECT enabled FROM organization_ai_settings WHERE organization_id=$1', [actor.organizationId])).rows[0]?.enabled;
       if (!enabled) throw new ForbiddenException('AI is not enabled for this organization');
-      const request = (await client.query<{ id: string; status: string; prompt_version: string; created_at: Date }>(
-        `INSERT INTO ai_requests(id,organization_id,ticket_id,status,prompt_version,redacted_input,created_by_user_id)
-         VALUES($1,$2,$3,'QUEUED','v1',$4,$5) RETURNING id,status,prompt_version,created_at`,
+      const request = (await client.query<{ id: string; status: string; prompt_version: string; created_at: Date; created: boolean }>(
+        `INSERT INTO ai_requests(id,organization_id,ticket_id,status,prompt_version,redacted_input,created_by_user_id,idempotency_key)
+         VALUES($1,$2,$3,'QUEUED','v1',$4,$5,$1) ON CONFLICT(organization_id,idempotency_key) WHERE idempotency_key IS NOT NULL DO UPDATE SET idempotency_key=ai_requests.idempotency_key
+         RETURNING id,status,prompt_version,created_at,(xmax=0) AS created`,
         [requestId, actor.organizationId, ticketId, { text: redactForAi(text) }, actor.userId],
       )).rows[0];
-      await client.query('INSERT INTO outbox_events(organization_id,topic,payload) VALUES($1,\'ai.requested\',$2)', [actor.organizationId, { requestId: request.id }]);
-      await this.audit(client, actor, 'ai.requested', 'ai_request', request.id, { ticketId });
+      if (request.created) {
+        await client.query('INSERT INTO outbox_events(organization_id,topic,payload) VALUES($1,\'ai.requested\',$2)', [actor.organizationId, { requestId: request.id }]);
+        await this.audit(client, actor, 'ai.requested', 'ai_request', request.id, { ticketId });
+      }
       return request;
     }); } catch (cause) { await this.commercial?.releaseSmartAction(actor.organizationId, requestId); throw cause; }
   }
@@ -126,15 +129,18 @@ export class AiGatewayService {
       const apiKey = this.credentials.decrypt({ ciphertext: setting.api_key_ciphertext, iv: setting.api_key_iv, authTag: setting.api_key_auth_tag });
       await this.database.withOrganization(request.organization_id, async (client) => { await client.query('UPDATE ai_requests SET status=\'RUNNING\' WHERE id=$1', [requestId]); });
       const answer = await provider.analyze({ promptVersion: request.prompt_version, text: request.redacted_input.text, configuration: { baseUrl: setting.provider_base_url, model: setting.analysis_model, apiKey } });
+      if (!answer.output || typeof answer.output !== 'object') throw new Error('ai_result_invalid');
       await this.database.withOrganization(request.organization_id, async (client) => {
         await client.query('INSERT INTO ai_results(request_id,organization_id,output,usage,provider,model) VALUES($1,$2,$3,$4,\'openai-compatible\',$5)', [requestId, request.organization_id, answer.output, answer.usage, setting.analysis_model]);
         await client.query('UPDATE ai_requests SET status=\'SUCCEEDED\',completed_at=now() WHERE id=$1', [requestId]);
         await this.audit(client, { userId: '', organizationId: request.organization_id }, 'ai.completed', 'ai_request', requestId, { model: setting.analysis_model });
       });
       delivered = true;
+      await this.commercial?.recordAiTelemetry(request.organization_id,requestId,{operationCode:'AI_TICKET_REVIEW',outcome:'SUCCEEDED',provider:'openai-compatible',model:setting.analysis_model,inputTokens:Number(answer.usage?.inputTokens)||undefined,outputTokens:Number(answer.usage?.outputTokens)||undefined});
       await this.commercial?.settleSmartAction(request.organization_id, requestId, requestId);
     } catch {
       if (delivered) return;
+      await this.commercial?.recordAiTelemetry(request.organization_id,requestId,{operationCode:'AI_TICKET_REVIEW',outcome:'RELEASED'}).catch(()=>undefined);
       await this.commercial?.releaseSmartAction(request.organization_id, requestId);
       await this.database.withOrganization(request.organization_id, async (client) => {
         await client.query('UPDATE ai_requests SET status=\'FAILED\',completed_at=now() WHERE id=$1', [requestId]);

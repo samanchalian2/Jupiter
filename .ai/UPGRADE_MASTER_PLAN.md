@@ -1,5 +1,9 @@
 # Jupiter Master Upgrade Plan
 
+## GOAL-051 — پوشش کامل metering برای AI Smart Actions (complete)
+
+`AI_TICKET_REVIEW` و `AI_SMART_INTAKE` به مرز تجاری مشترک رزرو، telemetry امن و تسویهٔ تحویل موفق متصل شدند. تبدیل مستقل صوت تجاری نشده و گزارش‌های Owner/Platform فقط projection مجاز را نشان می‌دهند.
+
 ## GOAL-050 — چرخهٔ عمر اشتراک تجاری (complete)
 
 Commercial subscriptions now use the official lifecycle states, Platform-controlled audited transitions, a tenant-configured grace window, safe expiry processing and owner-visible Persian lifecycle state. Core ticketing remains independent from commercial expiry.

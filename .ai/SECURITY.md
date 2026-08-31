@@ -1,5 +1,9 @@
 # Security and Privacy
 
+## GOAL-051 complete AI Smart Action coverage
+
+Telemetry is RLS-protected and immutable to the application role. It may contain operation/outcome, provider/model, token counts, audio duration and estimated cost only; prompts, ticket text, transcript, files and credentials are excluded from telemetry and settlement metadata. Owner and Platform reports are server-side projections of permitted fields only.
+
 ## GOAL-050 commercial subscription lifecycle
 
 Transitionهای اشتراک Platform-Admin-only، tenant-bound و audited هستند. سازمان هدف برای هر تغییر صریح است؛ اعلان lifecycle فقط برای ORG_OWNERهای فعال همان سازمان، با dedupe پایدار، ارسال می‌شود. پذیرش جدید Assist همان resolver سروری capability `JUPITER_ASSIST` را اجرا می‌کند و هرگز از اشتراک محصول نامرتبط مجوز نمی‌گیرد.

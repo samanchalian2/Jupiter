@@ -7,6 +7,7 @@ import type { AttachmentStorage, StoredObject } from '../attachments/attachment-
 import { DatabaseService } from '../database/database.service.js';
 import type { TicketActor } from '../tickets/ticket-actor.service.js';
 import { TicketService, type CreateDraftData } from '../tickets/ticket.service.js';
+import { CommercialService } from '../commercial/commercial.service.js';
 import type { TranscriptionProvider } from '../transcription/transcription-provider.js';
 import { TICKET_INTAKE_CONTRACT_VERSION, type IntakeCustomFieldDefinition, type TicketIntakeContext, type TicketIntakeProvider, type TicketIntakeProviderOutput } from './ticket-intake-provider.js';
 
@@ -23,6 +24,7 @@ type IntakeRow = {
   provider_usage:Record<string,unknown>; missing_fields:string[]; confidence_by_field:Record<string,number>; rejected_fields:string[];
   voice_storage_key:string|null; voice_original_filename:string|null; voice_content_type:string|null; voice_byte_size:string|null;
   voice_duration_seconds:string|null; voice_verified_at:Date|null; attempt_count:number; last_error_code:string|null; ticket_id:string|null;
+  smart_action_key:string|null;
   conversation_summary:string|null; primary_issue:Record<string,unknown>|null; secondary_issues:Array<Record<string,unknown>>; clarification_question:string|null; clarification_confidence:string|null;
   expires_at:Date; consumed_at:Date|null; created_at:Date; updated_at:Date;
 };
@@ -46,6 +48,7 @@ export class TicketIntakeService {
     private readonly tickets: TicketService,
     private readonly attachments: AttachmentService,
     private readonly credentials: AiCredentialService,
+    private readonly commercial: CommercialService,
     @Inject('AttachmentStorage') private readonly storage: AttachmentStorage,
   ) {}
 
@@ -72,13 +75,15 @@ export class TicketIntakeService {
   }
 
   async capabilities(actor: TicketActor) {
-    return this.database.withOrganization(actor.organizationId, async client => {
+    const configured = await this.database.withOrganization(actor.organizationId, async client => {
       const row=(await client.query<{smart_intake_enabled:boolean}>(`SELECT enabled AND smart_intake_enabled
         AND api_key_ciphertext IS NOT NULL
         AND COALESCE(NULLIF(btrim(analysis_model),''),NULLIF(btrim(model),'')) IS NOT NULL AS smart_intake_enabled
         FROM organization_ai_settings WHERE organization_id=$1`,[actor.organizationId])).rows[0];
-      return { smartIntakeEnabled: Boolean(row?.smart_intake_enabled) };
+      return Boolean(row?.smart_intake_enabled);
     });
+    const commercial=await this.commercial.resolve(actor.organizationId,'AI_SMART_INTAKE');
+    return { smartIntakeEnabled: configured&&commercial.effective, reasonCode: configured ? commercial.reasonCode : 'AI_CONFIGURATION_DISABLED' };
   }
 
   async addTextMessage(actor:TicketActor,id:string,input:{text:string}) {
@@ -133,7 +138,7 @@ export class TicketIntakeService {
   }
 
   async cancel(actor:TicketActor,id:string) {
-    return this.database.withOrganization(actor.organizationId,async client=>{
+    const result=await this.database.withOrganization(actor.organizationId,async client=>{
       const session=await this.owned(client,actor,id,true);
       this.assertMutable(session);
       const messages=(await client.query<IntakeMessageRow>('SELECT * FROM ticket_intake_messages WHERE intake_session_id=$1 FOR UPDATE',[id])).rows;
@@ -148,8 +153,10 @@ export class TicketIntakeService {
       await client.query("UPDATE outbox_events SET processed_at=now() WHERE topic='ticket_intake.process' AND payload->>'sessionId'=$1 AND processed_at IS NULL",[id]);
       await client.query('DELETE FROM ticket_intake_sessions WHERE id=$1',[id]);
       await this.audit(client,actor,'ticket_intake.cancelled',id,{hadVoice:storageKeys.length>0,messageCount:messages.filter(message=>message.role==='USER').length});
-      return {cancelled:true};
+      return {cancelled:true,key:session.smart_action_key};
     });
+    if(result.key)await this.commercial.releaseSmartAction(actor.organizationId,result.key);
+    return {cancelled:true};
   }
 
   async requestVoiceUpload(actor: TicketActor, id: string, input: { filename:string; contentType:string; byteSize:number; durationSeconds:number }) {
@@ -209,10 +216,10 @@ export class TicketIntakeService {
   }
 
   async analyze(actor: TicketActor, id: string) {
-    const row = await this.database.withOrganization(actor.organizationId, async (client) => {
+    const prepared = await this.database.withOrganization(actor.organizationId, async (client) => {
       const session = await this.owned(client, actor, id, true);
       this.assertMutable(session);
-      if (session.status === 'SUCCEEDED' || session.status === 'TRANSCRIBING' || session.status === 'ANALYZING') return session;
+      if (session.status === 'SUCCEEDED' || session.status === 'TRANSCRIBING' || session.status === 'ANALYZING') return { row: session, alreadyQueued: true };
       if (session.status === 'UPLOADING') throw new BadRequestException('Voice upload must be completed first');
       if (session.voice_storage_key && !session.voice_verified_at) throw new BadRequestException('Voice upload must be verified first');
       if (!session.source_description.trim() && !session.voice_storage_key) throw new BadRequestException('Text or voice input is required');
@@ -224,20 +231,29 @@ export class TicketIntakeService {
       if (!configured) throw new ForbiddenException('AI is not configured for this organization');
       const status = session.voice_storage_key && !session.transcript ? 'TRANSCRIBING' : 'ANALYZING';
       const updated = (await client.query<IntakeRow>(
-        `UPDATE ticket_intake_sessions SET status=$2,attempt_count=0,last_error_code=NULL,processing_started_at=NULL,
+        `UPDATE ticket_intake_sessions SET status=$2,smart_action_key=COALESCE(smart_action_key,gen_random_uuid()),attempt_count=0,last_error_code=NULL,processing_started_at=NULL,
          next_attempt_at=now(),analysis_result=NULL,provider_usage='{}'::jsonb,missing_fields='[]'::jsonb,
          confidence_by_field='{}'::jsonb,rejected_fields='[]'::jsonb,updated_at=now() WHERE id=$1 RETURNING *`, [id,status],
       )).rows[0];
+      return { row: updated, alreadyQueued: false };
+    });
+    const { row } = prepared;
+    if (prepared.alreadyQueued) return this.present(row);
+    if (!row.smart_action_key) return this.present(row);
+    try { await this.commercial.reserveSmartAction(actor,'AI_SMART_INTAKE',row.smart_action_key,{type:'ticket_intake',id}); }
+    catch (error) { await this.resetUnreservedAnalysis(actor.organizationId,id,row.smart_action_key); throw error; }
+    await this.database.withOrganization(actor.organizationId,async client=>{
       await client.query("INSERT INTO outbox_events(organization_id,topic,payload) VALUES($1,'ticket_intake.process',$2)",[actor.organizationId,{sessionId:id}]);
-      await this.audit(client,actor,'ticket_intake.analysis_requested',id,{hasVoice:Boolean(session.voice_storage_key)});
-      return updated;
+      await this.audit(client,actor,'ticket_intake.analysis_requested',id,{hasVoice:Boolean(row.voice_storage_key)});
     });
     return this.present(row);
   }
 
   async analyzeConversation(actor:TicketActor,id:string) {
-    const row=await this.database.withOrganization(actor.organizationId,async client=>{
-      const session=await this.owned(client,actor,id,true);this.assertMutable(session);this.assertNotProcessing(session);
+    const prepared=await this.database.withOrganization(actor.organizationId,async client=>{
+      const session=await this.owned(client,actor,id,true);this.assertMutable(session);
+      if(session.status==='SUCCEEDED'||session.status==='TRANSCRIBING'||session.status==='ANALYZING')return{row:session,alreadyQueued:true};
+      this.assertNotProcessing(session);
       const messages=(await client.query<IntakeMessageRow>('SELECT * FROM ticket_intake_messages WHERE intake_session_id=$1 AND discarded_at IS NULL ORDER BY sequence_number',[id])).rows;
       const userMessages=messages.filter(message=>message.role==='USER');
       if(!userMessages.length)throw new BadRequestException('A text or voice message is required');
@@ -248,11 +264,19 @@ export class TicketIntakeService {
         FROM organization_ai_settings WHERE organization_id=$1`,[actor.organizationId])).rows[0]?.configured;
       if(!configured)throw new ForbiddenException('AI is not configured for this organization');
       const needsTranscription=userMessages.some(message=>message.content_type==='VOICE'&&!message.transcript);
-      const updated=(await client.query<IntakeRow>(`UPDATE ticket_intake_sessions SET status=$2,attempt_count=0,last_error_code=NULL,processing_started_at=NULL,next_attempt_at=now(),
+      const updated=(await client.query<IntakeRow>(`UPDATE ticket_intake_sessions SET status=$2,smart_action_key=COALESCE(smart_action_key,gen_random_uuid()),attempt_count=0,last_error_code=NULL,processing_started_at=NULL,next_attempt_at=now(),
         analysis_result=NULL,provider_usage='{}'::jsonb,missing_fields='[]'::jsonb,confidence_by_field='{}'::jsonb,rejected_fields='[]'::jsonb,
         conversation_summary=NULL,secondary_issues='[]'::jsonb,clarification_question=NULL,clarification_confidence=NULL,updated_at=now() WHERE id=$1 RETURNING *`,[id,needsTranscription?'TRANSCRIBING':'ANALYZING'])).rows[0];
+      return {row:updated,alreadyQueued:false};
+    });
+    const {row}=prepared;
+    if(prepared.alreadyQueued)return this.present(row);
+    if (!row.smart_action_key) return this.present(row);
+    try { await this.commercial.reserveSmartAction(actor,'AI_SMART_INTAKE',row.smart_action_key,{type:'ticket_intake',id}); }
+    catch (error) { await this.resetUnreservedAnalysis(actor.organizationId,id,row.smart_action_key); throw error; }
+    await this.database.withOrganization(actor.organizationId,async client=>{
       await client.query("INSERT INTO outbox_events(organization_id,topic,payload) VALUES($1,'ticket_intake.process',$2)",[actor.organizationId,{sessionId:id}]);
-      await this.audit(client,actor,'ticket_intake.conversation_analysis_requested',id,{messageCount:userMessages.length,hasVoice:userMessages.some(message=>message.content_type==='VOICE')});return updated;
+      await this.audit(client,actor,'ticket_intake.conversation_analysis_requested',id,{hasVoice:Boolean(row.voice_storage_key)});
     });
     return this.present(row);
   }
@@ -277,6 +301,7 @@ export class TicketIntakeService {
       )).rows[0]);
       if (!claimed) return;
       stage = claimed.status;
+      if (!claimed.smart_action_key) throw new Error('commercial_action_missing');
       const configuration = await this.configuration(organizationId);
       const conversationMessages=await this.database.withOrganization(organizationId,client=>client.query<IntakeMessageRow>('SELECT * FROM ticket_intake_messages WHERE intake_session_id=$1 AND discarded_at IS NULL ORDER BY sequence_number',[id]).then(result=>result.rows));
       if(conversationMessages.length){
@@ -288,11 +313,13 @@ export class TicketIntakeService {
             const buffer=new ArrayBuffer(bytes.byteLength);new Uint8Array(buffer).set(bytes);
             const transcription=await transcriptionProvider.transcribe({audio:new Blob([buffer],{type:message.voice_content_type}),filename:message.voice_original_filename,configuration:{baseUrl:configuration.provider_base_url,apiKey:configuration.apiKey,model:configuration.transcription_model}});
             await this.database.withOrganization(organizationId,client=>client.query('UPDATE ticket_intake_messages SET transcript=$2,updated_at=now() WHERE id=$1',[message.id,transcription.text.trim().slice(0,20_000)]));
+            await this.commercial.recordAiTelemetry(organizationId,claimed.smart_action_key!,{operationCode:'AI_SMART_INTAKE',outcome:'SUCCEEDED',provider:'openai-compatible',model:configuration.transcription_model,audioDurationSeconds:Number(message.voice_duration_seconds)});
           }
         }
         const completeMessages=await this.database.withOrganization(organizationId,client=>client.query<IntakeMessageRow>('SELECT * FROM ticket_intake_messages WHERE intake_session_id=$1 AND discarded_at IS NULL ORDER BY sequence_number',[id]).then(result=>result.rows));
         const description=this.combineConversation(completeMessages);const context=await this.context(organizationId,description,completeMessages,this.validIssue(claimed.primary_issue)??undefined);
         const answer=await aiProvider.analyzeIntake({context,configuration:{baseUrl:configuration.provider_base_url,apiKey:configuration.apiKey,model:configuration.analysis_model}});const validated=this.validateAnalysis(answer.output,context);
+        if(!this.hasUsableSuggestion(validated.result)) throw new Error('analysis_result_unusable');
         const interpretation=this.safeText(answer.output.interpretation,2_000);const primary=this.validIssue(answer.output.primaryIssue);const secondary=this.secondaryProposals(answer.output,context);const question=this.safeText(answer.output.clarificationQuestion,500);const questionConfidence=typeof answer.output.clarificationConfidence==='number'&&Number.isFinite(answer.output.clarificationConfidence)?Math.max(0,Math.min(1,answer.output.clarificationConfidence)):null;
         await this.database.withOrganization(organizationId,async client=>{
           await client.query(`UPDATE ticket_intake_sessions SET status='SUCCEEDED',source_description=$2,combined_description=$2,analysis_contract_version=$3,analysis_result=$4,provider_usage=$5,missing_fields=$6,confidence_by_field=$7,rejected_fields=$8,conversation_summary=$9,primary_issue=$10,secondary_issues=$11,clarification_question=$12,clarification_confidence=$13,attempt_count=0,processing_started_at=NULL,next_attempt_at=NULL,last_error_code=NULL,updated_at=now() WHERE id=$1`,[id,description,TICKET_INTAKE_CONTRACT_VERSION,validated.result,answer.usage,JSON.stringify(validated.missingFields),validated.confidenceByField,JSON.stringify(validated.rejectedFields),interpretation,primary,JSON.stringify(secondary),question,questionConfidence]);
@@ -300,6 +327,8 @@ export class TicketIntakeService {
           if(question)await client.query(`INSERT INTO ticket_intake_messages(organization_id,intake_session_id,sequence_number,role,content_type,text_content) VALUES($1,$2,$3,'ASSISTANT','CLARIFICATION',$4)`,[organizationId,id,completeMessages.length+1,question]);
           await client.query("UPDATE outbox_events SET processed_at=now() WHERE topic='ticket_intake.process' AND payload->>'sessionId'=$1 AND processed_at IS NULL",[id]);await this.audit(client,{userId:'',organizationId},'ticket_intake.conversation_succeeded',id,{contractVersion:TICKET_INTAKE_CONTRACT_VERSION,hasClarification:Boolean(question),secondaryIssueCount:secondary.length});
         });
+        await this.commercial.recordAiTelemetry(organizationId,claimed.smart_action_key!,{operationCode:'AI_SMART_INTAKE',outcome:'SUCCEEDED',provider:'openai-compatible',model:configuration.analysis_model,inputTokens:Number(answer.usage?.inputTokens)||undefined,outputTokens:Number(answer.usage?.outputTokens)||undefined});
+        await this.commercial.settleSmartAction(organizationId,claimed.smart_action_key!,id);
         return;
       }
       let description = claimed.combined_description ?? claimed.source_description;
@@ -314,6 +343,7 @@ export class TicketIntakeService {
           configuration:{baseUrl:configuration.provider_base_url,apiKey:configuration.apiKey,model:configuration.transcription_model},
         });
         const transcript = transcription.text.trim().slice(0,20_000);
+        await this.commercial.recordAiTelemetry(organizationId,claimed.smart_action_key!,{operationCode:'AI_SMART_INTAKE',outcome:'SUCCEEDED',provider:'openai-compatible',model:configuration.transcription_model,audioDurationSeconds:Number(claimed.voice_duration_seconds)});
         description = this.combine(claimed.source_description,transcript);
         await this.database.withOrganization(organizationId, async (client) => {
           await client.query(
@@ -326,6 +356,7 @@ export class TicketIntakeService {
       const context = await this.context(organizationId,description);
       const answer = await aiProvider.analyzeIntake({ context, configuration:{baseUrl:configuration.provider_base_url,apiKey:configuration.apiKey,model:configuration.analysis_model} });
       const validated = this.validateAnalysis(answer.output,context);
+      if (!this.hasUsableSuggestion(validated.result)) throw new Error('analysis_result_unusable');
       await this.database.withOrganization(organizationId, async (client) => {
         await client.query(
           `UPDATE ticket_intake_sessions SET status='SUCCEEDED',analysis_contract_version=$2,analysis_result=$3,provider_usage=$4,missing_fields=$5,
@@ -335,8 +366,10 @@ export class TicketIntakeService {
         await client.query("UPDATE outbox_events SET processed_at=now() WHERE topic='ticket_intake.process' AND payload->>'sessionId'=$1 AND processed_at IS NULL",[id]);
         await this.audit(client,{userId:'',organizationId},'ticket_intake.succeeded',id,{contractVersion:TICKET_INTAKE_CONTRACT_VERSION});
       });
+      await this.commercial.recordAiTelemetry(organizationId,claimed.smart_action_key!,{operationCode:'AI_SMART_INTAKE',outcome:'SUCCEEDED',provider:'openai-compatible',model:configuration.analysis_model,inputTokens:Number(answer.usage?.inputTokens)||undefined,outputTokens:Number(answer.usage?.outputTokens)||undefined});
+      await this.commercial.settleSmartAction(organizationId,claimed.smart_action_key!,id);
     } catch (error) {
-      if (stage) await this.recordFailure(organizationId,id,stage,error);
+      if (stage) { await this.recordFailure(organizationId,id,stage,error); const row=await this.database.withOrganization(organizationId,c=>c.query<IntakeRow>('SELECT * FROM ticket_intake_sessions WHERE id=$1',[id]).then(r=>r.rows[0])); if(row?.status==='FAILED'&&row.smart_action_key){await this.commercial.recordAiTelemetry(organizationId,row.smart_action_key,{operationCode:'AI_SMART_INTAKE',outcome:'RELEASED'});await this.commercial.releaseSmartAction(organizationId,row.smart_action_key);} }
     }
   }
 
@@ -397,8 +430,8 @@ export class TicketIntakeService {
   }
 
   async cleanupExpired(limit=100) {
-    const rows = (await this.database.query<{id:string;organization_id:string;voice_storage_key:string|null}>(
-      `SELECT id,organization_id,voice_storage_key FROM ticket_intake_sessions
+    const rows = (await this.database.query<{id:string;organization_id:string;voice_storage_key:string|null;smart_action_key:string|null}>(
+      `SELECT id,organization_id,voice_storage_key,smart_action_key FROM ticket_intake_sessions
        WHERE expires_at<=now() AND status NOT IN ('CONSUMED','EXPIRED') ORDER BY expires_at LIMIT $1`, [Math.min(500,Math.max(1,limit))],
     )).rows;
     let cleaned=0;
@@ -410,6 +443,7 @@ export class TicketIntakeService {
         cleaned += await this.database.withOrganization(row.organization_id, async (client) => (await client.query(
           "UPDATE ticket_intake_sessions SET status='EXPIRED',processing_started_at=NULL,next_attempt_at=NULL,updated_at=now() WHERE id=$1 AND expires_at<=now() AND status NOT IN ('CONSUMED','EXPIRED')",[row.id],
         )).rowCount ?? 0);
+        if(row.smart_action_key)await this.commercial.releaseSmartAction(row.organization_id,row.smart_action_key);
       } catch { /* Object deletion is retried on the next worker cycle. */ }
     }
     return cleaned;
@@ -422,6 +456,18 @@ export class TicketIntakeService {
     )).rows[0]);
     if (!row) throw new Error('ai_configuration_unavailable');
     return {...row,apiKey:this.credentials.decrypt({ciphertext:row.api_key_ciphertext,iv:row.api_key_iv,authTag:row.api_key_auth_tag})};
+  }
+
+  private async resetUnreservedAnalysis(organizationId:string,id:string,actionKey:string) {
+    await this.database.withOrganization(organizationId,client=>client.query(
+      `UPDATE ticket_intake_sessions SET status='CREATED',smart_action_key=NULL,processing_started_at=NULL,next_attempt_at=NULL,updated_at=now()
+       WHERE id=$1 AND smart_action_key=$2 AND status IN ('TRANSCRIBING','ANALYZING')`,[id,actionKey],
+    ));
+  }
+
+  private hasUsableSuggestion(result:Record<string,unknown>) {
+    const suggestions=result.suggestions;
+    return Boolean(suggestions && typeof suggestions==='object' && Object.keys(suggestions as object).length);
   }
 
   private async context(organizationId:string,description:string,messages: IntakeMessageRow[]=[],previousPrimaryIssue:TicketIntakeContext['previousPrimaryIssue']=undefined):Promise<TicketIntakeContext> {

@@ -32,9 +32,16 @@ export function PlatformCommercial({ actor, organizations, users = [], onSaved, 
     <AllowanceControls actor={actor} organizations={organizations} onSaved={onSaved} onError={onError} />
     <SubscriptionLifecycleControls actor={actor} onSaved={onSaved} onError={onError} />
     <CommercialRequestQueue actor={actor} onSaved={onSaved} onError={onError} />
+    <SmartActionReport actor={actor} onError={onError} />
     <div className="contextual-help-row"><span>راهنمای سیاست پشتیبانی Jupiter</span><ContextualHelpTrigger actor={actor} relatedFeature="PLATFORM_COMMERCIAL" label="راهنمای پشتیبانی Jupiter"/></div>
     <PlatformAssistControls actor={actor} organizations={organizations} users={users} onSaved={onSaved} onError={onError} />
   </div>;
+}
+
+function SmartActionReport({actor,onError}:{actor:Actor;onError:(message:string)=>void}) {
+  const [items,setItems]=useState<{organization_name:string;capability_code:string;reservation_source:string;status:string;provider:string|null;model:string|null;input_tokens:number;output_tokens:number;audio_duration_seconds:number}[]>([]);
+  useEffect(()=>{void request('/platform/commercial/smart-actions',actor.session,actor.organizationId).then(x=>setItems(x as typeof items)).catch(e=>onError(e instanceof Error?e.message:'دریافت گزارش اقدامات هوشمند ناموفق بود.'));},[actor.session.accessToken]);
+  return <section className="card"><h3>گزارش اقدامات هوشمند</h3><p className="hint">این گزارش فقط metadata عملیاتی و واحد تجاری را نشان می‌دهد؛ متن تیکت، prompt و credential نمایش داده نمی‌شود.</p><SimpleTable headers={['سازمان','قابلیت','وضعیت / منبع','مدل','Telemetry']} rows={items.map(x=>[x.organization_name,<span dir="ltr">{x.capability_code}</span>,`${x.status} · ${x.reservation_source}`,x.model??'—',`ورودی ${x.input_tokens??0} · خروجی ${x.output_tokens??0} · صوت ${x.audio_duration_seconds??0}ث`])} empty="اقدام هوشمندی ثبت نشده است."/></section>;
 }
 
 function SubscriptionLifecycleControls({ actor,onSaved,onError }:{actor:Actor;onSaved:(message:string)=>void;onError:(message:string)=>void}){

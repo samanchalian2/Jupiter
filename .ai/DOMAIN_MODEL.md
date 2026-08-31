@@ -1,5 +1,9 @@
 # Domain Model
 
+## GOAL-051 complete AI Smart Action coverage
+
+GOAL-051 associates `CommercialSmartAction` with its authenticated actor and a safe ticket/intake subject reference. `AiOperationTelemetry` is tenant-scoped, append-only operational metadata attached to an action when available; it never owns customer content or becomes a billing ledger.
+
 ## GOAL-050 commercial subscription lifecycle
 
 `CommercialSubscription` اکنون وضعیت رسمی `TRIAL`، `ACTIVE`، `PAST_DUE`، `SUSPENDED`، `CANCELLED` یا `EXPIRED`، مهلت پرداخت و رخدادهای lifecycle را دارد. `OrganizationCommercialAgreement.grace_days` سیاست مهلت تجاری tenant-bound است. یک `Entitlement` product-bound فقط به subscription همان محصول تکیه می‌کند؛ بنابراین `JUPITER_ASSIST` از اشتراک AI نامرتبط مجوز نمی‌گیرد. این مدل هیچ تغییری در `Ticket` یا مالکیت داده‌های تیکت ایجاد نمی‌کند.

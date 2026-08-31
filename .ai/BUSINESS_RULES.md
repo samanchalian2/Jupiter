@@ -1,5 +1,11 @@
 # Business Rules
 
+## GOAL-051 complete AI Smart Action coverage
+
+- Ticket Review is one billable `AI_TICKET_REVIEW` action; a complete Smart Intake analysis is one billable `AI_SMART_INTAKE` action, including its voice and structured-output stages.
+- Only a valid, persisted and user-presentable outcome settles a unit. Provider failures, validation failures, cancellation, retry, fallback, diagnostics and internal calls release or retain the same reservation and do not create an additional settlement.
+- Manual ticket creation and submission remain available whenever AI capability, subscription, quota or overage denies an action.
+
 ## GOAL-050 commercial subscription lifecycle
 
 - گذارهای اشتراک فقط از سرویس Platform و مطابق گراف رسمی انجام می‌شوند؛ لغو دلیل لازم دارد و لغو‌شده دوباره فعال نمی‌شود.

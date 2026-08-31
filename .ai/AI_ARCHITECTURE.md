@@ -1,5 +1,9 @@
 # AI Architecture
 
+## GOAL-051 complete AI Smart Action coverage
+
+`AI_TICKET_REVIEW` and `AI_SMART_INTAKE` now use the same commercial boundary: effective capability resolution, one idempotent reservation before queue/provider work, safe telemetry, and one settlement only after a valid persisted result is available to the requester. Smart Intake's text, conversation, title, taxonomy, secondary-issue and voice stages share its single reservation. Standalone attachment transcription remains non-commercial. Telemetry deliberately stores only provider/model, token counts, audio duration, estimated cost and outcome; it stores no prompt, ticket text, transcript, file or credential.
+
 The AI Gateway isolates ticketing from providers. Its adapter, context builder,
 prompt registry, structured-output validator, redactor, usage recorder, and
 retry policy are separate responsibilities. Initial adapter: OpenAI API;

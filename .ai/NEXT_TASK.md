@@ -1,5 +1,7 @@
 # Next Task
 
+GOAL-051 کامل شد. طبق محدودهٔ مصوب، Goal بعدی آغاز نمی‌شود.
+
 GOAL-050 remediation پذیرش را گذراند. طبق محدودهٔ مصوب، Goal بعدی آغاز نمی‌شود.
 
 ## Master Upgrade complete
