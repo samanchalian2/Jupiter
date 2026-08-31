@@ -1,5 +1,10 @@
 # Business Rules
 
+## GOAL-049 commercial remediation
+
+- Smart Action reservation order is periodic, add-on, emergency, enabled capped overage, then deny; failed or undelivered work releases the reservation and manual ticketing remains available.
+- Only ORG_OWNER may configure overage or create commercial requests. A renewal must reference an ACTIVE or EXPIRED subscription of the same organization.
+
 - A requester must review or edit AI suggestions before final submission.
 - AI identifiers must validate against the active organization's catalog.
 - Organization isolation and authorization are enforced by the backend.

@@ -121,8 +121,10 @@ afterAll(async () => {
   await database.query('DELETE FROM membership_roles WHERE membership_id IN (SELECT id FROM memberships WHERE organization_id=$1)', [legacyOrganizationId]);
   await database.query('DELETE FROM memberships WHERE organization_id=$1', [legacyOrganizationId]);
   await database.query('DELETE FROM organizations WHERE id=$1', [legacyOrganizationId]);
+  await database.query('DELETE FROM platform_capability_availability WHERE updated_by_user_id IN ($1,$2)', [platformAdminId,legacyOrganizationAdminId]);
   await database.query('DELETE FROM users WHERE id IN ($1,$2)', [platformAdminId,legacyOrganizationAdminId]);
   await database.query('DELETE FROM users WHERE id=$1', [assistAgentId]);
+  await database.query('DELETE FROM commercial_subscriptions WHERE organization_id IN ($1,$2)', [directoryOrganizationA,directoryOrganizationB]);
   await database.query('DELETE FROM organizations WHERE id IN ($1,$2)', [directoryOrganizationA,directoryOrganizationB]);
   await database.query('DELETE FROM organization_setup_progress WHERE organization_id=$1',[setupOrganizationId]);
   await database.query('DELETE FROM audit_logs WHERE organization_id=$1 OR actor_user_id=$2',[setupOrganizationId,setupOwnerId]);
@@ -454,6 +456,42 @@ describe('public accounts and organization applications', () => {
     const dashboard=await commercial.ownerDashboard(owner);
     expect(dashboard.assist).toMatchObject({capacity_units:0,request_policy:'USER_REQUEST_ALLOWED'});
     expect(dashboard.ai).toHaveProperty('request_count');
+  });
+
+  it('enforces owner-only, capped overage reservations and idempotent commercial requests', async () => {
+    const owner={userId:setupOwnerId,organizationId:setupOrganizationId,roles:['ORG_OWNER','ORG_ADMIN']};
+    const admin={userId:legacyOrganizationAdminId,organizationId:legacyOrganizationId,roles:['ORG_ADMIN']};
+    const capability=`OVERAGE_${fixtureId.toUpperCase()}`;
+    await commercial.saveAvailability(platformAdminId,{capabilityCode:capability,isAvailable:true});
+    await commercial.saveFeatureSetting(platformAdminId,{organizationId:setupOrganizationId,capabilityCode:capability,enabled:true});
+    await commercial.saveEntitlement(platformAdminId,{organizationId:setupOrganizationId,capabilityCode:capability,status:'ACTIVE',startsAt:'2020-01-01',productId:null});
+    await expect(commercial.saveOverage(admin,{capabilityCode:capability,enabled:true,limitUnits:1})).rejects.toBeInstanceOf(ForbiddenException);
+    await expect(commercial.createRequest(admin,{requestType:'ADDON',capabilityCode:capability,requestedUnits:1,idempotencyKey:randomUUID()})).rejects.toBeInstanceOf(ForbiddenException);
+    await expect(commercial.reserveSmartAction(owner,capability,randomUUID())).rejects.toBeInstanceOf(ForbiddenException);
+    await commercial.saveOverage(owner,{capabilityCode:capability,enabled:true,limitUnits:1});
+    const allowed=await commercial.reserveSmartAction(owner,capability,randomUUID());
+    expect(allowed.reservation_source).toBe('OVERAGE');
+    await expect(commercial.reserveSmartAction(owner,capability,randomUUID())).rejects.toBeInstanceOf(ForbiddenException);
+    await commercial.releaseSmartAction(setupOrganizationId,(await database.withOrganization(setupOrganizationId,c=>c.query<{idempotency_key:string}>('SELECT idempotency_key FROM commercial_smart_actions WHERE id=$1',[allowed.id]))).rows[0].idempotency_key);
+    const concurrent=await Promise.allSettled([commercial.reserveSmartAction(owner,capability,randomUUID()),commercial.reserveSmartAction(owner,capability,randomUUID())]);
+    expect(concurrent.filter(x=>x.status==='fulfilled')).toHaveLength(1);
+    const key=randomUUID(); const request=await commercial.createRequest(owner,{requestType:'ADDON',capabilityCode:capability,requestedUnits:2,idempotencyKey:key});
+    await expect(commercial.createRequest(owner,{requestType:'ADDON',capabilityCode:capability,requestedUnits:2,idempotencyKey:key})).resolves.toEqual({id:request.id,idempotent:true});
+    expect((await database.withOrganization(setupOrganizationId,c=>c.query('SELECT id FROM commercial_requests WHERE idempotency_key=$1',[key]))).rowCount).toBe(1);
+    expect((await database.withOrganization(setupOrganizationId,c=>c.query("SELECT action FROM audit_logs WHERE target_id=$1",[request.id]))).rows).toEqual(expect.arrayContaining([expect.objectContaining({action:'COMMERCIAL_REQUEST_CREATED'})]));
+    const packageRecord=await commercial.saveAddonPackage(platformAdminId,{code:`APPLY_${fixtureId.toUpperCase()}`,name:'بسته اعمال',capabilityCode:capability,unitCount:2,status:'ACTIVE'});
+    await commercial.reviewRequest(platformAdminId,request.id,{organizationId:setupOrganizationId,decision:'APPROVED'});
+    await expect(commercial.reviewRequest(platformAdminId,request.id,{organizationId:setupOrganizationId,decision:'APPROVED'})).resolves.toMatchObject({status:'APPROVED'});
+    await commercial.applyRequest(platformAdminId,request.id,{organizationId:setupOrganizationId,addonPackageId:packageRecord.id});
+    await expect(commercial.applyRequest(platformAdminId,request.id,{organizationId:setupOrganizationId,addonPackageId:packageRecord.id})).resolves.toMatchObject({idempotent:true});
+    expect((await database.withOrganization(setupOrganizationId,c=>c.query('SELECT id FROM commercial_addon_allocations WHERE idempotency_key=$1',[request.id]))).rowCount).toBe(1);
+    expect((await database.withOrganization(setupOrganizationId,c=>c.query("SELECT action FROM audit_logs WHERE target_id=$1",[request.id]))).rows).toEqual(expect.arrayContaining([expect.objectContaining({action:'COMMERCIAL_REQUEST_APPROVED'}),expect.objectContaining({action:'COMMERCIAL_REQUEST_APPLIED'})]));
+    const product=await commercial.saveProduct(platformAdminId,{code:`RENEW_${fixtureId.toUpperCase()}`,name:'تمدید آزمایشی',status:'ACTIVE'});
+    const foreignSubscription=(await database.withOrganization(directoryOrganizationB,c=>c.query<{id:string}>('INSERT INTO commercial_subscriptions(organization_id,product_id,status,starts_at,ends_at) VALUES($1,$2,\'ACTIVE\',now(),now()+interval \'1 day\') RETURNING id',[directoryOrganizationB,product.id]))).rows[0].id;
+    await expect(commercial.createRequest(owner,{requestType:'RENEWAL',subscriptionId:foreignSubscription,idempotencyKey:randomUUID()})).rejects.toBeInstanceOf(NotFoundException);
+    const malformed=(await database.withOrganization(setupOrganizationId,c=>c.query<{id:string}>('INSERT INTO commercial_requests(organization_id,request_type,status,subscription_id,idempotency_key,created_by_user_id) VALUES($1,\'RENEWAL\',\'APPROVED\',$2,$3,$4) RETURNING id',[setupOrganizationId,foreignSubscription,randomUUID(),setupOwnerId]))).rows[0].id;
+    await expect(commercial.applyRequest(platformAdminId,malformed,{organizationId:setupOrganizationId,endsAt:'2030-01-01'})).rejects.toBeInstanceOf(NotFoundException);
+    expect((await database.withOrganization(setupOrganizationId,c=>c.query<{status:string}>('SELECT status FROM commercial_requests WHERE id=$1',[malformed]))).rows[0].status).toBe('APPROVED');
   });
 
   it('keeps platform appearance preset-only, auditable and platform-admin controlled', async () => {

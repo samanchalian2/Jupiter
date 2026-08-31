@@ -3,6 +3,7 @@
 ## GOAL-049 — کنترل تجاری مالک و مصرف مازاد
 
 - سیاست overage، درخواست تجاری، صف Platform و اعلان تجاری idempotent اضافه شد.
+- remediation: اعتبارسنجی tenant-bound renewal، auditهای صریح و coverage هم‌زمانی overage افزوده شد.
 
 ## 2026-08-31
 

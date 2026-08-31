@@ -1,5 +1,9 @@
 # Security and Privacy
 
+## GOAL-049 commercial remediation
+
+Commercial overage policies, requests and alert marks are tenant-RLS scoped. Platform review/apply requires an explicit organization target; owner controls use the authenticated tenant actor. Audit records retain the actual actor and minimal event facts, not request secrets.
+
 Primary threats: cross-tenant IDOR, privilege escalation, session theft, XSS/
 CSRF, malicious files, secret leakage, AI data disclosure, prompt injection,
 and rate abuse. Controls: backend policy checks, tenant context, composite

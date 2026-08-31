@@ -1,5 +1,9 @@
 # Domain Model
 
+## GOAL-049 commercial remediation
+
+`CommercialOveragePolicy` is tenant-scoped and unique per organization/capability. `CommercialRequest` is tenant-scoped, idempotent and auditable through PENDING, APPROVED/REJECTED and APPLIED. `CommercialNotificationMark` is a tenant-scoped dedupe key for commercial alerts.
+
 `Organization` is the tenant boundary. `User` is global; `Membership` grants
 a user organization-scoped roles and permissions. `Department`, `Location`,
 `Discipline`, `Category`, and `Subcategory` form organization-scoped routing
