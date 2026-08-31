@@ -1,5 +1,10 @@
 # Business Rules
 
+## GOAL-052 recurring Smart Action allowance
+
+- `AI_TICKET_REVIEW` و `AI_SMART_INTAKE` از یک استخر سازمانی مشترک استفاده می‌کنند: پیش‌فرض فعلی ۲۵ دوره‌ای و ۳ اضطراری در هر ماه تقویمی UTC؛ هر دو مقدار Platform-configurable هستند و rollover ندارند.
+- ترتیب reservation قطعی است: PERIODIC، ADDON فعال، EMERGENCY، Overage فعال همان capability و سپس deny. انقضای پیش‌فرض Add-on دوازده ماه است؛ تیکت دستی از تمام denialهای AI مستقل است.
+
 ## GOAL-051 complete AI Smart Action coverage
 
 - Ticket Review is one billable `AI_TICKET_REVIEW` action; a complete Smart Intake analysis is one billable `AI_SMART_INTAKE` action, including its voice and structured-output stages.

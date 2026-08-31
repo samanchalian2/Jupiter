@@ -1,5 +1,9 @@
 # Changelog
 
+## GOAL-052 — سهمیهٔ دوره‌ای و اضطراری Smart Action
+
+- استخر مشترک ماهانهٔ عملیات هوشمند با policy قابل‌تنظیم Platform، override سازمانی، provisioning تکرارپذیر UTC، Emergency محدود و انقضای Add-on اضافه شد.
+
 ## GOAL-051 — پوشش کامل metering برای AI Smart Actions
 
 - `AI_TICKET_REVIEW` و `AI_SMART_INTAKE` اکنون یک مسیر مشترک رزرو، telemetry امن، تحویل معتبر و تسویهٔ idempotent دارند.

@@ -1,5 +1,9 @@
 # Architecture Decisions
 
+## DEC-031 — Recurring shared Smart Action allowance
+
+Commercial billing remains based on delivered Smart Actions, not tokens. The two current AI actions share one organization pool with a Platform-configurable default of 25 units per UTC calendar month and 3 bounded emergency units. Allowances never roll over; Periodic capacity precedes active Add-on, then Emergency, enabled per-capability Overage and denial. Add-ons default to a 12-month expiry unless Platform records an explicit agreement-derived expiry. AI exhaustion never restricts manual ticketing.
+
 ## DEC-001 — TypeScript modular monolith
 
 Approved plan: NestJS backend and React/Vite frontend. This keeps one primary

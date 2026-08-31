@@ -1,5 +1,9 @@
 # Jupiter Master Upgrade Plan
 
+## GOAL-052 — سهمیهٔ دوره‌ای Smart Action و سیاست اضطراری (complete)
+
+سهمیهٔ مشترک سازمانی عملیات هوشمند با پیش‌فرض ۲۵ ماهانه و ۳ اضطراری، override Platform، window UTC، Add-on منقضی‌شونده و ترتیب reservation قطعی افزوده شد؛ تیکت دستی مستقل باقی می‌ماند.
+
 ## GOAL-051 — پوشش کامل metering برای AI Smart Actions (complete)
 
 `AI_TICKET_REVIEW` و `AI_SMART_INTAKE` به مرز تجاری مشترک رزرو، telemetry امن و تسویهٔ تحویل موفق متصل شدند. تبدیل مستقل صوت تجاری نشده و گزارش‌های Owner/Platform فقط projection مجاز را نشان می‌دهند.

@@ -1,5 +1,9 @@
 # Security and Privacy
 
+## GOAL-052 recurring Smart Action allowance
+
+Policy و override فقط Platform-Admin هستند؛ override سازمان هدف صریح، RLS tenant-bound و Audit دارد. Worker هیچ actor کاربری جعل نمی‌کند و metadata اتوماسیون حداقلی ثبت می‌شود. Owner فقط projection سازمان خودش را می‌بیند.
+
 ## GOAL-051 complete AI Smart Action coverage
 
 Telemetry is RLS-protected and immutable to the application role. It may contain operation/outcome, provider/model, token counts, audio duration and estimated cost only; prompts, ticket text, transcript, files and credentials are excluded from telemetry and settlement metadata. Owner and Platform reports are server-side projections of permitted fields only.

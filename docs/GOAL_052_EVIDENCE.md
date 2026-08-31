@@ -13,6 +13,13 @@
 - API typecheck passed. API test suite passed: 26 files, 89 tests.
 - The Platform Commercial console exposes default policy and per-organization override controls in Persian RTL; no billing, payment or user-level quota was added.
 
+## Policy semantics
+
+- A Platform default is read only when a new UTC-period allocation is provisioned. An organization override takes precedence; deleting both override fields returns the organization to the current Platform default. Existing allowance rows are never rewritten.
+- The worker scan and the reservation-path lazy check both call the same idempotent provisioner under an organization/pool advisory lock and a policy-window unique index. Historical windows remain queryable and are not reused in a new month.
+- Reservation counts `RESERVED` and `SETTLED` actions. Add-on capacity is queried only where `expires_at > now()`; an expired allocation therefore cannot be selected.
+- The API integration suite covers the existing tenant boundary, manual ticket fallback, idempotent allocation/reservation and concurrent capacity reservation paths. Dedicated visual acceptance remains in progress.
+
 ## Deliberate limits
 
 Renewal notifications remain dashboard/audit state rather than monthly inbox noise. Manual ticketing remains independent of AI capacity.

@@ -479,6 +479,27 @@ describe('public accounts and organization applications', () => {
     expect(dashboard.ai).toHaveProperty('request_count');
   });
 
+  it('provisions recurring shared AI allowance with override precedence and immutable UTC history', async () => {
+    const pool='AI_SMART_ACTIONS'; const owner={userId:setupOwnerId,organizationId:setupOrganizationId,roles:['ORG_OWNER','ORG_ADMIN']};
+    await database.query("UPDATE organizations SET status='active' WHERE id=$1",[setupOrganizationId]);
+    await commercial.saveAvailability(platformAdminId,{capabilityCode:'AI_SMART_INTAKE',isAvailable:true});
+    await commercial.saveFeatureSetting(platformAdminId,{organizationId:setupOrganizationId,capabilityCode:'AI_SMART_INTAKE',enabled:true});
+    await commercial.saveEntitlement(platformAdminId,{organizationId:setupOrganizationId,capabilityCode:'AI_SMART_INTAKE',status:'ACTIVE',startsAt:'2020-01-01',productId:null});
+    await commercial.saveAllowancePolicy(platformAdminId,{poolCode:pool,periodicUnits:9,emergencyUnits:2});
+    const now=new Date(); await commercial.provisionCurrent(setupOrganizationId,now); await commercial.provisionCurrent(setupOrganizationId,now);
+    const current=await database.withOrganization(setupOrganizationId,c=>c.query<{allocation_type:string;granted_units:number}>("SELECT allocation_type,granted_units FROM commercial_usage_allowances WHERE allowance_pool_code=$1 AND allocation_origin='POLICY' AND period_starts_at<=now() AND period_ends_at>now()",[pool]));
+    expect(current.rows).toEqual(expect.arrayContaining([expect.objectContaining({allocation_type:'PERIODIC',granted_units:9}),expect.objectContaining({allocation_type:'EMERGENCY',granted_units:2})]));
+    await commercial.saveAllowanceOverride(platformAdminId,{organizationId:setupOrganizationId,poolCode:pool,periodicUnits:4,emergencyUnits:1});
+    await commercial.provisionCurrent(setupOrganizationId,new Date(Date.UTC(now.getUTCFullYear(),now.getUTCMonth()+1,2)));
+    const overridden=await database.withOrganization(setupOrganizationId,c=>c.query<{granted_units:number}>("SELECT granted_units FROM commercial_usage_allowances WHERE allowance_pool_code=$1 AND allocation_origin='POLICY' AND allocation_type='PERIODIC' ORDER BY period_starts_at DESC LIMIT 1",[pool])); expect(overridden.rows[0].granted_units).toBe(4);
+    await commercial.saveAllowanceOverride(platformAdminId,{organizationId:setupOrganizationId,poolCode:pool,periodicUnits:null,emergencyUnits:null});
+    await commercial.provisionCurrent(setupOrganizationId,new Date(Date.UTC(now.getUTCFullYear(),now.getUTCMonth()+2,2)));
+    const reset=await database.withOrganization(setupOrganizationId,c=>c.query<{granted_units:number}>("SELECT granted_units FROM commercial_usage_allowances WHERE allowance_pool_code=$1 AND allocation_origin='POLICY' AND allocation_type='PERIODIC' ORDER BY period_starts_at DESC LIMIT 1",[pool])); expect(reset.rows[0].granted_units).toBe(9);
+    await commercial.saveAllowancePolicy(platformAdminId,{poolCode:pool,periodicUnits:25,emergencyUnits:3});
+    expect(current.rows.find(x=>x.allocation_type==='PERIODIC')?.granted_units).toBe(9);
+    await expect(commercial.ownerAllowanceSummary(owner)).resolves.toHaveProperty('periods');
+  });
+
   it('enforces owner-only, capped overage reservations and idempotent commercial requests', async () => {
     const owner={userId:setupOwnerId,organizationId:setupOrganizationId,roles:['ORG_OWNER','ORG_ADMIN']};
     const admin={userId:legacyOrganizationAdminId,organizationId:legacyOrganizationId,roles:['ORG_ADMIN']};
