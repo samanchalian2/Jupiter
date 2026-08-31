@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { DatabaseService } from '../database/database.service.js';
 
-export type TicketNotification = { type: string; ticketId: string; occurredAt: string };
+export type TicketNotification = { type: string; ticketId?: string; occurredAt: string };
 
 @Injectable()
 export class NotificationService {

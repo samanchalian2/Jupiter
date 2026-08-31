@@ -1,61 +1,6 @@
-import { useEffect, useState } from 'react';
-import type { Actor } from './App';
-import { request } from './App';
-
-type Allowance = { capability_code: string; allocation_type: string; granted_units: number; period_ends_at: string };
-type Addon = { capability_code: string; granted_units: number; created_at: string };
-type Dashboard = {
-  allowances: Allowance[];
-  addons: Addon[];
-  ai: { request_count: number; token_count: number };
-  assist: { capacity_units: number; request_policy: string; default_access_scope: string; assist_sla_minutes: number; active_cases: number } | null;
-};
-
-const policyLabel: Record<string, string> = {
-  DISABLED: 'غیرفعال',
-  ADMIN_APPROVAL_REQUIRED: 'نیازمند تأیید مدیر',
-  USER_REQUEST_ALLOWED: 'درخواست کاربران مجاز است',
-};
-
-function number(value: number) { return Number(value ?? 0).toLocaleString('fa-IR'); }
-function date(value: string) { return new Date(value).toLocaleDateString('fa-IR'); }
-
-export function OwnerCommercialDashboard({ actor }: { actor: Actor }) {
-  const [data, setData] = useState<Dashboard | null>(null);
-  const [error, setError] = useState('');
-
-  useEffect(() => {
-    setData(null);
-    setError('');
-    void request('/platform/commercial/owner-dashboard', actor.session, actor.organizationId)
-      .then((result) => setData(result as Dashboard))
-      .catch((cause) => setError(cause instanceof Error ? cause.message : 'دریافت نمای تجاری ناموفق بود.'));
-  }, [actor.organizationId, actor.session]);
-
-  if (error) return <p className="error" role="alert">{error}</p>;
-  if (!data) return <p className="hint" role="status">در حال دریافت نمای تجاری…</p>;
-
-  return <div className="admin-stack owner-commercial-dashboard">
-    <section className="card">
-      <h3>نمای تجاری سازمان</h3>
-      <p className="hint">این نما فقط اطلاعات سازمان شما را نشان می‌دهد. قرارداد، قیمت‌گذاری و تخصیص‌ها توسط تیم پلتفرم مدیریت می‌شوند.</p>
-      <div className="metrics-grid" aria-label="خلاصه تجاری">
-        <article className="metric-card"><span>سهمیه فعال</span><strong>{number(data.allowances.reduce((sum, item) => sum + item.granted_units, 0))}</strong><small>واحد در دوره‌های فعال</small></article>
-        <article className="metric-card"><span>بسته افزایشی</span><strong>{number(data.addons.reduce((sum, item) => sum + item.granted_units, 0))}</strong><small>واحد تخصیص‌یافته</small></article>
-        <article className="metric-card"><span>تکمیل هوشمند</span><strong>{number(data.ai.request_count)}</strong><small>{number(data.ai.token_count)} توکن عملیاتی ثبت‌شده</small></article>
-        <article className="metric-card"><span>درخواست کمک</span><strong>{number(data.assist?.active_cases ?? 0)}</strong><small>پرونده فعال نزد Jupiter</small></article>
-      </div>
-    </section>
-    <div className="admin-grid">
-      <section className="card">
-        <h3>سهمیه و بسته‌ها</h3>
-        {data.allowances.length ? <div className="table-wrap"><table><thead><tr><th>قابلیت</th><th>نوع</th><th>واحد</th><th>انقضا</th></tr></thead><tbody>{data.allowances.map((item, index) => <tr key={`${item.capability_code}-${index}`}><td dir="ltr">{item.capability_code}</td><td>{item.allocation_type === 'EMERGENCY' ? 'مصرف مازاد' : 'دوره‌ای'}</td><td>{number(item.granted_units)}</td><td>{date(item.period_ends_at)}</td></tr>)}</tbody></table></div> : <p className="hint">در حال حاضر سهمیه فعالی ثبت نشده است.</p>}
-        {data.addons.length ? <div className="list-compact">{data.addons.map((item, index) => <p key={`${item.capability_code}-${item.created_at}-${index}`}><span dir="ltr">{item.capability_code}</span> · {number(item.granted_units)} واحد · {date(item.created_at)}</p>)}</div> : <p className="hint">بسته افزایشی فعالی ثبت نشده است.</p>}
-      </section>
-      <section className="card">
-        <h3>پشتیبانی موردی Jupiter</h3>
-        {data.assist ? <div className="list-compact"><p>روش درخواست: {policyLabel[data.assist.request_policy] ?? data.assist.request_policy}</p><p>ظرفیت باقیمانده: {number(data.assist.capacity_units)} واحد</p><p>دامنه پیش‌فرض: {data.assist.default_access_scope === 'ROUTED_ONLY' ? 'فقط تیکت ارجاع‌شده' : data.assist.default_access_scope}</p><p>هدف پاسخ‌گویی: {number(data.assist.assist_sla_minutes)} دقیقه</p><p className="hint">پذیرش پرونده توسط کارشناس Jupiter، نه صرف ثبت درخواست، از ظرفیت استفاده می‌کند.</p></div> : <p className="hint">پشتیبانی موردی برای این سازمان فعال نشده است.</p>}
-      </section>
-    </div>
-  </div>;
-}
+import { FormEvent, useEffect, useState } from 'react';
+import type { Actor } from './App'; import { request } from './App'; import { ContextualHelpTrigger } from './ContextualHelp';
+type Overage={capability_code:string;overage:{enabled:boolean;limit_units:number};overageUsed:number};
+type Dashboard={allowances:{capability_code:string;allocation_type:string;granted_units:number;period_ends_at:string}[];addons:{capability_code:string;granted_units:number;created_at:string}[];subscriptions:{id:string;product_name:string;ends_at:string|null}[];overage:Overage[];requests:{id:string;request_type:string;status:string;capability_code:string|null;requested_units:number|null;decision_note:string|null;created_at:string}[];ai:{request_count:number;token_count:number};assist:null|{capacity_units:number;active_cases:number};};
+const n=(v:number)=>Number(v??0).toLocaleString('fa-IR');const d=(v:string)=>new Date(v).toLocaleDateString('fa-IR');
+export function OwnerCommercialDashboard({actor}:{actor:Actor}){const[data,setData]=useState<Dashboard|null>(null),[error,setError]=useState(''),[overage,setOverage]=useState({capabilityCode:'',enabled:false,limitUnits:10}),[commercial,setCommercial]=useState({requestType:'ADDON',capabilityCode:'',requestedUnits:10,subscriptionId:'',requestNote:''});const load=()=>request('/platform/commercial/owner-dashboard',actor.session,actor.organizationId).then(x=>setData(x as Dashboard)).catch(e=>setError(e instanceof Error?e.message:'دریافت نمای تجاری ناموفق بود.'));useEffect(()=>{void load();},[actor.organizationId,actor.session]);const submit=async(e:FormEvent,path:string,body:unknown)=>{e.preventDefault();try{await request(path,actor.session,actor.organizationId,{method:'POST',headers:path.includes('requests')?{'idempotency-key':crypto.randomUUID()}:undefined,body:JSON.stringify(body)});await load();}catch(x){setError(x instanceof Error?x.message:'ثبت اطلاعات ناموفق بود.');}};if(error)return <p className="error" role="alert">{error}</p>;if(!data)return <p className="hint" role="status">در حال دریافت نمای تجاری…</p>;return <div className="admin-stack owner-commercial-dashboard"><section className="card"><div className="contextual-help-row"><div><h3>سهمیه و پشتیبانی</h3><p className="hint">مصرف فقط پس از تحویل موفق اقدام هوشمند ثبت می‌شود؛ تیکت‌گذاری دستی همیشه در دسترس است.</p></div><ContextualHelpTrigger actor={actor} relatedFeature="COMMERCIAL_DASHBOARD" label="راهنمای سهمیه و مصرف مازاد"/></div><div className="metrics-grid"><article className="metric-card"><span>سهمیه فعال</span><strong>{n(data.allowances.reduce((s,x)=>s+x.granted_units,0))}</strong></article><article className="metric-card"><span>بسته افزایشی</span><strong>{n(data.addons.reduce((s,x)=>s+x.granted_units,0))}</strong></article><article className="metric-card"><span>تکمیل هوشمند</span><strong>{n(data.ai.request_count)}</strong></article><article className="metric-card"><span>کمک Jupiter</span><strong>{n(data.assist?.active_cases??0)}</strong></article></div></section><div className="admin-grid"><section className="card"><h3>مصرف مازاد</h3><p className="hint">پس از سهمیه دوره‌ای، بسته و سهمیه اضطراری استفاده می‌شود. سقف، reservationهای در حال اجرا و نهایی‌شده را پوشش می‌دهد.</p>{data.overage.length?<div className="table-wrap"><table><thead><tr><th>قابلیت</th><th>وضعیت</th><th>سقف</th><th>مصرف</th></tr></thead><tbody>{data.overage.map(x=><tr key={x.capability_code}><td dir="ltr">{x.capability_code}</td><td>{x.overage.enabled?'فعال':'غیرفعال'}</td><td>{n(x.overage.limit_units)}</td><td>{n(x.overageUsed)}</td></tr>)}</tbody></table></div>:<p className="hint">برای قابلیت‌های فعال هنوز سیاستی ثبت نشده است.</p>}<form className="compact-form" onSubmit={e=>void submit(e,'/platform/commercial/owner/overage',overage)}><label>قابلیت<input dir="ltr" value={overage.capabilityCode} onChange={e=>setOverage({...overage,capabilityCode:e.target.value.toUpperCase()})} required/></label><label>وضعیت<select value={String(overage.enabled)} onChange={e=>setOverage({...overage,enabled:e.target.value==='true'})}><option value="false">غیرفعال</option><option value="true">فعال</option></select></label><label>سقف واحد<input type="number" min={overage.enabled?1:0} value={overage.limitUnits} onChange={e=>setOverage({...overage,limitUnits:Number(e.target.value)})}/></label><button>ذخیرهٔ مصرف مازاد</button></form></section><section className="card"><h3>درخواست تجاری</h3><p className="hint">درخواست شما ابتدا بررسی می‌شود؛ تخصیص یا فعال‌سازی فقط پس از تأیید تیم پلتفرم انجام می‌گیرد.</p><form className="compact-form" onSubmit={e=>void submit(e,'/platform/commercial/owner/requests',commercial)}><label>نوع<select value={commercial.requestType} onChange={e=>setCommercial({...commercial,requestType:e.target.value})}><option value="ADDON">بسته افزایشی</option><option value="RENEWAL">تمدید اشتراک</option><option value="SERVICE_ACTIVATION">فعال‌سازی سرویس</option></select></label>{commercial.requestType!=='RENEWAL'&&<label>قابلیت<input dir="ltr" value={commercial.capabilityCode} onChange={e=>setCommercial({...commercial,capabilityCode:e.target.value.toUpperCase()})} required/></label>}{commercial.requestType==='ADDON'&&<label>واحد<input type="number" min="1" value={commercial.requestedUnits} onChange={e=>setCommercial({...commercial,requestedUnits:Number(e.target.value)})}/></label>}{commercial.requestType==='RENEWAL'&&<label>اشتراک<select value={commercial.subscriptionId} onChange={e=>setCommercial({...commercial,subscriptionId:e.target.value})} required><option value="">انتخاب اشتراک</option>{data.subscriptions.map(x=><option key={x.id} value={x.id}>{x.product_name}</option>)}</select></label>}<label>توضیح (اختیاری)<input value={commercial.requestNote} onChange={e=>setCommercial({...commercial,requestNote:e.target.value})}/></label><button>ارسال درخواست</button></form>{data.requests.length?<div className="list-compact">{data.requests.map(x=><p key={x.id}><span>{x.request_type}</span> · {x.status}{x.decision_note?` · ${x.decision_note}`:''}</p>)}</div>:<p className="hint">درخواستی ثبت نشده است.</p>}</section></div></div>;}

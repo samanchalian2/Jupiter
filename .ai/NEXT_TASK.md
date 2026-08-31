@@ -1,5 +1,7 @@
 # Next Task
 
+GOAL-050 — پس از پذیرش عملیاتی GOAL-049، با بازبینی بازخورد واقعی مالک و Platform Admin، فقط یک بهبود مستقل و اولویت‌دار انتخاب شود. هیچ پرداخت، فاکتور، checkout یا موجودیت تجاری جدید بدون نیاز تأییدشده اضافه نشود.
+
 ## Master Upgrade complete
 
 GOAL-030 through GOAL-048 are complete. The final local acceptance, migration

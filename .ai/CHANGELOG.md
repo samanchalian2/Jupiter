@@ -1,5 +1,9 @@
 # Changelog
 
+## GOAL-049 — کنترل تجاری مالک و مصرف مازاد
+
+- سیاست overage، درخواست تجاری، صف Platform و اعلان تجاری idempotent اضافه شد.
+
 ## 2026-08-31
 
 - Completed GOAL-048 cross-domain hardening and final acceptance. Rehearsed

@@ -1,5 +1,9 @@
 # Jupiter Master Upgrade Plan
 
+## GOAL-049 — کنترل تجاری مالک و مصرف مازاد (complete)
+
+Commercial Core بدون پرداخت به سیاست overage tenant-scoped، درخواست‌های ADDON/RENEWAL/SERVICE_ACTIVATION، رسیدگی Platform و داشبورد RTL مالک ارتقا یافت. ترتیب مصرف و قاعدهٔ تحویل موفق Smart Action حفظ شد.
+
 **Status:** approved program baseline; GOAL-030 through GOAL-048 complete.
 
 ## 1. Purpose and immutable boundaries
