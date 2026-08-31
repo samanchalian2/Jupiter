@@ -1,13 +1,10 @@
 # Next Task
 
-## MASTER UPGRADE SPECIFICATION — Handoff required
+## Master Upgrade complete
 
-**Status:** NOT STARTED
+GOAL-030 through GOAL-048 are complete. The final local acceptance, migration
+rehearsal and release-gate evidence is recorded in `docs/GOAL_048_EVIDENCE.md`.
 
-GOAL-029 completed the Organization Administration information architecture.
-Do not begin another UI Goal automatically. The next stage is review and
-planning against the MASTER UPGRADE SPECIFICATION, including its scope,
-sequencing and any architecture decisions it requires.
-
-**Prerequisite:** the owner must provide or select the MASTER UPGRADE
-SPECIFICATION before implementation planning resumes.
+Before a production release, execute the staging-only gates in
+`docs/STAGING_RELEASE_CHECKLIST.md`; these require the deployment environment
+and are not repository implementation work.

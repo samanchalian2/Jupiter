@@ -1,5 +1,178 @@
 # Current State
 
+**GOAL-048 — Cross-domain hardening, migration rehearsal and final acceptance (complete, 2026-08-31):** An isolated legacy baseline of migrations 001–032 was advanced through 045a and verified with 48 migration records, six Help articles and five roles before its temporary database was removed. Fresh API startup exposed and corrected an Appearance/Auth module dependency omission; the web notification client now uses the API's canonical event stream rather than a 404 route. Root quality gates pass: 82 API tests, 11 Web tests, production builds, fresh API smoke load and diff checks. Authenticated Persian RTL acceptance at 375/768/1024/1440 covers public onboarding, organization directory administration, platform controls, Help Center and contextual guidance; the mobile platform tab strip now becomes a compact select below 700px. Staging ingress, secret-manager, registry and managed-backup evidence remain deployment gates rather than completed local claims. Evidence: `docs/GOAL_048_EVIDENCE.md`. The Master Upgrade program is complete.
+
+**GOAL-047 — Help authoring, discovery, export and contextual mapping (complete, 2026-08-31):** Platform Admin now has audited create/draft/preview/publish/unpublish/restore controls, where each edit/restoration creates a runtime revision and only the selected published revision is user-visible. Published-only Markdown/JSON export supports one article, category or all Help. A Persian Help Center and compact triggers cover AI ticket review, directory connection and Jupiter Assist policy without changing tenant knowledge or adding RAG. Root typechecks, 82 API tests, 11 Web tests, production builds and diff checks pass; fresh login UI has no overflow at 375/768/1024/1440. Evidence: `docs/GOAL_047_EVIDENCE.md`. GOAL-048 is ready.
+
+**GOAL-046 — Help article domain and repository seed pipeline (complete, 2026-08-31):** Migration 045/045a adds global platform-owned, versioned Product Help articles/revisions with current publication pointers, Persian audience/discovery metadata and source lineage. `docs/help/` now seeds six initial published articles idempotently; a runtime article is never overwritten. API reads derive active role/platform audience server-side and return only current published content, with unauthorized/draft/unpublished slugs non-disclosing. API integration/unit tests, typecheck, build, migration and seed rehearsal pass. Evidence: `docs/GOAL_046_EVIDENCE.md`. GOAL-047 is ready.
+
+**GOAL-045 — Platform commercial console and governed appearance (complete, 2026-08-31):** Platform Admin can now manage Jupiter support agents and organization Assist policy, capacity and SLA from the commercial console without granting tenant membership. Migrations 044/044a add an auditable global platform appearance record that permits only contrast-reviewed brand, density, radius and internal-logo presets; organization branding remains logo-only and cannot alter semantic UI or layout. Root typechecks, 73 API tests, 11 Web tests, production builds, migration rehearsal and diff checks pass. Evidence: `docs/GOAL_045_EVIDENCE.md`. GOAL-046 is ready.
+
+**GOAL-044 — Organization commercial dashboard and owner controls (complete, 2026-08-30):** A tenant-bound, read-only Persian «سهمیه و پشتیبانی» dashboard now summarizes active allowances, add-on packages, AI activity and Jupiter Assist capacity for the explicit `ORG_OWNER` only. The API independently denies `ORG_ADMIN`; legacy organizations with no owner remain operational and are never promoted. Platform Admin retains contract, allocation, pricing and provider authority. Root typechecks, 72 API tests, 11 Web tests, builds, migration rehearsal and responsive browser validation at 375/768/1024/1440 pass. Evidence: `docs/GOAL_044_EVIDENCE.md`. GOAL-045 is ready.
+
+**GOAL-043 — Assist lifecycle and request experience (complete, 2026-08-30):** Migration 043 adds independent Assist cases, Assist SLA due time, additional-access requests and one-time capacity settlement at permitted acceptance; ticket status never changes. Requesters use the Persian «درخواست کمک از تیم Jupiter» action on the ticket. Root typechecks, 71 API tests, 11 Web tests, builds and migration rehearsal pass. Evidence: `docs/GOAL_043_EVIDENCE.md`. GOAL-044 is ready.
+
+**GOAL-042 — Jupiter Assist commercial and access foundation (complete, 2026-08-30):** Migration 042 adds a platform-managed Assist policy/capacity record, global Jupiter support-agent registry and tenant-RLS-protected scoped, time-bound, revocable support grants. Jupiter agents do not become organization members. Default routed-only visibility, selected/full scope and the additive restricted-ticket flag are evaluated server-side; a restricted ticket needs an explicit matching routed grant even when broad support exists. No Assist case, queue, acceptance, SLA or capacity consumption was introduced. Root typechecks, 70 API tests, 11 Web tests, builds and migration rehearsal pass. Evidence: `docs/GOAL_042_EVIDENCE.md`. GOAL-043 is ready.
+
+**GOAL-041 — Commercial Smart Action metering for AI (complete,
+2026-08-30):** Migration 041 adds tenant-RLS-protected, idempotent Smart Action
+reservations with `RESERVED`/`SETTLED`/`RELEASED` state and source ordering of
+periodic allowance, add-on allocation, then emergency allowance. A permitted
+customer-facing AI ticket review reserves capacity before execution, releases
+it for invalid or failed/undelivered work, and settles exactly once only after
+an authorized result is persisted. Provider calls, retries, connection tests,
+diagnostics and internal work have no billable ledger event; manual ticketing
+remains available. The Platform Admin guidance now explains this in Persian.
+Root typechecks, 69 API tests, 11 Web tests, builds, migration rehearsal and
+authenticated commercial-page acceptance pass. Evidence:
+`docs/GOAL_041_EVIDENCE.md`. GOAL-042 is ready.
+
+**GOAL-040 — Allowances, packs and immutable usage ledger (complete,
+2026-08-30):** Migrations 040/040a add RLS-bound add-on allocations,
+idempotent periodic/emergency allowance allocation and configured add-on packs.
+The Platform Admin Persian commercial console creates packages and allocations;
+tenant members receive a read-only, tenant-bound commercial-state API. Usage
+Ledger entries are application-role immutable and allocation retries do not
+create duplicates. No provider, diagnostic, retry or resolver operation
+consumes a customer unit; customer-facing settlement remains deferred. Root
+typechecks, 68 API tests, 11 Web tests, builds and authenticated browser checks
+at 375/768/1024/1440 pass. Evidence: `docs/GOAL_040_EVIDENCE.md`. GOAL-041 is
+ready.
+
+**GOAL-039 — Entitlement, settings, availability and capability resolution
+(complete, 2026-08-30):** The commercial resolver now allows a capability only
+when an in-window active entitlement, enabled organization setting and available
+platform setting all pass. Missing records deny by default; `requireEffective`
+is a server-side gate for later consumers. Platform Admin has concise Persian
+controls for entitlement, organization setting and platform availability, with
+minimal audit records and no change to legacy owners/memberships. API coverage
+proves every deny/allow combination, enforcement and tenant isolation. Root
+typechecks, 67 API tests, 11 Web tests, builds and authenticated browser checks
+at 375/768/1024/1440 pass. Evidence: `docs/GOAL_039_EVIDENCE.md`.
+
+**GOAL-038 — Minimal commercial core (complete, 2026-08-30):** Migration
+039 establishes the intentionally minimal commercial data boundary: product,
+subscription, entitlement, add-on package, organization agreement, allowance,
+usage ledger, platform availability and organization feature setting. Tenant
+records use RLS; product and agreement controls are Platform Admin-only and the
+Persian «تجاری» tab explicitly distinguishes catalog/contract data from future
+authorization and billing. The new integration coverage proves platform-only
+control, feature-setting tenant isolation and no Usage Ledger entry from an
+infrastructure-style action. API/Web typechecks, 66 API tests, 11 Web tests,
+both builds and a local migration rehearsal pass. Authenticated browser
+acceptance at 375/768/1024/1440 passed without document overflow. Evidence:
+`docs/GOAL_038_EVIDENCE.md`.
+
+**GOAL-037 — Windows connector and directory sync lifecycle (complete,
+2026-08-30):** Migration 038 adds tenant-RLS-protected sync runs and
+source-tracked directory role grants, with connector version/heartbeat/sync
+visibility. A paired connector uses a rotating hashed device token for each
+accepted heartbeat, preview and apply request; replay, wrong device binding and
+revocation are denied. Full/delta preview classifies create, update, suspend,
+out-of-scope and unchanged; apply is idempotent. It provisions a no-email user
+and membership, suspends disabled accounts immediately, and gives scope exits a
+seven-day grace without hard deletion. Only requester/expert/supervisor roles
+can be directory-managed. The PowerShell/WinSW service scaffold uses DPAPI
+locally. The verified AD scope is `OU=Jupiter,OU=PNS,DC=PNS,DC=local`.
+API/Web typechecks, API 65 tests, Web 11 tests and builds pass. Evidence:
+`docs/GOAL_037_EVIDENCE.md`.
+
+**GOAL-036 — Directory connector domain, pairing and control plane (complete,
+2026-08-30):** Migration 037 adds tenant-RLS-protected connector and pairing
+records. Organization owners and administrators can create a named connector,
+issue one hashed 15-minute pairing code, and revoke its device identity. The
+agent pairing exchange consumes the code atomically and returns a one-time
+device token; raw pairing and device credentials are never persisted or
+audited. The concise Persian organization-admin page exposes connector status,
+pairing and revocation while explicitly deferring directory synchronization.
+The implementation-validation matrix records Node/WinSW, secure-store and
+request-proof candidates without selecting one. API suite (64 tests), Web suite
+(11 tests), typechecks and production builds pass; browser acceptance at
+375/768/1024/1440 has no document overflow. Evidence:
+`docs/GOAL_036_EVIDENCE.md`. GOAL-037 is ready.
+
+**GOAL-035 — Manual and CSV user provisioning (complete, 2026-08-30):**
+Migration 036 adds a tenant-RLS-protected idempotency/result ledger for group
+member imports. `ORG_OWNER` now shares existing member-administration authority
+with `ORG_ADMIN`, without changing legacy administrator access. Organization
+administration provides a Persian RTL CSV preview and confirmation flow; it
+validates up to 500 rows, reports row-level issues, accepts quoted CSV values,
+uses one retry-safe import key per selected file, and never renders or returns
+passwords after the file is read. Confirmation is atomic for one tenant and
+audits only counts. API suite (63 tests), Web suite (11 tests), typechecks and
+production builds pass. Authenticated browser checks at 375/768/1024/1440 show
+the control with no document overflow. Evidence:
+`docs/GOAL_035_EVIDENCE.md`. GOAL-036 is ready.
+
+**GOAL-034 — Tenant routing, owner transition and resumable setup (complete,
+2026-08-30):** Migration 035 adds tenant-RLS-protected resumable setup progress.
+`/o/{slug}` is canonical; legacy entry redirects only for an unambiguous single
+membership and a multiple-membership user selects a tenant explicitly. Server
+resolution verifies active slug membership, while all tenant APIs retain their
+existing server-side membership checks. A setup tenant owner sees a Persian
+checklist and can activate only after settings and at least one service category
+are present. Platform Admin may explicitly replace an owner using an active
+member; existing `ORG_ADMIN` memberships remain unchanged. API suite (62
+tests), root typecheck/test/build and authenticated browser checks at
+375/768/1024/1440 pass. Evidence: `docs/GOAL_034_EVIDENCE.md`. GOAL-035 is
+ready.
+
+**GOAL-033 — Platform review, approval and tenant provisioning (complete,
+2026-08-30):** Migration 034 adds the additive `setup` tenant lifecycle,
+review metadata, a provisioned-organization reference and `ORG_OWNER` without
+changing existing active/suspended organizations or promoting existing
+`ORG_ADMIN` members. Platform Admin can review applications, request
+information, reject, or atomically approve with a selected slug. Approval is
+idempotent and creates exactly one setup organization and an applicant
+membership with `ORG_OWNER` plus `ORG_ADMIN`; a slug conflict rolls the entire
+operation back. Applicant status shows the review note and allocated slug.
+The API suite (61 tests), typechecks and production build pass. Authenticated
+Platform Admin browser acceptance passed at 375/768/1024/1440 without
+document-level overflow; the review tabs now have explicit keyboard activation
+and arrow-key navigation. Persian impact and evidence are in
+`docs/GOAL_033_EVIDENCE.md`. GOAL-034 is ready.
+
+**GOAL-032 — Public organization application experience and verification
+delivery (complete, 2026-08-29):** Public RTL account registration, sign-in,
+email verification, applicant draft/resume/update/submission/cancellation and
+status feedback are now available without fabricating tenant context. The
+no-membership shell becomes an applicant workspace. Verification delivery is
+explicitly configured as local-test (non-production only), HTTPS webhook, or
+safe disabled mode; raw tokens stay out of normal responses, audit and
+production logs. The development-only inbox is bound to the matching signed-in
+account and unavailable in production. API suite (60 tests), Web suite (11
+tests), typechecks/build and 375/768/1024/1440 browser overflow checks pass.
+Persian guidance and evidence are in `docs/PUBLIC_ORGANIZATION_ONBOARDING.md`
+and `docs/GOAL_032_EVIDENCE.md`. GOAL-033 is ready.
+
+**GOAL-031 — Additive identity and organization application foundation
+(complete, 2026-08-29):** Migration 033 preserves legacy `users` credentials
+while adding email-password authentication identities, tenant-RLS-protected
+directory principals for users without email, hashed/single-use 24-hour public
+verification tokens and persisted notification-delivery state. New public APIs
+support account creation, verification/resend, applicant-owned organization
+application drafts, status listing, verification-gated submission and
+idempotent cancellation. Application statuses are exactly `DRAFT`,
+`SUBMITTED`, `UNDER_REVIEW`, `NEEDS_INFORMATION`, `APPROVED`, `REJECTED` and
+`CANCELLED`; platform review and provisioning remain deferred. API integration
+coverage proves legacy/additive login, no token/password leakage, replay denial,
+applicant isolation, transition idempotency and Directory Principal RLS. All
+60 API tests, root API/Web typecheck and production build pass. Persian Help impact and the
+REST contract are recorded in `docs/GOAL_031_EVIDENCE.md` and
+`docs/ORGANIZATION_APPLICATION_API.md`. GOAL-032 is ready.
+
+**GOAL-030 — Master Upgrade program baseline and architecture decisions
+(complete, 2026-08-29):** The approved enterprise upgrade is now governed by
+`.ai/UPGRADE_MASTER_PLAN.md`. DEC-018 through DEC-027 record the selected
+additive identity evolution, verified public-account gate, exact organization
+application statuses, legacy-owner transition, conservative `/o/{slug}` route
+compatibility, connector security invariants/validation gate, minimal
+commercial core, delivered-Smart-Action metering, Assist grants and independent
+product Help. This Goal changed documentation only: no production code,
+migration, dependency, API or runtime behavior changed. Architecture, domain,
+business rules, security, risk, test, master/execution plan, next task,
+changelog and Persian Help impact evidence are synchronized. GOAL-031 is ready.
+
 **GOAL-029 — Organization Administration Workspace & Information Architecture
 (complete, 2026-08-29):** Organization Administration no longer uses a long
 horizontal tab strip. Its existing panels are available through grouped,

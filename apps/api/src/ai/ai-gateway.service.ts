@@ -4,30 +4,34 @@ import { redactForAi } from './redactor.js';
 import { AiProvider } from './ai-provider.js';
 import { AiCredentialService } from './ai-credential.service.js';
 import { aiProviderAllowedHosts } from '../config.js';
+import { CommercialService } from '../commercial/commercial.service.js';
+import { randomUUID } from 'node:crypto';
 
 type Actor = { userId: string; organizationId: string; roles?: string[] };
 const priorities = new Set(['LOW', 'NORMAL', 'HIGH', 'URGENT']);
 
 @Injectable()
 export class AiGatewayService {
-  constructor(private readonly database: DatabaseService, private readonly credentials: AiCredentialService) {}
+  constructor(private readonly database: DatabaseService, private readonly credentials: AiCredentialService, private readonly commercial?: CommercialService) {}
 
   async enqueue(actor: Actor, ticketId: string, text: string) {
     if (text.trim().length < 3 || text.length > 20_000) throw new BadRequestException('AI input is invalid');
-    return this.database.withOrganization(actor.organizationId, async (client) => {
+    const requestId = randomUUID();
+    await this.commercial?.reserveSmartAction({ ...actor, roles: actor.roles ?? [] }, 'AI_TICKET_REVIEW', requestId);
+    try { return await this.database.withOrganization(actor.organizationId, async (client) => {
       const ticket = await client.query('SELECT 1 FROM tickets WHERE id=$1 AND requester_user_id=$2', [ticketId, actor.userId]);
       if (!ticket.rowCount) throw new NotFoundException('Ticket not found');
       const enabled = (await client.query<{ enabled: boolean }>('SELECT enabled FROM organization_ai_settings WHERE organization_id=$1', [actor.organizationId])).rows[0]?.enabled;
       if (!enabled) throw new ForbiddenException('AI is not enabled for this organization');
       const request = (await client.query<{ id: string; status: string; prompt_version: string; created_at: Date }>(
-        `INSERT INTO ai_requests(organization_id,ticket_id,status,prompt_version,redacted_input,created_by_user_id)
-         VALUES($1,$2,'QUEUED','v1',$3,$4) RETURNING id,status,prompt_version,created_at`,
-        [actor.organizationId, ticketId, { text: redactForAi(text) }, actor.userId],
+        `INSERT INTO ai_requests(id,organization_id,ticket_id,status,prompt_version,redacted_input,created_by_user_id)
+         VALUES($1,$2,$3,'QUEUED','v1',$4,$5) RETURNING id,status,prompt_version,created_at`,
+        [requestId, actor.organizationId, ticketId, { text: redactForAi(text) }, actor.userId],
       )).rows[0];
       await client.query('INSERT INTO outbox_events(organization_id,topic,payload) VALUES($1,\'ai.requested\',$2)', [actor.organizationId, { requestId: request.id }]);
       await this.audit(client, actor, 'ai.requested', 'ai_request', request.id, { ticketId });
       return request;
-    });
+    }); } catch (cause) { await this.commercial?.releaseSmartAction(actor.organizationId, requestId); throw cause; }
   }
 
   async configurePlatform(actorId: string, input: {
@@ -112,6 +116,7 @@ export class AiGatewayService {
   async process(requestId: string, provider: AiProvider) {
     const request = (await this.database.query<{ id: string; organization_id: string; redacted_input: { text: string }; prompt_version: string }>('SELECT id,organization_id,redacted_input,prompt_version FROM ai_requests WHERE id=$1 AND status=\'QUEUED\'', [requestId])).rows[0];
     if (!request) return;
+    let delivered = false;
     try {
       const setting = (await this.database.query<{ provider_base_url: string; analysis_model: string; api_key_ciphertext: Buffer | null; api_key_iv: Buffer | null; api_key_auth_tag: Buffer | null }>(
         `SELECT provider_base_url,analysis_model,api_key_ciphertext,api_key_iv,api_key_auth_tag
@@ -126,7 +131,11 @@ export class AiGatewayService {
         await client.query('UPDATE ai_requests SET status=\'SUCCEEDED\',completed_at=now() WHERE id=$1', [requestId]);
         await this.audit(client, { userId: '', organizationId: request.organization_id }, 'ai.completed', 'ai_request', requestId, { model: setting.analysis_model });
       });
+      delivered = true;
+      await this.commercial?.settleSmartAction(request.organization_id, requestId, requestId);
     } catch {
+      if (delivered) return;
+      await this.commercial?.releaseSmartAction(request.organization_id, requestId);
       await this.database.withOrganization(request.organization_id, async (client) => {
         await client.query('UPDATE ai_requests SET status=\'FAILED\',completed_at=now() WHERE id=$1', [requestId]);
         await this.audit(client, { userId: '', organizationId: request.organization_id }, 'ai.failed', 'ai_request', requestId, {});

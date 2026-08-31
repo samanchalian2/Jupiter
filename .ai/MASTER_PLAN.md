@@ -44,3 +44,13 @@ The requester-intake refinement adds (26) an explicit, confirmed cancellation
 path for an unsubmitted temporary intake. It deletes the pre-ticket session,
 raw conversation, AI interpretation and temporary audio without changing the
 fixed ticket lifecycle. GOAL-026 is complete locally.
+
+## Master Upgrade program
+
+The approved enterprise upgrade starts at GOAL-030. Its detailed source of
+truth is `UPGRADE_MASTER_PLAN.md`; DEC-018 through DEC-027 define the approved
+architecture boundaries. The sequence adds organization application and
+provisioning, tenant setup/routing, user provisioning and directory connector,
+minimal commercial capability/usage, commercial Smart Actions, Jupiter Assist,
+platform commercial controls, product Help and final hardening. Each Goal is
+independently verified and documents Persian Help impact before the next Goal.

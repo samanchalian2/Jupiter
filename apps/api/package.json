@@ -10,6 +10,7 @@
     "migrate:ai-key": "tsx scripts/import-local-ai-key.ts",
     "verify:ai-provider": "tsx scripts/verify-ai-provider.ts",
     "seed:admin": "tsx scripts/seed-admin.ts",
+    "seed:help": "tsx scripts/seed-help.ts",
     "lint": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run",
     "typecheck": "tsc --noEmit -p tsconfig.json"

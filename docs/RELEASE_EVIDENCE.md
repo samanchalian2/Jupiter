@@ -13,19 +13,22 @@
 - The web shell is RTL, keyboard-focus-visible and uses semantic form labels;
   browser checks must still be recorded per release in staging.
 
-## Local execution record — 2026-08-11
+## Local execution record — 2026-08-31
 
-- `pnpm verify:release` passed: lint, typecheck, 28 API tests and both
-  production builds.
-- Runtime health/readiness both returned HTTP 200. The liveness response
-  included a request ID, `X-Frame-Options: DENY`, and
-  `X-Content-Type-Options: nosniff`.
+- `pnpm verify:release` passed: lint, typecheck, 82 API tests, 11 web tests
+  and both production builds.
 - `pnpm load:smoke` completed 40 concurrent local health/readiness requests
-  with zero failures.
-- An isolated PostgreSQL restore drill restored 14 schema migrations; a demo
-  tenant saw three tickets while a separate tenant context saw zero.
-- Local browser smoke covered login, report navigation and knowledge search;
-  visible keyboard focus styles and labelled form controls were inspected.
+  with zero failures at 268 requests per second on a fresh API start.
+- An isolated rehearsal applied the upgrade forward from migrations `001`–`032`
+  to `045a`; the outcome had 48 migration records, six Product Help articles
+  and five roles. The temporary database was removed.
+- Authenticated Persian RTL acceptance of public onboarding, organization
+  administration, platform controls, Product Help and the directory contextual
+  trigger passed at 375/768/1024/1440 px with no document-level overflow.
+- A mobile platform tab strip was replaced with a labelled selector below
+  700px, eliminating its clipped horizontal navigation in the final pass.
+- The notification center now opens the canonical `/notifications/events`
+  stream endpoint; a fresh authenticated browser load recorded no 404.
 
 ## Requires a staging environment
 

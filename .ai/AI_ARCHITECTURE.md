@@ -39,3 +39,24 @@ from the AI interpretation. The provider resolves corrections, negation and
 multi-issue statements before proposing one primary issue, optional secondary
 issues and an optional clarification question. It cannot create a secondary
 ticket or block manual final submission.
+
+## Commercial Smart Action metering
+
+The AI Gateway remains the sole provider boundary and Platform Admin remains
+the sole owner of provider credentials. Commercial usage is a separate domain:
+provider token/cost telemetry supports operations, while customer allowance is
+settled only by a successfully delivered Commercial Smart Action. Connection
+tests, diagnostics, retries, transcription plumbing and provider failures are
+never customer-billable.
+
+Commercial gating is server-side and combines entitlement, organization policy,
+platform availability and remaining allowance. A lack of commercial AI access
+never blocks manual ticketing or changes the explicit-submission, confidence,
+tenant-taxonomy or immutable-input invariants.
+
+GOAL-041 applies this boundary to the customer-facing `AI_TICKET_REVIEW`
+Smart Action. The gateway reserves one unit before permitted work begins,
+releases it when no deliverable result exists, and settles it exactly once only
+after the authorized result has been persisted. The action reservation, usage
+ledger event and minimal settlement audit remain distinct from provider
+telemetry.

@@ -67,6 +67,11 @@ prefer these over raw controls when the primitive fits.
 - HelpTrigger is the single compact entrypoint for tooltip/short help/future
   documentation; do not scatter arbitrary question-mark icons.
 
+GOAL-047 uses this trigger for AI ticket review, directory connection and
+Jupiter Assist policy guidance. The Help Center is a two-column discovery/read
+workspace on desktop and a single-column sequence on small screens; it uses
+ordinary cards and text hierarchy rather than a new navigation pattern.
+
 ## Forms, tables and feedback
 
 Labels sit with their controls, required/disabled/read-only state is explicit,
@@ -149,12 +154,11 @@ tables, pagination and inline LTR values must read natively in RTL.
 
 ## Appearance governance and overrides
 
-The current V2 foundation exposes default platform tokens only. Future
-platform appearance configuration must be data-driven, validated, auditable and
-restricted to approved token presets: platform logo/default identity, primary
-brand color with contrast validation, density and radius preset. It must never
-accept arbitrary CSS or JavaScript, or alter semantic success/warning/danger
-colors.
+GOAL-045 provides data-driven, validated, auditable platform appearance
+settings. They are restricted to approved brand presets with contrast review,
+platform logo/default identity, density and radius presets. They never accept
+arbitrary CSS or JavaScript, external logo URLs, or changes to semantic
+success/warning/danger colors.
 
 Override order is explicit: platform defaults → organization logo/approved
 organization identity → page content. Organization branding cannot override

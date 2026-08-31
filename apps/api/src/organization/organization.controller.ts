@@ -11,6 +11,8 @@ export class OrganizationController {
 
   @Get('members') members(@Headers('authorization') a?: string, @Headers('x-organization-id') o?: string) { return this.actor(a,o).then(actor=>this.organizations.members(actor)); }
   @Post('members') addMember(@Body() body: {email:string;username?:string;displayName:string;password:string;roles:string[]}, @Headers('authorization') a?:string,@Headers('x-organization-id') o?:string) { return this.actor(a,o).then(actor=>this.organizations.addMember(actor,body)); }
+  @Post('members/import/preview') previewMembers(@Body() body:{rows:unknown[]},@Headers('authorization') a?:string,@Headers('x-organization-id') o?:string) { return this.actor(a,o).then(actor=>this.organizations.previewMemberImport(actor,body.rows)); }
+  @Post('members/import/confirm') confirmMembers(@Body() body:{rows:unknown[]},@Headers('idempotency-key') key:string|undefined,@Headers('authorization') a?:string,@Headers('x-organization-id') o?:string) { return this.actor(a,o).then(actor=>this.organizations.confirmMemberImport(actor,body.rows,key)); }
   @Post('members/:id') updateMember(@Param('id') id:string,@Body() body:{displayName?:string;username?:string;roles?:string[];status?:'active'|'inactive'},@Headers('authorization') a?:string,@Headers('x-organization-id') o?:string) { return this.actor(a,o).then(actor=>this.organizations.updateMember(actor,id,body)); }
   @Post('members/:id/reset-password') resetPassword(@Param('id') id:string,@Body() body:{password:string},@Headers('authorization') a?:string,@Headers('x-organization-id') o?:string) { return this.actor(a,o).then(actor=>this.organizations.resetMemberPassword(actor,id,body.password)); }
 
@@ -40,10 +42,17 @@ export class OrganizationController {
   @Get('email-integration') emailIntegration(@Headers('authorization') a?:string,@Headers('x-organization-id') o?:string) { return this.actor(a,o).then(actor=>this.organizations.emailIntegration(actor)); }
   @Post('email-integration') saveEmailIntegration(@Body() body:{inboundAddress:string;senderName:string;enabled:boolean},@Headers('authorization') a?:string,@Headers('x-organization-id') o?:string) { return this.actor(a,o).then(actor=>this.organizations.saveEmailIntegration(actor,body)); }
 
+  @Get('tenant-context/:slug') tenantContext(@Param('slug') slug:string,@Headers('authorization') a?:string) { return this.platform(a).then(user=>this.organizations.tenantContext(user.sub,slug)); }
+  @Get('tenant-setup') tenantSetup(@Headers('authorization') a?:string,@Headers('x-organization-id') o?:string) { return this.actor(a,o).then(actor=>this.organizations.tenantSetup(actor)); }
+  @Post('tenant-setup/complete') completeTenantSetup(@Headers('authorization') a?:string,@Headers('x-organization-id') o?:string) { return this.actor(a,o).then(actor=>this.organizations.completeTenantSetup(actor)); }
+
   @Get('platform/organizations') platformOrganizations(@Headers('authorization') a?:string) { return this.platform(a).then(user=>this.organizations.platformOrganizations(user.sub)); }
   @Post('platform/organizations') createPlatformOrganization(@Body() body:{name:string;slug:string},@Headers('authorization') a?:string) { return this.platform(a).then(user=>this.organizations.createPlatformOrganization(user.sub,body)); }
   @Get('platform/users') platformUsers(@Headers('authorization') a?:string) { return this.platform(a).then(user=>this.organizations.platformUsers(user.sub)); }
   @Post('platform/users') createPlatformUser(@Body() body:{email:string;username?:string;displayName:string;password:string;isPlatformAdmin?:boolean},@Headers('authorization') a?:string) { return this.platform(a).then(user=>this.organizations.createPlatformUser(user.sub,body)); }
   @Post('platform/users/:id') updatePlatformUser(@Param('id') id:string,@Body() body:{displayName?:string;username?:string;isPlatformAdmin?:boolean;isActive?:boolean;password?:string},@Headers('authorization') a?:string) { return this.platform(a).then(user=>this.organizations.updatePlatformUser(user.sub,id,body)); }
   @Post('platform/organizations/:id/status') platformStatus(@Param('id') id:string,@Body() body:{status:'active'|'suspended'},@Headers('authorization') a?:string) { return this.platform(a).then(user=>this.organizations.setOrganizationStatus(user.sub,id,body.status)); }
+  @Get('platform/organizations/:id/owners') platformOwners(@Param('id') id:string,@Headers('authorization') a?:string) { return this.platform(a).then(user=>this.organizations.platformOwners(user.sub,id)); }
+  @Get('platform/organizations/:id/members') platformOrganizationMembers(@Param('id') id:string,@Headers('authorization') a?:string) { return this.platform(a).then(user=>this.organizations.platformOrganizationMembers(user.sub,id)); }
+  @Post('platform/organizations/:id/owner') assignPlatformOwner(@Param('id') id:string,@Body() body:{userId:string},@Headers('authorization') a?:string) { return this.platform(a).then(user=>this.organizations.assignPlatformOwner(user.sub,id,body.userId)); }
 }

@@ -17,6 +17,17 @@ Native mobile applications, RAG/knowledge base, configurable workflow engine,
 advanced SLA/assignment/analytics, billing, public organization sign-up,
 microservices, and broad external integrations.
 
+## Approved Master Upgrade scope
+
+The Master Upgrade supersedes the listed post-MVP exclusions only for the
+approved staged program: public organization application and manual approval,
+tenant setup lifecycle, manual/CSV/Active Directory provisioning, minimal
+commercial entitlement and usage controls, Jupiter Assist, controlled platform
+appearance, and Persian product Help. It still excludes microservices, full
+SCIM or SSO, AD password synchronization, broad identity-provider integrations,
+payment-gateway implementation, arbitrary theming, autonomous ticket
+resolution, and a general AI help chatbot.
+
 ## Actors
 
 Platform Admin manages tenants and global AI provider settings. Organization

@@ -18,3 +18,34 @@ export function aiProviderAllowedHosts() {
   loadLocalEnvironment();
   return new Set((process.env.AI_PROVIDER_ALLOWED_HOSTS ?? 'api.openai.com').split(',').map((host) => host.trim().toLowerCase()).filter(Boolean));
 }
+
+export type PublicAccountVerificationDeliveryMode = 'LOCAL_TEST' | 'WEBHOOK' | 'DISABLED';
+export function publicAccountVerificationDeliveryMode(): PublicAccountVerificationDeliveryMode {
+  loadLocalEnvironment();
+  const configured = process.env.PUBLIC_ACCOUNT_VERIFICATION_DELIVERY?.trim().toLowerCase();
+  if (!configured) return process.env.NODE_ENV === 'production' ? 'DISABLED' : 'LOCAL_TEST';
+  if (configured === 'local_test' && process.env.NODE_ENV !== 'production') return 'LOCAL_TEST';
+  if (configured === 'webhook') return 'WEBHOOK';
+  if (configured === 'disabled') return 'DISABLED';
+  throw new Error('PUBLIC_ACCOUNT_VERIFICATION_DELIVERY is invalid.');
+}
+
+export function publicAccountVerificationWebhookUrl() {
+  loadLocalEnvironment();
+  const value = process.env.PUBLIC_ACCOUNT_VERIFICATION_WEBHOOK_URL?.trim();
+  if (!value) throw new Error('PUBLIC_ACCOUNT_VERIFICATION_WEBHOOK_URL is required for webhook delivery.');
+  const url = new URL(value);
+  if (process.env.NODE_ENV === 'production' && url.protocol !== 'https:') throw new Error('Production verification webhook must use HTTPS.');
+  if (!['http:','https:'].includes(url.protocol)) throw new Error('Verification webhook URL must use HTTP or HTTPS.');
+  return url;
+}
+
+export function publicAccountVerificationUrl(token: string) {
+  loadLocalEnvironment();
+  const base = process.env.PUBLIC_ACCOUNT_VERIFICATION_WEB_URL?.trim() || process.env.WEB_ORIGIN?.split(',')[0]?.trim() || 'http://127.0.0.1:5173';
+  const url = new URL(base);
+  if (process.env.NODE_ENV === 'production' && url.protocol !== 'https:') throw new Error('Production verification web URL must use HTTPS.');
+  if (!['http:','https:'].includes(url.protocol)) throw new Error('Verification web URL must use HTTP or HTTPS.');
+  url.searchParams.set('verify', token);
+  return url.toString();
+}

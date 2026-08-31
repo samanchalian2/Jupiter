@@ -172,3 +172,174 @@ tenant context and business rules remain in place. Desktop uses grouped
 vertical navigation; mobile uses a compact labelled selector rather than a
 horizontal tab strip. Future commercial or directory features have no
 placeholder entry until a separately approved capability exists.
+
+## DEC-018 — Additive identity evolution for public and directory users
+
+The current global `User` and tenant `Membership` model remains the canonical
+person and access foundation. It is not replaced. GOAL-030 compared: extending
+only the existing `users` columns; staging directory records without users; and
+an additive identity model. The selected model retains legacy user email,
+username, password and refresh-session behavior during a staged transition,
+then adds only the needed authentication-identity and tenant-scoped
+directory-principal records.
+
+This is selected because a `users`-only change cannot cleanly represent a
+directory-managed person without email, a person linked to more than one
+directory tenant, and an organization-scoped login while preserving the
+existing global login contract. A staging-only model would duplicate
+membership/provisioning logic and defer a required activation state. Directory
+records never carry AD passwords. A directory-provisioned member is linked to
+a global user only when an authenticated Jupiter account is ready; until then
+it is explicitly not-ready for login. GOAL-031 must provide an additive,
+data-preserving migration and compatibility tests before legacy credential
+fields can become optional or deprecated.
+
+## DEC-019 — Verified public account before organization application submit
+
+Public account creation is allowed before a tenant membership exists. A public
+account must complete email verification before its organization application
+can transition from `DRAFT` to `SUBMITTED`. This reduces abuse and supplies a
+recoverable contact for platform review without treating email verification as
+organization approval.
+
+Verification delivery is an audited, rate-limited notification abstraction.
+Production delivery uses deployment configuration; local development uses an
+explicit test-only sink. Tokens are short-lived, single-use, stored only as
+hashes, and never returned by normal APIs or audit logs. Platform review may
+still request further information or reject an application after verification.
+
+## DEC-020 — Organization application and tenant lifecycle contracts
+
+Organization application statuses are exactly `DRAFT`, `SUBMITTED`,
+`UNDER_REVIEW`, `NEEDS_INFORMATION`, `APPROVED`, `REJECTED`, and `CANCELLED`.
+They are separate from tenant lifecycle. Tenant lifecycle is `SETUP`, `ACTIVE`,
+and `SUSPENDED`; existing active/suspended organizations retain their behavior
+through a data-preserving compatibility migration.
+
+Approval is audited and distinct from idempotent tenant provisioning. New
+tenants enter `SETUP`, receive an approved slug and an initial owner, and reach
+`ACTIVE` after the required setup gate. Existing tenants are never moved to
+`SETUP` merely because they predate the model.
+
+## DEC-021 — Explicit legacy-owner transition
+
+`ORG_OWNER` is a new role for organization ownership, commercial authority and
+owner-only controls. Existing organizations continue operating when no owner is
+assigned; existing `ORG_ADMIN` permissions remain unchanged. No existing
+administrator is automatically promoted.
+
+Platform Admin explicitly assigns an eligible existing member or invites a new
+owner, records the action in audit, and may replace that assignment later.
+Owner-only commercial actions remain unavailable while an organization has no
+owner. Newly provisioned organizations receive the approved applicant as their
+initial owner. A future bulk-promotion policy needs its own approved migration
+decision.
+
+## DEC-022 — Slug-based tenant routes with conservative legacy compatibility
+
+`/o/{slug}` is the canonical organization workspace route. The server resolves
+the slug to tenant context and independently verifies membership. Legacy routes
+redirect only when the authenticated user's target organization is
+unambiguous—one active membership or an explicit persisted default. Zero or
+multiple possible tenants require selection; no route guesses a tenant.
+
+Platform administration remains outside organization route context. Old routes
+remain supported during a measured compatibility period and are removed only by
+a separately approved deprecation decision.
+
+## DEC-023 — Connector security invariants and implementation validation gate
+
+The directory connector is an on-premises Windows service with outbound HTTPS
+only. The cloud never stores AD credentials. Pairing is organization-bound,
+single-use and short-lived; a paired device identity is independently rotatable
+and revocable. Connector requests must resist replay and tenant impersonation.
+
+TypeScript/Node plus WinSW, a Windows-native worker, DPAPI, Credential Manager,
+request signing, mTLS and short-lived device tokens are implementation
+candidates—not master requirements. GOAL-036 records a technology validation
+matrix covering service lifecycle, secure local storage, installation/update,
+rotation, observability and support burden before GOAL-037 adopts a concrete
+runtime protocol. The current validation matrix is
+`docs/DIRECTORY_CONNECTOR_VALIDATION.md`; it deliberately selects no Windows
+runtime, secure-store or request-proof candidate yet.
+
+## DEC-028 — Directory Connector V1 runtime and replay proof
+
+GOAL-037 selects the Windows PowerShell ActiveDirectory module hosted by WinSW
+for V1, because it is available on supported customer domain hosts and gives a
+recoverable service lifecycle with Windows Event Log observability. DPAPI under
+the service account protects local configuration. The cloud accepts no AD bind
+credential; the selected OU/group scope and all LDAP access remain local.
+
+The paired device credential is opaque and hashed server-side, then rotates
+after every accepted heartbeat, preview and apply request. The old credential
+cannot replay a request, and revocation clears the usable hash immediately.
+Directory payload roles may only grant REQUESTER, EXPERT or SUPERVISOR;
+ORG_ADMIN and ORG_OWNER are never directory-managed.
+
+## DEC-024 — Minimal commercial capability model
+
+The first commercial model contains only Product, Subscription, Entitlement,
+Usage Allowance, Usage Ledger, Add-on Package, Organization Commercial
+Agreement, Platform Availability and Organization Feature Setting. Price and
+agreement data are platform-managed and auditable; a payment gateway is not
+required.
+
+An API must calculate `effective` capability as entitlement AND organization
+setting AND platform availability. UI hiding never substitutes for this server
+check. Product versioning, invoices and a broad accounting model are deferred
+until a concrete requirement requires them.
+
+## DEC-025 — Commercial Smart Action settlement, not provider-call billing
+
+A provider invocation, retry, diagnostic, connection test, health check,
+embedding or other infrastructure operation does not consume customer
+allowance. A billable AI unit is settled once, using an idempotency key, only
+after a permitted commercial Smart Action produces valid output that the
+application persists and successfully makes available to its authorized user.
+
+Allowance reservation protects concurrent consumption; unsuccessful or
+undelivered actions release their reservation. The shared organization pool
+consumes periodic allowance, then purchased packs, then emergency allowance,
+then permitted overage, and finally stops the Smart Action while leaving manual
+ticketing available. Provider token/cost telemetry remains operational data,
+not a customer-priced unit.
+
+## DEC-026 — Delegated Jupiter Assist access is grant-scoped
+
+Jupiter support agents do not receive ordinary tenant memberships. A separate
+Support Access Grant is scoped, time-bound, revocable and audited. Assist
+request state and SLA are independent of fixed ticket lifecycle. A restricted
+ticket remains hidden unless a matching explicit grant permits it, including
+when an organization has selected broad support scope.
+
+An Assist unit settles only when a Jupiter agent accepts a permitted case;
+routing, request, reassignment and reopening do not create additional units.
+
+## DEC-027 — Product Help is separate from tenant knowledge
+
+Jupiter's product Help is a platform-owned, versioned domain, distinct from
+tenant knowledge articles. Repository content under `docs/help/` is a seed for
+initial publication only; published runtime revisions in the database are the
+source of truth. Help content has audience, route, feature, product-area and
+tag metadata for authorization, contextual help and future RAG readiness.
+
+Draft and unpublished content must never be returned to an unauthorized
+audience. The existing `HelpTrigger` is the compact UI entry point; product help
+does not alter tenant knowledge ownership or review semantics.
+
+## DEC-029 — Controlled, preset-only platform appearance
+
+GOAL-045 persists one platform-owned appearance record rather than allowing
+free-form tenant themes. A Platform Admin may select only an approved primary
+brand preset, density preset, radius preset and an internal managed logo path.
+The selected palettes meet the application's primary-action contrast target;
+semantic success, warning and danger colors are not configurable. Arbitrary
+CSS, JavaScript and external logo URLs are rejected.
+
+The precedence order is platform defaults, then an organization's approved
+logo identity, then page content. Organization branding cannot change platform
+tokens, layout density, radius, security-sensitive controls or semantic state.
+The platform default logo is also the favicon where the current architecture
+supports it. Changes are platform-admin-only and auditable; the public read
+model contains no secret or tenant data.

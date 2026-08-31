@@ -24,3 +24,62 @@ transaction.
 Ticket states are fixed semantic codes: `DRAFT`, `OPEN`, `IN_PROGRESS`,
 `WAITING_FOR_REQUESTER`, `RESOLVED`, and `CLOSED`. Organizations may configure
 display labels and closure policy, not arbitrary workflow transitions.
+
+## Master Upgrade aggregates
+
+GOAL-031 implements `OrganizationApplication`, `AuthenticationIdentity`,
+`DirectoryPrincipal`, public-account verification token/delivery records and
+immutable application transitions. `OrganizationApplication` is separate from `Organization`, with statuses
+`DRAFT`, `SUBMITTED`, `UNDER_REVIEW`, `NEEDS_INFORMATION`, `APPROVED`,
+`REJECTED`, and `CANCELLED`. `Organization` gains the additive lifecycle
+`SETUP`, `ACTIVE`, `SUSPENDED`; this does not alter ticket lifecycle.
+
+`User` and `Membership` remain canonical. Additive `AuthenticationIdentity`
+and tenant-scoped `DirectoryPrincipal` records support public accounts and
+directory users without email while preserving legacy credentials during
+migration. `ORG_OWNER` is a membership role. GOAL-033 assigns it only to a
+newly provisioned applicant (alongside `ORG_ADMIN` for existing administrative
+compatibility); existing organizations may have no owner until explicit
+assignment.
+
+GOAL-036 adds tenant-scoped `DirectoryConnector` and
+`DirectoryConnectorPairing`. A connector begins `UNPAIRED`, becomes `PAIRED`
+only through a consumed, short-lived pairing code, and becomes permanently
+`REVOKED` when its usable device credential is cleared. Pairing records retain
+only a hash and expiry; the raw pairing code and device token are one-time
+delivery values, never domain history or audit metadata. These aggregates do
+not own AD credentials. GOAL-037 adds tenant-scoped `DirectorySyncRun` and
+source-tracked `DirectoryPrincipalRoleGrant`. A run has a preview/apply
+lifecycle and provisions a backwards-compatible global `User` without email
+when needed, then its tenant membership and principal. It creates no login
+identity and never alters a pre-existing global user profile. Disabled users
+suspend immediately; scope exit is recorded first and suspends after seven
+days. Directory users are never hard deleted.
+
+Commercial aggregates are `Product`, `Subscription`, `Entitlement`,
+`UsageAllowance`, `UsageLedger`, `AddOnPackage`, and
+`OrganizationCommercialAgreement`, plus availability and organization-setting
+records. `CommercialSmartAction` is a tenant-bound idempotent reservation with
+`RESERVED`, `SETTLED` or `RELEASED` state and a selected allowance source; its
+settlement is distinct from provider usage.
+
+GOAL-042 adds `JupiterSupportAgent`, `OrganizationAssistPolicy` and `SupportAccessGrant`. They are separate from `Ticket` and `Membership`: a Jupiter agent has no tenant membership, while a grant is tenant-bound, time-bound and revocable. `Ticket.is_restricted` is additive; restricted access always requires an explicit routed-ticket grant. GOAL-043 adds tenant-scoped `AssistCase` and `AssistAccessRequest`: their request/approval/queue/acceptance/SLA lifecycle is independent of `Ticket`; only an accepted permitted case settles Assist capacity.
+
+GOAL-045 adds one global `PlatformAppearanceSettings` record. It holds only
+approved preset identifiers and an optional internal logo path, and is owned by
+Platform Admin. It contains no tenant branding, custom code or secret; an
+organization logo remains a narrower identity override.
+
+GOAL-046 adds global `ProductHelpArticle` and immutable-version
+`ProductHelpArticleRevision` aggregates. An article has a stable slug and at
+most one current published revision; a revision carries Persian title, summary,
+content, category, audience, tags, product area, related feature/route and
+source lineage. These records deliberately have no `organization_id`: Product
+Help is platform content and must never share the tenant knowledge ownership or
+review lifecycle.
+
+GOAL-047 makes a `ProductHelpArticleRevision` append-only from the application
+workflow: edits and restores create a new `DRAFT`, publishing selects exactly
+one current revision, and unpublishing hides the article without deleting
+history. Platform exports are projections of the current published revisions,
+not a second content store.

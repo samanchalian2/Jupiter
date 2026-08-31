@@ -14,6 +14,48 @@
 5. Run `pnpm load:smoke` against the staging API and complete the checklist in
    `STAGING_RELEASE_CHECKLIST.md`.
 
+## Master Upgrade control-plane checks
+
+Before enabling the public onboarding, connector, commercial AI, Assist,
+appearance or Product Help capabilities in a release, complete the matching
+staging checklist evidence. Do not infer authority from a user-supplied route:
+the server resolves platform authority and organization membership for every
+request.
+
+For directory synchronization, deploy only the approved Windows service
+candidate with outbound HTTPS. Pair from the organization administration
+workspace, record its revocable device identity, and never copy an Active
+Directory password into cloud configuration, logs, tickets or support notes.
+
+For AI/commercial incidents, distinguish provider activity from customer
+settlement. A retry, connection test, diagnostic or infrastructure call is not
+billable. Investigate a consumption discrepancy using the immutable usage
+ledger and delivery/confirmation audit events; do not repair it by editing a
+ledger record.
+
+For Jupiter Assist, confirm the case scope, time-bound support grant and
+restricted-ticket rule before an agent opens organization data. Capacity is
+settled only when a permitted agent accepts the Assist case.
+
+Product Help exports contain only currently published, audience-authorized
+content. Generate them from Platform Admin and retain the audit reference;
+never use a database dump or an unpublished revision as a support export.
+
+## Public-account verification delivery
+
+Production must explicitly select `PUBLIC_ACCOUNT_VERIFICATION_DELIVERY=webhook`
+and configure an HTTPS `PUBLIC_ACCOUNT_VERIFICATION_WEBHOOK_URL` owned by the
+approved mail-delivery integration. The adapter sends the verification URL and
+expiry; it must never log or persist the raw verification token. Set
+`PUBLIC_ACCOUNT_VERIFICATION_WEB_URL` to the public web origin used in the
+message.
+
+If a delivery integration is not ready, use `DISABLED`. This safely reports
+pending configuration and blocks application submission until verification; do
+not substitute a debug inbox, console log or manual token sharing in production.
+`LOCAL_TEST` and its retrieval endpoint are development-only and must not be
+enabled in production.
+
 ## Monitoring and incidents
 
 Every API response carries `X-Request-Id`; request logs are structured JSON

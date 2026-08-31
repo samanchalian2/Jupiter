@@ -16,9 +16,15 @@ import { HealthService } from './health.service.js';
 import { QueueWorker } from './jobs/queue.worker.js';
 import { EmailModule } from './email/email.module.js';
 import { TicketIntakeModule } from './ticket-intake/ticket-intake.module.js';
+import { OrganizationApplicationModule } from './organization-applications/organization-application.module.js';
+import { DirectoryConnectorModule } from './directory/directory-connector.module.js';
+import { CommercialModule } from './commercial/commercial.module.js';
+import { AssistModule } from './assist/assist.module.js';
+import { AppearanceModule } from './appearance/appearance.module.js';
+import { ProductHelpModule } from './help/help.module.js';
 
 @Module({
-  imports: [DatabaseModule, AuthModule, TicketModule, NotificationModule, ConversationModule, AttachmentModule, AiModule, TranscriptionModule, ReportingModule, OrganizationModule, KnowledgeModule, SlaModule, EmailModule, TicketIntakeModule],
+  imports: [DatabaseModule, AuthModule, TicketModule, NotificationModule, ConversationModule, AttachmentModule, AiModule, TranscriptionModule, ReportingModule, OrganizationModule, KnowledgeModule, SlaModule, EmailModule, TicketIntakeModule, OrganizationApplicationModule, DirectoryConnectorModule, CommercialModule, AssistModule, AppearanceModule, ProductHelpModule],
   controllers: [HealthController],
   providers: [HealthService, QueueWorker],
 })
