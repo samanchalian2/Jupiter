@@ -18,6 +18,15 @@
 - API typecheck passed.
 - Migration runner applied through migration 049 successfully.
 - API test suite passed: 26 files, 89 tests, including Ticket Review idempotency and Smart Intake settlement/telemetry assertions.
+- Web typecheck and web test suite passed (11 tests) after the owner-facing terminology refinement.
+
+## Authenticated browser acceptance (2026-09-01)
+
+- Authenticated Platform Commercial Console acceptance confirmed the compact Smart Action report at 375, 768, 1024 and 1440 px. All four RTL views had no document-level horizontal overflow and the report rendered without an API error.
+- The Platform report presents only the intended operational projection: organization, capability, reservation status/source, model and aggregate telemetry. The live sample had no action rows; its empty state and explanatory copy expose no ticket text, prompt, transcript, credential or provider secret.
+- Authenticated Owner dashboard acceptance confirmed the Persian RTL AI-usage section at 375, 768, 1024 and 1440 px, again with no document-level horizontal overflow. Capability codes are rendered with non-technical labels: «بررسی هوشمند تیکت» and «تکمیل هوشمند درخواست».
+- The `jupiter-demo` organization had no active `AI_SMART_INTAKE` entitlement and no enabled organization feature setting during the check. Its manual ticket composer remained available and explicitly states that AI never submits a ticket automatically and that all fields remain editable before submission.
+- A temporary `ORG_OWNER` assignment was used only to perform the Owner acceptance check, then removed exactly after it completed. The original ownerless state was restored and the restoration was recorded in the audit log.
 
 ## Deliberate limits
 
