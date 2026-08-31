@@ -17,8 +17,8 @@ export class SubscriptionLifecycleService {
     if (!user?.is_platform_admin) throw new ForbiddenException();
   }
   private async notifyOwners(organizationId: string, type: string, subscriptionId: string) {
-    const userIds = (await this.database.withOrganization(organizationId, async client => (await client.query<{ user_id: string }>("SELECT DISTINCT m.user_id FROM memberships m JOIN membership_roles mr ON mr.membership_id=m.id JOIN roles r ON r.id=mr.role_id JOIN users u ON u.id=m.user_id WHERE m.organization_id=$1 AND m.status='ACTIVE' AND u.is_active AND r.code='ORG_OWNER'", [organizationId])))).rows.map(row => row.user_id);
-    if (userIds.length) await this.notifications?.publish(organizationId, userIds, { type, ticketId: subscriptionId, occurredAt: new Date().toISOString() });
+    const userIds = (await this.database.withOrganization(organizationId, async client => (await client.query<{ user_id: string }>("SELECT DISTINCT m.user_id FROM memberships m JOIN membership_roles mr ON mr.membership_id=m.id JOIN roles r ON r.id=mr.role_id JOIN users u ON u.id=m.user_id WHERE m.organization_id=$1 AND m.status='active' AND u.is_active AND r.code='ORG_OWNER'", [organizationId])))).rows.map(row => row.user_id);
+    if (userIds.length) await this.notifications?.publish(organizationId, userIds, { type, occurredAt: new Date().toISOString() });
   }
   private async markedNotice(organizationId: string, alertCode: string, subscriptionId: string) {
     const created = await this.database.withOrganization(organizationId, async client => Boolean((await client.query("INSERT INTO commercial_notification_marks(organization_id,alert_code,capability_code,window_key) VALUES($1,$2,'',$3) ON CONFLICT DO NOTHING RETURNING organization_id", [organizationId, alertCode, subscriptionId])).rowCount));

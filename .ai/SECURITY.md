@@ -2,7 +2,7 @@
 
 ## GOAL-050 commercial subscription lifecycle
 
-Transitionهای اشتراک Platform-Admin-only، tenant-bound و audited هستند. سازمان هدف برای هر تغییر صریح است؛ اعلان lifecycle فقط برای ORG_OWNERهای فعال همان سازمان، با dedupe پایدار، ارسال می‌شود.
+Transitionهای اشتراک Platform-Admin-only، tenant-bound و audited هستند. سازمان هدف برای هر تغییر صریح است؛ اعلان lifecycle فقط برای ORG_OWNERهای فعال همان سازمان، با dedupe پایدار، ارسال می‌شود. پذیرش جدید Assist همان resolver سروری capability `JUPITER_ASSIST` را اجرا می‌کند و هرگز از اشتراک محصول نامرتبط مجوز نمی‌گیرد.
 
 ## GOAL-049 commercial remediation
 

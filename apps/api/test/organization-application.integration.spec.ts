@@ -9,6 +9,8 @@ import { DirectoryConnectorService } from '../src/directory/directory-connector.
 import { CommercialService } from '../src/commercial/commercial.service.js';
 import { SubscriptionLifecycleService } from '../src/commercial/subscription-lifecycle.service.js';
 import { AssistService } from '../src/assist/assist.service.js';
+import { NotificationService } from '../src/notifications/notification.service.js';
+import { TicketService } from '../src/tickets/ticket.service.js';
 import { AppearanceService } from '../src/appearance/appearance.service.js';
 import { VerificationNotification, VerificationNotificationDelivery, VerificationNotificationOutcome } from '../src/organization-applications/verification-notification.service.js';
 import { createHash, randomUUID } from 'node:crypto';
@@ -26,9 +28,11 @@ const delivery = new CaptureVerificationDelivery();
 const applications = new OrganizationApplicationService(database, delivery);
 const organizations = new OrganizationService(database, {} as never);
 const connectors = new DirectoryConnectorService(database);
-const subscriptions = new SubscriptionLifecycleService(database);
-const commercial = new CommercialService(database, undefined, subscriptions);
-const assist = new AssistService(database);
+const notifications = new NotificationService(database);
+const subscriptions = new SubscriptionLifecycleService(database, notifications);
+const commercial = new CommercialService(database, notifications, subscriptions);
+const assist = new AssistService(database, commercial);
+const tickets = new TicketService(database);
 const appearance = new AppearanceService(database);
 const createdEmails: string[] = [];
 const fixtureId = randomUUID().replace(/-/g, '').slice(0, 12);
@@ -52,6 +56,7 @@ let commercialProductCode = '';
 let addonPackageCode = '';
 let lifecycleProductCode = '';
 let assistAgentId = '';
+const lifecycleProductCodes: string[] = [];
 const provisionedSlugs: string[] = [];
 
 beforeAll(async () => {
@@ -85,6 +90,7 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
+  await database.query('DELETE FROM user_notifications WHERE organization_id IN ($1,$2,$3)', [directoryOrganizationA,directoryOrganizationB,setupOrganizationId]);
   await database.query("DELETE FROM audit_logs WHERE action LIKE 'assist.%'");
   await database.query('DELETE FROM support_access_grants WHERE organization_id IN ($1,$2,$3)', [directoryOrganizationA,directoryOrganizationB,setupOrganizationId]);
   await database.query('DELETE FROM assist_cases WHERE assigned_support_agent_user_id=$1', [assistAgentId]);
@@ -98,6 +104,8 @@ afterAll(async () => {
   await database.query('DELETE FROM commercial_addon_allocations WHERE organization_id IN ($1,$2,$3)', [directoryOrganizationA,directoryOrganizationB,setupOrganizationId]);
   await database.query('DELETE FROM commercial_usage_allowances WHERE organization_id IN ($1,$2,$3)', [directoryOrganizationA,directoryOrganizationB,setupOrganizationId]);
   await database.query('DELETE FROM commercial_entitlements WHERE organization_id IN ($1,$2,$3)', [directoryOrganizationA,directoryOrganizationB,setupOrganizationId]);
+  await database.query('DELETE FROM commercial_notification_marks WHERE organization_id IN ($1,$2,$3)', [directoryOrganizationA,directoryOrganizationB,setupOrganizationId]);
+  await database.query('DELETE FROM commercial_requests WHERE organization_id IN ($1,$2,$3)', [directoryOrganizationA,directoryOrganizationB,setupOrganizationId]);
   await database.query('DELETE FROM organization_feature_settings WHERE organization_id IN ($1,$2,$3)', [directoryOrganizationA,directoryOrganizationB,setupOrganizationId]);
   await database.query('DELETE FROM platform_capability_availability WHERE capability_code = ANY($1::text[])', [['SMART_ACTION_TEST','SMART_ACTION_CONCURRENCY']]);
   await database.query('DELETE FROM organization_commercial_agreements WHERE organization_id=$1', [setupOrganizationId]);
@@ -105,6 +113,7 @@ afterAll(async () => {
   if(commercialProductCode) await database.query('DELETE FROM commercial_products WHERE code=$1', [commercialProductCode]);
   if(addonPackageCode) await database.query('DELETE FROM commercial_addon_packages WHERE code=$1', [addonPackageCode]);
   if(lifecycleProductCode) await database.query('DELETE FROM commercial_products WHERE code=$1', [lifecycleProductCode]);
+  if(lifecycleProductCodes.length) await database.query('DELETE FROM commercial_products WHERE code = ANY($1::text[])', [lifecycleProductCodes]);
   await database.query(`DELETE FROM audit_logs WHERE actor_user_id IN (
     SELECT id FROM users WHERE email = ANY($1::text[])
   )`, [[...createdEmails,'application-platform-admin@jupiter.test','legacy-ownerless-admin@jupiter.test']]);
@@ -441,6 +450,13 @@ describe('public accounts and organization applications', () => {
 
   it('runs Assist independently of ticket status and settles capacity only on permitted acceptance', async () => {
     const actor={userId:setupOwnerId,organizationId:setupOrganizationId,roles:['ORG_OWNER','ORG_ADMIN']};
+    const assistProductCode=`ASSIST_BASE_${fixtureId.toUpperCase()}`;
+    lifecycleProductCodes.push(assistProductCode);
+    const assistProduct=await commercial.saveProduct(platformAdminId,{code:assistProductCode,name:'اشتراک Assist',status:'ACTIVE'});
+    await commercial.saveAvailability(platformAdminId,{capabilityCode:'JUPITER_ASSIST',isAvailable:true});
+    await commercial.saveFeatureSetting(platformAdminId,{organizationId:setupOrganizationId,capabilityCode:'JUPITER_ASSIST',enabled:true});
+    await commercial.saveEntitlement(platformAdminId,{organizationId:setupOrganizationId,capabilityCode:'JUPITER_ASSIST',status:'ACTIVE',startsAt:'2020-01-01',productId:assistProduct.id});
+    await database.withOrganization(setupOrganizationId,c=>c.query("INSERT INTO commercial_subscriptions(organization_id,product_id,status,starts_at,ends_at) VALUES($1,$2,'ACTIVE',now(),now()+interval '10 days')",[setupOrganizationId,assistProduct.id]));
     await assist.saveAgent(platformAdminId,{userId:assistAgentId,status:'ACTIVE'});
     await assist.savePolicy(platformAdminId,{organizationId:setupOrganizationId,requestPolicy:'USER_REQUEST_ALLOWED',defaultAccessScope:'ROUTED_ONLY',capacityUnits:1});
     const ticket=(await database.query<{id:string;status:string}>('INSERT INTO tickets(organization_id,requester_user_id,title,description,status) VALUES($1,$2,$3,$4,\'OPEN\') RETURNING id,status',[setupOrganizationId,setupOwnerId,'Lifecycle assist ticket','Independent lifecycle ticket'])).rows[0];
@@ -516,6 +532,79 @@ describe('public accounts and organization applications', () => {
     await expect(subscriptions.cancel(platformAdminId, setupOrganizationId, subscription.id, 'درخواست مشتری')).resolves.toMatchObject({ status: 'CANCELLED' });
     await expect(subscriptions.activate(platformAdminId, setupOrganizationId, subscription.id)).rejects.toBeInstanceOf(BadRequestException);
     expect((await database.withOrganization(setupOrganizationId, client => client.query<{action:string}>('SELECT action FROM audit_logs WHERE target_id=$1', [subscription.id]))).rows).toEqual(expect.arrayContaining([expect.objectContaining({ action: 'SUBSCRIPTION_PAST_DUE' }), expect.objectContaining({ action: 'SUBSCRIPTION_SUSPENDED' }), expect.objectContaining({ action: 'SUBSCRIPTION_CANCELLED' })]));
+  });
+
+  it('exercises the approved subscription transition graph through the server lifecycle service', async () => {
+    const productCode=`LIFECYCLE_GRAPH_${fixtureId.toUpperCase()}`; lifecycleProductCodes.push(productCode);
+    const product=await commercial.saveProduct(platformAdminId,{code:productCode,name:'گراف چرخهٔ عمر',status:'ACTIVE'});
+    const create=async(status:string='ACTIVE',ends="now()+interval '10 days'")=>(await database.withOrganization(setupOrganizationId,c=>c.query<{id:string}>(`INSERT INTO commercial_subscriptions(organization_id,product_id,status,starts_at,ends_at) VALUES($1,$2,$3,now(),${ends}) RETURNING id`,[setupOrganizationId,product.id,status]))).rows[0].id;
+    const trialActive=await create('TRIAL'); await expect(subscriptions.activate(platformAdminId,setupOrganizationId,trialActive)).resolves.toMatchObject({status:'ACTIVE'});
+    const trialExpired=await create('TRIAL'); await database.withOrganization(setupOrganizationId,c=>c.query("UPDATE commercial_subscriptions SET starts_at=now()-interval '2 days',ends_at=now()-interval '1 minute' WHERE id=$1",[trialExpired])); await subscriptions.expireDue(); expect((await database.withOrganization(setupOrganizationId,c=>c.query<{status:string}>('SELECT status FROM commercial_subscriptions WHERE id=$1',[trialExpired]))).rows[0].status).toBe('EXPIRED');
+    const activePastDue=await create(); await subscriptions.pastDue(platformAdminId,setupOrganizationId,activePastDue,1); await expect(subscriptions.renew(platformAdminId,setupOrganizationId,activePastDue,'2030-01-01')).resolves.toMatchObject({status:'ACTIVE'});
+    const activeSuspended=await create(); await subscriptions.suspend(platformAdminId,setupOrganizationId,activeSuspended,'عملیاتی'); await subscriptions.activate(platformAdminId,setupOrganizationId,activeSuspended); await subscriptions.cancel(platformAdminId,setupOrganizationId,activeSuspended,'پایان');
+    const activeCancelled=await create(); await subscriptions.cancel(platformAdminId,setupOrganizationId,activeCancelled,'لغو'); await expect(subscriptions.activate(platformAdminId,setupOrganizationId,activeCancelled)).rejects.toBeInstanceOf(BadRequestException);
+    const activeExpired=await create('ACTIVE'); await database.withOrganization(setupOrganizationId,c=>c.query("UPDATE commercial_subscriptions SET starts_at=now()-interval '2 days',ends_at=now()-interval '1 minute' WHERE id=$1",[activeExpired])); await subscriptions.expireDue(); expect((await database.withOrganization(setupOrganizationId,c=>c.query<{status:string}>('SELECT status FROM commercial_subscriptions WHERE id=$1',[activeExpired]))).rows[0].status).toBe('EXPIRED'); await expect(subscriptions.renew(platformAdminId,setupOrganizationId,activeExpired,'2030-01-01')).resolves.toMatchObject({status:'ACTIVE'});
+    const pastDueSuspended=await create(); await subscriptions.pastDue(platformAdminId,setupOrganizationId,pastDueSuspended,0); await database.withOrganization(setupOrganizationId,c=>c.query("UPDATE commercial_subscriptions SET grace_ends_at=now()-interval '1 minute' WHERE id=$1",[pastDueSuspended])); await subscriptions.expireDue(); expect((await database.withOrganization(setupOrganizationId,c=>c.query<{status:string}>('SELECT status FROM commercial_subscriptions WHERE id=$1',[pastDueSuspended]))).rows[0].status).toBe('SUSPENDED');
+    const pastDueCancelled=await create(); await subscriptions.pastDue(platformAdminId,setupOrganizationId,pastDueCancelled,1); await subscriptions.cancel(platformAdminId,setupOrganizationId,pastDueCancelled,'لغو در مهلت');
+    const invalidTrial=await create('TRIAL'); await expect(subscriptions.suspend(platformAdminId,setupOrganizationId,invalidTrial,'نامعتبر')).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('accepts a PAST_DUE owner renewal and applies it once without cross-tenant recovery', async () => {
+    const owner={userId:setupOwnerId,organizationId:setupOrganizationId,roles:['ORG_OWNER']};
+    const productCode=`RENEW_PAST_DUE_${fixtureId.toUpperCase()}`; lifecycleProductCodes.push(productCode);
+    const product=await commercial.saveProduct(platformAdminId,{code:productCode,name:'تمدید مهلت‌دار',status:'ACTIVE'});
+    const subscription=(await database.withOrganization(setupOrganizationId,c=>c.query<{id:string}>("INSERT INTO commercial_subscriptions(organization_id,product_id,status,starts_at,ends_at,past_due_at,grace_ends_at) VALUES($1,$2,'PAST_DUE',now()-interval '2 days',now()-interval '1 day',now()-interval '1 day',now()+interval '5 days') RETURNING id",[setupOrganizationId,product.id]))).rows[0].id;
+    const request=await commercial.createRequest(owner,{requestType:'RENEWAL',subscriptionId:subscription,idempotencyKey:randomUUID()});
+    await commercial.reviewRequest(platformAdminId,request.id,{organizationId:setupOrganizationId,decision:'APPROVED'});
+    await commercial.applyRequest(platformAdminId,request.id,{organizationId:setupOrganizationId,endsAt:'2030-01-01'});
+    expect((await database.withOrganization(setupOrganizationId,c=>c.query<{status:string}>('SELECT status FROM commercial_subscriptions WHERE id=$1',[subscription]))).rows[0].status).toBe('ACTIVE');
+    await expect(commercial.applyRequest(platformAdminId,request.id,{organizationId:setupOrganizationId,endsAt:'2030-01-01'})).resolves.toMatchObject({idempotent:true});
+    await database.withOrganization(setupOrganizationId,c=>c.query("UPDATE commercial_subscriptions SET status='CANCELLED' WHERE id=$1",[subscription]));
+    await expect(commercial.createRequest(owner,{requestType:'RENEWAL',subscriptionId:subscription,idempotencyKey:randomUUID()})).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  it('enforces commercial lifecycle for Smart Actions while manual ticketing and tenant data remain available', async () => {
+    const owner={userId:setupOwnerId,organizationId:setupOrganizationId,roles:['ORG_OWNER']}; const capability=`AI_LIFECYCLE_${fixtureId.toUpperCase()}`;
+    const productCode=`AI_LIFECYCLE_PRODUCT_${fixtureId.toUpperCase()}`; lifecycleProductCodes.push(productCode);
+    const product=await commercial.saveProduct(platformAdminId,{code:productCode,name:'هوش چرخه‌ای',status:'ACTIVE'});
+    await commercial.saveAvailability(platformAdminId,{capabilityCode:capability,isAvailable:true}); await commercial.saveFeatureSetting(platformAdminId,{organizationId:setupOrganizationId,capabilityCode:capability,enabled:true}); await commercial.saveEntitlement(platformAdminId,{organizationId:setupOrganizationId,capabilityCode:capability,status:'ACTIVE',startsAt:'2020-01-01',productId:product.id});
+    await commercial.allocateAllowance(platformAdminId,{organizationId:setupOrganizationId,capabilityCode:capability,periodStartsAt:'2026-01-01',periodEndsAt:'2027-01-01',grantedUnits:10,idempotencyKey:randomUUID()});
+    const subscription=(await database.withOrganization(setupOrganizationId,c=>c.query<{id:string}>("INSERT INTO commercial_subscriptions(organization_id,product_id,status,starts_at,ends_at) VALUES($1,$2,'ACTIVE',now(),now()+interval '10 days') RETURNING id",[setupOrganizationId,product.id]))).rows[0].id;
+    const active=await commercial.reserveSmartAction(owner,capability,randomUUID()); await commercial.releaseSmartAction(setupOrganizationId,(await database.withOrganization(setupOrganizationId,c=>c.query<{idempotency_key:string}>('SELECT idempotency_key FROM commercial_smart_actions WHERE id=$1',[active.id]))).rows[0].idempotency_key);
+    await subscriptions.pastDue(platformAdminId,setupOrganizationId,subscription,1); await expect(commercial.reserveSmartAction(owner,capability,randomUUID())).resolves.toMatchObject({status:'RESERVED'});
+    const preserved=await tickets.createDraft(owner,{title:'تیکت پایدار تجاری',description:'تاریخچه باید حفظ شود'}); await tickets.submit(owner,preserved.id);
+    const historyBefore=(await database.withOrganization(setupOrganizationId,c=>c.query<{count:string}>('SELECT count(*) FROM ticket_status_transitions WHERE ticket_id=$1',[preserved.id]))).rows[0].count;
+    await database.withOrganization(setupOrganizationId,c=>c.query("UPDATE commercial_subscriptions SET grace_ends_at=now()-interval '1 minute' WHERE id=$1",[subscription])); await expect(commercial.reserveSmartAction(owner,capability,randomUUID())).rejects.toBeInstanceOf(ForbiddenException);
+    for(const state of ['EXPIRED','SUSPENDED','CANCELLED']) { await database.withOrganization(setupOrganizationId,c=>c.query('UPDATE commercial_subscriptions SET status=$2,grace_ends_at=now()-interval \'1 minute\' WHERE id=$1',[subscription,state])); await expect(commercial.reserveSmartAction(owner,capability,randomUUID())).rejects.toBeInstanceOf(ForbiddenException); const ticket=await tickets.createDraft(owner,{title:`تیکت دستی ${state}`,description:'بدون وابستگی تجاری'}); await expect(tickets.submit(owner,ticket.id)).resolves.toMatchObject({status:'OPEN'}); }
+    expect((await database.withOrganization(setupOrganizationId,c=>c.query('SELECT id FROM tickets WHERE id=$1',[preserved.id]))).rowCount).toBe(1); expect((await database.withOrganization(setupOrganizationId,c=>c.query<{count:string}>('SELECT count(*) FROM ticket_status_transitions WHERE ticket_id=$1',[preserved.id]))).rows[0].count).toBe(historyBefore); expect((await database.withOrganization(setupOrganizationId,c=>c.query<{status:string}>('SELECT status FROM memberships WHERE organization_id=$1 AND user_id=$2',[setupOrganizationId,setupOwnerId]))).rows[0].status).toBe('active');
+  });
+
+  it('gates new Assist acceptance by its own capability but preserves accepted cases after expiry', async () => {
+    const actor={userId:setupOwnerId,organizationId:setupOrganizationId,roles:['ORG_OWNER','ORG_ADMIN']}; const assistCode=`ASSIST_LIFECYCLE_${fixtureId.toUpperCase()}`; const unrelatedCode=`AI_UNRELATED_${fixtureId.toUpperCase()}`; lifecycleProductCodes.push(assistCode,unrelatedCode);
+    const assistProduct=await commercial.saveProduct(platformAdminId,{code:assistCode,name:'Assist چرخه‌ای',status:'ACTIVE'}); const unrelated=await commercial.saveProduct(platformAdminId,{code:unrelatedCode,name:'AI نامرتبط',status:'ACTIVE'});
+    await commercial.saveAvailability(platformAdminId,{capabilityCode:'JUPITER_ASSIST',isAvailable:true}); await commercial.saveFeatureSetting(platformAdminId,{organizationId:setupOrganizationId,capabilityCode:'JUPITER_ASSIST',enabled:true}); await commercial.saveEntitlement(platformAdminId,{organizationId:setupOrganizationId,capabilityCode:'JUPITER_ASSIST',status:'ACTIVE',startsAt:'2020-01-01',productId:assistProduct.id});
+    const assistSubscription=(await database.withOrganization(setupOrganizationId,c=>c.query<{id:string}>("INSERT INTO commercial_subscriptions(organization_id,product_id,status,starts_at,ends_at) VALUES($1,$2,'ACTIVE',now(),now()+interval '10 days') RETURNING id",[setupOrganizationId,assistProduct.id]))).rows[0].id;
+    await database.withOrganization(setupOrganizationId,c=>c.query("INSERT INTO commercial_subscriptions(organization_id,product_id,status,starts_at,ends_at) VALUES($1,$2,'ACTIVE',now(),now()+interval '10 days')",[setupOrganizationId,unrelated.id]));
+    await assist.saveAgent(platformAdminId,{userId:assistAgentId,status:'ACTIVE'}); await assist.savePolicy(platformAdminId,{organizationId:setupOrganizationId,requestPolicy:'USER_REQUEST_ALLOWED',defaultAccessScope:'ROUTED_ONLY',capacityUnits:10});
+    const queue=async()=>{const ticket=(await database.query<{id:string}>('INSERT INTO tickets(organization_id,requester_user_id,title,description) VALUES($1,$2,$3,$4) RETURNING id',[setupOrganizationId,setupOwnerId,'Assist تجاری','آزمون'])).rows[0].id; const request=await assist.request(actor,ticket); await assist.approve(actor,request.id); await assist.createGrant(platformAdminId,{organizationId:setupOrganizationId,supportAgentUserId:assistAgentId,scope:'ROUTED_ONLY',ticketId:ticket,expiresAt:new Date(Date.now()+86_400_000).toISOString()}); return request.id;};
+    const accepted=await queue(); await expect(assist.accept(assistAgentId,accepted)).resolves.toBeDefined();
+    await subscriptions.pastDue(platformAdminId,setupOrganizationId,assistSubscription,1); const inGrace=await queue(); await expect(assist.accept(assistAgentId,inGrace)).resolves.toBeDefined();
+    await database.withOrganization(setupOrganizationId,c=>c.query("UPDATE commercial_subscriptions SET status='EXPIRED' WHERE id=$1",[assistSubscription]));
+    await assist.agentState(assistAgentId,accepted,'IN_PROGRESS'); await assist.agentState(assistAgentId,accepted,'WAITING_FOR_ORGANIZATION'); await assist.agentState(assistAgentId,accepted,'COMPLETED');
+    for(const state of ['EXPIRED','SUSPENDED','CANCELLED']) { await database.withOrganization(setupOrganizationId,c=>c.query('UPDATE commercial_subscriptions SET status=$2 WHERE id=$1',[assistSubscription,state])); const queued=await queue(); await expect(assist.accept(assistAgentId,queued)).rejects.toBeInstanceOf(ForbiddenException); }
+  });
+
+  it('deduplicates expiry, grace suspension and reactivation notifications across repeated worker runs', async () => {
+    const productCode=`NOTICE_LIFECYCLE_${fixtureId.toUpperCase()}`; lifecycleProductCodes.push(productCode); const product=await commercial.saveProduct(platformAdminId,{code:productCode,name:'اعلان چرخه‌ای',status:'ACTIVE'});
+    const expired=(await database.withOrganization(setupOrganizationId,c=>c.query<{id:string}>("INSERT INTO commercial_subscriptions(organization_id,product_id,status,starts_at,ends_at) VALUES($1,$2,'ACTIVE',now()-interval '2 days',now()-interval '1 minute') RETURNING id",[setupOrganizationId,product.id]))).rows[0].id;
+    const grace=(await database.withOrganization(setupOrganizationId,c=>c.query<{id:string}>("INSERT INTO commercial_subscriptions(organization_id,product_id,status,starts_at,ends_at,past_due_at,grace_ends_at) VALUES($1,$2,'PAST_DUE',now()-interval '2 days',now()-interval '1 day',now()-interval '1 day',now()-interval '1 minute') RETURNING id",[setupOrganizationId,product.id]))).rows[0].id;
+    const count=async(type:string)=>Number((await database.withOrganization(setupOrganizationId,c=>c.query<{count:string}>('SELECT count(*) FROM user_notifications WHERE user_id=$1 AND event_type=$2',[setupOwnerId,type]))).rows[0].count);
+    const expiredBefore=await count('COMMERCIAL_SUBSCRIPTION_EXPIRED'), suspendedBefore=await count('COMMERCIAL_SUBSCRIPTION_SUSPENDED'), reactivatedBefore=await count('COMMERCIAL_SUBSCRIPTION_REACTIVATED');
+    await subscriptions.expireDue(); await subscriptions.expireDue();
+    expect(await count('COMMERCIAL_SUBSCRIPTION_EXPIRED')).toBe(expiredBefore+1); expect(await count('COMMERCIAL_SUBSCRIPTION_SUSPENDED')).toBe(suspendedBefore+1);
+    expect((await database.withOrganization(setupOrganizationId,c=>c.query<{count:string}>("SELECT count(*) FROM audit_logs WHERE target_id=$1 AND action='SUBSCRIPTION_EXPIRED'",[expired]))).rows[0].count).toBe('1'); expect((await database.withOrganization(setupOrganizationId,c=>c.query<{count:string}>("SELECT count(*) FROM audit_logs WHERE target_id=$1 AND action='SUBSCRIPTION_SUSPENDED'",[grace]))).rows[0].count).toBe('1');
+    await subscriptions.renew(platformAdminId,setupOrganizationId,expired,'2030-01-01'); await subscriptions.activate(platformAdminId,setupOrganizationId,expired);
+    expect(await count('COMMERCIAL_SUBSCRIPTION_REACTIVATED')).toBe(reactivatedBefore+1); expect((await database.withOrganization(setupOrganizationId,c=>c.query<{count:string}>("SELECT count(*) FROM audit_logs WHERE target_id=$1 AND action='SUBSCRIPTION_REACTIVATED'",[expired]))).rows[0].count).toBe('1');
   });
 
   it('keeps platform appearance preset-only, auditable and platform-admin controlled', async () => {

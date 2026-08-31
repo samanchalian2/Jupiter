@@ -2,7 +2,7 @@
 
 ## GOAL-050 commercial subscription lifecycle
 
-`CommercialSubscription` اکنون وضعیت رسمی `TRIAL`، `ACTIVE`، `PAST_DUE`، `SUSPENDED`، `CANCELLED` یا `EXPIRED`، مهلت پرداخت و رخدادهای lifecycle را دارد. `OrganizationCommercialAgreement.grace_days` سیاست مهلت تجاری tenant-bound است؛ این مدل هیچ تغییری در `Ticket` یا مالکیت داده‌های تیکت ایجاد نمی‌کند.
+`CommercialSubscription` اکنون وضعیت رسمی `TRIAL`، `ACTIVE`، `PAST_DUE`، `SUSPENDED`، `CANCELLED` یا `EXPIRED`، مهلت پرداخت و رخدادهای lifecycle را دارد. `OrganizationCommercialAgreement.grace_days` سیاست مهلت تجاری tenant-bound است. یک `Entitlement` product-bound فقط به subscription همان محصول تکیه می‌کند؛ بنابراین `JUPITER_ASSIST` از اشتراک AI نامرتبط مجوز نمی‌گیرد. این مدل هیچ تغییری در `Ticket` یا مالکیت داده‌های تیکت ایجاد نمی‌کند.
 
 ## GOAL-049 commercial remediation
 
