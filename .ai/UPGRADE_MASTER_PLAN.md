@@ -1,5 +1,9 @@
 # Jupiter Master Upgrade Plan
 
+## GOAL-050 — چرخهٔ عمر اشتراک تجاری (complete)
+
+Commercial subscriptions now use the official lifecycle states, Platform-controlled audited transitions, a tenant-configured grace window, safe expiry processing and owner-visible Persian lifecycle state. Core ticketing remains independent from commercial expiry.
+
 ## GOAL-049 — کنترل تجاری مالک و مصرف مازاد (complete)
 
 Commercial Core بدون پرداخت به سیاست overage tenant-scoped، درخواست‌های ADDON/RENEWAL/SERVICE_ACTIVATION، رسیدگی Platform و داشبورد RTL مالک ارتقا یافت. ترتیب مصرف و قاعدهٔ تحویل موفق Smart Action حفظ شد.

@@ -343,3 +343,13 @@ tokens, layout density, radius, security-sensitive controls or semantic state.
 The platform default logo is also the favicon where the current architecture
 supports it. Changes are platform-admin-only and auditable; the public read
 model contains no secret or tenant data.
+
+## DEC-030 — Commercial lifecycle degrades paid capabilities, not ticketing
+
+Subscription state is evaluated server-side as part of commercial capability
+resolution. `PAST_DUE` retains paid capability only until the organization
+agreement's configured grace end; `SUSPENDED`, `CANCELLED` and `EXPIRED` deny
+new commercial Smart Actions and new Jupiter Assist acceptance. Ticket
+creation, ticket history and already accepted Assist cases remain available,
+so commercial administration cannot make an organization lose its support
+record or core operating workflow.

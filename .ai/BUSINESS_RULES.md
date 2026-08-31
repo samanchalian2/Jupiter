@@ -1,5 +1,10 @@
 # Business Rules
 
+## GOAL-050 commercial subscription lifecycle
+
+- گذارهای اشتراک فقط از سرویس Platform و مطابق گراف رسمی انجام می‌شوند؛ لغو دلیل لازم دارد و لغو‌شده دوباره فعال نمی‌شود.
+- در `PAST_DUE` تا پایان مهلت، قابلیت تجاری برقرار است؛ پس از انقضا یا تعلیق/لغو، Smart Action و پذیرش جدید Assist متوقف می‌شود اما تیکت دستی و پروندهٔ Assist پذیرفته‌شده ادامه دارد.
+
 ## GOAL-049 commercial remediation
 
 - Smart Action reservation order is periodic, add-on, emergency, enabled capped overage, then deny; failed or undelivered work releases the reservation and manual ticketing remains available.

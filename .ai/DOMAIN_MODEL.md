@@ -1,5 +1,9 @@
 # Domain Model
 
+## GOAL-050 commercial subscription lifecycle
+
+`CommercialSubscription` اکنون وضعیت رسمی `TRIAL`، `ACTIVE`، `PAST_DUE`، `SUSPENDED`، `CANCELLED` یا `EXPIRED`، مهلت پرداخت و رخدادهای lifecycle را دارد. `OrganizationCommercialAgreement.grace_days` سیاست مهلت تجاری tenant-bound است؛ این مدل هیچ تغییری در `Ticket` یا مالکیت داده‌های تیکت ایجاد نمی‌کند.
+
 ## GOAL-049 commercial remediation
 
 `CommercialOveragePolicy` is tenant-scoped and unique per organization/capability. `CommercialRequest` is tenant-scoped, idempotent and auditable through PENDING, APPROVED/REJECTED and APPLIED. `CommercialNotificationMark` is a tenant-scoped dedupe key for commercial alerts.

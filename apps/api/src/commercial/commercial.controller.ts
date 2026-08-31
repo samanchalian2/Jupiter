@@ -2,17 +2,18 @@ import { Body, Controller, Get, Headers, Param, Post, UnauthorizedException } fr
 import { AuthService } from '../auth/auth.service.js';
 import { TicketActorService } from '../tickets/ticket-actor.service.js';
 import { CommercialService } from './commercial.service.js';
+import { SubscriptionLifecycleService } from './subscription-lifecycle.service.js';
 
 @Controller('platform/commercial')
 export class CommercialController {
-  constructor(private readonly auth: AuthService, private readonly actors: TicketActorService, private readonly commercial: CommercialService) {}
+  constructor(private readonly auth: AuthService, private readonly actors: TicketActorService, private readonly commercial: CommercialService, private readonly subscriptions: SubscriptionLifecycleService) {}
   private user(value?: string) { const token = value?.replace(/^Bearer\s+/i, ''); if (!token) throw new UnauthorizedException(); return this.auth.verify(token).then((payload) => payload.sub); }
   private actor(authorization?: string, organizationId?: string) { return this.actors.fromHeaders(authorization, organizationId); }
 
   @Get('products') products(@Headers('authorization') authorization?: string) { return this.user(authorization).then((id) => this.commercial.products(id)); }
   @Post('products') product(@Body() body: { code?: string; name?: string; status?: 'DRAFT' | 'ACTIVE' | 'RETIRED' }, @Headers('authorization') authorization?: string) { return this.user(authorization).then((id) => this.commercial.saveProduct(id, body)); }
   @Get('agreements') agreements(@Headers('authorization') authorization?: string) { return this.user(authorization).then((id) => this.commercial.agreements(id)); }
-  @Post('agreements') agreement(@Body() body: { organizationId?: string; agreementReference?: string; status?: 'DRAFT' | 'ACTIVE' | 'SUSPENDED' | 'EXPIRED'; startsAt?: string; endsAt?: string | null }, @Headers('authorization') authorization?: string) { return this.user(authorization).then((id) => this.commercial.saveAgreement(id, body)); }
+  @Post('agreements') agreement(@Body() body: { organizationId?: string; agreementReference?: string; status?: 'DRAFT' | 'ACTIVE' | 'SUSPENDED' | 'EXPIRED'; startsAt?: string; endsAt?: string | null; graceDays?: number }, @Headers('authorization') authorization?: string) { return this.user(authorization).then((id) => this.commercial.saveAgreement(id, body)); }
   @Get('entitlements') entitlements(@Headers('authorization') authorization?: string) { return this.user(authorization).then((id) => this.commercial.entitlements(id)); }
   @Post('entitlements') entitlement(@Body() body: { organizationId?: string; productId?: string | null; capabilityCode?: string; status?: 'ACTIVE' | 'SUSPENDED' | 'EXPIRED'; startsAt?: string; endsAt?: string | null }, @Headers('authorization') authorization?: string) { return this.user(authorization).then((id) => this.commercial.saveEntitlement(id, body)); }
   @Get('availability') availability(@Headers('authorization') authorization?: string) { return this.user(authorization).then((id) => this.commercial.availability(id)); }
@@ -29,6 +30,12 @@ export class CommercialController {
   @Post('requests/:id/review') review(@Param('id') id:string, @Body() body:{organizationId?:string;decision?:'APPROVED'|'REJECTED';note?:string}, @Headers('authorization') authorization?:string) { return this.user(authorization).then(user=>this.commercial.reviewRequest(user,id,body)); }
   @Post('requests/:id/apply') apply(@Param('id') id:string, @Body() body:{organizationId?:string;addonPackageId?:string;endsAt?:string;productId?:string|null}, @Headers('authorization') authorization?:string) { return this.user(authorization).then(user=>this.commercial.applyRequest(user,id,body)); }
   @Post('overage') overage(@Body() body:{organizationId?:string;capabilityCode?:string;enabled?:boolean;limitUnits?:number;reason?:string}, @Headers('authorization') authorization?:string) { return this.user(authorization).then(user=>this.commercial.platformOverage(user,body)); }
+  @Get('subscriptions') subscriptionsList(@Headers('authorization') authorization?:string){return this.user(authorization).then(user=>this.subscriptions.list(user));}
+  @Post('subscriptions/:id/activate') activate(@Param('id') id:string,@Body() body:{organizationId?:string},@Headers('authorization') authorization?:string){return this.user(authorization).then(user=>this.subscriptions.activate(user,body.organizationId??'',id));}
+  @Post('subscriptions/:id/past-due') pastDue(@Param('id') id:string,@Body() body:{organizationId?:string;graceDays?:number},@Headers('authorization') authorization?:string){return this.user(authorization).then(user=>this.subscriptions.pastDue(user,body.organizationId??'',id,body.graceDays));}
+  @Post('subscriptions/:id/suspend') suspend(@Param('id') id:string,@Body() body:{organizationId?:string;reason?:string},@Headers('authorization') authorization?:string){return this.user(authorization).then(user=>this.subscriptions.suspend(user,body.organizationId??'',id,body.reason??''));}
+  @Post('subscriptions/:id/cancel') cancel(@Param('id') id:string,@Body() body:{organizationId?:string;reason?:string},@Headers('authorization') authorization?:string){return this.user(authorization).then(user=>this.subscriptions.cancel(user,body.organizationId??'',id,body.reason??''));}
+  @Post('subscriptions/:id/renew') renew(@Param('id') id:string,@Body() body:{organizationId?:string;endsAt?:string},@Headers('authorization') authorization?:string){return this.user(authorization).then(user=>this.subscriptions.renew(user,body.organizationId??'',id,body.endsAt??''));}
   @Get('effective') effective(@Headers('authorization') authorization?: string, @Headers('x-organization-id') organizationId?: string) { return this.actor(authorization, organizationId).then((actor) => this.commercial.effectiveCapabilities(actor)); }
   @Get('state') state(@Headers('authorization') authorization?: string, @Headers('x-organization-id') organizationId?: string) { return this.actor(authorization, organizationId).then((actor) => this.commercial.commercialState(actor)); }
   @Get('owner-dashboard') ownerDashboard(@Headers('authorization') authorization?: string, @Headers('x-organization-id') organizationId?: string) { return this.actor(authorization, organizationId).then((actor) => this.commercial.ownerDashboard(actor)); }

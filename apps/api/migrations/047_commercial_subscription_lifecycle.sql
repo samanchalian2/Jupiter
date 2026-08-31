@@ -1,0 +1,10 @@
+ALTER TABLE commercial_subscriptions DROP CONSTRAINT IF EXISTS commercial_subscriptions_status_check;
+ALTER TABLE commercial_subscriptions ADD CONSTRAINT commercial_subscriptions_status_check CHECK(status IN ('TRIAL','ACTIVE','PAST_DUE','SUSPENDED','CANCELLED','EXPIRED'));
+ALTER TABLE commercial_subscriptions ADD COLUMN IF NOT EXISTS past_due_at timestamptz;
+ALTER TABLE commercial_subscriptions ADD COLUMN IF NOT EXISTS grace_ends_at timestamptz;
+ALTER TABLE commercial_subscriptions ADD COLUMN IF NOT EXISTS cancelled_at timestamptz;
+ALTER TABLE commercial_subscriptions ADD COLUMN IF NOT EXISTS cancelled_by_user_id uuid REFERENCES users(id) ON DELETE SET NULL;
+ALTER TABLE commercial_subscriptions ADD COLUMN IF NOT EXISTS cancellation_reason text;
+ALTER TABLE commercial_subscriptions ADD COLUMN IF NOT EXISTS lifecycle_updated_at timestamptz NOT NULL DEFAULT now();
+CREATE INDEX IF NOT EXISTS commercial_subscriptions_lifecycle_due ON commercial_subscriptions(status, ends_at, grace_ends_at);
+ALTER TABLE organization_commercial_agreements ADD COLUMN IF NOT EXISTS grace_days integer NOT NULL DEFAULT 7 CHECK(grace_days BETWEEN 0 AND 90);

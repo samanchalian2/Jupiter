@@ -7,6 +7,7 @@ import { OrganizationApplicationService } from '../src/organization-applications
 import { OrganizationService } from '../src/organization/organization.service.js';
 import { DirectoryConnectorService } from '../src/directory/directory-connector.service.js';
 import { CommercialService } from '../src/commercial/commercial.service.js';
+import { SubscriptionLifecycleService } from '../src/commercial/subscription-lifecycle.service.js';
 import { AssistService } from '../src/assist/assist.service.js';
 import { AppearanceService } from '../src/appearance/appearance.service.js';
 import { VerificationNotification, VerificationNotificationDelivery, VerificationNotificationOutcome } from '../src/organization-applications/verification-notification.service.js';
@@ -25,7 +26,8 @@ const delivery = new CaptureVerificationDelivery();
 const applications = new OrganizationApplicationService(database, delivery);
 const organizations = new OrganizationService(database, {} as never);
 const connectors = new DirectoryConnectorService(database);
-const commercial = new CommercialService(database);
+const subscriptions = new SubscriptionLifecycleService(database);
+const commercial = new CommercialService(database, undefined, subscriptions);
 const assist = new AssistService(database);
 const appearance = new AppearanceService(database);
 const createdEmails: string[] = [];
@@ -48,6 +50,7 @@ let setupOrganizationId = '';
 let setupOwnerId = '';
 let commercialProductCode = '';
 let addonPackageCode = '';
+let lifecycleProductCode = '';
 let assistAgentId = '';
 const provisionedSlugs: string[] = [];
 
@@ -98,8 +101,10 @@ afterAll(async () => {
   await database.query('DELETE FROM organization_feature_settings WHERE organization_id IN ($1,$2,$3)', [directoryOrganizationA,directoryOrganizationB,setupOrganizationId]);
   await database.query('DELETE FROM platform_capability_availability WHERE capability_code = ANY($1::text[])', [['SMART_ACTION_TEST','SMART_ACTION_CONCURRENCY']]);
   await database.query('DELETE FROM organization_commercial_agreements WHERE organization_id=$1', [setupOrganizationId]);
+  await database.query('DELETE FROM commercial_subscriptions WHERE organization_id=$1', [setupOrganizationId]);
   if(commercialProductCode) await database.query('DELETE FROM commercial_products WHERE code=$1', [commercialProductCode]);
   if(addonPackageCode) await database.query('DELETE FROM commercial_addon_packages WHERE code=$1', [addonPackageCode]);
+  if(lifecycleProductCode) await database.query('DELETE FROM commercial_products WHERE code=$1', [lifecycleProductCode]);
   await database.query(`DELETE FROM audit_logs WHERE actor_user_id IN (
     SELECT id FROM users WHERE email = ANY($1::text[])
   )`, [[...createdEmails,'application-platform-admin@jupiter.test','legacy-ownerless-admin@jupiter.test']]);
@@ -492,6 +497,25 @@ describe('public accounts and organization applications', () => {
     const malformed=(await database.withOrganization(setupOrganizationId,c=>c.query<{id:string}>('INSERT INTO commercial_requests(organization_id,request_type,status,subscription_id,idempotency_key,created_by_user_id) VALUES($1,\'RENEWAL\',\'APPROVED\',$2,$3,$4) RETURNING id',[setupOrganizationId,foreignSubscription,randomUUID(),setupOwnerId]))).rows[0].id;
     await expect(commercial.applyRequest(platformAdminId,malformed,{organizationId:setupOrganizationId,endsAt:'2030-01-01'})).rejects.toBeInstanceOf(NotFoundException);
     expect((await database.withOrganization(setupOrganizationId,c=>c.query<{status:string}>('SELECT status FROM commercial_requests WHERE id=$1',[malformed]))).rows[0].status).toBe('APPROVED');
+  });
+
+  it('applies the subscription lifecycle safely, including grace, expiry and tenant isolation', async () => {
+    lifecycleProductCode = `LIFECYCLE_${fixtureId.toUpperCase()}`;
+    const product = await commercial.saveProduct(platformAdminId, { code: lifecycleProductCode, name: 'اشتراک چرخهٔ عمر', status: 'ACTIVE' });
+    const subscription = (await database.withOrganization(setupOrganizationId, client => client.query<{id:string}>("INSERT INTO commercial_subscriptions(organization_id,product_id,status,starts_at,ends_at) VALUES($1,$2,'TRIAL',now(),now()+interval '1 day') RETURNING id", [setupOrganizationId, product.id]))).rows[0];
+    await expect(subscriptions.activate(platformAdminId, setupOrganizationId, subscription.id)).resolves.toMatchObject({ status: 'ACTIVE', idempotent: false });
+    await expect(subscriptions.pastDue(platformAdminId, setupOrganizationId, subscription.id, 0)).resolves.toMatchObject({ status: 'PAST_DUE' });
+    await expect(subscriptions.pastDue(platformAdminId, setupOrganizationId, subscription.id, 0)).resolves.toMatchObject({ status: 'PAST_DUE', idempotent: true });
+    await expect(subscriptions.suspend(legacyOrganizationAdminId, setupOrganizationId, subscription.id, 'بدون مجوز')).rejects.toBeInstanceOf(ForbiddenException);
+    await expect(subscriptions.suspend(platformAdminId, directoryOrganizationA, subscription.id, 'سازمان نادرست')).rejects.toBeInstanceOf(NotFoundException);
+    await database.withOrganization(setupOrganizationId, client => client.query("UPDATE commercial_subscriptions SET grace_ends_at=now()-interval '1 minute' WHERE id=$1", [subscription.id]));
+    await expect(subscriptions.expireDue()).resolves.toMatchObject({ processed: expect.any(Number) });
+    expect((await database.withOrganization(setupOrganizationId, client => client.query<{status:string}>('SELECT status FROM commercial_subscriptions WHERE id=$1', [subscription.id]))).rows[0].status).toBe('SUSPENDED');
+    await expect(subscriptions.renew(platformAdminId, setupOrganizationId, subscription.id, '2030-01-01')).resolves.toMatchObject({ status: 'ACTIVE' });
+    await expect(subscriptions.activate(platformAdminId, setupOrganizationId, subscription.id)).resolves.toMatchObject({ status: 'ACTIVE', idempotent: true });
+    await expect(subscriptions.cancel(platformAdminId, setupOrganizationId, subscription.id, 'درخواست مشتری')).resolves.toMatchObject({ status: 'CANCELLED' });
+    await expect(subscriptions.activate(platformAdminId, setupOrganizationId, subscription.id)).rejects.toBeInstanceOf(BadRequestException);
+    expect((await database.withOrganization(setupOrganizationId, client => client.query<{action:string}>('SELECT action FROM audit_logs WHERE target_id=$1', [subscription.id]))).rows).toEqual(expect.arrayContaining([expect.objectContaining({ action: 'SUBSCRIPTION_PAST_DUE' }), expect.objectContaining({ action: 'SUBSCRIPTION_SUSPENDED' }), expect.objectContaining({ action: 'SUBSCRIPTION_CANCELLED' })]));
   });
 
   it('keeps platform appearance preset-only, auditable and platform-admin controlled', async () => {

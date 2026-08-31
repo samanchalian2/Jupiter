@@ -1,5 +1,9 @@
 # Security and Privacy
 
+## GOAL-050 commercial subscription lifecycle
+
+Transitionهای اشتراک Platform-Admin-only، tenant-bound و audited هستند. سازمان هدف برای هر تغییر صریح است؛ اعلان lifecycle فقط برای ORG_OWNERهای فعال همان سازمان، با dedupe پایدار، ارسال می‌شود.
+
 ## GOAL-049 commercial remediation
 
 Commercial overage policies, requests and alert marks are tenant-RLS scoped. Platform review/apply requires an explicit organization target; owner controls use the authenticated tenant actor. Audit records retain the actual actor and minimal event facts, not request secrets.
