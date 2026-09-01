@@ -352,4 +352,14 @@ export class OrganizationService {
       return {membershipId:member.id,userId:targetUserId};
     });
   }
+  async revokePlatformOwner(actorUserId:string,organizationId:string) {
+    await this.platform(actorUserId);
+    return this.database.transaction(async client=>{
+      const ownerRole=(await client.query<{id:string}>('SELECT id FROM roles WHERE code=\'ORG_OWNER\'')).rows[0]; if(!ownerRole) throw new NotFoundException('Owner role not found.');
+      const owners=(await client.query<{id:string,user_id:string}>('SELECT m.id,m.user_id FROM memberships m JOIN membership_roles mr ON mr.membership_id=m.id WHERE m.organization_id=$1 AND mr.role_id=$2 FOR UPDATE',[organizationId,ownerRole.id])).rows;
+      await client.query('DELETE FROM membership_roles WHERE role_id=$1 AND membership_id IN (SELECT id FROM memberships WHERE organization_id=$2)',[ownerRole.id,organizationId]);
+      await client.query('INSERT INTO audit_logs(organization_id,actor_user_id,action,target_type,target_id,metadata) VALUES($1,$2,\'platform.organization_owner_revoked\',\'organization\',$1,$3)',[organizationId,actorUserId,{previousOwnerUserIds:owners.map(owner=>owner.user_id),reason:'explicit_platform_revoke'}]);
+      return {revoked:owners.length};
+    });
+  }
 }

@@ -99,3 +99,6 @@ workflow: edits and restores create a new `DRAFT`, publishing selects exactly
 one current revision, and unpublishing hides the article without deleting
 history. Platform exports are projections of the current published revisions,
 not a second content store.
+# GOAL-053 — Assist capacity aggregates
+
+`AssistCapacityPackage` is a Platform-owned package linked to the existing `CommercialProduct`. `OrganizationAssistCapacityAllocation` is tenant-scoped, time-bounded capacity. `AssistCapacityLedger` is append-only and records allocation, adjustment and one unique consumption per `AssistCase`. `organization_assist_policies.capacity_units` remains a compatibility read model only; positive legacy values migrate once to open-ended `LEGACY_MIGRATED` allocation.

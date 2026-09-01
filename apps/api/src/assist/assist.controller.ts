@@ -1,11 +1,11 @@
 import { Body, Controller, Get, Headers, Param, Post, UnauthorizedException } from '@nestjs/common';
 import { AuthService } from '../auth/auth.service.js';
-import { AssistService } from './assist.service.js';
+import { AssistService } from './assist.service.js'; import { AssistCapacityService } from './assist-capacity.service.js';
 import { TicketActorService } from '../tickets/ticket-actor.service.js';
 
 @Controller('platform/assist')
 export class AssistController {
-  constructor(private readonly auth: AuthService, private readonly actors: TicketActorService, private readonly assist: AssistService) {}
+  constructor(private readonly auth: AuthService, private readonly actors: TicketActorService, private readonly assist: AssistService, private readonly capacity: AssistCapacityService) {}
   private async user(authorization?: string) { const token=authorization?.replace(/^Bearer\s+/i,''); if (!token) throw new UnauthorizedException(); return (await this.auth.verify(token)).sub; }
   @Get('agents') agents(@Headers('authorization') authorization?: string) { return this.user(authorization).then(userId=>this.assist.agents(userId)); }
   @Post('agents') agent(@Body() body:{userId?:string;status?:'ACTIVE'|'SUSPENDED'},@Headers('authorization') authorization?:string) { return this.user(authorization).then(userId=>this.assist.saveAgent(userId,body)); }
@@ -14,8 +14,16 @@ export class AssistController {
   @Get('grants') grants(@Headers('authorization') authorization?: string) { return this.user(authorization).then(userId=>this.assist.grants(userId)); }
   @Post('grants') grant(@Body() body:{organizationId?:string;supportAgentUserId?:string;scope?:string;ticketId?:string;departmentId?:string;categoryId?:string;allowsRestricted?:boolean;expiresAt?:string},@Headers('authorization') authorization?:string) { return this.user(authorization).then(userId=>this.assist.createGrant(userId,body)); }
   @Post('grants/:id/revoke') revoke(@Param('id') id:string,@Headers('authorization') authorization?:string) { return this.user(authorization).then(userId=>this.assist.revokeGrant(userId,id)); }
+  @Get('capacity/packages') packages(@Headers('authorization') authorization?:string) { return this.user(authorization).then(userId=>this.capacity.packages(userId)); }
+  @Post('capacity/packages') package(@Body() body:{productId?:string;code?:string;name?:string;includedUnits?:number;status?:'ACTIVE'|'SUSPENDED'},@Headers('authorization') authorization?:string) { return this.user(authorization).then(userId=>this.capacity.savePackage(userId,body)); }
+  @Get('capacity/allocations') allocations(@Headers('authorization') authorization?:string,@Headers('x-organization-id') organizationId?:string) { return this.user(authorization).then(userId=>this.capacity.allocations(userId,organizationId)); }
+  @Get('capacity/report') capacityReport(@Headers('authorization') authorization?:string) { return this.user(authorization).then(userId=>this.capacity.report(userId)); }
+  @Post('capacity/allocations') allocation(@Body() body:{organizationId?:string;packageId?:string;source?:'INCLUDED'|'PROMOTIONAL'|'MANUAL'|'LEGACY_MIGRATED'|'PURCHASED';units?:number;startsAt?:string;expiresAt?:string;contractReference?:string},@Headers('authorization') authorization?:string) { return this.user(authorization).then(userId=>this.capacity.assign(userId,body)); }
+  @Post('capacity/allocations/:id/adjust') adjust(@Param('id') id:string,@Body() body:{organizationId?:string;units?:number;reason?:string},@Headers('authorization') authorization?:string) { return this.user(authorization).then(userId=>this.capacity.adjust(userId,{...body,allocationId:id})); }
+  @Post('capacity/allocations/:id/suspend') suspend(@Param('id') id:string,@Body() body:{organizationId?:string;reason?:string},@Headers('authorization') authorization?:string) { return this.user(authorization).then(userId=>this.capacity.suspend(userId,{...body,allocationId:id})); }
 
   @Get('cases') cases(@Headers('authorization') authorization?:string,@Headers('x-organization-id') organizationId?:string) { return this.actors.fromHeaders(authorization,organizationId).then(actor=>this.assist.cases(actor)); }
+  @Get('owner/capacity') ownerCapacity(@Headers('authorization') authorization?:string,@Headers('x-organization-id') organizationId?:string) { return this.actors.fromHeaders(authorization,organizationId).then(actor=>this.capacity.ownerSummary(actor)); }
   @Post('tickets/:ticketId/request') request(@Param('ticketId') ticketId:string,@Body() body:{note?:string},@Headers('authorization') authorization?:string,@Headers('x-organization-id') organizationId?:string) { return this.actors.fromHeaders(authorization,organizationId).then(actor=>this.assist.request(actor,ticketId,body.note)); }
   @Post('cases/:id/approve') approve(@Param('id') id:string,@Headers('authorization') authorization?:string,@Headers('x-organization-id') organizationId?:string) { return this.actors.fromHeaders(authorization,organizationId).then(actor=>this.assist.approve(actor,id)); }
   @Get('platform/cases') platformCases(@Headers('authorization') authorization?:string) { return this.user(authorization).then(userId=>this.assist.platformCases(userId)); }

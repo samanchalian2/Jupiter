@@ -1,5 +1,11 @@
 # Changelog
 
+## GOAL-053 — مدل بسته و ظرفیت Jupiter Assist
+
+- ظرفیت Assist به بسته‌ها، تخصیص‌های tenant-scoped و ledger تغییرناپذیر منتقل شد؛ فقط پذیرش موفق پرونده یک واحد مصرف می‌کند.
+- Platform package، تخصیص، اصلاح، تعلیق و حذف صریح Owner را با Audit کنترل می‌کند؛ نمایش Owner فقط summary مجاز است.
+- راهنمای فارسی Jupiter Assist در runtime به نسخهٔ ۲ منتشر شد.
+
 ## GOAL-052 — سهمیهٔ دوره‌ای و اضطراری Smart Action
 
 - استخر مشترک ماهانهٔ عملیات هوشمند با policy قابل‌تنظیم Platform، override سازمانی، provisioning تکرارپذیر UTC، Emergency محدود و انقضای Add-on اضافه شد.

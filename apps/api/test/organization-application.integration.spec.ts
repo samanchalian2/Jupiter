@@ -9,6 +9,7 @@ import { DirectoryConnectorService } from '../src/directory/directory-connector.
 import { CommercialService } from '../src/commercial/commercial.service.js';
 import { SubscriptionLifecycleService } from '../src/commercial/subscription-lifecycle.service.js';
 import { AssistService } from '../src/assist/assist.service.js';
+import { AssistCapacityService } from '../src/assist/assist-capacity.service.js';
 import { NotificationService } from '../src/notifications/notification.service.js';
 import { TicketService } from '../src/tickets/ticket.service.js';
 import { AppearanceService } from '../src/appearance/appearance.service.js';
@@ -32,6 +33,7 @@ const notifications = new NotificationService(database);
 const subscriptions = new SubscriptionLifecycleService(database, notifications);
 const commercial = new CommercialService(database, notifications, subscriptions);
 const assist = new AssistService(database, commercial);
+const assistCapacity = new AssistCapacityService(database);
 const tickets = new TicketService(database);
 const appearance = new AppearanceService(database);
 const createdEmails: string[] = [];
@@ -76,6 +78,7 @@ beforeAll(async () => {
   )).rows[0].id;
   await database.query(`DELETE FROM membership_roles WHERE membership_id IN (SELECT m.id FROM memberships m JOIN roles r ON r.code='ORG_OWNER' WHERE m.organization_id=$1 AND m.user_id=$2)`, [legacyOrganizationId,legacyOrganizationAdminId]);
   assistAgentId = (await database.query<{id:string}>(`INSERT INTO users(email,display_name,password_hash) VALUES($1,$2,$3) ON CONFLICT(email) DO UPDATE SET display_name=EXCLUDED.display_name RETURNING id`, ['jupiter-assist-agent@jupiter.test','Jupiter Assist Agent','scrypt$AA$AA'])).rows[0].id;
+  await database.transaction(async c=>{await c.query("SET LOCAL session_replication_role = 'replica'");await c.query('DELETE FROM assist_capacity_ledger WHERE assist_case_id IN (SELECT id FROM assist_cases WHERE assigned_support_agent_user_id=$1)',[assistAgentId]);});
   await database.query('DELETE FROM assist_cases WHERE assigned_support_agent_user_id=$1', [assistAgentId]);
   await database.query('DELETE FROM support_access_grants WHERE support_agent_user_id=$1', [assistAgentId]);
   await database.query('DELETE FROM jupiter_support_agents WHERE user_id=$1', [assistAgentId]);
@@ -93,6 +96,9 @@ afterAll(async () => {
   await database.query('DELETE FROM user_notifications WHERE organization_id IN ($1,$2,$3)', [directoryOrganizationA,directoryOrganizationB,setupOrganizationId]);
   await database.query("DELETE FROM audit_logs WHERE action LIKE 'assist.%'");
   await database.query('DELETE FROM support_access_grants WHERE organization_id IN ($1,$2,$3)', [directoryOrganizationA,directoryOrganizationB,setupOrganizationId]);
+  await database.transaction(async c=>{await c.query("SET LOCAL session_replication_role = 'replica'");await c.query('DELETE FROM assist_capacity_ledger WHERE organization_id IN ($1,$2,$3)', [directoryOrganizationA,directoryOrganizationB,setupOrganizationId]);});
+  await database.query('DELETE FROM organization_assist_capacity_allocations WHERE organization_id IN ($1,$2,$3)', [directoryOrganizationA,directoryOrganizationB,setupOrganizationId]);
+  await database.query('DELETE FROM assist_capacity_packages WHERE code LIKE $1', [`ASSIST_CAPACITY_${fixtureId.toUpperCase()}%`]);
   await database.query('DELETE FROM assist_cases WHERE assigned_support_agent_user_id=$1', [assistAgentId]);
   await database.query('DELETE FROM assist_cases WHERE organization_id IN ($1,$2,$3)', [directoryOrganizationA,directoryOrganizationB,setupOrganizationId]);
   await database.query('DELETE FROM organization_assist_policies WHERE organization_id IN ($1,$2,$3)', [directoryOrganizationA,directoryOrganizationB,setupOrganizationId]);
@@ -136,6 +142,9 @@ afterAll(async () => {
   await database.query('DELETE FROM memberships WHERE organization_id=$1', [legacyOrganizationId]);
   await database.query('DELETE FROM organizations WHERE id=$1', [legacyOrganizationId]);
   await database.query('DELETE FROM platform_capability_availability WHERE updated_by_user_id IN ($1,$2)', [platformAdminId,legacyOrganizationAdminId]);
+  await database.query('UPDATE organization_feature_settings SET updated_by_user_id=NULL WHERE updated_by_user_id IN ($1,$2)', [platformAdminId,legacyOrganizationAdminId]);
+  await database.query('DELETE FROM commercial_addon_allocations WHERE created_by_user_id IN ($1,$2)', [platformAdminId,legacyOrganizationAdminId]);
+  await database.query('DELETE FROM commercial_usage_allowances WHERE created_by_user_id IN ($1,$2)', [platformAdminId,legacyOrganizationAdminId]);
   await database.query('DELETE FROM users WHERE id IN ($1,$2)', [platformAdminId,legacyOrganizationAdminId]);
   await database.query('DELETE FROM users WHERE id=$1', [assistAgentId]);
   await database.query('DELETE FROM commercial_subscriptions WHERE organization_id IN ($1,$2)', [directoryOrganizationA,directoryOrganizationB]);
@@ -469,6 +478,19 @@ describe('public accounts and organization applications', () => {
     expect((await database.withOrganization(setupOrganizationId,c=>c.query<{capacity_units:number}>('SELECT capacity_units FROM organization_assist_policies'))).rows[0].capacity_units).toBe(0);
     await assist.agentState(assistAgentId,requested.id,'IN_PROGRESS'); await assist.agentState(assistAgentId,requested.id,'COMPLETED');
     expect((await database.query<{status:string}>('SELECT status FROM tickets WHERE id=$1',[ticket.id])).rows[0].status).toBe('OPEN');
+  });
+
+  it('settles one package-backed Assist unit only when a queued case is accepted', async () => {
+    const actor={userId:setupOwnerId,organizationId:setupOrganizationId,roles:['ORG_OWNER','ORG_ADMIN']}; const code=`ASSIST_CAPACITY_${fixtureId.toUpperCase()}`; lifecycleProductCodes.push(code);
+    const product=await commercial.saveProduct(platformAdminId,{code,name:'محصول ظرفیت Assist',status:'ACTIVE'});
+    const packageRecord=await assistCapacity.savePackage(platformAdminId,{productId:product.id,code:`${code}_PACK`,name:'بسته آزمون Assist',includedUnits:2,status:'ACTIVE'});
+    await assistCapacity.assign(platformAdminId,{organizationId:setupOrganizationId,packageId:packageRecord.id,source:'INCLUDED',units:1,startsAt:new Date(Date.now()-60_000).toISOString(),expiresAt:new Date(Date.now()+86_400_000).toISOString(),contractReference:'acceptance-test'});
+    await commercial.saveAvailability(platformAdminId,{capabilityCode:'JUPITER_ASSIST',isAvailable:true}); await commercial.saveFeatureSetting(platformAdminId,{organizationId:setupOrganizationId,capabilityCode:'JUPITER_ASSIST',enabled:true}); await commercial.saveEntitlement(platformAdminId,{organizationId:setupOrganizationId,capabilityCode:'JUPITER_ASSIST',status:'ACTIVE',startsAt:'2020-01-01',productId:product.id});
+    await database.withOrganization(setupOrganizationId,c=>c.query("INSERT INTO commercial_subscriptions(organization_id,product_id,status,starts_at,ends_at) VALUES($1,$2,'ACTIVE',now(),now()+interval '10 days')",[setupOrganizationId,product.id]));
+    const packageAssist=new AssistService(database,commercial,assistCapacity); await packageAssist.saveAgent(platformAdminId,{userId:assistAgentId,status:'ACTIVE'}); await packageAssist.savePolicy(platformAdminId,{organizationId:setupOrganizationId,requestPolicy:'USER_REQUEST_ALLOWED',defaultAccessScope:'ROUTED_ONLY',assistSlaMinutes:60});
+    const ticket=(await database.query<{id:string}>('INSERT INTO tickets(organization_id,requester_user_id,title,description) VALUES($1,$2,$3,$4) RETURNING id',[setupOrganizationId,setupOwnerId,'Package assist','capacity test'])).rows[0].id; const queued=await packageAssist.request(actor,ticket); await packageAssist.approve(actor,queued.id); await packageAssist.createGrant(platformAdminId,{organizationId:setupOrganizationId,supportAgentUserId:assistAgentId,scope:'ROUTED_ONLY',ticketId:ticket,expiresAt:new Date(Date.now()+86_400_000).toISOString()});
+    expect((await assistCapacity.ownerSummary(actor)).allocations[0]).toMatchObject({remaining:1,source:'INCLUDED'}); await packageAssist.accept(assistAgentId,queued.id); await expect(packageAssist.accept(assistAgentId,queued.id)).rejects.toBeDefined();
+    const settled=await database.withOrganization(setupOrganizationId,c=>c.query<{count:number;remaining:number}>(`SELECT count(*) FILTER (WHERE event_type='CONSUMED')::int count,COALESCE(sum(unit_delta),0)::int remaining FROM assist_capacity_ledger WHERE organization_id=$1`,[setupOrganizationId])); expect(settled.rows[0]).toMatchObject({count:1,remaining:0});
   });
 
   it('shows the commercial dashboard only to the explicit organization owner', async () => {

@@ -1,5 +1,7 @@
 # Next Task
 
+GOAL-053 کامل شد. طبق محدودهٔ مصوب، Goal بعدی آغاز نمی‌شود. Evidence: `docs/GOAL_053_EVIDENCE.md`.
+
 GOAL-052 کامل شد. طبق محدودهٔ مصوب، Goal بعدی آغاز نمی‌شود.
 
 GOAL-050 remediation پذیرش را گذراند. طبق محدودهٔ مصوب، Goal بعدی آغاز نمی‌شود.

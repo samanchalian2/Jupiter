@@ -55,4 +55,5 @@ export class OrganizationController {
   @Get('platform/organizations/:id/owners') platformOwners(@Param('id') id:string,@Headers('authorization') a?:string) { return this.platform(a).then(user=>this.organizations.platformOwners(user.sub,id)); }
   @Get('platform/organizations/:id/members') platformOrganizationMembers(@Param('id') id:string,@Headers('authorization') a?:string) { return this.platform(a).then(user=>this.organizations.platformOrganizationMembers(user.sub,id)); }
   @Post('platform/organizations/:id/owner') assignPlatformOwner(@Param('id') id:string,@Body() body:{userId:string},@Headers('authorization') a?:string) { return this.platform(a).then(user=>this.organizations.assignPlatformOwner(user.sub,id,body.userId)); }
+  @Post('platform/organizations/:id/owner/revoke') revokePlatformOwner(@Param('id') id:string,@Headers('authorization') a?:string) { return this.platform(a).then(user=>this.organizations.revokePlatformOwner(user.sub,id)); }
 }

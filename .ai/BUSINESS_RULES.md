@@ -99,3 +99,7 @@
   brand, density and radius presets plus an internal managed logo path;
   organization branding cannot alter semantic colors, density, radius or
   security-sensitive UI.
+# GOAL-053 — Jupiter Assist capacity
+
+Assist request, approval, queueing and assignment attempts do not consume commercial capacity. Exactly one unit is settled only when a permitted Jupiter agent accepts a queued case. New acceptance needs both an effective `JUPITER_ASSIST` commercial capability and valid package capacity; accepted cases remain operable after later capacity expiry or suspension. Capacity order is valid included package, promotional/manual/legacy credit, then purchased package, each by nearest expiry and stable creation/id tie-breakers. No Assist emergency or overage exists.
+Existing organizations may remain ownerless. Only Platform Admin may explicitly assign or revoke `ORG_OWNER`; both actions are audited and revocation never changes the member's other organization roles.

@@ -1,5 +1,9 @@
 # Jupiter Master Upgrade Plan
 
+## GOAL-053 — مدل بسته و ظرفیت Jupiter Assist (complete)
+
+ظرفیت Assist از شمارندهٔ policy به بسته، تخصیص tenant-scoped و ledger immutable منتقل می‌شود. تنها Accept پرونده ظرفیت مصرف می‌کند؛ مجوز دسترسی، AI و ticket lifecycle مستقل باقی می‌مانند.
+
 ## GOAL-052 — سهمیهٔ دوره‌ای Smart Action و سیاست اضطراری (complete)
 
 سهمیهٔ مشترک سازمانی عملیات هوشمند با پیش‌فرض ۲۵ ماهانه و ۳ اضطراری، override Platform، window UTC، Add-on منقضی‌شونده و ترتیب reservation قطعی افزوده شد؛ تیکت دستی مستقل باقی می‌ماند.

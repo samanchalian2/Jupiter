@@ -66,6 +66,7 @@ export function OrganizationAdminConsole({ actor }: { actor: Actor }) {
         {notice && <p className="notice" role="status">{notice}</p>}
         {tab === 'directory' && <ContextualHelpTrigger actor={actor} relatedFeature="DIRECTORY_CONNECTOR" label="راهنمای اتصال دایرکتوری"/>}
         {tab === 'settings' && <ContextualHelpTrigger actor={actor} relatedFeature="AI_TICKET_REVIEW" label="راهنمای تکمیل هوشمند"/>}
+        {tab === 'commercial' && <ContextualHelpTrigger actor={actor} relatedFeature="JUPITER_ASSIST" label="راهنمای Jupiter Assist"/>}
         {tab === 'members' && <><MembersPanel actor={actor} onNotice={setNotice}/><CsvMemberImport actor={actor} onNotice={setNotice}/></>}
         {tab === 'directory' && <DirectoryConnectorPanel actor={actor} onNotice={setNotice}/>}
         {tab === 'catalog' && <CatalogPanel actor={actor} onNotice={setNotice}/>}

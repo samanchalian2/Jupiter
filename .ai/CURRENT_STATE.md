@@ -1,5 +1,7 @@
 # Current State
 
+**GOAL-053 — مدل بسته و ظرفیت Jupiter Assist (complete with 375px browser-surface limitation, 2026-09-01):** ظرفیت Assist از شمارندهٔ policy به بسته‌ها، تخصیص‌های tenant-scoped و ledger immutable منتقل شد. پذیرش پرونده تنها محل settlement است؛ request، approval و queue مصرف ایجاد نمی‌کنند. Platform تنها مرجع package/allocation/adjustment/suspension و revoke صریح Owner است؛ Owner فقط projection مجاز می‌بیند. Help فارسی runtime به نسخهٔ ۲ منتشر شد. Evidence: `docs/GOAL_053_EVIDENCE.md`.
+
 **GOAL-052 — سهمیهٔ دوره‌ای Smart Action و سیاست اضطراری (complete, 2026-09-01):** استخر مشترک `AI_SMART_ACTIONS` برای Ticket Review و Smart Intake با دورهٔ ماه تقویمی UTC، پیش‌فرض ۲۵ دوره‌ای و ۳ اضطراری، override صرفاً Platform و انقضای پیش‌فرض ۱۲ماههٔ Add-on اضافه شد. worker موجود provisioning تکرارپذیر را اجرا می‌کند و reservation نیز آن را lazy-ensure می‌کند؛ تیکت‌گذاری دستی مستقل باقی می‌ماند. Evidence: `docs/GOAL_052_EVIDENCE.md`.
 
 **GOAL-051 — پوشش کامل metering برای AI Smart Actions (complete, 2026-08-31):** Migration 049 actor/subject references and tenant-RLS safe AI telemetry. Ticket Review and Smart Intake reserve one effective commercial action before execution and settle exactly once only after a valid persisted deliverable; retries, failed validation, cancellation, diagnostics and standalone attachment transcription never consume another customer unit. Owner and Platform reports expose only permitted summaries. Evidence: `docs/GOAL_051_EVIDENCE.md`.

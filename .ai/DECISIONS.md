@@ -4,6 +4,10 @@
 
 Commercial billing remains based on delivered Smart Actions, not tokens. The two current AI actions share one organization pool with a Platform-configurable default of 25 units per UTC calendar month and 3 bounded emergency units. Allowances never roll over; Periodic capacity precedes active Add-on, then Emergency, enabled per-capability Overage and denial. Add-ons default to a 12-month expiry unless Platform records an explicit agreement-derived expiry. AI exhaustion never restricts manual ticketing.
 
+## DEC-032 — Package-backed Jupiter Assist capacity
+
+Jupiter Assist capacity is a tenant-scoped, immutable-ledger commercial resource, separate from AI Smart Action allowance and Support Access Grants. A unit is settled only when a permitted agent accepts a queued Assist case in the same transaction; request, approval, queue and assignment attempts do not consume it. Valid included packages consume first by nearest expiry, then promotional/manual/legacy credits, then purchased packages, with stable created-at/id tie-breakers. Legacy policy capacity is migrated to open-ended `LEGACY_MIGRATED` credit so existing service is not lost; the former policy field is read-model compatibility only. New packages require a validity period, and expiry/suspension blocks only new acceptance—not already accepted case work.
+
 ## DEC-001 — TypeScript modular monolith
 
 Approved plan: NestJS backend and React/Vite frontend. This keeps one primary
