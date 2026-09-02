@@ -33,7 +33,7 @@ const notifications = new NotificationService(database);
 const subscriptions = new SubscriptionLifecycleService(database, notifications);
 const commercial = new CommercialService(database, notifications, subscriptions);
 const assist = new AssistService(database, commercial);
-const assistCapacity = new AssistCapacityService(database);
+const assistCapacity = new AssistCapacityService(database, notifications);
 const tickets = new TicketService(database);
 const appearance = new AppearanceService(database);
 const createdEmails: string[] = [];
@@ -491,6 +491,51 @@ describe('public accounts and organization applications', () => {
     const ticket=(await database.query<{id:string}>('INSERT INTO tickets(organization_id,requester_user_id,title,description) VALUES($1,$2,$3,$4) RETURNING id',[setupOrganizationId,setupOwnerId,'Package assist','capacity test'])).rows[0].id; const queued=await packageAssist.request(actor,ticket); await packageAssist.approve(actor,queued.id); await packageAssist.createGrant(platformAdminId,{organizationId:setupOrganizationId,supportAgentUserId:assistAgentId,scope:'ROUTED_ONLY',ticketId:ticket,expiresAt:new Date(Date.now()+86_400_000).toISOString()});
     expect((await assistCapacity.ownerSummary(actor)).allocations[0]).toMatchObject({remaining:1,source:'INCLUDED'}); await packageAssist.accept(assistAgentId,queued.id); await expect(packageAssist.accept(assistAgentId,queued.id)).rejects.toBeDefined();
     const settled=await database.withOrganization(setupOrganizationId,c=>c.query<{count:number;remaining:number}>(`SELECT count(*) FILTER (WHERE event_type='CONSUMED')::int count,COALESCE(sum(unit_delta),0)::int remaining FROM assist_capacity_ledger WHERE organization_id=$1`,[setupOrganizationId])); expect(settled.rows[0]).toMatchObject({count:1,remaining:0});
+  });
+
+  it('delivers deduplicated Assist package notices only to active owners and suspends definitions without changing issued allocations', async () => {
+    const code=`ASSIST_CAPACITY_${fixtureId.toUpperCase()}_NOTICE`; lifecycleProductCodes.push(code);
+    const product=await commercial.saveProduct(platformAdminId,{code,name:'محصول اعلان Assist',status:'ACTIVE'});
+    const packageRecord=await assistCapacity.savePackage(platformAdminId,{productId:product.id,code:`${code}_PACK`,name:'بسته اعلان Assist',includedUnits:3,status:'ACTIVE'});
+    const inactive=await account('inactive-assist-member');
+    await database.query(`INSERT INTO memberships(organization_id,user_id,status) VALUES($1,$2,'inactive')`,[setupOrganizationId,inactive.id]);
+    await database.query(`INSERT INTO membership_roles(membership_id,role_id) SELECT m.id,r.id FROM memberships m JOIN roles r ON r.code='ORG_OWNER' WHERE m.organization_id=$1 AND m.user_id=$2`,[setupOrganizationId,inactive.id]);
+    const event='assist.capacity.assist_package_assigned'; const before=(await database.withOrganization(setupOrganizationId,c=>c.query<{count:number}>('SELECT count(*)::int count FROM user_notifications WHERE organization_id=$1 AND user_id=$2 AND event_type=$3',[setupOrganizationId,setupOwnerId,event]))).rows[0].count;
+    const allocation=await assistCapacity.assign(platformAdminId,{organizationId:setupOrganizationId,packageId:packageRecord.id,source:'INCLUDED',units:2,startsAt:new Date(Date.now()-60_000).toISOString(),expiresAt:new Date(Date.now()+86_400_000).toISOString(),contractReference:'notification-test'});
+    expect((await database.withOrganization(setupOrganizationId,c=>c.query('SELECT id FROM user_notifications WHERE organization_id=$1 AND user_id=$2 AND event_type=$3',[setupOrganizationId,setupOwnerId,event]))).rowCount).toBe(before+1);
+    expect((await database.withOrganization(setupOrganizationId,c=>c.query('SELECT id FROM user_notifications WHERE organization_id=$1 AND user_id=$2 AND event_type=$3',[setupOrganizationId,inactive.id,event]))).rowCount).toBe(0);
+    await (assistCapacity as unknown as {notify:(organizationId:string,alertCode:string,windowKey:string)=>Promise<void>}).notify(setupOrganizationId,'ASSIST_PACKAGE_ASSIGNED',allocation.id);
+    expect((await database.withOrganization(setupOrganizationId,c=>c.query('SELECT id FROM user_notifications WHERE organization_id=$1 AND user_id=$2 AND event_type=$3',[setupOrganizationId,setupOwnerId,event]))).rowCount).toBe(before+1);
+    await assistCapacity.setPackageStatus(platformAdminId,packageRecord.id,{status:'SUSPENDED',reason:'acceptance suspension'});
+    await expect(assistCapacity.assign(platformAdminId,{organizationId:setupOrganizationId,packageId:packageRecord.id,source:'INCLUDED',units:1,startsAt:new Date().toISOString(),expiresAt:new Date(Date.now()+86_400_000).toISOString()})).rejects.toBeInstanceOf(BadRequestException);
+    expect((await assistCapacity.ownerSummary({userId:setupOwnerId,organizationId:setupOrganizationId,roles:['ORG_OWNER']})).allocations).toEqual(expect.arrayContaining([expect.objectContaining({package_code:`${code}_PACK`,remaining:2,status:'ACTIVE'})]));
+    await assistCapacity.setPackageStatus(platformAdminId,packageRecord.id,{status:'ACTIVE',reason:'acceptance reactivation'});
+    expect((await database.query("SELECT action FROM audit_logs WHERE target_id=$1 AND action IN ('ASSIST_PACKAGE_SUSPENDED','ASSIST_PACKAGE_REACTIVATED')",[packageRecord.id])).rowCount).toBe(2);
+  });
+
+  it('selects Assist capacity deterministically and keeps concurrent consumption bounded', async () => {
+    const organizationId=directoryOrganizationB;
+    const code=`ASSIST_CAPACITY_${fixtureId.toUpperCase()}_ORDER`; lifecycleProductCodes.push(code);
+    const product=await commercial.saveProduct(platformAdminId,{code,name:'محصول ترتیب ظرفیت Assist',status:'ACTIVE'});
+    const pack=await assistCapacity.savePackage(platformAdminId,{productId:product.id,code:`${code}_PACK`,name:'بسته ترتیب Assist',includedUnits:4});
+    const at=(days:number)=>new Date(Date.now()+days*86_400_000).toISOString();
+    const included=await assistCapacity.assign(platformAdminId,{organizationId,packageId:pack.id,source:'INCLUDED',units:1,startsAt:at(-1),expiresAt:at(5)});
+    const promotional=await assistCapacity.assign(platformAdminId,{organizationId,packageId:pack.id,source:'PROMOTIONAL',units:1,startsAt:at(-1),expiresAt:at(4)});
+    const manual=await assistCapacity.assign(platformAdminId,{organizationId,packageId:pack.id,source:'MANUAL',units:1,startsAt:at(-1),expiresAt:at(2)});
+    const purchased=await assistCapacity.assign(platformAdminId,{organizationId,packageId:pack.id,source:'PURCHASED',units:3,startsAt:at(-1),expiresAt:at(3)});
+    const createCase=async(label:string)=>{const ticket=(await database.query<{id:string}>('INSERT INTO tickets(organization_id,requester_user_id,title,description) VALUES($1,$2,$3,$4) RETURNING id',[organizationId,platformAdminId,`Capacity ${label}`,label])).rows[0];return database.withOrganization(organizationId,async c=>(await c.query<{id:string}>("INSERT INTO assist_cases(organization_id,ticket_id,requested_by_user_id,status) VALUES($1,$2,$3,'QUEUED') RETURNING id",[organizationId,ticket.id,platformAdminId])).rows[0].id);};
+    const cases=await Promise.all(['one','two','three','four'].map(createCase));
+    for(const caseId of cases) await database.withOrganization(organizationId,c=>assistCapacity.consumeInTransaction(c,organizationId,caseId,assistAgentId));
+    const consumed=(await database.withOrganization(organizationId,c=>c.query<{allocation_id:string;assist_case_id:string}>('SELECT allocation_id,assist_case_id FROM assist_capacity_ledger WHERE organization_id=$1 AND assist_case_id=ANY($2::uuid[])',[organizationId,cases]))).rows;
+    const order=cases.map(caseId=>consumed.find(row=>row.assist_case_id===caseId)?.allocation_id);
+    expect(order).toEqual([included.id,manual.id,promotional.id,purchased.id]);
+    const sameCase=await createCase('same-case');
+    await Promise.all([database.withOrganization(organizationId,c=>assistCapacity.consumeInTransaction(c,organizationId,sameCase,assistAgentId)),database.withOrganization(organizationId,c=>assistCapacity.consumeInTransaction(c,organizationId,sameCase,assistAgentId))]);
+    expect((await database.withOrganization(organizationId,c=>c.query('SELECT id FROM assist_capacity_ledger WHERE organization_id=$1 AND assist_case_id=$2 AND event_type=\'CONSUMED\'',[organizationId,sameCase]))).rowCount).toBe(1);
+    const concurrentCases=await Promise.all(['five','six'].map(createCase));
+    const concurrent=await Promise.all([database.withOrganization(organizationId,c=>assistCapacity.consumeInTransaction(c,organizationId,concurrentCases[0],assistAgentId)),database.withOrganization(organizationId,c=>assistCapacity.consumeInTransaction(c,organizationId,concurrentCases[1],assistAgentId))].map(x=>x.then(()=>true).catch(()=>false)));
+    expect(concurrent.filter(Boolean)).toHaveLength(1);
+    expect((await database.withOrganization(organizationId,c=>c.query<{remaining:number}>('SELECT COALESCE(SUM(unit_delta),0)::int remaining FROM assist_capacity_ledger WHERE allocation_id=$1',[purchased.id]))).rows[0].remaining).toBe(0);
   });
 
   it('shows the commercial dashboard only to the explicit organization owner', async () => {

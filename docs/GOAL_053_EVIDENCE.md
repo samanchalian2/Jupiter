@@ -23,3 +23,17 @@
 ## Acceptance limitation
 
 The in-app Browser control surface did not honor a literal 375px override. A follow-up visual run on a browser surface that permits a 375px viewport remains recommended before a release decision; this is an acceptance-environment limitation, not a document-overflow finding.
+
+## GOAL-053 remediation — Assist capacity acceptance gaps
+
+- Membership status is canonically the lower-case identity value `active`. `AssistCapacityService` now names that invariant explicitly and also requires `users.is_active` before delivering a commercial Assist notification. The new integration assertion proves an active `ORG_OWNER` receives `ASSIST_PACKAGE_ASSIGNED`, while an inactive owner membership receives none; repeating the same organization/capability/event-window creates no second notification.
+- Package definitions are now controllable by Platform Admin through `POST /platform/assist/capacity/packages/{id}/status`, with a mandatory reason and `ASSIST_PACKAGE_SUSPENDED` or `ASSIST_PACKAGE_REACTIVATED` audit event. Definition suspension blocks **new assignments only**. It does not alter, delete or suspend allocations already issued; those remain consumable until their own status or expiry prevents it. Allocation suspension independently prevents new consumption and likewise does not interrupt an already accepted Assist case.
+- Existing server integration coverage proves request and approval do not settle capacity, only queued-case acceptance settles exactly one unit, and a repeated acceptance cannot settle another. It also covers denied acceptance without usable capacity, access-grant enforcement, lifecycle gating, tenant-scoped owner projections and unchanged ticket lifecycle. The remediation test adds definition suspension, retained issued allocation, assignment denial from a suspended package, reactivation audit, active-owner notification delivery and event deduplication.
+- Capacity selection remains database-locked and deterministic: `INCLUDED`, then `PROMOTIONAL`/`MANUAL`/`LEGACY_MIGRATED`, then `PURCHASED`; the query breaks ties by nearest expiry, then creation time and allocation id. A per-organization advisory lock plus the unique consumed-case index means concurrent attempts on the same case create at most one `CONSUMED` event, and competing cases cannot drive remaining capacity below zero. Legacy positive policy capacity is migrated idempotently to one open-ended `LEGACY_MIGRATED` allocation and matching immutable credit ledger entry by migration `053_assist_package_capacity.sql`.
+- Notification coverage intentionally implemented in this Goal is package-assignment recipient delivery and dedupe. Low/exhausted, expiry and allocation-suspension notifications are not yet emitted; they remain deferred rather than being claimed as delivered.
+
+### Remediation verification
+
+- `pnpm --filter @jupiter/api migrate`: migration runner completed successfully through `053b`.
+- `pnpm --filter @jupiter/api test`: 26 files / 93 tests passed, including the new package-recipient/status and deterministic-source/concurrency integration tests.
+- `pnpm --filter @jupiter/web test`: 2 files / 11 tests passed. API and Web typechecks and both production builds passed; `git diff --check` passed.
