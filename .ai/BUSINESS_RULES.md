@@ -2,6 +2,19 @@
 
 ## GOAL-052 recurring Smart Action allowance
 
+## GOAL-054 عملیات Directory Connector
+
+- Connector status is derived from `last_seen_at`: under 5 minutes HEALTHY,
+  5–15 minutes DEGRADED, then OFFLINE. Notifications are emitted only on a
+  derived-state transition.
+- The 15-minute run is `INCREMENTAL_SNAPSHOT`; Full Reconciliation is scheduled
+  daily and is batch-complete before absence evaluation. AD delta tracking is
+  neither claimed nor implemented.
+- Selected-scope absence gets a seven-day OUT_OF_SCOPE grace. A principal absent
+  from a successful Entire Directory FULL snapshot is suspended, never deleted.
+- Directory mappings may manage only REQUESTER, EXPERT and SUPERVISOR grants;
+  ORG_ADMIN/ORG_OWNER and all manual role grants remain untouched.
+
 - `AI_TICKET_REVIEW` و `AI_SMART_INTAKE` از یک استخر سازمانی مشترک استفاده می‌کنند: پیش‌فرض فعلی ۲۵ دوره‌ای و ۳ اضطراری در هر ماه تقویمی UTC؛ هر دو مقدار Platform-configurable هستند و rollover ندارند.
 - ترتیب reservation قطعی است: PERIODIC، ADDON فعال، EMERGENCY، Overage فعال همان capability و سپس deny. انقضای پیش‌فرض Add-on دوازده ماه است؛ تیکت دستی از تمام denialهای AI مستقل است.
 

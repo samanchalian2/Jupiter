@@ -1,33 +1,11 @@
 param([string]$ConfigPath = "$PSScriptRoot\connector.config")
-$ErrorActionPreference='Stop'
-function Read-ProtectedConfig {
-  if (!(Test-Path -LiteralPath $ConfigPath)) { throw 'Connector configuration is missing.' }
-  $secure=(Get-Content -LiteralPath $ConfigPath -Raw | ConvertTo-SecureString)
-  $bstr=[Runtime.InteropServices.Marshal]::SecureStringToBSTR($secure)
-  try { return [Runtime.InteropServices.Marshal]::PtrToStringBSTR($bstr)|ConvertFrom-Json } finally { [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr) }
-}
-function Save-ProtectedConfig($Config) { ($Config|ConvertTo-Json -Depth 8|ConvertTo-SecureString -AsPlainText -Force|ConvertFrom-SecureString)|Set-Content -LiteralPath $ConfigPath -NoNewline }
-function Invoke-Jupiter($Config,[string]$Path,$Body) {
-  $headers=@{'Authorization'="Bearer $($Config.deviceToken)";'x-directory-connector-id'=$Config.connectorId;'x-directory-device-id'=$Config.deviceId}
-  $result=Invoke-RestMethod -Method Post -Uri "$($Config.jupiterUrl.TrimEnd('/'))/api/v1/directory/agent/$Path" -Headers $headers -ContentType 'application/json' -Body ($Body|ConvertTo-Json -Depth 12)
-  $Config.deviceToken=$result.deviceToken; Save-ProtectedConfig $Config; return $result
-}
-function Get-Entries($Config) {
-  Import-Module ActiveDirectory -ErrorAction Stop
-  $properties='objectGUID','sAMAccountName','userPrincipalName','mail','displayName','givenName','sn','department','title','telephoneNumber','manager','memberOf','Enabled'
-  Get-ADUser -Server $Config.domainController -SearchBase $Config.searchBase -LDAPFilter '(objectClass=user)' -Properties $properties | ForEach-Object {
-    $displayName=if([string]::IsNullOrWhiteSpace($_.displayName)){$_.sAMAccountName}else{$_.displayName}
-    @{ externalObjectId=$_.ObjectGUID.Guid; accountName=$_.sAMAccountName; email=$_.mail; displayName=$displayName; givenName=$_.givenName; surname=$_.sn; department=$_.department; title=$_.title; telephoneNumber=$_.telephoneNumber; manager=$_.manager; memberOf=@($_.memberOf); enabled=[bool]$_.Enabled; roles=@('REQUESTER') }
-  }
-}
-$config=Read-ProtectedConfig; $lastFull=[datetime]::MinValue
-while($true) {
-  try {
-    $kind=if(((Get-Date)-$lastFull).TotalHours -ge 24){'FULL'}else{'DELTA'}
-    $entries=@(Get-Entries $config)
-    $preview=Invoke-Jupiter $config 'sync/preview' @{requestId=[guid]::NewGuid().ToString();kind=$kind;scopeFingerprint=$config.scopeFingerprint;connectorVersion='1.0.0';entries=$entries}
-    Invoke-Jupiter $config 'sync/apply' @{runId=$preview.runId}|Out-Null
-    if($kind -eq 'FULL'){$lastFull=Get-Date}
-  } catch { Write-EventLog -LogName Application -Source 'JupiterDirectoryConnector' -EventId 3701 -EntryType Error -Message $_.Exception.Message }
-  Start-Sleep -Seconds 900
-}
+$ErrorActionPreference='Stop';$ConnectorVersion='1.1.0'
+function Read-ProtectedConfig { if (!(Test-Path -LiteralPath $ConfigPath)) { throw 'Connector configuration is missing.' };$secure=(Get-Content -LiteralPath $ConfigPath -Raw|ConvertTo-SecureString);$bstr=[Runtime.InteropServices.Marshal]::SecureStringToBSTR($secure);try{return [Runtime.InteropServices.Marshal]::PtrToStringBSTR($bstr)|ConvertFrom-Json}finally{[Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr)} }
+function Save-ProtectedConfig($Config){($Config|ConvertTo-Json -Depth 12|ConvertTo-SecureString -AsPlainText -Force|ConvertFrom-SecureString)|Set-Content -LiteralPath $ConfigPath -NoNewline}
+function Invoke-Jupiter($Config,[string]$Path,$Body=@{}){$headers=@{'Authorization'="Bearer $($Config.deviceToken)";'x-directory-connector-id'=$Config.connectorId;'x-directory-device-id'=$Config.deviceId};$result=Invoke-RestMethod -Method Post -Uri "$($Config.jupiterUrl.TrimEnd('/'))/api/v1/directory/agent/$Path" -Headers $headers -ContentType 'application/json' -Body ($Body|ConvertTo-Json -Depth 12);$Config.deviceToken=$result.deviceToken;Save-ProtectedConfig $Config;return $result}
+function Get-ScopeCatalog($Config){Import-Module ActiveDirectory -ErrorAction Stop;$ous=@(Get-ADOrganizationalUnit -Server $Config.domainController -Filter *|ForEach-Object{@{type='OU';externalId=$_.ObjectGUID.Guid;displayName=$_.Name;distinguishedName=$_.DistinguishedName}});$groups=@(Get-ADGroup -Server $Config.domainController -Filter *|ForEach-Object{@{type='GROUP';externalId=$_.ObjectGUID.Guid;displayName=$_.Name;distinguishedName=$_.DistinguishedName}});return @($ous+$groups)}
+function Get-Entries($Config,$Policy){Import-Module ActiveDirectory -ErrorAction Stop;$props='objectGUID','sAMAccountName','mail','displayName','givenName','sn','department','title','telephoneNumber','manager','memberOf','Enabled';$bases=@($Config.searchBase);if($Policy.scope_type -eq 'SELECTED_OUS'){ $known=@{};Get-ScopeCatalog $Config|Where-Object{$_.type -eq 'OU'}|ForEach-Object{$known[$_.externalId]=$_.distinguishedName};$bases=@($Policy.selected_ou_ids|ForEach-Object{$known[$_]})|Where-Object{$_};if(!$bases.Count){throw 'Cloud scope policy has no discovered OU selection.'} };$users=foreach($base in $bases){Get-ADUser -Server $Config.domainController -SearchBase $base -LDAPFilter '(objectClass=user)' -Properties $props};foreach($u in $users){$memberOf=@($u.memberOf|ForEach-Object{try{(Get-ADGroup -Identity $_ -Properties objectGUID).ObjectGUID.Guid}catch{}}|Where-Object{$_});if($Policy.scope_type -eq 'SELECTED_GROUPS' -and -not @($memberOf|Where-Object{$Policy.selected_group_ids -contains $_}).Count){continue};$name=if([string]::IsNullOrWhiteSpace($u.displayName)){$u.sAMAccountName}else{$u.displayName};@{externalObjectId=$u.ObjectGUID.Guid;accountName=$u.sAMAccountName;email=$u.mail;displayName=$name;givenName=$u.givenName;surname=$u.sn;department=$u.department;title=$u.title;telephoneNumber=$u.telephoneNumber;manager=$u.manager;memberOf=$memberOf;enabled=[bool]$u.Enabled}}}
+function Invoke-DirectorySync($Config,$Command){$entries=@(Get-Entries $Config $Config.policy);$batchCount=[Math]::Max(1,[Math]::Ceiling($entries.Count/1000));$reconciliationId=if($Command.mode -eq 'FULL'){[guid]::NewGuid().ToString()}else{$null};$failureRequestId=[guid]::NewGuid().ToString();try{for($index=0;$index -lt $batchCount;$index++){$start=$index*1000;$end=[Math]::Min($start+999,$entries.Count-1);$batch=if($entries.Count){@($entries[$start..$end])}else{@()};if($reconciliationId){Invoke-Jupiter $Config 'sync/full-batch' @{reconciliationId=$reconciliationId;batchIndex=$index;batchCount=$batchCount;scopePolicyVersion=$Config.policyVersion;externalObjectIds=@($batch|ForEach-Object{$_.externalObjectId})}|Out-Null};$preview=Invoke-Jupiter $Config 'sync/preview' @{requestId=[guid]::NewGuid().ToString();kind='INCREMENTAL_SNAPSHOT';scopeFingerprint="policy:$($Config.policyVersion)";connectorVersion=$ConnectorVersion;entries=$batch;scopePolicyVersion=$Config.policyVersion};Invoke-Jupiter $Config 'sync/apply-operational' @{runId=$preview.runId;commandId=if(!$reconciliationId -and $index -eq $batchCount-1){$Command.id}else{$null}}|Out-Null};if($reconciliationId){Invoke-Jupiter $Config 'sync/full-complete' @{reconciliationId=$reconciliationId;commandId=$Command.id}|Out-Null}}catch{try{Invoke-Jupiter $Config 'sync/record-failure' @{commandId=$Command.id;requestId=$failureRequestId;failureCode='CONNECTOR_SYNC_FAILED'}|Out-Null}catch{};throw}}
+function Publish-ScopeCatalog($Config,$Generation){$items=@(Get-ScopeCatalog $Config);for($offset=0;$offset -lt $items.Count;$offset+=2000){$end=[Math]::Min($offset+1999,$items.Count-1);Invoke-Jupiter $Config 'scope-discovery' @{generation=$Generation;items=@($items[$offset..$end])}|Out-Null}}
+$config=Read-ProtectedConfig;if(!$config.policyVersion){$config|Add-Member -NotePropertyName policyVersion -NotePropertyValue 0};$generation=0
+while($true){try{$heartbeat=Invoke-Jupiter $config 'heartbeat' @{version=$ConnectorVersion;policyVersion=$config.policyVersion;serviceStatus='RUNNING'};if($heartbeat.policyChanged){$policyReply=Invoke-Jupiter $config 'policy';$config.policyVersion=$policyReply.policy.version;$config.policy=$policyReply.policy;Save-ProtectedConfig $config};if(!$config.policy){throw 'No cloud directory scope policy has been received.'};if(($generation++ % 15)-eq 0){Publish-ScopeCatalog $config $generation};if($heartbeat.pendingCommand){Invoke-DirectorySync $config $heartbeat.pendingCommand}}catch{Write-EventLog -LogName Application -Source 'JupiterDirectoryConnector' -EventId 3701 -EntryType Error -Message $_.Exception.Message};Start-Sleep -Seconds 60}

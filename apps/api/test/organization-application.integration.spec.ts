@@ -325,16 +325,17 @@ describe('public accounts and organization applications', () => {
     const actor = { userId: setupOwnerId, organizationId: setupOrganizationId, roles: ['ORG_OWNER'] };
     const connector = await connectors.create(actor, 'همگام‌سازی آزمایشی');
     const paired = await connectors.pair((await connectors.createPairing(actor, connector.id)).pairingCode, 'Lifecycle Connector');
+    const mappedGroupId=randomUUID(); await connectors.saveMapping(actor,{groupExternalId:mappedGroupId,roleCode:'REQUESTER'});
     const heartbeat = await connectors.heartbeat(connector.id, paired.deviceId, paired.deviceToken, '1.0.0');
     expect(heartbeat.deviceToken).not.toBe(paired.deviceToken);
     const externalObjectId = randomUUID();
     const preview = await connectors.preview(connector.id, paired.deviceId, heartbeat.deviceToken, {
-      requestId: randomUUID(), kind: 'FULL', scopeFingerprint: 'pns-jupiter-ou-v1', connectorVersion: '1.0.0',
-      entries: [{ externalObjectId, accountName: 'directory-user', displayName: 'کاربر دایرکتوری', enabled: true, roles: ['REQUESTER'] }],
+      requestId: randomUUID(), kind: 'INCREMENTAL_SNAPSHOT', scopeFingerprint: 'pns-jupiter-ou-v1', scopePolicyVersion: 1, connectorVersion: '1.0.0',
+      entries: [{ externalObjectId, accountName: 'directory-user', displayName: 'کاربر دایرکتوری', enabled: true, memberOf: [mappedGroupId] }],
     }) as { runId:string; deviceToken:string; status:string; summary:{create:number} };
-    expect(preview).toMatchObject({ status: 'PREVIEWED', summary: { create: 1 } });
+    expect(preview).toMatchObject({ status: 'RUNNING', summary: { create: 1 } });
     const applied = await connectors.apply(connector.id, paired.deviceId, preview.deviceToken, preview.runId);
-    expect(applied).toMatchObject({ status: 'APPLIED', summary: { create: 1 } });
+    expect(applied).toMatchObject({ status: 'SUCCEEDED', summary: { create: 1 } });
     await expect(connectors.heartbeat(connector.id, paired.deviceId, paired.deviceToken, '1.0.0')).rejects.toBeInstanceOf(UnauthorizedException);
     const principal = await database.withOrganization(setupOrganizationId, client => client.query<{email:string|null;status:string;roles:string[]}>(
       `SELECT u.email,dp.status,array_agg(r.code ORDER BY r.code) AS roles FROM directory_principals dp
@@ -343,7 +344,52 @@ describe('public accounts and organization applications', () => {
        WHERE dp.external_object_id=$1 GROUP BY u.email,dp.status`, [externalObjectId],
     ));
     expect(principal.rows).toEqual([{ email: null, status: 'ACTIVE', roles: ['REQUESTER'] }]);
-    expect(await connectors.runs(actor, connector.id)).toEqual([expect.objectContaining({ id: preview.runId, status: 'APPLIED' })]);
+    expect(await connectors.runs(actor, connector.id)).toEqual([expect.objectContaining({ id: preview.runId, status: 'SUCCEEDED', scope_policy_version: 1 })]);
+  });
+
+  it('keeps Directory scope and role mapping tenant-bound and makes Sync Now idempotent', async () => {
+    const actor={userId:setupOwnerId,organizationId:setupOrganizationId,roles:['ORG_OWNER']};
+    const connector=await connectors.create(actor,'عملیات Directory');
+    await connectors.pair((await connectors.createPairing(actor,connector.id)).pairingCode,'Operational Connector');
+    const scope=await connectors.saveScope(actor,{scopeType:'ENTIRE_DIRECTORY'});
+    expect(scope.version).toBeGreaterThanOrEqual(1);
+    await connectors.saveMapping(actor,{groupExternalId:randomUUID(),roleCode:'REQUESTER'});
+    await expect(connectors.saveMapping(actor,{groupExternalId:randomUUID(),roleCode:'ORG_ADMIN'})).rejects.toBeInstanceOf(BadRequestException);
+    const first=await connectors.syncNow(actor,connector.id,randomUUID());
+    const second=await connectors.syncNow(actor,connector.id,randomUUID());
+    expect(second).toMatchObject({id:first.id,idempotent:true});
+    expect((await connectors.scope(actor)).policy).toMatchObject({scope_type:'ENTIRE_DIRECTORY',version:scope.version});
+    expect((await connectors.scope({...actor,organizationId:directoryOrganizationA})).policy).toMatchObject({scope_type:'SELECTED_OUS',selected_ou_ids:[]});
+  });
+
+  it('records an identity conflict as PARTIAL while applying safe directory records once', async () => {
+    const actor={userId:setupOwnerId,organizationId:setupOrganizationId,roles:['ORG_OWNER']};
+    const connector=await connectors.create(actor,'همگام‌سازی تعارض');
+    const paired=await connectors.pair((await connectors.createPairing(actor,connector.id)).pairingCode,'Conflict Connector');
+    const duplicateEmail=`directory-conflict-${fixtureId}@jupiter.test`; createdEmails.push(duplicateEmail);
+    await database.query('INSERT INTO users(email,display_name,password_hash) VALUES($1,$2,NULL)',[duplicateEmail,'کاربر موجود']);
+    const preview=await connectors.preview(connector.id,paired.deviceId,paired.deviceToken,{requestId:randomUUID(),kind:'INCREMENTAL_SNAPSHOT',scopeFingerprint:'scope-conflict-v1',scopePolicyVersion:1,entries:[{externalObjectId:randomUUID(),accountName:'conflict',email:duplicateEmail,displayName:'تعارض',enabled:true},{externalObjectId:randomUUID(),accountName:'safe',displayName:'ایمن',enabled:true}]}) as {runId:string;deviceToken:string;summary:{conflict:number}};
+    expect(preview.summary.conflict).toBe(1);
+    const applied=await connectors.applyOperational(connector.id,paired.deviceId,preview.deviceToken,preview.runId);
+    expect(applied).toMatchObject({status:'PARTIAL',itemFailures:0});
+    expect(await connectors.runs(actor,connector.id)).toEqual([expect.objectContaining({status:'PARTIAL',conflict_count:1})]);
+    expect(await connectors.conflicts(actor,connector.id)).toEqual([expect.objectContaining({conflict_type:'EMAIL_LINKED_TO_ANOTHER_IDENTITY'})]);
+    const safe=await database.withOrganization(setupOrganizationId,client=>client.query<{count:string}>('SELECT count(*) FROM directory_principals WHERE account_name=$1',['safe']));
+    expect(safe.rows[0].count).toBe('1');
+  });
+
+  it('does not infer absence from an incomplete Full reconciliation and suspends only after a complete Entire Directory Full', async () => {
+    const actor={userId:setupOwnerId,organizationId:setupOrganizationId,roles:['ORG_OWNER']}; const connector=await connectors.create(actor,'بازبینی batch'); const paired=await connectors.pair((await connectors.createPairing(actor,connector.id)).pairingCode,'Batch Connector'); const externalObjectId=randomUUID();
+    const preview=await connectors.preview(connector.id,paired.deviceId,paired.deviceToken,{requestId:randomUUID(),kind:'INCREMENTAL_SNAPSHOT',scopeFingerprint:'scope-batch-v1',scopePolicyVersion:1,entries:[{externalObjectId,accountName:'batch-user',displayName:'کاربر Batch',enabled:true}]}) as {runId:string;deviceToken:string};
+    const created=await connectors.applyOperational(connector.id,paired.deviceId,preview.deviceToken,preview.runId) as {deviceToken:string};
+    const incomplete=await connectors.recordFullBatch(connector.id,paired.deviceId,created.deviceToken,{reconciliationId:randomUUID(),batchIndex:0,batchCount:2,scopePolicyVersion:1,externalObjectIds:[externalObjectId]}) as {reconciliationId:string;deviceToken:string};
+    const incompleteResult=await connectors.completeFullReconciliation(connector.id,paired.deviceId,incomplete.deviceToken,{reconciliationId:incomplete.reconciliationId});
+    expect(incompleteResult).toMatchObject({status:'PARTIAL',failureCode:'FULL_RECONCILIATION_INCOMPLETE'});
+    expect((await database.withOrganization(setupOrganizationId,client=>client.query<{status:string}>('SELECT status FROM directory_principals WHERE external_object_id=$1',[externalObjectId]))).rows[0].status).toBe('ACTIVE');
+    await connectors.saveScope(actor,{scopeType:'ENTIRE_DIRECTORY'});
+    const complete=await connectors.recordFullBatch(connector.id,paired.deviceId,(incompleteResult as {deviceToken:string}).deviceToken,{reconciliationId:randomUUID(),batchIndex:0,batchCount:1,scopePolicyVersion:2,externalObjectIds:[]}) as {reconciliationId:string;deviceToken:string};
+    expect(await connectors.completeFullReconciliation(connector.id,paired.deviceId,complete.deviceToken,{reconciliationId:complete.reconciliationId})).toMatchObject({status:'SUCCEEDED'});
+    expect((await database.withOrganization(setupOrganizationId,client=>client.query<{status:string}>('SELECT status FROM directory_principals WHERE external_object_id=$1',[externalObjectId]))).rows[0].status).toBe('SUSPENDED');
   });
 
   it('keeps the commercial core platform-managed and preserves tenant isolation without billing provider operations', async () => {

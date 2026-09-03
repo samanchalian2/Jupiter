@@ -102,3 +102,13 @@ authors cannot introduce executable markup through content.
 
 Only Platform Admin may create/suspend packages, allocate or adjust capacity, with an explicit organization target and mandatory adjustment/suspension reason. Owners may read their organization projection only. Ledger rows are tenant-RLS-scoped and application-role immutable; acceptance locks the organization and case to prevent a second settlement.
 Platform Owner assignment and revocation are explicit, organization-targeted operations. Revocation removes only `ORG_OWNER`, records the actor and prior owner identities in audit metadata, and never automatically promotes an `ORG_ADMIN`.
+
+## GOAL-054 Directory operational controls
+
+Heartbeat, policy, discovery and sync requests use the rotating hashed device
+identity and are organization-bound by application checks and RLS. Heartbeats
+store only timestamp, version, service status and non-sensitive host metadata.
+Conflict records contain a safe correction message, never a token, credential
+or raw directory payload. Sync Now is owner/admin-only and returns an active
+command instead of creating a parallel one. Revocation invalidates device
+identity and unused pairing material without putting raw secrets in audits.

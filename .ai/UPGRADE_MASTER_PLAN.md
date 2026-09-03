@@ -294,3 +294,12 @@ audience-aware discovery, while compact HelpTriggers map AI, directory and
 Jupiter Assist settings to approved Help. It neither changes tenant knowledge
 ownership nor adds RAG/AI chat. Its evidence is `docs/GOAL_047_EVIDENCE.md`.
 GOAL-048 may begin.
+
+## GOAL-054 — Directory Connector Operational Completeness
+
+GOAL-054 extends the established outbound-only Directory Connector with derived
+health, lightweight versioned heartbeat, connector-bound command scheduling,
+`INCREMENTAL_SNAPSHOT` runs and daily Full reconciliation. Scope, group-role
+mapping, safe conflict handling, run history, Persian Help and authenticated
+RTL acceptance are required; no inbound LDAP, credential sync, writeback, SSO
+or connector auto-update is introduced.

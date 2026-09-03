@@ -361,3 +361,17 @@ new commercial Smart Actions and new Jupiter Assist acceptance. Ticket
 creation, ticket history and already accepted Assist cases remain available,
 so commercial administration cannot make an organization lose its support
 record or core operating workflow.
+
+## DEC-032 — Directory snapshot scheduling and absence safety
+
+GOAL-054 uses a connector-provided `INCREMENTAL_SNAPSHOT` every fifteen minutes,
+not fabricated AD change tracking. A complete FULL reconciliation is scheduled
+at least daily and is the sole basis for absence lifecycle. Under selected
+OU/group scope, absence becomes OUT_OF_SCOPE with a seven-day grace. Under
+Entire Directory, absence in a successful FULL snapshot suspends the principal;
+no Directory user is hard-deleted.
+
+Connector health is a derived last-seen projection. The worker stores a health
+transition only when the derived state changes and notifies owner/admin users
+only for DEGRADED or OFFLINE transitions. This prevents periodic write/notice
+noise while allowing another offline notice after a verified recovery.

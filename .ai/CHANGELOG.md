@@ -1,5 +1,11 @@
 # Changelog
 
+## GOAL-054 — عملیات عملیاتی Directory Connector (در حال اجرا)
+
+- وضعیت عملیاتی مشتق‌شده، heartbeat سبک، صف Sync دستی/زمان‌بندی‌شده و تاریخچهٔ run به Directory افزوده شد.
+- نام Sync زمان‌بندی‌شده `INCREMENTAL_SNAPSHOT` است؛ Full Reconciliation مبنای lifecycle absence باقی می‌ماند.
+- Scope نسخه‌دار، کشف OU/Group، نگاشت امن گروه→نقش، conflictهای قابل رسیدگی و صفحهٔ RTL عملیاتی افزوده شدند.
+
 ## GOAL-053 — مدل بسته و ظرفیت Jupiter Assist
 
 - ظرفیت Assist به بسته‌ها، تخصیص‌های tenant-scoped و ledger تغییرناپذیر منتقل شد؛ فقط پذیرش موفق پرونده یک واحد مصرف می‌کند.

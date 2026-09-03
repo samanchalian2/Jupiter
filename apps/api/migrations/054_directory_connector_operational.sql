@@ -19,10 +19,11 @@ ALTER TABLE directory_sync_runs ADD COLUMN IF NOT EXISTS unchanged_count integer
 ALTER TABLE directory_sync_runs ADD COLUMN IF NOT EXISTS out_of_scope_count integer NOT NULL DEFAULT 0;
 ALTER TABLE directory_sync_runs ADD COLUMN IF NOT EXISTS failure_code text;
 ALTER TABLE directory_sync_runs DROP CONSTRAINT IF EXISTS directory_sync_runs_status_check;
+ALTER TABLE directory_sync_runs DROP CONSTRAINT IF EXISTS directory_sync_runs_check;
 ALTER TABLE directory_sync_runs ADD CONSTRAINT directory_sync_runs_status_check CHECK(status IN ('QUEUED','RUNNING','SUCCEEDED','PARTIAL','FAILED','CANCELLED','PREVIEWED','APPLIED'));
 ALTER TABLE directory_sync_runs DROP CONSTRAINT IF EXISTS directory_sync_runs_sync_kind_check;
-ALTER TABLE directory_sync_runs ADD CONSTRAINT directory_sync_runs_sync_kind_check CHECK(sync_kind IN ('FULL','INCREMENTAL_SNAPSHOT','DELTA'));
 UPDATE directory_sync_runs SET sync_kind='INCREMENTAL_SNAPSHOT' WHERE sync_kind='DELTA';
+ALTER TABLE directory_sync_runs ADD CONSTRAINT directory_sync_runs_sync_kind_check CHECK(sync_kind IN ('FULL','INCREMENTAL_SNAPSHOT'));
 UPDATE directory_sync_runs SET status='SUCCEEDED',started_at=created_at,completed_at=COALESCE(applied_at,created_at) WHERE status='APPLIED';
 UPDATE directory_sync_runs SET status='CANCELLED',started_at=created_at,completed_at=created_at WHERE status='PREVIEWED';
 

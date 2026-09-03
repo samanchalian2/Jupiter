@@ -51,3 +51,14 @@ pointer, while restore copies a prior revision into a new draft. Platform
 exports select only current published runtime revisions. The React Help Center
 uses the existing shell/navigation and compact `HelpTrigger` entry point;
 feature mapping is metadata-driven and never reaches tenant knowledge.
+
+## GOAL-054 Directory Connector operations
+
+The Directory module remains in the monolith. The Windows Connector remains
+outbound-only; the worker only queues tenant-scoped commands and derives health.
+Heartbeats carry lightweight telemetry and a pending command reference, while
+scope/mapping policy is fetched only after a policy-version change. The scheduled
+mode is `INCREMENTAL_SNAPSHOT`, not fabricated AD delta tracking; only a complete
+`FULL` reconciliation evaluates absence lifecycle. Full snapshots are submitted
+in bounded batches, and the cloud evaluates absence only after every announced
+batch has been received.

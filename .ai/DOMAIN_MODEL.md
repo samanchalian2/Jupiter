@@ -102,3 +102,12 @@ not a second content store.
 # GOAL-053 — Assist capacity aggregates
 
 `AssistCapacityPackage` is a Platform-owned package linked to the existing `CommercialProduct`. `OrganizationAssistCapacityAllocation` is tenant-scoped, time-bounded capacity. `AssistCapacityLedger` is append-only and records allocation, adjustment and one unique consumption per `AssistCase`. `organization_assist_policies.capacity_units` remains a compatibility read model only; positive legacy values migrate once to open-ended `LEGACY_MIGRATED` allocation.
+
+## GOAL-054 Directory operations aggregates
+
+`DirectoryScopePolicy` and `DirectoryGroupRoleMapping` are tenant-scoped,
+versioned records. `DirectoryScopeCatalogItem` keeps connector-discovered OU /
+group generation and last-discovery time. `DirectorySyncRun` is immutable run
+history with policy/mapping versions and count projections. `DirectorySyncCommand`
+is the bounded connector queue entry; `DirectorySyncConflict` is the safe,
+tenant-scoped record for an identity correction.
