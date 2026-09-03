@@ -318,4 +318,6 @@ GOAL-055 replaces the legacy two-item setup checklist with a server-backed,
 versioned, resumable ten-step Wizard. Its Go-Live gate is intentionally narrow:
 SETUP lifecycle, active owner, valid organization name/timezone and one Ticket
 Category. Optional services remain warnings and cannot create an implicit paid
-activation. Evidence is `docs/GOAL_055_EVIDENCE.md`; no later Goal begins here.
+activation. The legacy tenant-setup completion endpoint delegates to the same
+canonical Go-Live service, including readiness re-evaluation and concurrent
+idempotency. Evidence is `docs/GOAL_055_EVIDENCE.md`; no later Goal begins here.

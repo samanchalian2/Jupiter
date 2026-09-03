@@ -390,3 +390,10 @@ organization access policy, while only that role may skip an optional setup
 step or activate the tenant. Contact responsibility is represented by active
 ownership; no free-text `contact_name` is duplicated. Optional contact phone
 metadata is non-blocking. After activation no `ACTIVE → SETUP` rollback exists.
+
+The one canonical lifecycle implementation is `OrganizationSetupService.goLive`.
+The legacy tenant-setup completion route is retained only as a compatibility
+delegate, so it shares authorization, readiness, locking, idempotency and the
+single successful activation audit. Readiness rejection is transactional and
+does not claim a durable rejected-audit event. Platform status controls may
+never change `SETUP` directly to `ACTIVE`; they cannot bypass Go-Live.

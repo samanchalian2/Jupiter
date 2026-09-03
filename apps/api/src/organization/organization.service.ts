@@ -1,9 +1,10 @@
-import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException, Optional } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service.js';
 import { hashPassword } from '../auth/password.js';
 import { AttachmentStorage } from '../attachments/attachment-storage.js';
 import { createHash, randomUUID } from 'node:crypto';
 import { OrganizationAccessPolicy } from './organization-access.policy.js';
+import { OrganizationSetupService } from './organization-setup.service.js';
 
 type Actor = { userId: string; organizationId: string; roles: string[] };
 type MemberInput = { email: string; username?: string; displayName: string; password?: string; roles: string[] };
@@ -25,7 +26,7 @@ const enterpriseItTemplate = [
 
 @Injectable()
 export class OrganizationService {
-  constructor(private readonly database: DatabaseService, @Inject('AttachmentStorage') private readonly storage: AttachmentStorage, private readonly access: OrganizationAccessPolicy = new OrganizationAccessPolicy()) {}
+  constructor(private readonly database: DatabaseService, @Inject('AttachmentStorage') private readonly storage: AttachmentStorage, private readonly access: OrganizationAccessPolicy = new OrganizationAccessPolicy(), @Optional() private readonly setup?: OrganizationSetupService) {}
 
   private admin(actor: Actor) { this.access.operator(actor); }
   private memberAdmin(actor: Actor) { this.access.operator(actor); }
@@ -281,7 +282,17 @@ export class OrganizationService {
   async platformUsers(userId: string) { await this.platform(userId); return (await this.database.query('SELECT id,email,display_name,is_platform_admin,is_active,created_at FROM users ORDER BY display_name')).rows; }
   async createPlatformUser(actorUserId: string, input: { email: string; username?: string; displayName: string; password: string; isPlatformAdmin?: boolean }) { await this.platform(actorUserId); if(!/^\S+@\S+\.\S+$/.test(input.email ?? '') || !input.displayName?.trim() || !input.password || input.password.length<10) throw new BadRequestException('Provide valid user details and a password of at least 10 characters.'); try { const result=(await this.database.query<{id:string;email:string;display_name:string;is_platform_admin:boolean;is_active:boolean}>('INSERT INTO users(email,username,display_name,password_hash,is_platform_admin) VALUES($1,$2,$3,$4,$5) RETURNING id,email,display_name,is_platform_admin,is_active',[input.email.toLowerCase(),this.username(input.username)??null,input.displayName.trim(),await hashPassword(input.password),input.isPlatformAdmin??false])).rows[0]; await this.database.query('INSERT INTO audit_logs(actor_user_id,action,target_type,target_id,metadata) VALUES($1,\'platform.user_created\',\'user\',$2,$3)',[actorUserId,result.id,{isPlatformAdmin:result.is_platform_admin}]); return result; } catch (cause) { this.usernameConflict(cause); } }
   async updatePlatformUser(actorUserId: string, targetUserId: string, input: { displayName?: string; username?: string; isPlatformAdmin?: boolean; isActive?: boolean; password?: string }) { await this.platform(actorUserId); if(targetUserId===actorUserId && (input.isActive===false || input.isPlatformAdmin===false)) throw new BadRequestException('You cannot remove your own platform access.'); if(input.password !== undefined && (input.password.length < 10 || input.password.length > 200)) throw new BadRequestException('Password must be between 10 and 200 characters.'); const { password, ...auditInput } = input; try { const passwordHash=password ? await hashPassword(password) : null; const result=(await this.database.query<{id:string;email:string;display_name:string;is_platform_admin:boolean;is_active:boolean}>('UPDATE users SET display_name=COALESCE($1,display_name),username=COALESCE($2,username),is_platform_admin=COALESCE($3,is_platform_admin),is_active=COALESCE($4,is_active),password_hash=COALESCE($5,password_hash),updated_at=now() WHERE id=$6 RETURNING id,email,display_name,is_platform_admin,is_active',[input.displayName?.trim()||null,this.username(input.username)??null,input.isPlatformAdmin??null,input.isActive??null,passwordHash,targetUserId])).rows[0]; if(!result) throw new NotFoundException('Platform user not found.'); if(passwordHash) await this.database.query('UPDATE refresh_sessions SET revoked_at=now() WHERE user_id=$1 AND revoked_at IS NULL',[targetUserId]); await this.database.query('INSERT INTO audit_logs(actor_user_id,action,target_type,target_id,metadata) VALUES($1,\'platform.user_updated\',\'user\',$2,$3)',[actorUserId,targetUserId,{...auditInput,passwordChanged:Boolean(passwordHash)}]); return result; } catch (cause) { this.usernameConflict(cause); } }
-  async setOrganizationStatus(userId:string, organizationId:string, status:'active'|'suspended') { await this.platform(userId); const result=await this.database.query('UPDATE organizations SET status=$1,updated_at=now() WHERE id=$2 RETURNING id,name,status',[status,organizationId]); if(result.rows[0]) await this.database.query('INSERT INTO audit_logs(actor_user_id,action,target_type,target_id,metadata) VALUES($1,\'platform.organization_status_changed\',\'organization\',$2,$3)',[userId,organizationId,{status}]); return result.rows[0]; }
+  async setOrganizationStatus(userId:string, organizationId:string, status:'active'|'suspended') {
+    await this.platform(userId);
+    return this.database.transaction(async client=>{
+      const organization=(await client.query<{status:string}>('SELECT status FROM organizations WHERE id=$1 FOR UPDATE',[organizationId])).rows[0];
+      if(!organization) throw new NotFoundException('Organization not found.');
+      if(organization.status==='setup'&&status==='active') throw new BadRequestException('سازمان در مرحلهٔ راه‌اندازی فقط از مسیر Go-Live فعال می‌شود.');
+      const result=await client.query('UPDATE organizations SET status=$1,updated_at=now() WHERE id=$2 RETURNING id,name,status',[status,organizationId]);
+      await client.query('INSERT INTO audit_logs(actor_user_id,action,target_type,target_id,metadata) VALUES($1,\'platform.organization_status_changed\',\'organization\',$2,$3)',[userId,organizationId,{status}]);
+      return result.rows[0];
+    });
+  }
   async tenantContext(userId:string, slug:string) {
     const context=(await this.database.query<{organization_id:string;organization_name:string;organization_slug:string;organization_status:string;role_codes:string[]}>(
       `SELECT m.organization_id,o.name AS organization_name,o.slug AS organization_slug,o.status AS organization_status,
@@ -314,7 +325,6 @@ export class OrganizationService {
       await this.audit(client,actor,'members.csv_imported','organization',actor.organizationId,{created:result.created,updated:result.updated,rowCount:resultRows.length});return result;
     });
   }
-  private owner(actor:Actor) { this.access.owner(actor); }
   async tenantSetup(actor:Actor) {
     return this.database.withOrganization(actor.organizationId,async client=>{
       const organization=(await client.query<{id:string;name:string;slug:string;status:string}>('SELECT id,name,slug,status FROM organizations WHERE id=$1',[actor.organizationId])).rows[0];
@@ -325,19 +335,10 @@ export class OrganizationService {
     });
   }
   async completeTenantSetup(actor:Actor) {
-    this.owner(actor);
-    return this.database.withOrganization(actor.organizationId,async client=>{
-      const organization=(await client.query<{status:string}>('SELECT status FROM organizations WHERE id=$1 FOR UPDATE',[actor.organizationId])).rows[0];
-      if(!organization) throw new NotFoundException('Organization not found.');
-      if(organization.status==='active') return {status:'active'};
-      if(organization.status!=='setup') throw new ForbiddenException('راه‌اندازی این سازمان قابل تکمیل نیست.');
-      const readiness=(await client.query<{settings_ready:boolean;categories:number}>(`SELECT EXISTS(SELECT 1 FROM organization_settings WHERE organization_id=$1) AS settings_ready,(SELECT count(*)::int FROM categories) AS categories`,[actor.organizationId])).rows[0];
-      if(!readiness.settings_ready||readiness.categories<1) throw new BadRequestException('ابتدا تنظیمات سازمان و دست‌کم یک دسته‌بندی خدمات را تکمیل کنید.');
-      await client.query(`INSERT INTO organization_setup_progress(organization_id,confirmed_by_user_id,completed_at,updated_at) VALUES($1,$2,now(),now()) ON CONFLICT(organization_id) DO UPDATE SET confirmed_by_user_id=EXCLUDED.confirmed_by_user_id,completed_at=COALESCE(organization_setup_progress.completed_at,EXCLUDED.completed_at),updated_at=now()`,[actor.organizationId,actor.userId]);
-      await client.query(`UPDATE organizations SET status='active',updated_at=now() WHERE id=$1`,[actor.organizationId]);
-      await this.audit(client,actor,'organization.setup_completed','organization',actor.organizationId,{settingsReady:true,categories:readiness.categories});
-      return {status:'active'};
-    });
+    if (!this.setup) throw new NotFoundException('سرویس راه‌اندازی سازمان در دسترس نیست.');
+    // Compatibility endpoint only: the canonical setup service owns readiness,
+    // authorization, locking, idempotency, audit and lifecycle transition.
+    return this.setup.goLive(actor);
   }
   async platformOwners(userId:string,organizationId:string) { await this.platform(userId); return (await this.database.query(`SELECT m.id AS membership_id,u.id AS user_id,u.display_name,u.email FROM memberships m JOIN users u ON u.id=m.user_id JOIN membership_roles mr ON mr.membership_id=m.id JOIN roles r ON r.id=mr.role_id WHERE m.organization_id=$1 AND m.status='active' AND r.code='ORG_OWNER' ORDER BY u.display_name`,[organizationId])).rows; }
   async platformOrganizationMembers(userId:string,organizationId:string) { await this.platform(userId); return (await this.database.query(`SELECT m.id AS membership_id,u.id AS user_id,u.display_name,u.email,array_remove(array_agg(r.code ORDER BY r.code),NULL) AS roles FROM memberships m JOIN users u ON u.id=m.user_id LEFT JOIN membership_roles mr ON mr.membership_id=m.id LEFT JOIN roles r ON r.id=mr.role_id WHERE m.organization_id=$1 AND m.status='active' GROUP BY m.id,u.id ORDER BY u.display_name`,[organizationId])).rows; }

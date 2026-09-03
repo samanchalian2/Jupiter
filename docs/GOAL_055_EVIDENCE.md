@@ -24,9 +24,15 @@ workflows.
 - Owner operational access is centralized in `OrganizationAccessPolicy`; it
   recognizes owner/admin operators without creating an admin role or promoting
   legacy members. Go-Live remains owner-only.
-- `ORGANIZATION_SETUP_*` audits are minimal and never include credentials or
-  connector/AI secret material. Activation notification is emitted only after
-  the atomic transaction commits.
+- The sole `SETUP → ACTIVE` implementation is
+  `OrganizationSetupService.goLive()`. The retained legacy endpoint
+  `POST /admin/tenant-setup/complete` is a compatibility delegate to that
+  method; it has no independent readiness or lifecycle logic.
+- The canonical successful Go-Live audit is minimal and never includes
+  credentials or connector/AI secret material. Activation notification is
+  emitted only after the atomic transaction commits. A readiness rejection has
+  no durable `ORGANIZATION_SETUP_GO_LIVE_REJECTED` audit: it is intentionally
+  not emitted rather than being inserted in a transaction that is rolled back.
 
 ## Verification completed
 
@@ -69,6 +75,37 @@ workflows.
 ## Final quality gate
 
 - `git diff --check` passed after the acceptance evidence was recorded.
+
+## GOAL-055 remediation — canonical Go-Live path (2026-09-03)
+
+- `POST /admin/tenant-setup/complete` now delegates directly to
+  `OrganizationSetupService.goLive()`. It cannot activate an organization with
+  its former checklist or produce the retired `organization.setup_completed`
+  audit; successful calls return the canonical idempotency result and create
+  only `ORGANIZATION_SETUP_GO_LIVE`. The compatibility test supplies a saved
+  settings row and Ticket Category with an invalid timezone: the old checklist
+  would have activated it, while the delegated canonical evaluator rejects it
+  until the profile is corrected.
+- Platform status controls also reject `SETUP → ACTIVE`; Platform Admin may not
+  use the general status endpoint to bypass Go-Live readiness or Owner
+  authorization.
+- The integration suite proves configuration drift before Go-Live: after a
+  valid profile and Ticket Category make a `SETUP` organization ready, removing
+  that Category makes readiness blocked again and Go-Live is rejected. Restoring
+  the Category is required before activation.
+- Two concurrent canonical Go-Live calls on one ready `SETUP` organization
+  result in exactly one activation, one `ORGANIZATION_SETUP_GO_LIVE` audit and
+  one owner lifecycle notification. The other call returns canonical idempotent
+  success; no duplicate lifecycle event or corrupted state is created.
+- Tenant resolution rejects an owner token presented with another organization's
+  header before the setup service is reached; a caller cannot select a foreign
+  tenant for any Go-Live route.
+- Rejected Go-Live has deliberately no durable rejected audit. This avoids the
+  false claim that an audit written inside a failed transaction persists, while
+  preserving fully transactional readiness and activation.
+- Remediation verification: migrations through 055, API tests (26 files / 99
+  tests), Web tests (2 files / 11 tests), API/Web typechecks and production
+  builds all passed. `git diff --check` passed after this evidence update.
 
 ## Known limitations
 

@@ -82,6 +82,11 @@
   `setup` tenant and initial applicant owner/admin membership atomically.
 - Existing organizations remain operational without an `ORG_OWNER`; owner-only
   commercial actions require explicit Platform Admin assignment.
+- A `SETUP` organization becomes `ACTIVE` only through the canonical Go-Live
+  evaluator. Its legacy tenant-setup completion endpoint is a compatibility
+  delegate, never a second readiness path. Re-evaluate readiness at activation:
+  removal of a required Ticket Category before Go-Live blocks activation again.
+  The general Platform status endpoint cannot activate a `SETUP` organization.
 - Directory synchronization will provision users and memberships only. It never
   receives, stores or validates AD passwords, and can map only REQUESTER,
   EXPERT and SUPERVISOR roles.

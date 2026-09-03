@@ -5,6 +5,7 @@
 - Wizard سازمان به progress سروری، versioned و resumable با readiness واحد و Go-Live اتمیک Owner-only ارتقا یافت.
 - حداقل شرط Go-Live نام/timezone معتبر، مالک فعال و Ticket Category است؛ Directory، SLA، AI، Assist، تیم و ظاهر اختیاری‌اند.
 - راهنمای فارسی runtime «راه‌اندازی سازمان» افزوده شد؛ شمارهٔ تماس سازمان اختیاری است و `contact_name` جدیدی ذخیره نمی‌شود.
+- remediation: مسیر قدیمی `tenant-setup/complete` اکنون صرفاً به Go-Live canonical واگذار می‌شود؛ drift پیش از فعال‌سازی و هم‌زمانی دو درخواست با یک Audit/اعلان موفق پوشش دارد. رد readiness عمداً Audit پایدار ادعا نمی‌کند.
 
 ## GOAL-054 — عملیات عملیاتی Directory Connector
 

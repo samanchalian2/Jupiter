@@ -105,14 +105,20 @@ remains outside tenant context.
 | --- | --- | --- |
 | GET | `/admin/tenant-context/:slug` | Resolve a slug only for an active member; returns the server-authorized tenant context. |
 | GET | `/admin/tenant-setup` | Return the current tenant's setup status and readiness. |
-| POST | `/admin/tenant-setup/complete` | Owner-only, idempotently activate a `setup` organization after prerequisites. |
+| POST | `/admin/tenant-setup/complete` | Backward-compatible alias of canonical Go-Live; Owner-only and idempotent. |
 | GET | `/admin/platform/organizations/:id/members` | Platform Admin-only list of active eligible members. |
 | GET | `/admin/platform/organizations/:id/owners` | Platform Admin-only list of explicitly assigned owners. |
 | POST | `/admin/platform/organizations/:id/owner` | Platform Admin-only replacement of the owner with an active member. |
 
-`POST /admin/tenant-setup/complete` requires `ORG_OWNER`, saved organization
-settings and at least one service category. It records an auditable setup
-completion and changes only that organization's state from `setup` to `active`.
+`POST /admin/tenant-setup/complete` delegates to the same canonical
+`OrganizationSetupService.goLive()` flow as
+`POST /admin/setup-wizard/go-live`. Both routes require `ORG_OWNER` and apply
+the identical server-derived readiness, locking, idempotency, audit and
+`setup` → `active` lifecycle behavior: an active owner, valid organization
+name/timezone and at least one Ticket Category. It emits the canonical
+`ORGANIZATION_SETUP_GO_LIVE` audit exactly once on successful activation; a
+rejected readiness attempt does not claim a durable rejected audit because its
+transaction is rolled back.
 An active legacy organization stays operational without an owner until a
 Platform Admin deliberately assigns one; no existing `ORG_ADMIN` is inferred
 or auto-promoted.

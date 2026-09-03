@@ -7,6 +7,7 @@ import { OrganizationApplicationService } from '../src/organization-applications
 import { OrganizationService } from '../src/organization/organization.service.js';
 import { OrganizationSetupService } from '../src/organization/organization-setup.service.js';
 import { OrganizationAccessPolicy } from '../src/organization/organization-access.policy.js';
+import { TicketActorService } from '../src/tickets/ticket-actor.service.js';
 import { DirectoryConnectorService } from '../src/directory/directory-connector.service.js';
 import { CommercialService } from '../src/commercial/commercial.service.js';
 import { SubscriptionLifecycleService } from '../src/commercial/subscription-lifecycle.service.js';
@@ -29,12 +30,13 @@ class CaptureVerificationDelivery implements VerificationNotificationDelivery {
 const database = new DatabaseService();
 const delivery = new CaptureVerificationDelivery();
 const applications = new OrganizationApplicationService(database, delivery);
-const organizations = new OrganizationService(database, {} as never);
 const connectors = new DirectoryConnectorService(database);
 const notifications = new NotificationService(database);
 const subscriptions = new SubscriptionLifecycleService(database, notifications);
 const commercial = new CommercialService(database, notifications, subscriptions);
-const setupWizard = new OrganizationSetupService(database, new OrganizationAccessPolicy(), commercial, notifications);
+const organizationAccess = new OrganizationAccessPolicy();
+const setupWizard = new OrganizationSetupService(database, organizationAccess, commercial, notifications);
+const organizations = new OrganizationService(database, {} as never, organizationAccess, setupWizard);
 const assist = new AssistService(database, commercial);
 const assistCapacity = new AssistCapacityService(database, notifications);
 const tickets = new TicketService(database);
@@ -260,17 +262,26 @@ describe('public accounts and organization applications', () => {
     expect(await applications.platformApplications(platformAdminId,'APPROVED')).toEqual(expect.arrayContaining([expect.objectContaining({id:draft.id,status:'APPROVED',assignedSlug:approvedSlug})]));
   });
 
-  it('resolves a canonical tenant only for a member, assigns legacy owners explicitly, and activates a prepared setup tenant', async () => {
+  it('keeps the legacy setup completion compatibility path on canonical readiness semantics', async () => {
     await expect(organizations.tenantContext(legacyOrganizationAdminId,'legacy-ownerless-application')).resolves.toMatchObject({organization_id:legacyOrganizationId,organization_slug:'legacy-ownerless-application',role_codes:['ORG_ADMIN']});
     await expect(organizations.tenantContext(legacyOrganizationAdminId,`setup-${fixtureId}`)).rejects.toBeInstanceOf(NotFoundException);
     expect(await organizations.platformOwners(platformAdminId,legacyOrganizationId)).toEqual([]);
     await expect(organizations.assignPlatformOwner(platformAdminId,legacyOrganizationId,legacyOrganizationAdminId)).resolves.toMatchObject({userId:legacyOrganizationAdminId});
     await expect(organizations.platformOwners(platformAdminId,legacyOrganizationId)).resolves.toEqual([expect.objectContaining({user_id:legacyOrganizationAdminId})]);
     const ownerActor={userId:setupOwnerId,organizationId:setupOrganizationId,roles:['ORG_ADMIN','ORG_OWNER']};
+    await expect(organizations.setOrganizationStatus(platformAdminId,setupOrganizationId,'active')).rejects.toBeInstanceOf(BadRequestException);
+    // The retired checklist accepted any settings row plus a category. The
+    // compatibility route must instead reject an invalid timezone from the
+    // canonical profile evaluator.
+    await database.withOrganization(setupOrganizationId,async client=>{await client.query('INSERT INTO organization_settings(organization_id,business_timezone) VALUES($1,$2)',[setupOrganizationId,'Invalid/Timezone']);await client.query('INSERT INTO categories(organization_id,code,name) VALUES($1,$2,$3)',[setupOrganizationId,'GENERAL','عمومی']);});
     await expect(organizations.completeTenantSetup(ownerActor)).rejects.toBeInstanceOf(BadRequestException);
-    await database.withOrganization(setupOrganizationId,async client=>{await client.query('INSERT INTO organization_settings(organization_id) VALUES($1)',[setupOrganizationId]);await client.query('INSERT INTO categories(organization_id,code,name) VALUES($1,$2,$3)',[setupOrganizationId,'GENERAL','عمومی']);});
-    await expect(organizations.completeTenantSetup(ownerActor)).resolves.toEqual({status:'active'});
+    await setupWizard.profile(ownerActor,{name:'Setup Organization',businessTimezone:'Asia/Tehran',contactPhone:''});
+    await expect(organizations.completeTenantSetup(ownerActor)).resolves.toEqual({status:'active',idempotent:false});
+    await expect(organizations.completeTenantSetup(ownerActor)).resolves.toEqual({status:'active',idempotent:true});
     await expect(organizations.tenantSetup(ownerActor)).resolves.toMatchObject({status:'active',settingsReady:true,categories:1});
+    const audits=await database.withOrganization(setupOrganizationId,c=>c.query<{action:string}>('SELECT action FROM audit_logs WHERE organization_id=$1',[setupOrganizationId]));
+    expect(audits.rows.filter(row=>row.action==='ORGANIZATION_SETUP_GO_LIVE')).toHaveLength(1);
+    expect(audits.rows.some(row=>row.action==='organization.setup_completed')).toBe(false);
   });
 
   it('keeps setup progress server-derived, tenant-bound and owner-only for Go Live', async () => {
@@ -281,17 +292,26 @@ describe('public accounts and organization applications', () => {
     await database.query("INSERT INTO membership_roles(membership_id,role_id) SELECT m.id,r.id FROM memberships m JOIN roles r ON r.code IN ('ORG_OWNER','ORG_ADMIN') WHERE m.organization_id=$1 AND m.user_id=$2",[org.id,owner.id]);
     await database.query("INSERT INTO membership_roles(membership_id,role_id) SELECT m.id,r.id FROM memberships m JOIN roles r ON r.code='ORG_ADMIN' WHERE m.organization_id=$1 AND m.user_id=$2",[org.id,admin.id]);
     const ownerActor={userId:owner.id,organizationId:org.id,roles:['ORG_OWNER']}; const adminActor={userId:admin.id,organizationId:org.id,roles:['ORG_ADMIN']};
+    const actors=new TicketActorService({verify:async()=>({sub:owner.id})} as never,database);
+    await expect(actors.fromHeaders('Bearer setup-owner-token',legacyOrganizationId)).rejects.toBeInstanceOf(UnauthorizedException);
     const first=await setupWizard.get(ownerActor); const second=await setupWizard.get(ownerActor); expect(second.progress.version).toBe(first.progress.version); expect(first.readiness.blockers).toEqual(expect.arrayContaining([expect.stringContaining('نام سازمان'),expect.stringContaining('دسته‌بندی')]));
     await expect(setupWizard.skip(ownerActor,'PROFILE',first.progress.version)).rejects.toBeInstanceOf(BadRequestException);
     await setupWizard.profile(ownerActor,{name:'Wizard Organization',businessTimezone:'Asia/Tehran',contactPhone:''});
     const afterProfile=await setupWizard.get(ownerActor); await expect(setupWizard.goLive(adminActor)).rejects.toBeInstanceOf(ForbiddenException);
     await database.withOrganization(org.id,c=>c.query('INSERT INTO categories(organization_id,code,name) VALUES($1,$2,$3)',[org.id,'GENERAL','عمومی']));
     const ready=await setupWizard.get(ownerActor); expect(ready.readiness.ready).toBe(true); expect(ready.readiness.warnings).toEqual(expect.arrayContaining([expect.stringContaining('SLA'),expect.stringContaining('Connector')]));
+    await database.withOrganization(org.id,c=>c.query('DELETE FROM categories WHERE organization_id=$1',[org.id]));
+    const drifted=await setupWizard.get(ownerActor); expect(drifted.readiness.ready).toBe(false); expect(drifted.readiness.blockers).toEqual(expect.arrayContaining([expect.stringContaining('دسته‌بندی')]));
+    await expect(setupWizard.goLive(ownerActor)).rejects.toBeInstanceOf(BadRequestException);
+    await database.withOrganization(org.id,c=>c.query('INSERT INTO categories(organization_id,code,name) VALUES($1,$2,$3)',[org.id,'GENERAL_RESTORED','عمومی']));
+    expect((await setupWizard.get(ownerActor)).readiness.ready).toBe(true);
     await expect(setupWizard.skip(ownerActor,'DIRECTORY',afterProfile.progress.version)).rejects.toBeInstanceOf(ConflictException);
-    await expect(setupWizard.goLive(ownerActor)).resolves.toEqual({status:'active',idempotent:false}); await expect(setupWizard.goLive(ownerActor)).resolves.toEqual({status:'active',idempotent:true});
+    const concurrent=await Promise.all([setupWizard.goLive(ownerActor),setupWizard.goLive(ownerActor)]);
+    expect(concurrent.map(result=>result.idempotent).sort()).toEqual([false,true]);
     await database.withOrganization(org.id,c=>c.query('DELETE FROM categories WHERE organization_id=$1',[org.id]));
     expect((await database.query<{status:string}>('SELECT status FROM organizations WHERE id=$1',[org.id])).rows[0].status).toBe('active');
-    const audits=await database.withOrganization(org.id,c=>c.query<{action:string}>('SELECT action FROM audit_logs WHERE organization_id=$1',[org.id])); expect(audits.rows.filter(row=>row.action==='ORGANIZATION_SETUP_GO_LIVE')).toHaveLength(1);
+    const audits=await database.withOrganization(org.id,c=>c.query<{action:string}>('SELECT action FROM audit_logs WHERE organization_id=$1',[org.id])); expect(audits.rows.filter(row=>row.action==='ORGANIZATION_SETUP_GO_LIVE')).toHaveLength(1); expect(audits.rows.some(row=>row.action==='ORGANIZATION_SETUP_GO_LIVE_REJECTED')).toBe(false);
+    const lifecycleEvents=await database.withOrganization(org.id,c=>c.query<{event_type:string}>('SELECT event_type FROM user_notifications WHERE organization_id=$1',[org.id])); expect(lifecycleEvents.rows.filter(row=>row.event_type==='ORGANIZATION_SETUP_GO_LIVE')).toHaveLength(1);
     await database.query('DELETE FROM membership_roles WHERE membership_id IN (SELECT id FROM memberships WHERE organization_id=$1)',[org.id]); await database.query('DELETE FROM memberships WHERE organization_id=$1',[org.id]); await database.query('DELETE FROM organizations WHERE id=$1',[org.id]); await database.query('DELETE FROM users WHERE id IN ($1,$2)',[owner.id,admin.id]);
   });
 
