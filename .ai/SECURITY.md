@@ -112,3 +112,7 @@ Conflict records contain a safe correction message, never a token, credential
 or raw directory payload. Sync Now is owner/admin-only and returns an active
 command instead of creating a parallel one. Revocation invalidates device
 identity and unused pairing material without putting raw secrets in audits.
+Explicit re-pair is tenant-bound and owner/admin-only; it can issue a new
+hashed one-time code only for a revoked connector. Pairing creates a fresh
+device identity/token in the same record, so the revoked credential never
+becomes valid again and audit metadata contains no secret material.

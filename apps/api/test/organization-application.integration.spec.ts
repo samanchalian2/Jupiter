@@ -321,6 +321,27 @@ describe('public accounts and organization applications', () => {
     expect(JSON.stringify(audits.rows)).not.toContain(paired.deviceToken);
   });
 
+  it('re-pairs the same revoked connector with a single new device credential', async () => {
+    const actor={userId:setupOwnerId,organizationId:setupOrganizationId,roles:['ORG_OWNER']}; const connector=await connectors.create(actor,'اتصال قابل جفت‌سازی مجدد');
+    const initialCode=await connectors.createPairing(actor,connector.id); const initial=await connectors.pair(initialCode.pairingCode,'Initial Connector');
+    const authenticated=await connectors.heartbeat(connector.id,initial.deviceId,initial.deviceToken,'1.0.0',0,'RUNNING') as {deviceToken:string};
+    const staleCode=await connectors.createPairing(actor,connector.id); await connectors.revoke(actor,connector.id);
+    await expect(connectors.heartbeat(connector.id,initial.deviceId,authenticated.deviceToken,'1.0.0',0,'RUNNING')).rejects.toBeInstanceOf(UnauthorizedException);
+    await expect(connectors.pair(staleCode.pairingCode,'Old Code')).rejects.toBeInstanceOf(BadRequestException);
+    await expect(connectors.createPairing(actor,connector.id)).rejects.toBeInstanceOf(BadRequestException);
+    await expect(connectors.rePair({...actor,organizationId:directoryOrganizationA},connector.id)).rejects.toBeInstanceOf(NotFoundException);
+    const firstRepair=await connectors.rePair(actor,connector.id); const secondRepair=await connectors.rePair(actor,connector.id);
+    expect(firstRepair.connectorId).toBe(connector.id); expect(secondRepair.pairingCode).toHaveLength(43);
+    await expect(connectors.pair(firstRepair.pairingCode,'Superseded Repair')).rejects.toBeInstanceOf(BadRequestException);
+    const repaired=await connectors.pair(secondRepair.pairingCode,'Repaired Connector');
+    expect(repaired).toMatchObject({connectorId:connector.id,organizationId:setupOrganizationId}); expect(repaired.deviceId).not.toBe(initial.deviceId);
+    await expect(connectors.pair(secondRepair.pairingCode,'Reused Repair')).rejects.toBeInstanceOf(BadRequestException);
+    await expect(connectors.heartbeat(connector.id,initial.deviceId,authenticated.deviceToken,'1.0.0',0,'RUNNING')).rejects.toBeInstanceOf(UnauthorizedException);
+    await expect(connectors.heartbeat(connector.id,repaired.deviceId,repaired.deviceToken,'1.0.0',0,'RUNNING')).resolves.toMatchObject({connectorId:connector.id,status:'PAIRED'});
+    const audits=await database.withOrganization(setupOrganizationId,client=>client.query<{action:string;metadata:object}>('SELECT action,metadata FROM audit_logs WHERE target_id=$1 ORDER BY created_at',[connector.id]));
+    expect(audits.rows.map(row=>row.action)).toContain('DIRECTORY_CONNECTOR_REPAIR_REQUESTED'); expect(JSON.stringify(audits.rows)).not.toContain(secondRepair.pairingCode); expect(JSON.stringify(audits.rows)).not.toContain(repaired.deviceToken);
+  });
+
   it('previews and applies a tenant-bound directory lifecycle with rotating device credentials', async () => {
     const actor = { userId: setupOwnerId, organizationId: setupOrganizationId, roles: ['ORG_OWNER'] };
     const connector = await connectors.create(actor, 'همگام‌سازی آزمایشی');

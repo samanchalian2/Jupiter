@@ -6,6 +6,7 @@
 - نام Sync زمان‌بندی‌شده `INCREMENTAL_SNAPSHOT` است؛ Full Reconciliation مبنای lifecycle absence باقی می‌ماند.
 - Scope نسخه‌دار، کشف OU/Group، نگاشت امن گروه→نقش، conflictهای قابل رسیدگی و صفحهٔ RTL عملیاتی افزوده شدند.
 - پذیرش authenticated در 375/768/1024/1440 بدون document-level horizontal overflow انجام شد؛ Full با تغییر Scope Policy در میانهٔ reconciliation نیز lifecycle absence اجرا نمی‌کند.
+- remediation: `POST /directory/connectors/:id/re-pair` فقط برای Connector لغوشده، همان record را با code یک‌بارمصرف جدید به جفت‌سازی مجدد می‌رساند؛ credential قبلی بازگشت‌پذیر نیست.
 
 ## GOAL-053 — مدل بسته و ظرفیت Jupiter Assist
 

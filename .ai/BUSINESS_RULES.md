@@ -14,6 +14,10 @@
   from a successful Entire Directory FULL snapshot is suspended, never deleted.
 - Directory mappings may manage only REQUESTER, EXPERT and SUPERVISOR grants;
   ORG_ADMIN/ORG_OWNER and all manual role grants remain untouched.
+- Re-pair is an explicit ORG_ADMIN/ORG_OWNER operation for a `REVOKED`
+  connector only. It preserves the Connector record, invalidates any unused
+  pairing code and restores `PAIRED` only after a one-time, short-lived code
+  produces a new device identity and credential.
 
 - `AI_TICKET_REVIEW` و `AI_SMART_INTAKE` از یک استخر سازمانی مشترک استفاده می‌کنند: پیش‌فرض فعلی ۲۵ دوره‌ای و ۳ اضطراری در هر ماه تقویمی UTC؛ هر دو مقدار Platform-configurable هستند و rollover ندارند.
 - ترتیب reservation قطعی است: PERIODIC، ADDON فعال، EMERGENCY، Overage فعال همان capability و سپس deny. انقضای پیش‌فرض Add-on دوازده ماه است؛ تیکت دستی از تمام denialهای AI مستقل است.

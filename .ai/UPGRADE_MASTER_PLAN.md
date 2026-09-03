@@ -307,3 +307,7 @@ or connector auto-update is introduced.
 Authenticated Persian RTL acceptance at 375/768/1024/1440 passed without
 document-level horizontal overflow. Evidence: `docs/GOAL_054_EVIDENCE.md`.
 No subsequent Goal is started by this execution.
+
+Re-pair remediation preserves the Connector ID after an explicit owner/admin
+request, invalidates stale pairing material and establishes only a fresh device
+identity after one successful use of the new code.

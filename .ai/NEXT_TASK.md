@@ -2,9 +2,9 @@
 
 ## GOAL-054 — Directory Connector Operational Completeness
 
-GOAL-054 کامل شد. Connector عملیاتی Directory با سلامت مشتق‌شده، heartbeat
-سبک، `INCREMENTAL_SNAPSHOT`، Full Reconciliation امن، Scope نسخه‌دار، نگاشت
-گروه→نقش، تاریخچهٔ run، conflict و Help فارسی پذیرش شد. Evidence:
+GOAL-054 با remediation جفت‌سازی مجدد کامل شد. Connector لغوشده فقط با
+عملیات صریح owner/admin و کد یک‌بارمصرف هش‌شده می‌تواند در همان record دوباره
+paired شود؛ credential و کدهای قدیمی همواره نامعتبر می‌مانند. Evidence:
 `docs/GOAL_054_EVIDENCE.md`. طبق محدودهٔ مصوب، GOAL-055 آغاز نمی‌شود.
 
 GOAL-053 کامل شد. Evidence: `docs/GOAL_053_EVIDENCE.md`.

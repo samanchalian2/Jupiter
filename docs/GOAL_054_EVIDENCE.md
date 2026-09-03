@@ -46,18 +46,36 @@
   updates the same principal. A conflicting email is a safe conflict, not a
   merge.
 
+## Re-pair remediation
+
+- `POST /directory/connectors/:id/re-pair` is an explicit owner/admin-only,
+  tenant-scoped operation for a `REVOKED` Connector. It keeps the same
+  Connector ID, consumes every previous unused pairing code and issues a new
+  hash-only code with the normal 15-minute expiry. Ordinary pairing issuance
+  still rejects revoked records.
+- Successful use of the re-pair code creates a new device ID and token and
+  returns the same Connector to `PAIRED`. The revoked device ID/token, stale
+  pre-revoke codes, superseded re-pair codes and a reused new code all fail.
+  `DIRECTORY_CONNECTOR_REPAIR_REQUESTED` is durable; `DIRECTORY_CONNECTOR_PAIRED`
+  records the successful new identity without storing raw code, token, hash or
+  AD secret.
+
 ## Verification completed
 
 - `pnpm --filter @jupiter/api migrate` applied migrations 054, 054a, 054b,
   054c and 054d in the local environment.
 - API and Web typechecks passed.
-- API integration suite passed: 26 files, 97 tests; Web suite passed: 2 files,
+- API integration suite passed: 26 files, 98 tests; Web suite passed: 2 files,
   11 tests. Coverage includes pairing
   and revoke, no-email principal, rotating credential, role mapping, Sync Now
   idempotency, rejection of a direct `FULL` preview, pairing/revoke audit
   events, a policy-version change during Full reconciliation that performs no
   absence lifecycle action, and a partial conflict run that applies the safe
   record once.
+- Re-pair coverage proves the authenticated initial connector, immediate old
+  credential rejection after revoke, stale-code rejection, cross-tenant denial,
+  same-ID explicit re-pair, single-use replacement code, replacement device
+  authentication and continued old-credential denial.
 - API and Web production builds passed. `git diff --check` passed.
 - The scope picker visibly includes each discovered OU/group's last discovery
   time and generation, so an administrator can identify stale selections.

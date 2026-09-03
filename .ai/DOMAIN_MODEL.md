@@ -111,3 +111,6 @@ group generation and last-discovery time. `DirectorySyncRun` is immutable run
 history with policy/mapping versions and count projections. `DirectorySyncCommand`
 is the bounded connector queue entry; `DirectorySyncConflict` is the safe,
 tenant-scoped record for an identity correction.
+`DirectoryConnector` retains its identity across explicit re-pair: a revoked
+record receives new hashed one-time pairing material and only a successful
+pair establishes its replacement device identity.
