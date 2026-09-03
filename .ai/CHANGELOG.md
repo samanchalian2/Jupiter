@@ -1,10 +1,11 @@
 # Changelog
 
-## GOAL-054 — عملیات عملیاتی Directory Connector (در حال اجرا)
+## GOAL-054 — عملیات عملیاتی Directory Connector
 
 - وضعیت عملیاتی مشتق‌شده، heartbeat سبک، صف Sync دستی/زمان‌بندی‌شده و تاریخچهٔ run به Directory افزوده شد.
 - نام Sync زمان‌بندی‌شده `INCREMENTAL_SNAPSHOT` است؛ Full Reconciliation مبنای lifecycle absence باقی می‌ماند.
 - Scope نسخه‌دار، کشف OU/Group، نگاشت امن گروه→نقش، conflictهای قابل رسیدگی و صفحهٔ RTL عملیاتی افزوده شدند.
+- پذیرش authenticated در 375/768/1024/1440 بدون document-level horizontal overflow انجام شد؛ Full با تغییر Scope Policy در میانهٔ reconciliation نیز lifecycle absence اجرا نمی‌کند.
 
 ## GOAL-053 — مدل بسته و ظرفیت Jupiter Assist
 

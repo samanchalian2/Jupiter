@@ -2,12 +2,10 @@
 
 ## GOAL-054 — Directory Connector Operational Completeness
 
-GOAL-054 is the active, single implementation goal. Complete the operational
-Directory Connector without changing its outbound-only architecture: derived
-health, lightweight heartbeat, `INCREMENTAL_SNAPSHOT` scheduling plus Full
-reconciliation, safe scope/lifecycle handling, group-role mapping, run history,
-conflict visibility, Persian Help and acceptance evidence. Do not start
-GOAL-055. Evidence will be `docs/GOAL_054_EVIDENCE.md`.
+GOAL-054 کامل شد. Connector عملیاتی Directory با سلامت مشتق‌شده، heartbeat
+سبک، `INCREMENTAL_SNAPSHOT`، Full Reconciliation امن، Scope نسخه‌دار، نگاشت
+گروه→نقش، تاریخچهٔ run، conflict و Help فارسی پذیرش شد. Evidence:
+`docs/GOAL_054_EVIDENCE.md`. طبق محدودهٔ مصوب، GOAL-055 آغاز نمی‌شود.
 
 GOAL-053 کامل شد. Evidence: `docs/GOAL_053_EVIDENCE.md`.
 

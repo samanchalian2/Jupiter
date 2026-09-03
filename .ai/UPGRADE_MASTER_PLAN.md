@@ -295,7 +295,7 @@ Jupiter Assist settings to approved Help. It neither changes tenant knowledge
 ownership nor adds RAG/AI chat. Its evidence is `docs/GOAL_047_EVIDENCE.md`.
 GOAL-048 may begin.
 
-## GOAL-054 — Directory Connector Operational Completeness
+## GOAL-054 — Directory Connector Operational Completeness (complete)
 
 GOAL-054 extends the established outbound-only Directory Connector with derived
 health, lightweight versioned heartbeat, connector-bound command scheduling,
@@ -303,3 +303,7 @@ health, lightweight versioned heartbeat, connector-bound command scheduling,
 mapping, safe conflict handling, run history, Persian Help and authenticated
 RTL acceptance are required; no inbound LDAP, credential sync, writeback, SSO
 or connector auto-update is introduced.
+
+Authenticated Persian RTL acceptance at 375/768/1024/1440 passed without
+document-level horizontal overflow. Evidence: `docs/GOAL_054_EVIDENCE.md`.
+No subsequent Goal is started by this execution.

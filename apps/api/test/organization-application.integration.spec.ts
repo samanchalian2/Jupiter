@@ -350,7 +350,7 @@ describe('public accounts and organization applications', () => {
   it('keeps Directory scope and role mapping tenant-bound and makes Sync Now idempotent', async () => {
     const actor={userId:setupOwnerId,organizationId:setupOrganizationId,roles:['ORG_OWNER']};
     const connector=await connectors.create(actor,'عملیات Directory');
-    await connectors.pair((await connectors.createPairing(actor,connector.id)).pairingCode,'Operational Connector');
+    const paired=await connectors.pair((await connectors.createPairing(actor,connector.id)).pairingCode,'Operational Connector');
     const scope=await connectors.saveScope(actor,{scopeType:'ENTIRE_DIRECTORY'});
     expect(scope.version).toBeGreaterThanOrEqual(1);
     await connectors.saveMapping(actor,{groupExternalId:randomUUID(),roleCode:'REQUESTER'});
@@ -360,6 +360,10 @@ describe('public accounts and organization applications', () => {
     expect(second).toMatchObject({id:first.id,idempotent:true});
     expect((await connectors.scope(actor)).policy).toMatchObject({scope_type:'ENTIRE_DIRECTORY',version:scope.version});
     expect((await connectors.scope({...actor,organizationId:directoryOrganizationA})).policy).toMatchObject({scope_type:'SELECTED_OUS',selected_ou_ids:[]});
+    await expect(connectors.preview(connector.id,paired.deviceId,paired.deviceToken,{requestId:randomUUID(),kind:'FULL',scopeFingerprint:'must-not-run-direct-full',scopePolicyVersion:scope.version,entries:[]})).rejects.toBeInstanceOf(BadRequestException);
+    await connectors.revoke(actor,connector.id);
+    const audit=await database.withOrganization(setupOrganizationId,client=>client.query<{action:string}>('SELECT action FROM audit_logs WHERE target_id=$1 AND action=ANY($2::text[]) ORDER BY created_at',[connector.id,['DIRECTORY_CONNECTOR_PAIRED','DIRECTORY_CONNECTOR_REVOKED']]));
+    expect(audit.rows.map(row=>row.action)).toEqual(['DIRECTORY_CONNECTOR_PAIRED','DIRECTORY_CONNECTOR_REVOKED']);
   });
 
   it('records an identity conflict as PARTIAL while applying safe directory records once', async () => {
@@ -390,6 +394,16 @@ describe('public accounts and organization applications', () => {
     const complete=await connectors.recordFullBatch(connector.id,paired.deviceId,(incompleteResult as {deviceToken:string}).deviceToken,{reconciliationId:randomUUID(),batchIndex:0,batchCount:1,scopePolicyVersion:2,externalObjectIds:[]}) as {reconciliationId:string;deviceToken:string};
     expect(await connectors.completeFullReconciliation(connector.id,paired.deviceId,complete.deviceToken,{reconciliationId:complete.reconciliationId})).toMatchObject({status:'SUCCEEDED'});
     expect((await database.withOrganization(setupOrganizationId,client=>client.query<{status:string}>('SELECT status FROM directory_principals WHERE external_object_id=$1',[externalObjectId]))).rows[0].status).toBe('SUSPENDED');
+  });
+
+  it('does not apply Full absence when the scope policy changes during reconciliation', async () => {
+    const actor={userId:setupOwnerId,organizationId:setupOrganizationId,roles:['ORG_OWNER']}; const connector=await connectors.create(actor,'بازبینی تغییر policy'); const paired=await connectors.pair((await connectors.createPairing(actor,connector.id)).pairingCode,'Policy Change Connector'); const externalObjectId=randomUUID(); const policyVersion=(await connectors.scope(actor)).policy.version;
+    const preview=await connectors.preview(connector.id,paired.deviceId,paired.deviceToken,{requestId:randomUUID(),kind:'INCREMENTAL_SNAPSHOT',scopeFingerprint:'scope-policy-change-v1',scopePolicyVersion:policyVersion,entries:[{externalObjectId,accountName:'policy-user',displayName:'کاربر Policy',enabled:true}]}) as {runId:string;deviceToken:string};
+    const created=await connectors.applyOperational(connector.id,paired.deviceId,preview.deviceToken,preview.runId) as {deviceToken:string};
+    const batch=await connectors.recordFullBatch(connector.id,paired.deviceId,created.deviceToken,{reconciliationId:randomUUID(),batchIndex:0,batchCount:1,scopePolicyVersion:policyVersion,externalObjectIds:[]}) as {reconciliationId:string;deviceToken:string};
+    await connectors.saveScope(actor,{scopeType:'ENTIRE_DIRECTORY'});
+    expect(await connectors.completeFullReconciliation(connector.id,paired.deviceId,batch.deviceToken,{reconciliationId:batch.reconciliationId})).toMatchObject({status:'PARTIAL',failureCode:'FULL_RECONCILIATION_POLICY_CHANGED'});
+    expect((await database.withOrganization(setupOrganizationId,client=>client.query<{status:string}>('SELECT status FROM directory_principals WHERE external_object_id=$1',[externalObjectId]))).rows[0].status).toBe('ACTIVE');
   });
 
   it('keeps the commercial core platform-managed and preserves tenant isolation without billing provider operations', async () => {
