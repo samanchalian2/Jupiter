@@ -1,11 +1,12 @@
 import { Body, Controller, Get, Headers, Param, Post, UnauthorizedException } from '@nestjs/common';
 import { TicketActorService } from '../tickets/ticket-actor.service.js';
 import { OrganizationService } from './organization.service.js';
+import { OrganizationSetupService } from './organization-setup.service.js';
 import { AuthService } from '../auth/auth.service.js';
 
 @Controller('admin')
 export class OrganizationController {
-  constructor(private readonly actors: TicketActorService, private readonly organizations: OrganizationService, private readonly auth: AuthService) {}
+  constructor(private readonly actors: TicketActorService, private readonly organizations: OrganizationService, private readonly setup: OrganizationSetupService, private readonly auth: AuthService) {}
   private actor(authorization?: string, organizationId?: string) { return this.actors.fromHeaders(authorization, organizationId); }
   private platform(authorization?: string) { const token=authorization?.replace(/^Bearer\s+/i,''); if(!token) throw new UnauthorizedException(); return this.auth.verify(token); }
 
@@ -45,6 +46,10 @@ export class OrganizationController {
   @Get('tenant-context/:slug') tenantContext(@Param('slug') slug:string,@Headers('authorization') a?:string) { return this.platform(a).then(user=>this.organizations.tenantContext(user.sub,slug)); }
   @Get('tenant-setup') tenantSetup(@Headers('authorization') a?:string,@Headers('x-organization-id') o?:string) { return this.actor(a,o).then(actor=>this.organizations.tenantSetup(actor)); }
   @Post('tenant-setup/complete') completeTenantSetup(@Headers('authorization') a?:string,@Headers('x-organization-id') o?:string) { return this.actor(a,o).then(actor=>this.organizations.completeTenantSetup(actor)); }
+  @Get('setup-wizard') setupWizard(@Headers('authorization') a?:string,@Headers('x-organization-id') o?:string) { return this.actor(a,o).then(actor=>this.setup.get(actor)); }
+  @Post('setup-wizard/profile') setupProfile(@Body() body:{name?:unknown;businessTimezone?:unknown;contactPhone?:unknown},@Headers('authorization') a?:string,@Headers('x-organization-id') o?:string) { return this.actor(a,o).then(actor=>this.setup.profile(actor,body)); }
+  @Post('setup-wizard/steps/:step/skip') skipSetupStep(@Param('step') step:string,@Body() body:{version?:number},@Headers('authorization') a?:string,@Headers('x-organization-id') o?:string) { return this.actor(a,o).then(actor=>this.setup.skip(actor,step,body.version??0)); }
+  @Post('setup-wizard/go-live') goLive(@Headers('authorization') a?:string,@Headers('x-organization-id') o?:string) { return this.actor(a,o).then(actor=>this.setup.goLive(actor)); }
 
   @Get('platform/organizations') platformOrganizations(@Headers('authorization') a?:string) { return this.platform(a).then(user=>this.organizations.platformOrganizations(user.sub)); }
   @Post('platform/organizations') createPlatformOrganization(@Body() body:{name:string;slug:string},@Headers('authorization') a?:string) { return this.platform(a).then(user=>this.organizations.createPlatformOrganization(user.sub,body)); }

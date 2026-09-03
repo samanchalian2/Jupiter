@@ -3,6 +3,7 @@ import { DatabaseService } from '../database/database.service.js';
 import { hashPassword } from '../auth/password.js';
 import { AttachmentStorage } from '../attachments/attachment-storage.js';
 import { createHash, randomUUID } from 'node:crypto';
+import { OrganizationAccessPolicy } from './organization-access.policy.js';
 
 type Actor = { userId: string; organizationId: string; roles: string[] };
 type MemberInput = { email: string; username?: string; displayName: string; password?: string; roles: string[] };
@@ -24,10 +25,10 @@ const enterpriseItTemplate = [
 
 @Injectable()
 export class OrganizationService {
-  constructor(private readonly database: DatabaseService, @Inject('AttachmentStorage') private readonly storage: AttachmentStorage) {}
+  constructor(private readonly database: DatabaseService, @Inject('AttachmentStorage') private readonly storage: AttachmentStorage, private readonly access: OrganizationAccessPolicy = new OrganizationAccessPolicy()) {}
 
-  private admin(actor: Actor) { if (!actor.roles.includes('ORG_ADMIN')) throw new ForbiddenException(); }
-  private memberAdmin(actor: Actor) { if (!actor.roles.some((role) => role === 'ORG_ADMIN' || role === 'ORG_OWNER')) throw new ForbiddenException(); }
+  private admin(actor: Actor) { this.access.operator(actor); }
+  private memberAdmin(actor: Actor) { this.access.operator(actor); }
   private validRoles(roles: string[]) {
     const unique = [...new Set(roles ?? [])];
     if (!unique.length || unique.some((role) => !roleCodes.has(role))) throw new BadRequestException('Select at least one valid role.');
@@ -313,7 +314,7 @@ export class OrganizationService {
       await this.audit(client,actor,'members.csv_imported','organization',actor.organizationId,{created:result.created,updated:result.updated,rowCount:resultRows.length});return result;
     });
   }
-  private owner(actor:Actor) { if(!actor.roles.includes('ORG_OWNER')) throw new ForbiddenException('مالک سازمان لازم است.'); }
+  private owner(actor:Actor) { this.access.owner(actor); }
   async tenantSetup(actor:Actor) {
     return this.database.withOrganization(actor.organizationId,async client=>{
       const organization=(await client.query<{id:string;name:string;slug:string;status:string}>('SELECT id,name,slug,status FROM organizations WHERE id=$1',[actor.organizationId])).rows[0];

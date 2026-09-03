@@ -1,5 +1,9 @@
 # Security and Privacy
 
+## GOAL-055 Setup Wizard
+
+Wizard APIها tenant-bound هستند و actor از membership سروری گرفته می‌شود. `OrganizationAccessPolicy` اختیار عملیاتی Owner/Admin را مرکزی می‌کند؛ Go-Live و skip صرفاً Owner هستند. optimistic version از overwrite حالت stale جلوگیری می‌کند. projection readiness هیچ credential Directory، token جفت‌سازی، کلید AI یا secret را برنمی‌گرداند و Audit فقط step/action و شمار blocker را ذخیره می‌کند.
+
 ## GOAL-052 recurring Smart Action allowance
 
 Policy و override فقط Platform-Admin هستند؛ override سازمان هدف صریح، RLS tenant-bound و Audit دارد. Worker هیچ actor کاربری جعل نمی‌کند و metadata اتوماسیون حداقلی ثبت می‌شود. Owner فقط projection سازمان خودش را می‌بیند.

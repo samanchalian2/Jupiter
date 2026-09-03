@@ -375,3 +375,18 @@ Connector health is a derived last-seen projection. The worker stores a health
 transition only when the derived state changes and notifies owner/admin users
 only for DEGRADED or OFFLINE transitions. This prevents periodic write/notice
 noise while allowing another offline notice after a verified recovery.
+
+## DEC-033 — Minimal, server-derived organization Go-Live gate
+
+Organization setup progress is a versioned tenant-scoped read model and never
+substitutes for actual operational configuration. The V1 Go-Live evaluator has
+only five hard conditions: organization lifecycle `SETUP`, an active
+`ORG_OWNER`, valid organization display name, valid timezone and at least one
+Ticket Category. SLA, teams, departments, extra users, Directory, AI, Assist
+and appearance remain optional and become warnings only.
+
+`ORG_OWNER` receives organization-operational authority through the central
+organization access policy, while only that role may skip an optional setup
+step or activate the tenant. Contact responsibility is represented by active
+ownership; no free-text `contact_name` is duplicated. Optional contact phone
+metadata is non-blocking. After activation no `ACTIVE → SETUP` rollback exists.

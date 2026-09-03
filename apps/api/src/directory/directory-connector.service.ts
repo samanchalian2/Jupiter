@@ -2,6 +2,7 @@ import { BadRequestException, ConflictException, ForbiddenException, Injectable,
 import { createHash, randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
 import { DatabaseService } from '../database/database.service.js';
 import { NotificationService } from '../notifications/notification.service.js';
+import { OrganizationAccessPolicy } from '../organization/organization-access.policy.js';
 
 type Actor={userId:string;organizationId:string;roles:string[]};
 type Connector={id:string;organization_id:string;display_name:string;status:'UNPAIRED'|'PAIRED'|'REVOKED';device_id:string|null;device_token_hash?:string|null;paired_at:string|null;last_seen_at:string|null;version:string|null;last_heartbeat_at:string|null;last_sync_at:string|null;last_sync_status:string|null;last_error_code:string|null;created_at:string};
@@ -13,10 +14,10 @@ const HEALTHY_MS=5*60_000, DEGRADED_MS=15*60_000;
 
 @Injectable()
 export class DirectoryConnectorService {
-  constructor(private readonly database:DatabaseService, private readonly notifications?:NotificationService) {}
+  constructor(private readonly database:DatabaseService, private readonly notifications?:NotificationService, private readonly access:OrganizationAccessPolicy=new OrganizationAccessPolicy()) {}
   private hash(value:string){return createHash('sha256').update(value).digest('hex');}
   private secret(){return randomBytes(32).toString('base64url');}
-  private manager(actor:Actor){if(!actor.roles.some(role=>role==='ORG_ADMIN'||role==='ORG_OWNER'))throw new ForbiddenException();}
+  private manager(actor:Actor){this.access.operator(actor);}
   private audit(c:{query:(sql:string,values?:unknown[])=>Promise<unknown>},actor:Actor,action:string,id:string,metadata:object={}){return c.query('INSERT INTO audit_logs(organization_id,actor_user_id,action,target_type,target_id,metadata) VALUES($1,$2,$3,$4,$5,$6)',[actor.organizationId,actor.userId,action,'directory_connector',id,metadata]);}
   private equal(a:string,b:string){const x=Buffer.from(a),y=Buffer.from(b);return x.length===y.length&&timingSafeEqual(x,y);}
   private connectorName(value?:string){const result=value?.trim();if(!result||result.length<2||result.length>120)throw new BadRequestException('نام اتصال باید بین ۲ تا ۱۲۰ نویسه باشد.');return result;}

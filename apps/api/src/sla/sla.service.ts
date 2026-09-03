@@ -1,6 +1,7 @@
 import { ForbiddenException, Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service.js';
 import { NotificationService } from '../notifications/notification.service.js';
+import { OrganizationAccessPolicy } from '../organization/organization-access.policy.js';
 
 type Actor = { userId:string; organizationId:string; roles:string[] };
 const managers = new Set(['ORG_ADMIN','SUPERVISOR']);
@@ -8,10 +9,10 @@ const managers = new Set(['ORG_ADMIN','SUPERVISOR']);
 @Injectable()
 export class SlaService implements OnModuleInit, OnModuleDestroy {
   private timer?: ReturnType<typeof setInterval>;
-  constructor(private readonly database:DatabaseService, private readonly notifications:NotificationService) {}
+  constructor(private readonly database:DatabaseService, private readonly notifications:NotificationService, private readonly access:OrganizationAccessPolicy=new OrganizationAccessPolicy()) {}
   onModuleInit() { this.timer=setInterval(()=>void this.evaluateAll().catch((cause: unknown)=>console.error(JSON.stringify({event:'sla.evaluation_failed',message:cause instanceof Error?cause.message:'Unknown error'}))),60_000); }
   onModuleDestroy() { if(this.timer) clearInterval(this.timer); }
-  private manager(actor:Actor) { if(!actor.roles.some(role=>managers.has(role))) throw new ForbiddenException(); }
+  private manager(actor:Actor) { if(actor.roles.includes('SUPERVISOR')) return; this.access.operator(actor); }
   async policies(actor:Actor) { this.manager(actor); return this.database.withOrganization(actor.organizationId,async c=>(await c.query('SELECT id,name,priority,first_response_minutes,resolution_minutes,warning_minutes,escalation_role,is_active FROM sla_policies ORDER BY priority')).rows); }
   async savePolicy(actor:Actor,input:{name:string;priority:'LOW'|'NORMAL'|'HIGH'|'URGENT';firstResponseMinutes:number;resolutionMinutes:number;warningMinutes:number;escalationRole:'SUPERVISOR'|'ORG_ADMIN';isActive?:boolean}) { this.manager(actor); return this.database.withOrganization(actor.organizationId,async c=>(await c.query('INSERT INTO sla_policies(organization_id,name,priority,first_response_minutes,resolution_minutes,warning_minutes,escalation_role,is_active) VALUES($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT(organization_id,priority) DO UPDATE SET name=EXCLUDED.name,first_response_minutes=EXCLUDED.first_response_minutes,resolution_minutes=EXCLUDED.resolution_minutes,warning_minutes=EXCLUDED.warning_minutes,escalation_role=EXCLUDED.escalation_role,is_active=EXCLUDED.is_active RETURNING id,name,priority,first_response_minutes,resolution_minutes,warning_minutes,escalation_role,is_active',[actor.organizationId,input.name,input.priority,input.firstResponseMinutes,input.resolutionMinutes,input.warningMinutes,input.escalationRole,input.isActive??true])).rows[0]); }
   async calendar(actor:Actor) { this.manager(actor); return this.database.withOrganization(actor.organizationId,async c=>(await c.query('SELECT timezone,workdays,start_minute,end_minute FROM business_calendars WHERE organization_id=$1',[actor.organizationId])).rows[0]??{timezone:'Asia/Tehran',workdays:[1,2,3,4,5],start_minute:480,end_minute:1020}); }

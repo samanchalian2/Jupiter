@@ -1,5 +1,11 @@
 # Business Rules
 
+## GOAL-055 سازمان و راه‌اندازی
+
+- Go-Live فقط برای سازمان `SETUP` توسط `ORG_OWNER` واقعی انجام می‌شود و نیازمند مالک فعال، نام نمایشی معتبر، timezone معتبر و حداقل یک Ticket Category است.
+- SLA، Team/Department، کاربر اضافه، Directory، AI، Assist و Appearance اختیاری‌اند و فقط warning می‌سازند.
+- وضعیت مراحل Wizard سروری، versioned و قابل ادامه است؛ skip فقط برای مرحلهٔ اختیاری توسط Owner ثبت می‌شود و حذف Ticket Category پس از تکمیل دوباره readiness را block می‌کند.
+
 ## GOAL-052 recurring Smart Action allowance
 
 ## GOAL-054 عملیات Directory Connector

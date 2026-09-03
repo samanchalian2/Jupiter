@@ -1,5 +1,11 @@
 # Changelog
 
+## GOAL-055 — راه‌اندازی سازمان
+
+- Wizard سازمان به progress سروری، versioned و resumable با readiness واحد و Go-Live اتمیک Owner-only ارتقا یافت.
+- حداقل شرط Go-Live نام/timezone معتبر، مالک فعال و Ticket Category است؛ Directory، SLA، AI، Assist، تیم و ظاهر اختیاری‌اند.
+- راهنمای فارسی runtime «راه‌اندازی سازمان» افزوده شد؛ شمارهٔ تماس سازمان اختیاری است و `contact_name` جدیدی ذخیره نمی‌شود.
+
 ## GOAL-054 — عملیات عملیاتی Directory Connector
 
 - وضعیت عملیاتی مشتق‌شده، heartbeat سبک، صف Sync دستی/زمان‌بندی‌شده و تاریخچهٔ run به Directory افزوده شد.

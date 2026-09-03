@@ -5,6 +5,8 @@ import { hashPassword } from '../src/auth/password.js';
 import { DatabaseService } from '../src/database/database.service.js';
 import { OrganizationApplicationService } from '../src/organization-applications/organization-application.service.js';
 import { OrganizationService } from '../src/organization/organization.service.js';
+import { OrganizationSetupService } from '../src/organization/organization-setup.service.js';
+import { OrganizationAccessPolicy } from '../src/organization/organization-access.policy.js';
 import { DirectoryConnectorService } from '../src/directory/directory-connector.service.js';
 import { CommercialService } from '../src/commercial/commercial.service.js';
 import { SubscriptionLifecycleService } from '../src/commercial/subscription-lifecycle.service.js';
@@ -32,6 +34,7 @@ const connectors = new DirectoryConnectorService(database);
 const notifications = new NotificationService(database);
 const subscriptions = new SubscriptionLifecycleService(database, notifications);
 const commercial = new CommercialService(database, notifications, subscriptions);
+const setupWizard = new OrganizationSetupService(database, new OrganizationAccessPolicy(), commercial, notifications);
 const assist = new AssistService(database, commercial);
 const assistCapacity = new AssistCapacityService(database, notifications);
 const tickets = new TicketService(database);
@@ -268,6 +271,28 @@ describe('public accounts and organization applications', () => {
     await database.withOrganization(setupOrganizationId,async client=>{await client.query('INSERT INTO organization_settings(organization_id) VALUES($1)',[setupOrganizationId]);await client.query('INSERT INTO categories(organization_id,code,name) VALUES($1,$2,$3)',[setupOrganizationId,'GENERAL','عمومی']);});
     await expect(organizations.completeTenantSetup(ownerActor)).resolves.toEqual({status:'active'});
     await expect(organizations.tenantSetup(ownerActor)).resolves.toMatchObject({status:'active',settingsReady:true,categories:1});
+  });
+
+  it('keeps setup progress server-derived, tenant-bound and owner-only for Go Live', async () => {
+    const slug=`wizard-${fixtureId}`; const org=(await database.query<{id:string}>('INSERT INTO organizations(slug,name,status) VALUES($1,$2,\'setup\') RETURNING id',[slug,'Wizard Organization'])).rows[0];
+    const owner=(await database.query<{id:string}>('INSERT INTO users(email,display_name,password_hash) VALUES($1,$2,$3) RETURNING id',[`wizard-owner-${fixtureId}@jupiter.test`,'Wizard Owner','scrypt$AA$AA'])).rows[0];
+    const admin=(await database.query<{id:string}>('INSERT INTO users(email,display_name,password_hash) VALUES($1,$2,$3) RETURNING id',[`wizard-admin-${fixtureId}@jupiter.test`,'Wizard Admin','scrypt$AA$AA'])).rows[0];
+    await database.query('INSERT INTO memberships(organization_id,user_id,status) VALUES($1,$2,\'active\'),($1,$3,\'active\')',[org.id,owner.id,admin.id]);
+    await database.query("INSERT INTO membership_roles(membership_id,role_id) SELECT m.id,r.id FROM memberships m JOIN roles r ON r.code IN ('ORG_OWNER','ORG_ADMIN') WHERE m.organization_id=$1 AND m.user_id=$2",[org.id,owner.id]);
+    await database.query("INSERT INTO membership_roles(membership_id,role_id) SELECT m.id,r.id FROM memberships m JOIN roles r ON r.code='ORG_ADMIN' WHERE m.organization_id=$1 AND m.user_id=$2",[org.id,admin.id]);
+    const ownerActor={userId:owner.id,organizationId:org.id,roles:['ORG_OWNER']}; const adminActor={userId:admin.id,organizationId:org.id,roles:['ORG_ADMIN']};
+    const first=await setupWizard.get(ownerActor); const second=await setupWizard.get(ownerActor); expect(second.progress.version).toBe(first.progress.version); expect(first.readiness.blockers).toEqual(expect.arrayContaining([expect.stringContaining('نام سازمان'),expect.stringContaining('دسته‌بندی')]));
+    await expect(setupWizard.skip(ownerActor,'PROFILE',first.progress.version)).rejects.toBeInstanceOf(BadRequestException);
+    await setupWizard.profile(ownerActor,{name:'Wizard Organization',businessTimezone:'Asia/Tehran',contactPhone:''});
+    const afterProfile=await setupWizard.get(ownerActor); await expect(setupWizard.goLive(adminActor)).rejects.toBeInstanceOf(ForbiddenException);
+    await database.withOrganization(org.id,c=>c.query('INSERT INTO categories(organization_id,code,name) VALUES($1,$2,$3)',[org.id,'GENERAL','عمومی']));
+    const ready=await setupWizard.get(ownerActor); expect(ready.readiness.ready).toBe(true); expect(ready.readiness.warnings).toEqual(expect.arrayContaining([expect.stringContaining('SLA'),expect.stringContaining('Connector')]));
+    await expect(setupWizard.skip(ownerActor,'DIRECTORY',afterProfile.progress.version)).rejects.toBeInstanceOf(ConflictException);
+    await expect(setupWizard.goLive(ownerActor)).resolves.toEqual({status:'active',idempotent:false}); await expect(setupWizard.goLive(ownerActor)).resolves.toEqual({status:'active',idempotent:true});
+    await database.withOrganization(org.id,c=>c.query('DELETE FROM categories WHERE organization_id=$1',[org.id]));
+    expect((await database.query<{status:string}>('SELECT status FROM organizations WHERE id=$1',[org.id])).rows[0].status).toBe('active');
+    const audits=await database.withOrganization(org.id,c=>c.query<{action:string}>('SELECT action FROM audit_logs WHERE organization_id=$1',[org.id])); expect(audits.rows.filter(row=>row.action==='ORGANIZATION_SETUP_GO_LIVE')).toHaveLength(1);
+    await database.query('DELETE FROM membership_roles WHERE membership_id IN (SELECT id FROM memberships WHERE organization_id=$1)',[org.id]); await database.query('DELETE FROM memberships WHERE organization_id=$1',[org.id]); await database.query('DELETE FROM organizations WHERE id=$1',[org.id]); await database.query('DELETE FROM users WHERE id IN ($1,$2)',[owner.id,admin.id]);
   });
 
   it('lets an owner preview and idempotently import CSV members without exposing passwords', async () => {

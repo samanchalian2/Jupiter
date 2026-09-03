@@ -1,5 +1,12 @@
 # Next Task
 
+## GOAL-055 — Organization Setup Wizard Completeness
+
+GOAL-055 is accepted: the authenticated RTL browser journey passed at
+375/768/1024/1440 without document-level overflow, and its temporary owner
+role, organization and test data were audited and restored. It does not start
+GOAL-056. Evidence: `docs/GOAL_055_EVIDENCE.md`.
+
 ## GOAL-054 — Directory Connector Operational Completeness
 
 GOAL-054 با remediation جفت‌سازی مجدد کامل شد. Connector لغوشده فقط با

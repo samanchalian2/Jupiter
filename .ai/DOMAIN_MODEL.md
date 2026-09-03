@@ -1,5 +1,9 @@
 # Domain Model
 
+## GOAL-055 OrganizationSetupProgress
+
+`OrganizationSetupProgress` یک رکورد tenant-scoped و versioned برای Wizard V1 است: current step، JSON stateهای صریح، زمان شروع/تکمیل و actor تکمیل را نگه می‌دارد. این aggregate مالک تنظیمات عملیاتی نیست؛ وضعیت Category، SLA، Team، Directory و capabilityها را از aggregateهای موجود projection می‌کند. `contact_phone` metadata اختیاری `OrganizationSettings` است؛ شخص تماس آزاد یا `contact_name` جدیدی ساخته نشده است.
+
 ## GOAL-052 recurring Smart Action allowance
 
 `CommercialAllowancePolicy` سیاست global استخر `AI_SMART_ACTIONS` و `OrganizationAllowancePolicyOverride` استثنای nullable سازمان را نگه می‌دارند. Allowance، Add-on Allocation و Smart Action علاوه بر capability، pool مصرف را ثبت می‌کنند؛ Add-on تاریخ انقضا دارد و allocation دوره‌ای تاریخچهٔ immutable هر window UTC است.

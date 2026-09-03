@@ -311,3 +311,11 @@ No subsequent Goal is started by this execution.
 Re-pair remediation preserves the Connector ID after an explicit owner/admin
 request, invalidates stale pairing material and establishes only a fresh device
 identity after one successful use of the new code.
+
+## GOAL-055 — Organization Setup Wizard Completeness
+
+GOAL-055 replaces the legacy two-item setup checklist with a server-backed,
+versioned, resumable ten-step Wizard. Its Go-Live gate is intentionally narrow:
+SETUP lifecycle, active owner, valid organization name/timezone and one Ticket
+Category. Optional services remain warnings and cannot create an implicit paid
+activation. Evidence is `docs/GOAL_055_EVIDENCE.md`; no later Goal begins here.
