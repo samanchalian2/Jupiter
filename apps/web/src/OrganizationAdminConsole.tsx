@@ -65,8 +65,10 @@ export function OrganizationAdminConsole({ actor }: { actor: Actor }) {
       <div className="admin-workspace-content">
         {notice && <p className="notice" role="status">{notice}</p>}
         {tab === 'directory' && <ContextualHelpTrigger actor={actor} relatedFeature="DIRECTORY_CONNECTOR" label="راهنمای اتصال دایرکتوری"/>}
-        {tab === 'settings' && <ContextualHelpTrigger actor={actor} relatedFeature="AI_TICKET_REVIEW" label="راهنمای تکمیل هوشمند"/>}
-        {tab === 'commercial' && <ContextualHelpTrigger actor={actor} relatedFeature="JUPITER_ASSIST" label="راهنمای Jupiter Assist"/>}
+        {tab === 'members' && <ContextualHelpTrigger actor={actor} relatedFeature="ORGANIZATION_MEMBERSHIP" label="راهنمای کاربران و CSV"/>}
+        {['catalog','vocabulary','teams','settings','extensions'].includes(tab) && <ContextualHelpTrigger actor={actor} relatedFeature="TICKET_CONFIGURATION" label="راهنمای تنظیمات تیکت"/>}
+        {tab === 'automation' && <ContextualHelpTrigger actor={actor} relatedFeature="SLA_ADMINISTRATION" label="راهنمای SLA و تقویم کاری"/>}
+        {tab === 'commercial' && <ContextualHelpTrigger actor={actor} relatedFeature="COMMERCIAL_DASHBOARD" label="راهنمای سهمیه و پشتیبانی"/>}
         {tab === 'members' && <><MembersPanel actor={actor} onNotice={setNotice}/><CsvMemberImport actor={actor} onNotice={setNotice}/></>}
         {tab === 'directory' && <><DirectoryConnectorControlPanel actor={actor} onNotice={setNotice}/><DirectoryOperationalPanel actor={actor}/><DirectoryPolicyControls actor={actor}/><DirectoryRunHistory actor={actor}/></>}
         {tab === 'catalog' && <CatalogPanel actor={actor} onNotice={setNotice}/>}

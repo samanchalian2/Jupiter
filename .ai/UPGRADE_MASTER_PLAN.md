@@ -321,3 +321,12 @@ Category. Optional services remain warnings and cannot create an implicit paid
 activation. The legacy tenant-setup completion endpoint delegates to the same
 canonical Go-Live service, including readiness re-evaluation and concurrent
 idempotency. Evidence is `docs/GOAL_055_EVIDENCE.md`; no later Goal begins here.
+
+## GOAL-056 — Help Content Completeness
+
+GOAL-056 preserves the existing global, versioned Product Help engine and
+expands the catalog through runtime revisions rather than destructive updates.
+It adds a constrained contextual metadata registry, lightweight Persian search
+ranking and category navigation, with no migration, RAG, tenant knowledge or
+new search engine. Evidence: `docs/GOAL_056_EVIDENCE.md`. GOAL-057 is not
+started by this execution.

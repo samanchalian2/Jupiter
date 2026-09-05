@@ -60,7 +60,7 @@ describe('Product Help publication and audience isolation', () => {
   });
 
   it('limits authoring/export to Platform Admin and keeps revision publication explicit', async () => {
-    const initial = { slug:`managed-${suffix}`, title:'راهنمای قابل مدیریت', summary:'خلاصهٔ نسخهٔ اول', content:'متن نسخهٔ اول', category:'آزمون', audience:['ALL'], tags:['آزمون'], productArea:'آزمون', relatedFeature:'TEST_HELP', relatedRoute:'/help' };
+    const initial = { slug:`managed-${suffix}`, title:'راهنمای قابل مدیریت', summary:'خلاصهٔ نسخهٔ اول', content:'متن نسخهٔ اول', category:'آزمون', audience:['ALL'], tags:['آزمون'], productArea:'آزمون', relatedFeature:'ACCOUNT_HELP_CENTER', relatedRoute:'/help' };
     await expect(help.create(ownerId, initial)).rejects.toBeDefined();
     const created = await help.create(platformId, initial); managedArticleId = created.id;
     await expect(help.detail(undefined, initial.slug)).rejects.toBeInstanceOf(NotFoundException);
@@ -85,5 +85,11 @@ describe('Product Help publication and audience isolation', () => {
     expect(all.content).toContain(initial.slug);
     await help.unpublish(platformId, created.id);
     await expect(help.detail(undefined, initial.slug)).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  it('ranks Persian domain matches and exposes a published article for every contextual feature', async () => {
+    const expectations: Array<[string,string]> = [['دایرکتوری','organization-directory'],['جفت‌سازی','organization-directory'],['تیکت','ticket-lifecycle'],['SLA','sla-business-calendar'],['هوش مصنوعی','ai-ticket-review'],['Assist','jupiter-assist'],['اشتراک','commercial-allowances'],['سهمیه','commercial-allowances'],['راه‌اندازی سازمان','organization-setup-wizard']];
+    for (const [query,slug] of expectations) expect((await help.list(ownerId, { q:query }))[0]?.slug).toBe(slug);
+    for (const feature of ['TICKET_LIFECYCLE','AI_TICKET_REVIEW','ORGANIZATION_MEMBERSHIP','TICKET_CONFIGURATION','SLA_ADMINISTRATION','DIRECTORY_CONNECTOR','COMMERCIAL_DASHBOARD','JUPITER_ASSIST','PLATFORM_APPEARANCE']) await expect(help.list(ownerId, { relatedFeature:feature })).resolves.toHaveLength(1);
   });
 });

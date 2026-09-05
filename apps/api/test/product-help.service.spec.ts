@@ -36,11 +36,12 @@ describe('Product Help audience boundary', () => {
 });
 
 describe('Product Help repository seed', () => {
-  const valid = `---\nslug: first-guide\ntitle: راهنمای اول\nsummary: یک خلاصه معتبر\ncategory: شروع کار\naudience: ["ALL"]\ntags: ["شروع"]\nproductArea: راهنما\nrelatedFeature: ticketing\nrelatedRoute: /dashboard\n---\n# راهنما\nمتن`;
+  const valid = `---\nslug: first-guide\ntitle: راهنمای اول\nsummary: یک خلاصه معتبر\ncategory: شروع کار\naudience: ["ALL"]\ntags: ["شروع"]\nproductArea: راهنما\nrelatedFeature: ACCOUNT_HELP_CENTER\nrelatedRoute: /help\n---\n# راهنما\nمتن`;
 
   it('parses explicit Persian metadata and rejects unsafe audience values', () => {
-    expect(parseHelpSeed(valid)).toMatchObject({ slug:'first-guide', audience:['ALL'], relatedRoute:'/dashboard' });
+    expect(parseHelpSeed(valid)).toMatchObject({ slug:'first-guide', audience:['ALL'], relatedRoute:'/help' });
     expect(() => parseHelpSeed(valid.replace('["ALL"]', '["UNKNOWN"]'))).toThrow('invalid audience');
+    expect(() => parseHelpSeed(valid.replace('ACCOUNT_HELP_CENTER', 'UNKNOWN_FEATURE'))).toThrow('unknown related feature');
   });
 
   it('never overwrites an existing runtime article during reseeding', async () => {

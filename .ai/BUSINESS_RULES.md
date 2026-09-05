@@ -123,6 +123,10 @@
 - Publishing makes one selected revision current and unpublishes a preceding
   published revision. Exports return only current published runtime content and
   may be scoped to one slug, one category or all Help.
+- Product Help metadata uses the approved contextual feature and route registry.
+  Repository seeds and Platform authoring reject unknown mappings. Public Help
+  search is intentionally lightweight: title, summary, category and tags are
+  searched, with title and exact-tag matches ranked before broader matches.
 - Only Platform Admin may change platform appearance. It accepts only approved
   brand, density and radius presets plus an internal managed logo path;
   organization branding cannot alter semantic colors, density, radius or

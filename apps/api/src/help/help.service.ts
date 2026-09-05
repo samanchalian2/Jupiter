@@ -1,6 +1,7 @@
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service.js';
 import { HELP_AUDIENCES, type HelpAudience } from './help-seed.js';
+import { isHelpContextFeature, isHelpRelatedRoute } from './help-catalog.js';
 
 type Viewer = { userId?: string; audiences: HelpAudience[] };
 type ArticleRow = { slug:string; title:string; summary:string; content?:string; category:string; audience:string[]; tags:string[]; product_area:string; related_feature:string|null; related_route:string|null; version:number; published_at:string };
@@ -30,8 +31,10 @@ export class ProductHelpService {
     const tags = Array.isArray(value.tags) ? [...new Set(value.tags.map(item => item.trim()).filter(Boolean))] : [];
     if (!audience.length || audience.some(item => !HELP_AUDIENCES.includes(item as HelpAudience)) || tags.length > 20 || tags.some(item => item.length > 80)) throw new BadRequestException('مخاطب یا برچسب مقاله معتبر نیست.');
     const relatedRoute = text(value.relatedRoute, 'مسیر مرتبط', 1, 500, false);
-    if (relatedRoute && (!relatedRoute.startsWith('/') || /\s/.test(relatedRoute))) throw new BadRequestException('مسیر مرتبط معتبر نیست.');
-    return { slug, title:text(value.title,'عنوان',3,200)!, summary:text(value.summary,'خلاصه',3,600)!, content:text(value.content,'متن',1,50000)!, category:text(value.category,'دسته',2,100)!, audience, tags, productArea:text(value.productArea,'بخش محصول',2,100)!, relatedFeature:text(value.relatedFeature,'قابلیت مرتبط',1,100,false), relatedRoute };
+    const relatedFeature = text(value.relatedFeature,'قابلیت مرتبط',1,100,false);
+    if (relatedRoute && !isHelpRelatedRoute(relatedRoute)) throw new BadRequestException('مسیر مرتبط معتبر نیست.');
+    if (relatedFeature && !isHelpContextFeature(relatedFeature)) throw new BadRequestException('قابلیت مرتبط معتبر نیست.');
+    return { slug, title:text(value.title,'عنوان',3,200)!, summary:text(value.summary,'خلاصه',3,600)!, content:text(value.content,'متن',1,50000)!, category:text(value.category,'دسته',2,100)!, audience, tags, productArea:text(value.productArea,'بخش محصول',2,100)!, relatedFeature, relatedRoute };
   }
 
   private async audit(client: { query:(sql:string, values?:unknown[])=>Promise<unknown> }, actorId:string, action:string, articleId:string, metadata:Record<string,unknown>) {
@@ -63,7 +66,10 @@ export class ProductHelpService {
 
   async list(userId?: string, input: { q?:string; category?:string; relatedRoute?:string; relatedFeature?:string } = {}) {
     const viewer = await this.viewer(userId); const q = input.q?.trim() ?? '';
-    const rows = (await this.database.query<ArticleRow>(`${this.select(false)} AND ($2='' OR revision.title ILIKE $3 OR revision.summary ILIKE $3) AND ($4='' OR revision.category=$4) AND ($5='' OR revision.related_route=$5) AND ($6='' OR revision.related_feature=$6) ORDER BY revision.published_at DESC,revision.title`, [viewer.audiences, q, `%${q}%`, input.category?.trim() ?? '', input.relatedRoute?.trim() ?? '', input.relatedFeature?.trim() ?? ''])).rows;
+    const rows = (await this.database.query<ArticleRow>(`${this.select(false)}
+      AND ($2='' OR revision.title ILIKE $3 OR revision.summary ILIKE $3 OR revision.category ILIKE $3 OR array_to_string(revision.tags, ' ') ILIKE $3)
+      AND ($4='' OR revision.category=$4) AND ($5='' OR revision.related_route=$5) AND ($6='' OR revision.related_feature=$6)
+      ORDER BY CASE WHEN $2='' THEN 0 WHEN revision.title ILIKE $3 THEN 0 WHEN $2 = ANY(revision.tags) THEN 1 WHEN array_to_string(revision.tags, ' ') ILIKE $3 THEN 2 WHEN revision.category ILIKE $3 THEN 3 ELSE 4 END, revision.published_at DESC,revision.title`, [viewer.audiences, q, `%${q}%`, input.category?.trim() ?? '', input.relatedRoute?.trim() ?? '', input.relatedFeature?.trim() ?? ''])).rows;
     return rows.map(row => this.map(row, false));
   }
 

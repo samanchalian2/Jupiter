@@ -1,5 +1,11 @@
 # Changelog
 
+## GOAL-056 — تکمیل محتوای راهنمای محصول
+
+- کاتالوگ راهنمای فارسی به ۱۵ راهنمای دامنه‌ای منتشرشده رسید: هفت مقالهٔ پیشین با revision runtime بازبینی شدند و هشت راهنمای عملیاتی جدید افزوده شد.
+- جست‌وجوی Help اکنون title، summary، دسته و برچسب را با رتبه‌بندی فارسی سبک بررسی می‌کند؛ دسته‌بندی و triggerهای contextual کامل‌تر شدند.
+- publication utility فقط با Platform Admin معتبر و فقط در صورت اختلاف، revision runtime می‌سازد و منتشر می‌کند؛ seedها همچنان محتوای runtime را بازنویسی نمی‌کنند.
+
 ## GOAL-055 — راه‌اندازی سازمان
 
 - Wizard سازمان به progress سروری، versioned و resumable با readiness واحد و Go-Live اتمیک Owner-only ارتقا یافت.

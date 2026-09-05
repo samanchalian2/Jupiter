@@ -5,6 +5,7 @@ import { request } from './App';
 import { applyIntakeSuggestions, blocksManualSubmit, intakeFailureMessage, intakeFieldLabel, microphoneErrorMessage, pollIntake, processingStatuses, removeIntakeTranscript, type IntakeSession, type TicketFormState, type TicketTag } from './ticketIntake';
 import { Button, Card, ConfirmDialog } from './ui';
 import { beginVoiceRecording, prepareVoiceCapture, type VoiceRecordingHandle } from './voiceRecording';
+import { ContextualHelpTrigger } from './ContextualHelp';
 
 type Catalog = { id: string; name: string; category_id?: string };
 type CustomField = { field_key:string; label:string; field_type:'TEXT'|'NUMBER'|'DATE'|'SELECT'|'BOOLEAN'; options:unknown[]; is_required:boolean };
@@ -217,7 +218,7 @@ export function TicketComposer({ actor, onCreated, onCancelled }: { actor:Actor;
   const hasConversation=Boolean(intake?.messages?.length);
   const hasCancellableDraft=Boolean(intake||messageDraft.trim()||form.description.trim()||recording||file);
   const clarificationInConversation=Boolean(intake?.clarificationQuestion&&intake.messages?.some(message=>message.role==='ASSISTANT'&&message.text===intake.clarificationQuestion));
-  return <Card className={`quick-ticket-card smart-ticket-composer${hasConversation?' conversation-active':''}`}><div className="quick-ticket-heading"><div><p className="eyebrow">درخواست جدید</p><h2>درخواستتان را با زبان خودتان توضیح دهید</h2><p>ژوپیتر می‌تواند از روی متن یا صدای شما سایر فیلدها را پیشنهاد کند.</p></div><Sparkles aria-hidden="true"/></div>
+  return <Card className={`quick-ticket-card smart-ticket-composer${hasConversation?' conversation-active':''}`}><div className="quick-ticket-heading"><div><p className="eyebrow">درخواست جدید</p><h2>درخواستتان را با زبان خودتان توضیح دهید</h2><p>ژوپیتر می‌تواند از روی متن یا صدای شما سایر فیلدها را پیشنهاد کند.</p></div><Sparkles aria-hidden="true"/></div><ContextualHelpTrigger actor={actor} relatedFeature="AI_TICKET_REVIEW" label="راهنمای دستیار هوشمند"/>
     <form className="quick-ticket-form" onSubmit={submit}>
       {hasConversation? <section className="intake-conversation" aria-label="گفتگوی تکمیل درخواست">{intake?.messages?.map(message=><article key={message.id} className={`intake-message ${message.role==='ASSISTANT'?'assistant':'requester'}`}><strong>{message.role==='ASSISTANT'?'ژوپیتر':'شما'}</strong><p>{message.contentType==='VOICE'?(message.transcript??'در حال آماده‌سازی متن صوت…'):(message.text??'')}</p>{message.contentType==='VOICE'&&message.voice&&<small>پیام صوتی · {formatDuration(message.voice.durationSeconds)}</small>}</article>)}</section>:null}
       <section className={`message-composer${hasConversation?' conversation-composer':''}`} aria-label="نوشتن پیام درخواست">{clarificationFor&&<p className="clarification-context" role="status">توضیح دربارهٔ: <strong>{clarificationFor.title}</strong></p>}<label className="ticket-description-field"><span className="field-label-row"><span>{hasConversation?'پیام جدید':'شرح درخواست'}</span>{aiBadge('description')}</span><textarea ref={descriptionRef} maxLength={10000} value={messageDraft} onChange={event=>setMessageDraft(event.target.value)} placeholder={hasConversation?'توضیح یا اطلاعات جدیدی اضافه کنید…':'مشکل، زمان شروع و نتیجه‌ای که انتظار دارید را توضیح دهید…'}/></label>

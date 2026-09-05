@@ -102,6 +102,11 @@ Platform Admin-only and audited. A preview is available only to that role;
 public/user discovery still uses the published-and-audience query. The Help
 reader renders Markdown as escaped text rather than injected HTML, so Help
 authors cannot introduce executable markup through content.
+
+GOAL-056 keeps Help global and Platform-owned. Its contextual feature/route
+registry is allowlisted server-side; it exposes neither tenant data nor any
+credential. The runtime publication utility requires an active Platform Admin
+actor and only creates immutable drafts/revisions before publishing them.
 # GOAL-053 — Assist capacity authorization
 
 Only Platform Admin may create/suspend packages, allocate or adjust capacity, with an explicit organization target and mandatory adjustment/suspension reason. Owners may read their organization projection only. Ledger rows are tenant-RLS-scoped and application-role immutable; acceptance locks the organization and case to prevent a second settlement.

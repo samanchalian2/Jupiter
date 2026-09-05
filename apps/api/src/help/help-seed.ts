@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { Pool, PoolClient } from 'pg';
+import { isHelpContextFeature, isHelpRelatedRoute } from './help-catalog.js';
 
 export const HELP_AUDIENCES = ['REQUESTER', 'EXPERT', 'SUPERVISOR', 'ORG_ADMIN', 'ORG_OWNER', 'PLATFORM_ADMIN', 'ALL'] as const;
 export type HelpAudience = (typeof HELP_AUDIENCES)[number];
@@ -44,6 +45,8 @@ export function parseHelpSeed(source: string): HelpSeedArticle {
     relatedRoute: value(header, 'relatedRoute', false) || undefined, content: match[2].trim(),
   };
   if (!/^[a-z0-9][a-z0-9-]{2,120}$/.test(article.slug) || !article.content) throw new Error(`Invalid Help seed ${article.slug}.`);
+  if (article.relatedFeature && !isHelpContextFeature(article.relatedFeature)) throw new Error(`Help seed ${article.slug} has an unknown related feature.`);
+  if (article.relatedRoute && !isHelpRelatedRoute(article.relatedRoute)) throw new Error(`Help seed ${article.slug} has an unknown related route.`);
   return article;
 }
 

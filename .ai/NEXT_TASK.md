@@ -1,5 +1,9 @@
 # Next Task
 
+## GOAL-056 — Help Content Completeness
+
+GOAL-056 در حال تکمیل پذیرش نهایی است. موتور Help و versioning موجود حفظ شده؛ runtime publication مرجع نهایی و seedها فقط bootstrap هستند. کاتالوگ هدف ۱۵ مقالهٔ منتشرشده، registry feature/route، جست‌وجوی فارسی سبک، دسته‌بندی Help Center و triggerهای contextual را پوشش می‌دهد. Evidence: `docs/GOAL_056_EVIDENCE.md`. GOAL-057 آغاز نمی‌شود.
+
 ## GOAL-055 — Organization Setup Wizard Completeness
 
 GOAL-055 remediation is accepted: the legacy tenant-setup completion endpoint
