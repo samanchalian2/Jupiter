@@ -1,8 +1,8 @@
 # Jupiter Master Upgrade Plan
 
-## GOAL-056 — تکمیل محتوای راهنمای محصول (in progress)
+## GOAL-056 — تکمیل محتوای راهنمای محصول (complete)
 
-موتور versioned Help حفظ شد و کاتالوگ runtime به ۱۵ راهنمای فارسی دامنه‌ای رسید. registry محدود metadata، جست‌وجوی فارسی سبک، دسته‌بندی Help Center و Triggerهای contextual در پذیرش نهایی هستند؛ GOAL-057 آغاز نشده است.
+موتور versioned Help حفظ شد و کاتالوگ runtime به ۱۵ راهنمای فارسی دامنه‌ای رسید. registry محدود metadata، جست‌وجوی فارسی سبک، دسته‌بندی Help Center و Triggerهای contextual پذیرفته شدند؛ پذیرش Setup Wizard در مسیر واقعی یک سازمان موقت `SETUP` با عضو `ORG_OWNER` انجام و fixture پاک شد. GOAL-057 آغاز نشده است.
 
 ## GOAL-053 — مدل بسته و ظرفیت Jupiter Assist (complete)
 

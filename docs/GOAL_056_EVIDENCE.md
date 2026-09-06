@@ -119,11 +119,27 @@ form, after which the requester session opened Ticket Detail and verified the
 Jupiter Assist Help trigger without overflow. No commercial request, Assist
 request, ticket or other product data was created during either check.
 
-**Browser acceptance NOT COMPLETED.** The remaining Setup Wizard trigger needs
-an authenticated member of an organization currently in `setup` lifecycle;
-the existing authenticated organization is active, and no temporary setup
-organization or membership was created solely to weaken this acceptance check.
-GOAL-056 stays in progress until that route is exercised.
+### Final Setup Wizard acceptance
+
+A temporary `SETUP` organization named `GOAL-056 Setup Acceptance` was
+provisioned through the supported organization/membership fixture path with an
+active `ORG_OWNER` membership for the existing local Platform Admin. The real
+tenant route `/o/goal056-setup-acceptance` opened the Setup Wizard normally;
+no authorization rule or tenant-membership check was bypassed.
+
+The compact contextual trigger «راهنمای راه‌اندازی سازمان» was visible and,
+when opened, resolved the published `organization-setup-wizard` article
+(`ORGANIZATION_SETUP_WIZARD`). Its Persian title and body, including the
+Go-Live guidance, rendered readably in RTL. At 375 × 812 (effective width
+360) and 1440 × 900 (effective width 1425), `scrollWidth` equalled
+`clientWidth`; the dialog exposed no unrelated or unauthorized Help content
+and the route/context mapping was intact.
+
+After the check, the fixture membership role, membership, setup-progress and
+fixture audit rows, then the temporary organization itself, were removed. The
+browser returned to `jupiter-demo`; normal runtime Help content was preserved.
+No credential, secret or production-like tenant data was retained or changed.
+GOAL-056 is accepted; GOAL-057 was not started.
 
 ## Limitations
 

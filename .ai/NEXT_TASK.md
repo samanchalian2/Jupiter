@@ -1,8 +1,8 @@
 # Next Task
 
-## GOAL-056 — Help Content Completeness
+## GOAL-056 — Help Content Completeness (complete)
 
-GOAL-056 با کاتالوگ ۱۵ مقاله‌ای، publication runtime اختلاف‌محور، registry feature/route، جست‌وجوی فارسی سبک، دسته‌بندی Help Center و Triggerهای contextual در حال پذیرش نهایی است. پذیرش Browser برای سطح‌های اصلی در 375/768/1024/1440 ثبت شده و Trigger چرخهٔ تیکت در Detail افزوده شد؛ مسیرهای باقیمانده و quality gateهای نهایی باید پیش از بستن Goal کامل شوند. Evidence: `docs/GOAL_056_EVIDENCE.md`. GOAL-057 آغاز نمی‌شود.
+GOAL-056 با کاتالوگ ۱۵ مقاله‌ای، publication runtime اختلاف‌محور، registry feature/route، جست‌وجوی فارسی سبک، دسته‌بندی Help Center و Triggerهای contextual پذیرفته شد. پذیرش نهایی Setup Wizard در یک سازمان موقت `SETUP`، با عضو مجاز `ORG_OWNER` و مسیر canonical انجام و سپس fixture به‌طور کامل پاک شد؛ Help Trigger مقالهٔ `organization-setup-wizard` را در RTL و بدون overflow باز کرد. Evidence: `docs/GOAL_056_EVIDENCE.md`. GOAL-057 آغاز نمی‌شود.
 
 ## GOAL-055 — Organization Setup Wizard Completeness
 

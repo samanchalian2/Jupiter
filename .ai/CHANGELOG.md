@@ -6,6 +6,7 @@
 - جست‌وجوی Help اکنون title، summary، دسته و برچسب را با رتبه‌بندی فارسی سبک بررسی می‌کند؛ دسته‌بندی و triggerهای contextual کامل‌تر شدند.
 - publication utility فقط با Platform Admin معتبر و فقط در صورت اختلاف، revision runtime می‌سازد و منتشر می‌کند؛ seedها همچنان محتوای runtime را بازنویسی نمی‌کنند.
 - remediation پذیرش: Trigger فشردهٔ «راهنمای چرخهٔ تیکت» به صفحهٔ جزئیات تیکت افزوده و anchor popover برای جلوگیری از horizontal overflow اصلاح شد؛ پذیرش احرازشدهٔ Browser در 375/768/1024/1440 گذشت.
+- پذیرش نهایی Setup Wizard با fixture موقت `SETUP`، عضویت مجاز `ORG_OWNER` و مسیر canonical انجام شد: Trigger مقالهٔ منتشرشدهٔ `organization-setup-wizard` را در RTL و بدون overflow در 375 و 1440 باز کرد و همهٔ داده‌های fixture پس از آزمون حذف شدند.
 
 ## GOAL-055 — راه‌اندازی سازمان
 
