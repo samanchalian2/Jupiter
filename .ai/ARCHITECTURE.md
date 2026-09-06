@@ -1,5 +1,14 @@
 # System Architecture
 
+## GOAL-057 Appearance runtime
+
+The Appearance module remains inside the modular monolith. It owns canonical
+hex validation and the effective appearance projection; the React token helper
+applies only that projection as CSS variables. Tenant runtime loading is
+membership-bound and cancellation-safe on tenant switch, while public and
+Platform routes bootstrap the global projection to prevent stale tenant theme
+state.
+
 MVP is an API-first TypeScript modular monolith: React/Vite SPA behind Nginx;
 NestJS API and worker processes; PostgreSQL; Redis/BullMQ; and S3-compatible
 object storage. REST is versioned under `/api/v1`; SSE publishes server events.

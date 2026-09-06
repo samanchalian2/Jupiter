@@ -1,5 +1,13 @@
 # Domain Model
 
+## GOAL-057 Appearance overrides
+
+`PlatformAppearanceSettings.custom_primary` is an optional global canonical
+hex override. `OrganizationSettings.appearance_primary` is an optional
+tenant-RLS override. Neither stores derived tokens or inherited platform
+values; those are a runtime projection with SYSTEM, PLATFORM or ORGANIZATION
+source. Existing preset, density, radius and logo attributes remain separate.
+
 ## GOAL-055 OrganizationSetupProgress
 
 `OrganizationSetupProgress` یک رکورد tenant-scoped و versioned برای Wizard V1 است: current step، JSON stateهای صریح، زمان شروع/تکمیل و actor تکمیل را نگه می‌دارد. این aggregate مالک تنظیمات عملیاتی نیست؛ وضعیت Category، SLA، Team، Directory و capabilityها را از aggregateهای موجود projection می‌کند. `contact_phone` metadata اختیاری `OrganizationSettings` است؛ شخص تماس آزاد یا `contact_name` جدیدی ساخته نشده است.

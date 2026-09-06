@@ -1,5 +1,13 @@
 # Jupiter Master Upgrade Plan
 
+## GOAL-057 — Appearance Theme Migration & Custom Primary Validation (complete)
+
+Jupiter's canonical Light Theme primary is `#315399`. Validated, tenant-safe
+Platform/Organization Custom Primary inheritance, deterministic white/dark
+foreground selection and reset behavior are complete without arbitrary CSS or
+semantic palette overrides. Authenticated responsive acceptance at
+375/768/1024/1440 and all quality gates passed. GOAL-058 is not started.
+
 ## GOAL-056 — تکمیل محتوای راهنمای محصول (complete)
 
 موتور versioned Help حفظ شد و کاتالوگ runtime به ۱۵ راهنمای فارسی دامنه‌ای رسید. registry محدود metadata، جست‌وجوی فارسی سبک، دسته‌بندی Help Center و Triggerهای contextual پذیرفته شدند؛ پذیرش Setup Wizard در مسیر واقعی یک سازمان موقت `SETUP` با عضو `ORG_OWNER` انجام و fixture پاک شد. GOAL-057 آغاز نشده است.

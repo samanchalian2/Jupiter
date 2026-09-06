@@ -51,7 +51,7 @@ export async function request(path: string, session: Session, organizationId: st
 export function App() {
   const [session, setSession] = useState<Session | null>(savedSession);
   const [organizationId, setOrganizationId] = useState(session?.user.memberships[0]?.organization_id ?? '');
-  useEffect(() => { void fetch(`${api}/appearance`).then((response) => response.ok ? response.json() : null).then((value: PlatformAppearanceValue | null) => { if (value) applyPlatformAppearance(value); }).catch(() => undefined); }, []);
+  useEffect(() => { if (session) return; void fetch(`${api}/appearance`).then((response) => response.ok ? response.json() : null).then((value: PlatformAppearanceValue | null) => { if (value) applyPlatformAppearance(value); }).catch(() => undefined); }, [session]);
   const login = (value: Session) => { sessionStorage.setItem('jupiter.session', JSON.stringify(value)); setSession(value); setOrganizationId(value.user.memberships[0]?.organization_id ?? ''); };
   const logout = () => { void fetch(`${api}/auth/logout`, { method: 'POST', credentials: 'include' }); sessionStorage.removeItem('jupiter.session'); setSession(null); setOrganizationId(''); };
   useEffect(() => { const update = () => setSession(savedSession()); const expire = () => { setSession(null); setOrganizationId(''); }; window.addEventListener('jupiter:session-refreshed', update); window.addEventListener('jupiter:session-expired', expire); return () => { window.removeEventListener('jupiter:session-refreshed', update); window.removeEventListener('jupiter:session-expired', expire); }; }, []);
@@ -59,17 +59,27 @@ export function App() {
   const match = /^\/o\/([a-z0-9-]{3,63})(\/.*)?$/.exec(window.location.pathname);
   const requestedSlug = match?.[1];
   const membership = requestedSlug ? session.user.memberships.find((item) => item.organization_slug === requestedSlug) : session.user.memberships.find((item) => item.organization_id === organizationId) ?? session.user.memberships[0];
-  if (window.location.pathname.startsWith('/platform') && session.user.platformAdmin) return <BrowserRouter><main className="portal" dir="rtl"><header><div><p className="eyebrow">JUPITER / مدیر پلتفرم</p><h1>مدیریت پلتفرم</h1></div><button className="secondary" onClick={logout}>خروج</button></header><PlatformAdministration actor={{ session, organizationId: membership?.organization_id ?? '', membership: membership ?? { organization_id: '', role_codes: [] } }} /></main></BrowserRouter>;
+  if (window.location.pathname.startsWith('/platform') && session.user.platformAdmin) return <BrowserRouter><PlatformAppearanceBootstrap/><main className="portal" dir="rtl"><header><div><p className="eyebrow">JUPITER / مدیر پلتفرم</p><h1>مدیریت پلتفرم</h1></div><button className="secondary" onClick={logout}>خروج</button></header><PlatformAdministration actor={{ session, organizationId: membership?.organization_id ?? '', membership: membership ?? { organization_id: '', role_codes: [] } }} /></main></BrowserRouter>;
   if (!requestedSlug && membership && session.user.memberships.length === 1 && membership.organization_slug && !window.location.pathname.startsWith('/platform')) { window.location.replace(`/o/${membership.organization_slug}${window.location.pathname === '/' ? '' : window.location.pathname}`); return null; }
   if (!requestedSlug && session.user.memberships.length > 1 && !window.location.pathname.startsWith('/platform')) return <OrganizationChooser memberships={session.user.memberships}/>;
-  if (!membership && session.user.platformAdmin) return <BrowserRouter><main className="portal" dir="rtl"><header><div><p className="eyebrow">JUPITER / مدیر پلتفرم</p><h1>مدیریت پلتفرم</h1></div><button className="secondary" onClick={logout}>خروج</button></header><PlatformAdministration actor={{ session, organizationId: '', membership: { organization_id: '', role_codes: [] } }} /></main></BrowserRouter>;
+  if (!membership && session.user.platformAdmin) return <BrowserRouter><PlatformAppearanceBootstrap/><main className="portal" dir="rtl"><header><div><p className="eyebrow">JUPITER / مدیر پلتفرم</p><h1>مدیریت پلتفرم</h1></div><button className="secondary" onClick={logout}>خروج</button></header><PlatformAdministration actor={{ session, organizationId: '', membership: { organization_id: '', role_codes: [] } }} /></main></BrowserRouter>;
   if (!membership) return <NoOrganization session={session} onLogout={logout} />;
   const selectOrganization=(id:string)=>{const target=session.user.memberships.find((item)=>item.organization_id===id);if(target?.organization_slug) window.location.assign(`/o/${target.organization_slug}`);};
   const actor={ session, organizationId: membership.organization_id, membership };
-  if (match?.[2] === '/help') return <BrowserRouter basename={`/o/${membership.organization_slug ?? ''}`}><ProductHelpStandalone actor={actor}/></BrowserRouter>;
+  if (match?.[2] === '/help') return <BrowserRouter basename={`/o/${membership.organization_slug ?? ''}`}><TenantAppearance actor={actor}/><ProductHelpStandalone actor={actor}/></BrowserRouter>;
   const setupAdminPath=Boolean(match?.[2]?.startsWith('/admin/'));
   const setupOperator=membership.role_codes.some(role=>role==='ORG_OWNER'||role==='ORG_ADMIN');
-  return <BrowserRouter basename={`/o/${membership.organization_slug ?? ''}`}>{membership.organization_status==='setup' ? (setupAdminPath&&setupOperator?<main className="portal" dir="rtl"><header><Link className="ui-button secondary" to="/">بازگشت به راه‌اندازی</Link></header><OrganizationAdminConsole actor={actor}/></main>:<SetupWorkspace actor={actor} onLogout={logout}/>) : <ProductShell actor={actor} onOrganization={selectOrganization} onLogout={logout} />}</BrowserRouter>;
+  return <BrowserRouter basename={`/o/${membership.organization_slug ?? ''}`}><TenantAppearance actor={actor}/>{membership.organization_status==='setup' ? (setupAdminPath&&setupOperator?<main className="portal" dir="rtl"><header><Link className="ui-button secondary" to="/">بازگشت به راه‌اندازی</Link></header><OrganizationAdminConsole actor={actor}/></main>:<SetupWorkspace actor={actor} onLogout={logout}/>) : <ProductShell actor={actor} onOrganization={selectOrganization} onLogout={logout} />}</BrowserRouter>;
+}
+
+function TenantAppearance({ actor }: { actor: Actor }) {
+  useEffect(() => { let current = true; void request('/appearance/organization', actor.session, actor.organizationId).then((value) => { if (current) applyPlatformAppearance(value as PlatformAppearanceValue); }).catch(() => undefined); return () => { current = false; }; }, [actor.organizationId, actor.session.accessToken]);
+  return null;
+}
+
+function PlatformAppearanceBootstrap() {
+  useEffect(() => { void fetch(`${api}/appearance`).then((response) => response.ok ? response.json() : null).then((value: PlatformAppearanceValue | null) => { if (value) applyPlatformAppearance(value); }).catch(() => undefined); }, []);
+  return null;
 }
 
 function ProductHelpStandalone({ actor }: { actor:Actor }) { return <main className="app-main help-standalone" dir="rtl"><header className="app-header"><div className="page-context"><p className="eyebrow">JUPITER / راهنمای محصول</p><p className="shell-title">مرکز خدمات پشتیبانی</p></div><Link className="ui-button secondary" to="/">بازگشت به سامانه</Link></header><HelpCenter actor={actor}/></main>; }

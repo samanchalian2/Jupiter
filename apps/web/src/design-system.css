@@ -11,10 +11,11 @@
   --color-text-primary: #211b2b;
   --color-text-secondary: #665f6d;
   --color-text-tertiary: #857d8d;
-  --color-brand: #6d5587;
-  --color-brand-hover: #59436f;
-  --color-brand-soft: #f4f0f6;
-  --color-brand-border: #d8cddd;
+  --color-brand: #315399;
+  --color-brand-hover: #2a4782;
+  --color-brand-active: #233c6e;
+  --color-brand-soft: #eff1f7;
+  --color-brand-border: #c5cfe2;
   --color-success: #087443;
   --color-warning: #9a5d00;
   --color-danger: #b42318;
@@ -65,7 +66,7 @@
   --radius: var(--radius-medium);
   --radius-lg: var(--radius-large);
   --shadow: var(--elevation-subtle);
-  --focus: 0 0 0 3px rgba(109, 85, 135, 0.28);
+  --focus: 0 0 0 2px var(--color-surface), 0 0 0 4px var(--color-brand);
 }
 
 [data-ui-density='comfortable'] {

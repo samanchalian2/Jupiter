@@ -1,5 +1,12 @@
 # Next Task
 
+## GOAL-057 — Appearance Theme Migration & Custom Primary Validation (complete)
+
+GOAL-057 migrated the canonical Light Theme primary to `#315399` and added
+tenant-safe, audited Custom Primary validation, inheritance and deterministic
+white/dark foreground selection. Browser acceptance, restoration and quality
+gates passed. Evidence: `docs/GOAL_057_EVIDENCE.md`. GOAL-058 does not start.
+
 ## GOAL-056 — Help Content Completeness (complete)
 
 GOAL-056 با کاتالوگ ۱۵ مقاله‌ای، publication runtime اختلاف‌محور، registry feature/route، جست‌وجوی فارسی سبک، دسته‌بندی Help Center و Triggerهای contextual پذیرفته شد. پذیرش نهایی Setup Wizard در یک سازمان موقت `SETUP`، با عضو مجاز `ORG_OWNER` و مسیر canonical انجام و سپس fixture به‌طور کامل پاک شد؛ Help Trigger مقالهٔ `organization-setup-wizard` را در RTL و بدون overflow باز کرد. Evidence: `docs/GOAL_056_EVIDENCE.md`. GOAL-057 آغاز نمی‌شود.

@@ -40,7 +40,7 @@ const organizations = new OrganizationService(database, {} as never, organizatio
 const assist = new AssistService(database, commercial);
 const assistCapacity = new AssistCapacityService(database, notifications);
 const tickets = new TicketService(database);
-const appearance = new AppearanceService(database);
+const appearance = new AppearanceService(database, organizationAccess);
 const createdEmails: string[] = [];
 const fixtureId = randomUUID().replace(/-/g, '').slice(0, 12);
 const uuid = (tail: string) => `00000000-0000-4000-8000-${tail.padStart(12, '0')}`;
@@ -821,12 +821,20 @@ describe('public accounts and organization applications', () => {
     expect(await count('COMMERCIAL_SUBSCRIPTION_REACTIVATED')).toBe(reactivatedBefore+1); expect((await database.withOrganization(setupOrganizationId,c=>c.query<{count:string}>("SELECT count(*) FROM audit_logs WHERE target_id=$1 AND action='SUBSCRIPTION_REACTIVATED'",[expired]))).rows[0].count).toBe('1');
   });
 
-  it('keeps platform appearance preset-only, auditable and platform-admin controlled', async () => {
+  it('resolves platform and organization appearance overrides without tenant leakage', async () => {
     const original = await appearance.current();
     await expect(appearance.save(legacyOrganizationAdminId, { brandPreset: 'OCEAN', densityPreset: 'COMPACT', radiusPreset: 'SMALL', logoUrl: '/jupiter-logo.png' })).rejects.toBeInstanceOf(ForbiddenException);
-    const saved = await appearance.save(platformAdminId, { brandPreset: 'OCEAN', densityPreset: 'COMPACT', radiusPreset: 'SMALL', logoUrl: '/jupiter-logo.png' });
-    expect(saved).toMatchObject({ brandPreset: 'OCEAN', densityPreset: 'COMPACT', radiusPreset: 'SMALL', logoUrl: '/jupiter-logo.png' });
+    const saved = await appearance.save(platformAdminId, { brandPreset: 'OCEAN', densityPreset: 'COMPACT', radiusPreset: 'SMALL', logoUrl: '/jupiter-logo.png', customPrimary: '#204080' });
+    expect(saved).toMatchObject({ brandPreset: 'OCEAN', densityPreset: 'COMPACT', radiusPreset: 'SMALL', logoUrl: '/jupiter-logo.png', effectivePrimary: '#204080', primarySource: 'PLATFORM' });
     await expect(appearance.save(platformAdminId, { brandPreset: 'OCEAN', densityPreset: 'COMPACT', radiusPreset: 'SMALL', logoUrl: 'https://untrusted.example/logo.png' })).rejects.toBeDefined();
+    const admin={userId:legacyOrganizationAdminId,organizationId:legacyOrganizationId,roles:['ORG_ADMIN']}; const owner={userId:setupOwnerId,organizationId:setupOrganizationId,roles:['ORG_OWNER']};
+    await expect(appearance.saveOrganizationPrimary({ ...admin, roles:['REQUESTER'] }, { customPrimary:'#1A6F55' })).rejects.toBeInstanceOf(ForbiddenException);
+    expect(await appearance.saveOrganizationPrimary(admin, { customPrimary:'#1a6f55' })).toMatchObject({ customPrimary:'#1A6F55',effectivePrimary:'#1A6F55',primarySource:'ORGANIZATION' });
+    expect(await appearance.organizationCurrent(owner)).toMatchObject({ customPrimary:'#204080',effectivePrimary:'#204080',primarySource:'PLATFORM' });
+    await appearance.resetOrganizationPrimary(admin);
+    expect(await appearance.organizationCurrent(admin)).toMatchObject({ customPrimary:'#204080',effectivePrimary:'#204080',primarySource:'PLATFORM' });
+    await appearance.resetPlatformPrimary(platformAdminId);
+    expect(await appearance.organizationCurrent(admin)).toMatchObject({ effectivePrimary:'#315399',primarySource:'SYSTEM' });
     await appearance.save(platformAdminId, original);
   });
 });

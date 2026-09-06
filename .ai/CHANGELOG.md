@@ -1,5 +1,15 @@
 # Changelog
 
+## GOAL-057 — Appearance Theme Migration & Custom Primary Validation
+
+- Jupiter Light Theme primary migrated to `#315399` with deterministic derived
+  primary tokens and independent semantic colors.
+- Platform and Organization now have governed, audited Custom Primary overrides
+  with server-side hex/contrast validation, inheritance and reset semantics.
+- `onPrimary` is selected deterministically as white or the approved dark
+  foreground, and authenticated RTL browser acceptance at 375/768/1024/1440
+  passed without document-level overflow.
+
 ## GOAL-056 — تکمیل محتوای راهنمای محصول
 
 - کاتالوگ راهنمای فارسی به ۱۵ راهنمای دامنه‌ای منتشرشده رسید: هفت مقالهٔ پیشین با revision runtime بازبینی شدند و هشت راهنمای عملیاتی جدید افزوده شد.

@@ -14,7 +14,7 @@ unnecessary card nesting, large shadows and equally prominent CTAs.
 
 ## Brand and tokens
 
-`#6d5587` is Jupiter's brand accent. It is reserved for primary actions,
+`#315399` is Jupiter's canonical Light Theme brand accent. It is reserved for primary actions,
 selected navigation, focus and controlled emphasis; canvases and ordinary
 surfaces remain neutral. The canonical tokens live in
 `apps/web/src/design-system.css`.
@@ -24,7 +24,7 @@ surfaces remain neutral. The canonical tokens live in
 | Surfaces | canvas, surface, surface-subtle, surface-raised |
 | Borders | border, border-strong |
 | Text | text-primary, text-secondary, text-tertiary, technical |
-| Brand | brand, brand-hover, brand-soft, brand-border |
+| Brand | brand, brand-hover, brand-active, brand-soft, brand-border, on-primary |
 | Semantics | success, warning, danger, info |
 | Spacing | 4, 8, 12, 16, 20, 24, 32, 40 px |
 | Radius | small 6px, medium 10px, large 14px |
@@ -165,6 +165,15 @@ organization identity → page content. Organization branding cannot override
 semantic tokens, security-sensitive UI or layout rules. Adding persisted
 platform appearance settings requires an ADR and a separate Goal because it
 changes API/data contracts.
+
+GOAL-057 makes `#315399` the built-in Jupiter primary and permits only an
+audited, hex-normalized Custom Primary override. The primary token family is
+derived deterministically; semantic status colors remain independent. Runtime
+precedence is System → Platform → Organization, and Organization reset removes
+only its override. Platform reset returns its color configuration to JUPITER
+without changing density, radius or logo. Button foreground is selected
+deterministically between white and the approved dark foreground; primary text
+on light surfaces uses the derived accessible primary-text token.
 
 ## Do / don't
 

@@ -6,8 +6,8 @@
   --surface-muted: #f2f6fb;
   --border: #dce3ed;
   --text-muted: #52657f;
-  --primary: #6d5587;
-  --primary-dark: #59436f;
+  --primary: #315399;
+  --primary-dark: #2a4782;
   --danger: #b42318;
   --radius: 10px;
   --shadow: 0 6px 18px #17325b0d;
@@ -15,13 +15,13 @@
 
 /* Jupiter commercial design tokens */
 :root {
-  --primary: #6d5587;
-  --primary-dark: #59436f;
-  --primary-soft: #f4f0f6;
-  --primary-border: #d8cddd;
+  --primary: #315399;
+  --primary-dark: #2a4782;
+  --primary-soft: #eff1f7;
+  --primary-border: #c5cfe2;
   --on-primary: #ffffff;
-  --primary-text: #6d5587;
-  --accent: #6d5587;
+  --primary-text: #315399;
+  --accent: #315399;
   --canvas: #fafafa;
   --surface: #fff;
   --surface-muted: #f8f7fb;
@@ -35,7 +35,7 @@
   --radius: 14px;
   --radius-lg: 20px;
   --shadow: 0 8px 26px rgba(48, 32, 84, 0.08);
-  --focus: 0 0 0 3px rgba(109, 85, 135, 0.35);
+  --focus: 0 0 0 3px rgba(49, 83, 153, 0.35);
   --sidebar-width: 264px;
   --header-height: 72px;
   --z-drawer: 30;
@@ -323,6 +323,18 @@ button.drawer-backdrop:hover:not(:disabled),
 button.drawer-backdrop:focus-visible {
   background: rgba(15, 23, 42, 0.10);
 }
+.appearance-preview { display: grid; gap: 10px; padding: 12px; border: 1px solid var(--primary-border); border-radius: var(--radius-sm); background: var(--surface-muted); }
+.appearance-preview-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.appearance-preview-row > button, .appearance-preview-row > a, .appearance-preview-nav, .appearance-preview-chip { min-height: 36px; padding: 7px 10px; border-radius: var(--radius-sm); font: inherit; }
+.appearance-preview-row > a { text-decoration: underline; text-underline-offset: 3px; }
+.appearance-preview-nav, .appearance-preview-chip { border: 1px solid; }
+.appearance-preview-focus { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+.appearance-preview-semantics span { padding: 4px 8px; border-radius: 999px; font-size: .82rem; }
+.appearance-preview-semantics .success { color: var(--success); background: #eaf7f0; }
+.appearance-preview-semantics .warning { color: var(--warning); background: #fff5e2; }
+.appearance-preview-semantics .error { color: var(--danger); background: #fff0ef; }
+.organization-primary-controls { display: grid; gap: 10px; margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--border); }
+.organization-primary-controls h4 { margin: 0; }
 
 .platform-tab-selector {
   display: none;
@@ -350,12 +362,12 @@ button.drawer-backdrop:focus-visible {
 .help-center-layout { display:grid; grid-template-columns:minmax(260px,.85fr) minmax(0,1.45fr); gap:var(--space-20,20px); align-items:start; }
 .help-result-list,.help-admin-list { display:grid; gap:8px; margin-top:16px; }
 .help-result { display:grid; gap:4px; width:100%; padding:12px; border:1px solid var(--color-border, #ddd); border-radius:var(--radius-small,6px); background:var(--color-surface,#fff); color:inherit; text-align:right; }
-.help-result:hover,.help-result:focus-visible,.help-result.selected { border-color:var(--color-brand-border,#c9b8df); background:var(--color-brand-soft,#f5f0fa); }
+.help-result:hover,.help-result:focus-visible,.help-result.selected { border-color:var(--color-brand-border,#c5cfe2); background:var(--color-brand-soft,#eff1f7); }
 .help-result span,.help-result small { color:var(--color-text-secondary,#64748b); font-size:.82rem; }
 .help-result p { margin:0; color:var(--color-text-secondary,#64748b); }
 .help-categories { display:flex; flex-wrap:wrap; gap:6px; margin-top:12px; }
 .help-categories button { min-height:34px; padding:5px 10px; border:1px solid var(--color-border,#ddd); border-radius:999px; background:transparent; color:var(--color-text-secondary,#64748b); font-weight:500; }
-.help-categories button:hover,.help-categories button:focus-visible,.help-categories button.active { border-color:var(--color-brand-border,#c9b8df); background:var(--color-brand-soft,#f5f0fa); color:var(--color-brand,#6d4c90); }
+.help-categories button:hover,.help-categories button:focus-visible,.help-categories button.active { border-color:var(--color-brand-border,#c5cfe2); background:var(--color-brand-soft,#eff1f7); color:var(--color-brand,#315399); }
 .help-reader pre,.help-preview pre,.contextual-help-popover pre { white-space:pre-wrap; overflow-wrap:anywhere; font:inherit; line-height:1.9; margin:16px 0 0; }
 .help-reader { min-height:300px; }
 .platform-help-admin > .admin-grid { align-items:start; }
@@ -507,7 +519,7 @@ button.drawer-backdrop:focus-visible {
 }
 .message-composer .ticket-description-field textarea:focus {
   border-color: var(--primary-border);
-  box-shadow: 0 0 0 3px rgba(109, 85, 135, .16);
+  box-shadow: 0 0 0 3px rgba(49, 83, 153, .16);
 }
 .conversation-active .quick-ticket-heading {
   margin-bottom: -4px;
@@ -543,7 +555,7 @@ button.drawer-backdrop:focus-visible {
   font-weight: 700;
 }
 .add-message-button:hover,
-.add-message-button:focus-visible { color: #fff; background: var(--primary); border-color: var(--primary); }
+.add-message-button:focus-visible { color: var(--on-primary); background: var(--primary); border-color: var(--primary); }
 .intake-conversation {
   display: grid;
   gap: 10px;
@@ -668,7 +680,7 @@ button.drawer-backdrop:focus-visible {
   background: var(--primary);
 }
 .message-send-button.ui-button:hover:not(:disabled),
-.message-send-button.ui-button:focus-visible { color: #fff; background: var(--primary-dark); }
+.message-send-button.ui-button:focus-visible { color: var(--on-primary); background: var(--primary-dark); }
 .message-send-button .status-spinner { width:14px; height:14px; border-color:rgba(255,255,255,.45); border-top-color:#fff; }
 .selected-attachment {
   display: flex;
@@ -696,7 +708,7 @@ button.drawer-backdrop:focus-visible {
   border-radius: 999px;
 }
 .selected-attachment button:hover,
-.selected-attachment button:focus-visible { color: #fff; background: var(--primary); }
+.selected-attachment button:focus-visible { color: var(--on-primary); background: var(--primary); }
 .voice-recorder {
   flex-wrap: wrap;
   min-width: 0;
@@ -794,7 +806,7 @@ button.drawer-backdrop:focus-visible {
 }
 .tag-picker button.selected,
 .tag-picker button:hover,
-.ticket-tag-field .tag-list button:hover { color: #fff; background: var(--primary); border-color: var(--primary); }
+.ticket-tag-field .tag-list button:hover { color: var(--on-primary); background: var(--primary); border-color: var(--primary); }
 .ticket-tag-field .tag-list { margin-top: 9px; }
 .custom-tag-entry {
   display: flex;
@@ -1460,8 +1472,8 @@ header {
 }
 .app-sidebar a:hover,
 .app-sidebar a.active {
-  color: #fff;
-  background: #1f4b70;
+  color: var(--on-primary);
+  background: var(--primary);
 }
 .sidebar-footer {
   display: grid;
@@ -2415,13 +2427,13 @@ header {
 
 /* Commercial shell overrides: keep these last so old page styles cannot win. */
 :root {
-  --primary: #6d5587;
-  --primary-dark: #59436f;
-  --primary-soft: #f4f0f6;
-  --primary-border: #d8cddd;
+  --primary: #315399;
+  --primary-dark: #2a4782;
+  --primary-soft: #eff1f7;
+  --primary-border: #c5cfe2;
   --on-primary: #ffffff;
-  --primary-text: #6d5587;
-  --accent: #6d5587;
+  --primary-text: #315399;
+  --accent: #315399;
   --canvas: #fafafa;
   --surface: #fff;
   --surface-muted: #f8f7fb;
@@ -2435,7 +2447,7 @@ header {
   --radius: 14px;
   --radius-lg: 20px;
   --shadow: 0 8px 26px rgba(48, 32, 84, 0.08);
-  --focus: 0 0 0 3px rgba(109, 85, 135, 0.35);
+  --focus: 0 0 0 3px rgba(49, 83, 153, 0.35);
   --sidebar-width: 264px;
   --header-height: 72px;
   --z-drawer: 30;
@@ -3747,7 +3759,7 @@ summary:focus-visible {
   }
 }
 
-/* Accessible foreground companion for the Jupiter #6d5587 brand color. */
+/* Accessible foreground companion for the Jupiter #315399 brand color. */
 .ui-button.secondary,
 .icon-button:hover,
 .app-sidebar a:hover,

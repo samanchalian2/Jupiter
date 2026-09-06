@@ -1,5 +1,15 @@
 # Business Rules
 
+## GOAL-057 Appearance primary rules
+
+The built-in Jupiter Light Theme primary is `#315399`. A Custom Primary accepts
+only canonical `#RRGGBB`, affects only the derived primary token family and is
+validated server-side. Platform writes require Platform Admin; Organization
+writes require the existing org operator policy. Source precedence is System,
+then Platform, then Organization. Platform reset restores JUPITER; Organization
+reset clears only its local override. Semantic colors, density, radius and
+logos are independent from a Custom Primary change.
+
 ## GOAL-055 سازمان و راه‌اندازی
 
 - Go-Live فقط برای سازمان `SETUP` توسط `ORG_OWNER` واقعی انجام می‌شود و نیازمند مالک فعال، نام نمایشی معتبر، timezone معتبر و حداقل یک Ticket Category است.

@@ -1,5 +1,15 @@
 # Security and Privacy
 
+## GOAL-057 Appearance input boundary
+
+Appearance accepts only server-normalized uppercase six-digit hex values.
+It rejects raw CSS, variables, URLs, gradients and HTML/script payloads before
+persistence. Platform appearance is Platform Admin-only; organization primary
+writes run under active membership and tenant RLS. Audit records retain only
+event facts and source, never raw payloads or secrets. The effective theme is
+loaded per tenant so one organization's primary cannot be read or applied in
+another organization's context.
+
 ## GOAL-055 Setup Wizard
 
 Wizard APIها tenant-bound هستند و actor از membership سروری گرفته می‌شود. `OrganizationAccessPolicy` اختیار عملیاتی Owner/Admin را مرکزی می‌کند؛ Go-Live و skip صرفاً Owner هستند. optimistic version از overwrite حالت stale جلوگیری می‌کند. projection readiness هیچ credential Directory، token جفت‌سازی، کلید AI یا secret را برنمی‌گرداند و Audit فقط step/action و شمار blocker را ذخیره می‌کند.

@@ -1,5 +1,17 @@
 # Architecture Decisions
 
+## DEC-033 — Governed inherited Custom Primary
+
+Jupiter's built-in Light Theme primary is `#315399`. Appearance stores only a
+nullable, canonical `#RRGGBB` custom primary at Platform and Organization
+scope; it never stores CSS, semantic colors or inherited copies. Resolution is
+System → Platform → Organization. Platform reset intentionally returns the
+color configuration to the JUPITER preset, while Organization reset removes
+only the tenant override. A centralized server validator selects white or the
+approved dark foreground deterministically by WCAG contrast and rejects values
+for which neither is safe. The derived primary-text token may darken rendering
+on a light surface but never mutates the saved primary value.
+
 ## DEC-031 — Recurring shared Smart Action allowance
 
 Commercial billing remains based on delivered Smart Actions, not tokens. The two current AI actions share one organization pool with a Platform-configurable default of 25 units per UTC calendar month and 3 bounded emergency units. Allowances never roll over; Periodic capacity precedes active Add-on, then Emergency, enabled per-capability Overage and denial. Add-ons default to a 12-month expiry unless Platform records an explicit agreement-derived expiry. AI exhaustion never restricts manual ticketing.
