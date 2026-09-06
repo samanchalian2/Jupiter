@@ -1,5 +1,9 @@
 # Jupiter Master Upgrade Plan
 
+## GOAL-056 — تکمیل محتوای راهنمای محصول (in progress)
+
+موتور versioned Help حفظ شد و کاتالوگ runtime به ۱۵ راهنمای فارسی دامنه‌ای رسید. registry محدود metadata، جست‌وجوی فارسی سبک، دسته‌بندی Help Center و Triggerهای contextual در پذیرش نهایی هستند؛ GOAL-057 آغاز نشده است.
+
 ## GOAL-053 — مدل بسته و ظرفیت Jupiter Assist (complete)
 
 ظرفیت Assist از شمارندهٔ policy به بسته، تخصیص tenant-scoped و ledger immutable منتقل می‌شود. تنها Accept پرونده ظرفیت مصرف می‌کند؛ مجوز دسترسی، AI و ticket lifecycle مستقل باقی می‌مانند.

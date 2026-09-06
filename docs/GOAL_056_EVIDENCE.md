@@ -66,14 +66,64 @@ articles remain non-disclosing. Content review contains no credential,
 secret, prompt, ticket body, transcript or tenant data. The publication utility
 requires an active Platform Admin and records normal authoring audits only.
 
-## Verification
+## Quality gates
 
-API and Web typechecks passed during implementation. Product Help API tests
-cover seed idempotency, audience isolation, lifecycle, registry validation,
-runtime revision behavior, Persian search and contextual lookups. Full API/Web
-tests, production builds, migration rehearsal through 055, `git diff --check`
-and authenticated browser acceptance at 375/768/1024/1440 are recorded after
-the final verification pass below.
+- Migration runner through 055: rerun locally; no pending migration was
+  applied.
+- API tests: rerun, 26 files / 100 tests passed.
+- Web tests: 2 files / 11 tests passed.
+- API typecheck and API production build: rerun and passed.
+- Web typecheck and Vite production build: rerun and passed.
+- `git diff --check`: rerun and passed.
+
+Product Help coverage includes seed idempotency, audience isolation, lifecycle,
+registry validation, runtime revision behavior, Persian search and contextual
+lookups.
+
+## Browser acceptance
+
+Authenticated local acceptance was performed using the local Platform Admin
+session; no credential, secret or private content is retained in this evidence.
+The Help Center, a selected article, the Ticket Composer trigger, the Ticket
+Detail trigger, Organization Members/CSV trigger and Platform Help authoring
+were exercised. No authoring mutation, publication or unpublication was used
+for the browser check.
+
+| Viewport requested | Effective content width | RTL | Document overflow | Verified surface |
+| --- | ---: | --- | --- | --- |
+| 375 × 900 | 360 | Yes | None (`scrollWidth = clientWidth`) | Help Center categories/search/article; Ticket Detail Help dialog; Platform authoring/revisions |
+| 768 × 900 | 753 | Yes | None (`scrollWidth = clientWidth`) | Help Center; Members/CSV Help dialog; Platform authoring/revisions |
+| 1024 × 900 | 1009 | Yes | None (`scrollWidth = clientWidth`) | Ticket Composer and Ticket Detail Help dialogs; Platform authoring/revisions |
+| 1440 × 900 | 1425 | Yes | None (`scrollWidth = clientWidth`) | Help Center categories, published article and Platform authoring/revisions |
+
+Persian search for «دایرکتوری» returned «اتصال دایرکتوری سازمان و همگام‌سازی
+کاربران» as the relevant first result, and opening it displayed the published
+article. The existing Ticket Detail view lacked its promised Help Trigger;
+acceptance remediation added the compact «راهنمای چرخهٔ تیکت» trigger using the
+published `TICKET_LIFECYCLE` article. Its popover initially exposed a
+document-level overflow at 1024px when anchored at the inline start. The
+popover now anchors at inline end with a bounded width, and its dialog was
+retested at all four viewports without overflow.
+
+Platform Help authoring showed the 15 published runtime articles, editor,
+revision history and publish/restore controls. The controls were inspected but
+not invoked, preserving the published local Help content. GOAL-057 was not
+started.
+
+Owner Commercial was subsequently exercised through a temporary explicit
+`ORG_OWNER` assignment for the local Platform Admin, then immediately revoked;
+the Owner Help trigger opened successfully without overflow and the UI confirmed
+that the owner was removed. The requester account's supplied password was
+securely reset to the same supplied value through the local member-management
+form, after which the requester session opened Ticket Detail and verified the
+Jupiter Assist Help trigger without overflow. No commercial request, Assist
+request, ticket or other product data was created during either check.
+
+**Browser acceptance NOT COMPLETED.** The remaining Setup Wizard trigger needs
+an authenticated member of an organization currently in `setup` lifecycle;
+the existing authenticated organization is active, and no temporary setup
+organization or membership was created solely to weaken this acceptance check.
+GOAL-056 stays in progress until that route is exercised.
 
 ## Limitations
 

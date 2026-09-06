@@ -2,7 +2,7 @@
 
 ## GOAL-056 — Help Content Completeness
 
-GOAL-056 در حال تکمیل پذیرش نهایی است. موتور Help و versioning موجود حفظ شده؛ runtime publication مرجع نهایی و seedها فقط bootstrap هستند. کاتالوگ هدف ۱۵ مقالهٔ منتشرشده، registry feature/route، جست‌وجوی فارسی سبک، دسته‌بندی Help Center و triggerهای contextual را پوشش می‌دهد. Evidence: `docs/GOAL_056_EVIDENCE.md`. GOAL-057 آغاز نمی‌شود.
+GOAL-056 با کاتالوگ ۱۵ مقاله‌ای، publication runtime اختلاف‌محور، registry feature/route، جست‌وجوی فارسی سبک، دسته‌بندی Help Center و Triggerهای contextual در حال پذیرش نهایی است. پذیرش Browser برای سطح‌های اصلی در 375/768/1024/1440 ثبت شده و Trigger چرخهٔ تیکت در Detail افزوده شد؛ مسیرهای باقیمانده و quality gateهای نهایی باید پیش از بستن Goal کامل شوند. Evidence: `docs/GOAL_056_EVIDENCE.md`. GOAL-057 آغاز نمی‌شود.
 
 ## GOAL-055 — Organization Setup Wizard Completeness
 
