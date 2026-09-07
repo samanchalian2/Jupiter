@@ -9,6 +9,9 @@
 - `onPrimary` is selected deterministically as white or the approved dark
   foreground, and authenticated RTL browser acceptance at 375/768/1024/1440
   passed without document-level overflow.
+- Remediation: Platform «حذف رنگ سفارشی» now clears only `custom_primary`;
+  preset, density, radius and logo remain unchanged and effective primary
+  resolves from the selected preset.
 
 ## GOAL-056 — تکمیل محتوای راهنمای محصول
 

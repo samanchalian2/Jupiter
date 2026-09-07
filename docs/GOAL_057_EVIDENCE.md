@@ -23,9 +23,9 @@ Migration `056_appearance_custom_primary.sql` adds nullable, uppercase-hex
 primary overrides to the global Platform record and tenant-RLS
 `OrganizationSettings`. Effective precedence is System → Platform →
 Organization; inherited values are never copied into tenant storage. Platform
-reset restores preset `JUPITER` and no custom primary while preserving density,
-radius and logo. Organization reset clears only its override and resumes
-inheritance.
+«حذف رنگ سفارشی» فقط `custom_primary` را پاک می‌کند و preset، تراکم، radius و
+لوگو را نگه می‌دارد؛ بنابراین رنگ مؤثر به preset انتخاب‌شده بازمی‌گردد.
+Organization reset clears only its override and resumes inheritance.
 
 ## Validator, contrast and security
 
@@ -83,6 +83,17 @@ trigger opened the published `platform-appearance` article successfully.
 - API and Web production builds passed. Vite reported only its existing
   advisory about a JavaScript chunk above 500 kB.
 - `git diff --check` passed after the final stylesheet cleanup.
+
+## Remediation — Platform Primary Reset Semantics
+
+The original reset action was corrected: it no longer changes `brand_preset`.
+It only clears `custom_primary`; its audit projection reports the resulting
+System or Platform source. The Persian Platform UI now calls this action
+«حذف رنگ سفارشی», and the Help article explicitly distinguishes it from any
+future full reset. Integration coverage verifies OCEAN/custom → OCEAN,
+TEAL/custom → TEAL and JUPITER/custom → `#315399`, while density, radius and
+logo remain unchanged. The runtime Help revision was republished after this
+correction.
 
 ## Known limitations
 

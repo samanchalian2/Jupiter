@@ -833,8 +833,15 @@ describe('public accounts and organization applications', () => {
     expect(await appearance.organizationCurrent(owner)).toMatchObject({ customPrimary:'#204080',effectivePrimary:'#204080',primarySource:'PLATFORM' });
     await appearance.resetOrganizationPrimary(admin);
     expect(await appearance.organizationCurrent(admin)).toMatchObject({ customPrimary:'#204080',effectivePrimary:'#204080',primarySource:'PLATFORM' });
-    await appearance.resetPlatformPrimary(platformAdminId);
-    expect(await appearance.organizationCurrent(admin)).toMatchObject({ effectivePrimary:'#315399',primarySource:'SYSTEM' });
+    for (const scenario of [
+      { brandPreset: 'OCEAN' as const, densityPreset: 'COMFORTABLE' as const, radiusPreset: 'LARGE' as const, logoUrl: '/ocean-logo.png', customPrimary: '#204080', effectivePrimary: '#266A91', primarySource: 'PLATFORM' as const },
+      { brandPreset: 'TEAL' as const, densityPreset: 'COMPACT' as const, radiusPreset: 'SMALL' as const, logoUrl: '/teal-logo.png', customPrimary: '#1A6F55', effectivePrimary: '#176C68', primarySource: 'PLATFORM' as const },
+      { brandPreset: 'JUPITER' as const, densityPreset: 'STANDARD' as const, radiusPreset: 'MEDIUM' as const, logoUrl: '/jupiter-logo.png', customPrimary: '#204080', effectivePrimary: '#315399', primarySource: 'SYSTEM' as const },
+    ]) {
+      await appearance.save(platformAdminId, scenario);
+      const reset = await appearance.resetPlatformPrimary(platformAdminId);
+      expect(reset).toMatchObject({ brandPreset: scenario.brandPreset, densityPreset: scenario.densityPreset, radiusPreset: scenario.radiusPreset, logoUrl: scenario.logoUrl, customPrimary: null, effectivePrimary: scenario.effectivePrimary, primarySource: scenario.primarySource });
+    }
     await appearance.save(platformAdminId, original);
   });
 });

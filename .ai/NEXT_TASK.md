@@ -4,8 +4,9 @@
 
 GOAL-057 migrated the canonical Light Theme primary to `#315399` and added
 tenant-safe, audited Custom Primary validation, inheritance and deterministic
-white/dark foreground selection. Browser acceptance, restoration and quality
-gates passed. Evidence: `docs/GOAL_057_EVIDENCE.md`. GOAL-058 does not start.
+white/dark foreground selection. Its reset-semantics remediation now makes
+«حذف رنگ سفارشی» preserve preset, density, radius and logo. Quality gates
+passed. Evidence: `docs/GOAL_057_EVIDENCE.md`. GOAL-058 does not start.
 
 ## GOAL-056 — Help Content Completeness (complete)
 

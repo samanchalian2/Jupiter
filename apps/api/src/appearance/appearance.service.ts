@@ -57,9 +57,11 @@ export class AppearanceService {
 
   async resetPlatformPrimary(userId: string) {
     await this.platform(userId);
+    const current = await this.platformRow();
+    const source = current?.brand_preset === 'JUPITER' ? 'SYSTEM' : 'PLATFORM';
     await this.database.transaction(async client => {
-      await client.query("UPDATE platform_appearance_settings SET brand_preset='JUPITER',custom_primary=NULL,updated_by_user_id=$1,updated_at=now() WHERE singleton=true", [userId]);
-      await client.query('INSERT INTO audit_logs(organization_id,actor_user_id,action,target_type,target_id,metadata) VALUES(NULL,$1,$2,$3,NULL,$4)', [userId, 'appearance.platform_reset', 'platform_appearance_settings', { reset: true, source: 'SYSTEM' }]);
+      await client.query('UPDATE platform_appearance_settings SET custom_primary=NULL WHERE singleton=true');
+      await client.query('INSERT INTO audit_logs(organization_id,actor_user_id,action,target_type,target_id,metadata) VALUES(NULL,$1,$2,$3,NULL,$4)', [userId, 'appearance.platform_reset', 'platform_appearance_settings', { reset: true, source }]);
     });
     return this.current();
   }
