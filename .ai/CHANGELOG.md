@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-09-08 — GOAL-059 staging release gate audit
+
+- Recorded the real release candidate identity and an evidence-based staging
+  gate matrix.
+- Marked deployment-only gates BLOCKED because no staging infrastructure or
+  Windows/AD Connector host is available; no local evidence was promoted to a
+  staging claim.
+
 ## GOAL-058 — Full End-to-End Business Acceptance
 
 - Executed supported application/provisioning for temporary Setup, Active and

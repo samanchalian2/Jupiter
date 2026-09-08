@@ -1,0 +1,217 @@
+# GOAL-059 — Staging Release Readiness & Deployment Gate Acceptance
+
+## 1. Initial Staging Readiness Inventory
+
+Audit date: 2026-09-08. The repository contains local release tooling:
+application Dockerfiles, local Compose dependencies, transactional migration
+runner, DB-backed readiness, API request IDs/structured request logs, Nginx
+browser-security headers, a health-only smoke tool, restore procedure and a
+Windows/WinSW Directory Connector package. It does **not** contain a staging
+endpoint, deployment manifests for a staging provider, registry configuration,
+secret-manager identity, DNS/TLS configuration, managed-backup access,
+monitoring/alerting integration, or a reachable Windows/AD staging host.
+
+This workstation has no staging-related environment variables and no Docker
+CLI/runtime. Consequently, no local result is represented as a staging PASS.
+
+## 2. Release Candidate SHA
+
+- Candidate source SHA: `45bd3f10e988213a2f402e6b81f918a5cde044aa` (`main`)
+- Source commit time: `2026-09-08T13:50:06+03:30`
+- Pre-audit working tree: clean.
+- `origin/main` resolved to the same source SHA during the audit.
+
+No immutable deployed release candidate was created because no staging
+deployment target is available.
+
+## 3. Artifact/Image Provenance
+
+**BLOCKED.** API and Web Dockerfiles exist, but this host has no Docker runtime
+and no image registry/repository or deployment target was configured. No image
+was built, pushed, pulled, or deployed; no digest exists. `latest` was not
+used as a release identity.
+
+## 4. Secret Injection
+
+**BLOCKED.** The Dockerfiles do not copy `.env`, and the runbook requires
+deployment-owned secret injection. The actual staging secret manager,
+identities, mounted/injected variables and image-layer inspection cannot be
+verified without the staging platform. No secret values were read or recorded.
+
+## 5. Migration
+
+**BLOCKED for staging.** The runner applies each SQL file in a transaction and
+records it in `schema_migrations`; a rerun skips recorded migrations. Its
+current source set ends at `056_appearance_custom_primary.sql` (65 migrations
+in the local rehearsal recorded by GOAL-058). No staging schema state was
+available, and no migration was run outside the migration system.
+
+## 6. Health/Readiness
+
+**BLOCKED.** `/api/v1/health` is process health and `/api/v1/health/ready`
+checks PostgreSQL with `SELECT 1`, but no staging ingress exists to verify HTTP
+200, dependency readiness, or ingress routing.
+
+## 7. HTTPS/TLS
+
+**BLOCKED.** No staging hostname, DNS record, certificate or ingress was
+provided. The local address is not staging evidence.
+
+## 8. Security Headers
+
+**BLOCKED.** Nginx config declares CSP, `X-Content-Type-Options`, frame
+protection, `Referrer-Policy` and `Permissions-Policy`; API middleware also
+sets security headers. HSTS is an ingress policy and no staging edge response
+was available to verify it or CSP runtime behavior.
+
+## 9. Logging
+
+**BLOCKED.** Source review confirms a generated/propagated `X-Request-Id` and
+structured request log fields limited to event, ID, method, path, status and
+duration. Staging log transport, correlation, validation/unauthorized error
+paths and real redaction cannot be verified without log access.
+
+## 10. Business Smoke
+
+**BLOCKED.** No authorized staging tenant or staging endpoint is available for
+the requester/staff/admin smoke. GOAL-058 local evidence is deliberately not
+substituted.
+
+## 11. Tenant Isolation
+
+**BLOCKED.** No two staging tenants or staging DB/RLS session were available.
+
+## 12. Attachments
+
+**BLOCKED.** No staging object-storage endpoint, credential injection or
+authorized staging fixture was available.
+
+## 13. AI
+
+**BLOCKED.** No staging Platform Admin, tenant fixture or approved provider
+failure mechanism was available. No provider secret was accessed.
+
+## 14. Commercial Metering
+
+**BLOCKED.** No delivered staging Smart Action or staging usage ledger was
+available for reconciliation.
+
+## 15. Assist
+
+**BLOCKED.** No staging Assist fixture, support grant or capacity allocation
+was available for request/accept reconciliation.
+
+## 16. Public Onboarding
+
+**BLOCKED.** No staging email adapter/test mailbox, public staging URL or
+authorized fixture exists. Verification was not bypassed.
+
+## 17. Org Browser Acceptance
+
+**BLOCKED.** No authenticated staging organization/session exists for the
+375/768/1024/1440 RTL acceptance sweep.
+
+## 18. Platform Browser Acceptance
+
+**BLOCKED.** No authenticated staging Platform Admin/session exists for the
+375/768/1024/1440 acceptance sweep.
+
+## 19. Help
+
+**BLOCKED.** No staging anonymous/requester/owner/Platform sessions exist to
+verify audience separation, exports and unpublished content behavior.
+
+## 20. Directory Connector
+
+**BLOCKED (release-blocking).** The supported package requires an approved
+Windows service host, outbound HTTPS route and AD scope. None is available.
+The local-only connector implementation is not claimed as staging acceptance.
+
+## 21. Load Smoke
+
+**BLOCKED.** `pnpm load:smoke` defaults to 40 requests at concurrency 8, but
+there is no agreed staging endpoint/configuration. It was not run against a
+local URL as a substitute.
+
+## 22. Backup
+
+**BLOCKED.** No managed staging backup target or backup identifier is available.
+
+## 23. Restore Drill
+
+**BLOCKED.** No staging backup can be restored to an approved isolated target.
+The local GOAL-058 migration rehearsal is not a staging restore drill.
+
+## 24. Monitoring
+
+**BLOCKED.** No staging health/5xx/restart/DB/worker monitoring or alert
+channel was supplied.
+
+## 25. Rollback Plan
+
+**BLOCKED.** The repository documents forward-only compatibility rules, but no
+staging rollback owner, decision authority, maintenance window or alert channel
+was supplied for this candidate.
+
+## 26. Cleanup
+
+**NOT APPLICABLE.** No staging fixture, attachment, allocation, browser
+session, connector record or Help draft was created.
+
+## 27. Integrity
+
+**BLOCKED for staging.** No staging database access exists for post-cleanup
+integrity checks. GOAL-058 records the corresponding local integrity result.
+
+## 28. Defects
+
+No product-code defect was identified. The blocker is deployment infrastructure:
+no staging ingress/DNS/TLS, registry, secret manager, backup/restore access,
+monitoring/alert channel or Windows/AD Connector host is accessible here.
+No security workaround or artificial staging fixture was created.
+
+## 29. Quality Gates
+
+**PASS locally; not staging evidence.** Migration check completed without
+pending output. API tests passed: **27 files / 117 tests**. Web tests passed:
+**3 files / 13 tests**. API and Web typechecks and production builds passed.
+`git diff --check` passed. The web build emitted its existing advisory for a
+minified JavaScript chunk above 500 kB; it did not fail the build. `git
+ls-files` contains only `.env.example`, not an operational `.env`.
+
+## 30. Staging Release Matrix
+
+| Gate | Result | Evidence |
+| --- | --- | --- |
+| Release SHA | PASS (identified) | Section 2; source and remote main matched at audit time |
+| Artifact/Image provenance | BLOCKED | No Docker runtime, registry or deployment target |
+| Secrets | BLOCKED | No staging secret manager/injection visibility |
+| Migration | BLOCKED | No staging schema/runner access |
+| Health | BLOCKED | No staging ingress |
+| HTTPS / HSTS / headers | BLOCKED | No hostname, TLS or edge response |
+| Logging | BLOCKED | No staging logs/correlation sink |
+| Business smoke / RLS / attachments | BLOCKED | No authorized staging fixtures/services |
+| AI / commercial / Assist | BLOCKED | No staging control plane or provider fixture |
+| Public, org, platform browser / Help | BLOCKED | No staging URL or authenticated sessions |
+| Directory Connector | BLOCKED | No Windows/AD staging host |
+| Load smoke | BLOCKED | No agreed staging endpoint |
+| Backup / restore | BLOCKED | No managed backup or isolated restore target |
+| Monitoring / rollback | BLOCKED | No deployment ownership/alerting context |
+| Cleanup / integrity | NOT APPLICABLE / BLOCKED | No staging fixture or DB access |
+
+## 31. Final Verdict
+
+## BLOCKED
+
+Jupiter is still **Local Release Ready**, not Staging Release Accepted. At
+least the Directory Connector, deployment, TLS, secrets, backup/restore and
+monitoring gates are unavailable. No partial local evidence is labelled as a
+staging acceptance.
+
+## 32. Known Limitations
+
+To continue, provide an authorized staging URL/ingress, immutable image
+registry path, deployment/secret-manager access, a sanitized staging fixture or
+fixture policy, log/monitoring/backup access, a rollback owner/channel/window,
+and an approved Windows/AD Connector host. The next execution must deploy a
+new exact candidate and validate the real environment; GOAL-060 is not started.

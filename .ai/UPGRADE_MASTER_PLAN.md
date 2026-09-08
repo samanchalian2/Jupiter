@@ -1,5 +1,11 @@
 # Jupiter Master Upgrade Plan
 
+## GOAL-059 — Staging Release Readiness & Deployment Gate Acceptance
+
+**Status: BLOCKED (2026-09-08).** The local release candidate is audited, but
+there is no authorized staging deployment environment or Connector host to
+execute the required real release gates. See `docs/GOAL_059_EVIDENCE.md`.
+
 ## GOAL-058 — Full End-to-End Business Acceptance (complete)
 
 The local final acceptance used supported three-tenant provisioning and

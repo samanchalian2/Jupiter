@@ -1,5 +1,13 @@
 # Next Task
 
+## GOAL-059 — Staging Release Readiness & Deployment Gate Acceptance (BLOCKED)
+
+The release candidate has not been deployed to staging. Continue only when the
+authorized staging ingress, immutable image registry, secret injection,
+migration/backup/restore and monitoring access, rollback ownership, and Windows
+Connector host are available. Use `docs/GOAL_059_EVIDENCE.md`; do not start
+GOAL-060.
+
 ## GOAL-058 — Full End-to-End Business Acceptance (complete)
 
 GOAL-058 accepted the integrated business flows through supported paths, a
