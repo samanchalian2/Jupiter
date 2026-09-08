@@ -1,12 +1,20 @@
 # Next Task
 
+## GOAL-058 — Full End-to-End Business Acceptance (complete)
+
+GOAL-058 accepted the integrated business flows through supported paths, a
+three-tenant isolation journey and authenticated RTL browser sweep. It repaired
+the temporary Setup-fixture cleanup order discovered during acceptance, removed
+all temporary data, and passed final integrity/migration/test/typecheck/build
+quality gates. Evidence: `docs/GOAL_058_EVIDENCE.md`. GOAL-059 is not started.
+
 ## GOAL-057 — Appearance Theme Migration & Custom Primary Validation (complete)
 
 GOAL-057 migrated the canonical Light Theme primary to `#315399` and added
 tenant-safe, audited Custom Primary validation, inheritance and deterministic
 white/dark foreground selection. Its reset-semantics remediation now makes
 «حذف رنگ سفارشی» preserve preset, density, radius and logo. Quality gates
-passed. Evidence: `docs/GOAL_057_EVIDENCE.md`. GOAL-058 does not start.
+passed. Evidence: `docs/GOAL_057_EVIDENCE.md`.
 
 ## GOAL-056 — Help Content Completeness (complete)
 

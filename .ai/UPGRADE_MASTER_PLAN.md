@@ -1,5 +1,15 @@
 # Jupiter Master Upgrade Plan
 
+## GOAL-058 — Full End-to-End Business Acceptance (complete)
+
+The local final acceptance used supported three-tenant provisioning and
+authenticated Persian RTL browser routes at 375/768/1024/1440, then verified
+cross-domain isolation, audit safety, data integrity and complete cleanup. A
+fixture-cleanup ordering defect was corrected. An isolated database rehearsal
+applied all 65 migrations through 056; API/Web tests, typechecks, builds and
+diff check passed. Evidence: `docs/GOAL_058_EVIDENCE.md`. GOAL-059 is not
+started.
+
 ## GOAL-057 — Appearance Theme Migration & Custom Primary Validation (complete)
 
 Jupiter's canonical Light Theme primary is `#315399`. Validated, tenant-safe

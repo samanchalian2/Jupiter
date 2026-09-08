@@ -1,5 +1,19 @@
 # Changelog
 
+## GOAL-058 — Full End-to-End Business Acceptance
+
+- Executed supported application/provisioning for temporary Setup, Active and
+  Isolation tenants; verified owner-only concurrent Go-Live, role boundaries,
+  full ticket lifecycle and cross-tenant/Platform non-disclosure.
+- Revalidated AI allowance/settlement, commercial lifecycle, Assist capacity
+  and grants, Directory lifecycle, appearance and audience-safe Help against
+  the integrated suite and authenticated Persian RTL routes at 375/768/1024/
+  1440.
+- Corrected a temporary Setup fixture cleanup order so test tickets are removed
+  before memberships; final fixture and DB integrity checks are clean.
+- Rehearsed migrations through 056 in an isolated database and passed 117 API
+  tests, 13 Web tests, typechecks, production builds and diff check.
+
 ## GOAL-057 — Appearance Theme Migration & Custom Primary Validation
 
 - Jupiter Light Theme primary migrated to `#315399` with deterministic derived

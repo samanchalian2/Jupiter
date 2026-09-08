@@ -52,6 +52,25 @@ const account = async (suffix: string) => {
   return { ...result, email, token: notification.token, response: result };
 };
 
+const provisionOrganization = async (suffix: string, platformActorId: string) => {
+  const applicant = await account(`goal058-${suffix}`);
+  await applications.verifyEmail(applicant.token);
+  const slug = `goal058-${suffix}-${fixtureId}`;
+  const application = await applications.createApplication(applicant.id, {
+    organizationName: `GOAL 058 ${suffix.toUpperCase()}`,
+    preferredSlug: slug,
+    contactName: `GOAL 058 ${suffix.toUpperCase()} Owner`,
+  }, randomUUID());
+  await applications.submitApplication(applicant.id, application.id, randomUUID());
+  await applications.startReview(platformActorId, application.id, randomUUID());
+  await applications.approveApplication(platformActorId, application.id, slug, randomUUID(), 'GOAL-058 business acceptance');
+  provisionedSlugs.push(slug);
+  const organization = (await database.query<{id:string;status:string}>(
+    'SELECT id,status FROM organizations WHERE slug=$1', [slug],
+  )).rows[0];
+  return { organizationId: organization.id, ownerId: applicant.id, slug, applicationId: application.id };
+};
+
 let directoryOrganizationA = '';
 let directoryOrganizationB = '';
 let platformAdminId = '';
@@ -137,6 +156,8 @@ afterAll(async () => {
   await database.query(`DELETE FROM memberships WHERE user_id IN (
     SELECT id FROM users WHERE email = ANY($1::text[])
   )`, [createdEmails]);
+  await database.query('DELETE FROM tickets WHERE organization_id IN (SELECT id FROM organizations WHERE slug = ANY($1::text[]))', [provisionedSlugs]);
+  await database.query('DELETE FROM organization_setup_progress WHERE organization_id IN (SELECT id FROM organizations WHERE slug = ANY($1::text[]))', [provisionedSlugs]);
   await database.query('DELETE FROM users WHERE email = ANY($1::text[])', [createdEmails]);
   await database.query('DELETE FROM audit_logs WHERE action LIKE $1', ['public_account.%']);
   await database.query('DELETE FROM organizations WHERE slug = ANY($1::text[])', [provisionedSlugs]);
@@ -156,15 +177,75 @@ afterAll(async () => {
   await database.query('DELETE FROM organizations WHERE id IN ($1,$2)', [directoryOrganizationA,directoryOrganizationB]);
   await database.query('DELETE FROM organization_setup_progress WHERE organization_id=$1',[setupOrganizationId]);
   await database.query('DELETE FROM audit_logs WHERE organization_id=$1 OR actor_user_id=$2',[setupOrganizationId,setupOwnerId]);
+  await database.query('DELETE FROM tickets WHERE organization_id=$1',[setupOrganizationId]);
   await database.query('DELETE FROM membership_roles WHERE membership_id IN (SELECT id FROM memberships WHERE organization_id=$1)',[setupOrganizationId]);
   await database.query('DELETE FROM memberships WHERE organization_id=$1',[setupOrganizationId]);
-  await database.query('DELETE FROM tickets WHERE organization_id=$1',[setupOrganizationId]);
   await database.query('DELETE FROM organizations WHERE id=$1',[setupOrganizationId]);
   await database.query('DELETE FROM users WHERE id=$1',[setupOwnerId]);
   await database.onModuleDestroy();
 });
 
 describe('public accounts and organization applications', () => {
+  it('runs the GOAL-058 supported three-tenant onboarding, role, lifecycle, isolation and integrity journey', async () => {
+    const [tenantA, tenantB, tenantC] = await Promise.all([
+      provisionOrganization('setup-a', platformAdminId),
+      provisionOrganization('active-b', platformAdminId),
+      provisionOrganization('isolation-c', platformAdminId),
+    ]);
+    const ownerA = { userId: tenantA.ownerId, organizationId: tenantA.organizationId, roles: ['ORG_OWNER','ORG_ADMIN'] };
+    const ownerB = { userId: tenantB.ownerId, organizationId: tenantB.organizationId, roles: ['ORG_OWNER','ORG_ADMIN'] };
+    const ownerC = { userId: tenantC.ownerId, organizationId: tenantC.organizationId, roles: ['ORG_OWNER','ORG_ADMIN'] };
+
+    for (const actor of [ownerA, ownerB, ownerC]) {
+      await setupWizard.profile(actor, { name: `GOAL 058 ${actor.organizationId.slice(0, 6)}`, businessTimezone: 'Asia/Tehran', contactPhone: '' });
+      await organizations.addCatalog(actor, 'categories', { code: 'GENERAL', name: 'عمومی' });
+    }
+    const adminEmail = `goal058-admin-${fixtureId}@jupiter.test`;
+    const supervisorEmail = `goal058-supervisor-${fixtureId}@jupiter.test`;
+    const expertEmail = `goal058-expert-${fixtureId}@jupiter.test`;
+    const requesterEmail = `goal058-requester-${fixtureId}@jupiter.test`;
+    createdEmails.push(adminEmail, supervisorEmail, expertEmail, requesterEmail);
+    const admin = await organizations.addMember(ownerB, { email: adminEmail, displayName: 'GOAL 058 Admin', password: 'safe-password-123', roles: ['ORG_ADMIN'] });
+    const supervisor = await organizations.addMember(ownerB, { email: supervisorEmail, displayName: 'GOAL 058 Supervisor', password: 'safe-password-123', roles: ['SUPERVISOR'] });
+    const expert = await organizations.addMember(ownerB, { email: expertEmail, displayName: 'GOAL 058 Expert', password: 'safe-password-123', roles: ['EXPERT'] });
+    const requester = await organizations.addMember(ownerB, { email: requesterEmail, displayName: 'GOAL 058 Requester', password: 'safe-password-123', roles: ['REQUESTER'] });
+    const adminActor = { userId: admin.userId, organizationId: tenantB.organizationId, roles: ['ORG_ADMIN'] };
+    const supervisorActor = { userId: supervisor.userId, organizationId: tenantB.organizationId, roles: ['SUPERVISOR'] };
+    const expertActor = { userId: expert.userId, organizationId: tenantB.organizationId, roles: ['EXPERT'] };
+    const requesterActor = { userId: requester.userId, organizationId: tenantB.organizationId, roles: ['REQUESTER'] };
+
+    await expect(setupWizard.goLive(adminActor)).rejects.toBeInstanceOf(ForbiddenException);
+    for (const actor of [ownerA, ownerC]) await expect(setupWizard.goLive(actor)).resolves.toMatchObject({ status: 'active' });
+    const liveB = await Promise.all([setupWizard.goLive(ownerB), setupWizard.goLive(ownerB)]);
+    expect(liveB.map(result => result.idempotent).sort()).toEqual([false, true]);
+    await organizations.updateMember(ownerB, requester.id, { status: 'inactive' });
+    await organizations.updateMember(ownerB, requester.id, { status: 'active' });
+    await expect(organizations.updateMember(ownerC, requester.id, { status: 'inactive' })).rejects.toBeInstanceOf(NotFoundException);
+    await expect(commercial.ownerDashboard(adminActor)).rejects.toBeInstanceOf(ForbiddenException);
+
+    const draft = await tickets.createDraft(requesterActor, { title: 'پذیرش کامل چرخه تیکت', description: 'سناریوی واقعی GOAL-058' });
+    expect(draft.status).toBe('DRAFT');
+    await tickets.submit(requesterActor, draft.id);
+    await tickets.assign(supervisorActor, draft.id, expert.userId);
+    for (const state of ['IN_PROGRESS','WAITING_FOR_REQUESTER','IN_PROGRESS','RESOLVED'] as const) await tickets.changeStatus(expertActor, draft.id, state);
+    await tickets.changeStatus(requesterActor, draft.id, 'CLOSED');
+    await expect(tickets.get({ ...requesterActor, organizationId: tenantC.organizationId }, draft.id)).rejects.toBeInstanceOf(NotFoundException);
+    await expect(tickets.get({ userId: platformAdminId, organizationId: tenantB.organizationId, roles: [] }, draft.id)).rejects.toBeInstanceOf(NotFoundException);
+
+    const state = await database.query<{
+      organizations:number; owners:number; b_members:number; transitions:number; go_live_events:number; unsafe_audits:number;
+    }>(`SELECT
+      (SELECT count(*)::int FROM organizations WHERE id=ANY($1::uuid[])) organizations,
+      (SELECT count(*)::int FROM memberships m JOIN membership_roles mr ON mr.membership_id=m.id JOIN roles r ON r.id=mr.role_id WHERE m.organization_id=ANY($1::uuid[]) AND r.code='ORG_OWNER') owners,
+      (SELECT count(*)::int FROM memberships WHERE organization_id=$2 AND status='active') b_members,
+      (SELECT count(*)::int FROM ticket_status_transitions WHERE ticket_id=$3) transitions,
+      (SELECT count(*)::int FROM audit_logs WHERE organization_id=ANY($1::uuid[]) AND action='ORGANIZATION_SETUP_GO_LIVE') go_live_events,
+      (SELECT count(*)::int FROM audit_logs WHERE organization_id=ANY($1::uuid[]) AND metadata::text ~* '(password|secret|token)') unsafe_audits`,
+      [[tenantA.organizationId,tenantB.organizationId,tenantC.organizationId],tenantB.organizationId,draft.id]);
+    expect(state.rows[0]).toEqual({ organizations: 3, owners: 3, b_members: 5, transitions: 6, go_live_events: 3, unsafe_audits: 0 });
+    expect((await database.query<{count:number}>(`SELECT count(*)::int AS count FROM memberships m LEFT JOIN organizations o ON o.id=m.organization_id WHERE o.id IS NULL`)).rows[0].count).toBe(0);
+  });
+
   it('keeps legacy credentials compatible while public accounts authenticate through additive identities', async () => {
     const legacyEmail = `legacy-application-auth-${fixtureId}@jupiter.test`;
     createdEmails.push(legacyEmail);
