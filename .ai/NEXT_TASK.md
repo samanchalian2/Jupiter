@@ -18,11 +18,11 @@ quality gates. Evidence: `docs/GOAL_058_EVIDENCE.md`. GOAL-059 is not started.
 
 ## GOAL-057 — Appearance Theme Migration & Custom Primary Validation (complete)
 
-GOAL-057 migrated the canonical Light Theme primary to `#315399` and added
-tenant-safe, audited Custom Primary validation, inheritance and deterministic
+GOAL-057 added tenant-safe, audited Custom Primary validation, inheritance and deterministic
 white/dark foreground selection. Its reset-semantics remediation now makes
 «حذف رنگ سفارشی» preserve preset, density, radius and logo. Quality gates
-passed. Evidence: `docs/GOAL_057_EVIDENCE.md`.
+passed. Its historical `#315399` canonical color is superseded by the current
+`#014348` Teal palette remediation. Evidence: `docs/GOAL_057_EVIDENCE.md`.
 
 ## GOAL-056 — Help Content Completeness (complete)
 

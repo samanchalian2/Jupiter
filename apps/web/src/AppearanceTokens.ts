@@ -1,7 +1,7 @@
 export type AppearanceSource = 'SYSTEM' | 'PLATFORM' | 'ORGANIZATION';
 export type PlatformAppearanceValue = { brandPreset: 'JUPITER' | 'OCEAN' | 'TEAL'; densityPreset: 'COMFORTABLE' | 'STANDARD' | 'COMPACT'; radiusPreset: 'SMALL' | 'MEDIUM' | 'LARGE'; logoUrl: string | null; customPrimary?: string | null; effectivePrimary?: string; primarySource?: AppearanceSource; onPrimary?: string };
-export const JUPITER_PRIMARY = '#315399';
-const DARK_ON_PRIMARY = '#172033'; const LIGHT_SURFACE = '#FFFFFF';
+export const JUPITER_PRIMARY = '#014348';
+const DARK_ON_PRIMARY = '#0B292C'; const LIGHT_SURFACE = '#FFFFFF';
 const presetPrimary: Record<PlatformAppearanceValue['brandPreset'], string> = { JUPITER: JUPITER_PRIMARY, OCEAN: '#266A91', TEAL: '#176C68' };
 type Rgb = { r: number; g: number; b: number };
 const toRgb = (value: string): Rgb => ({ r: Number.parseInt(value.slice(1, 3), 16), g: Number.parseInt(value.slice(3, 5), 16), b: Number.parseInt(value.slice(5, 7), 16) });
@@ -15,6 +15,7 @@ export function derivePrimaryTokens(primary: string): DerivedPrimaryTokens {
   if (!onPrimary) throw new Error('رنگ انتخاب‌شده برای استفاده در رابط کاربری کنتراست کافی ندارد.');
   let primaryText = canonical;
   if (contrastRatio(primaryText, LIGHT_SURFACE) < 4.5) for (let amount = 0.01; amount <= 1; amount += 0.01) { const candidate = mix(canonical, DARK_ON_PRIMARY, amount); if (contrastRatio(candidate, LIGHT_SURFACE) >= 4.5) { primaryText = candidate; break; } }
+  if (canonical === JUPITER_PRIMARY) return { primary: JUPITER_PRIMARY, primaryHover: '#00383C', primaryActive: '#002D31', primarySubtle: '#EFF7F7', primaryBorder: '#BFD9D9', primaryText: JUPITER_PRIMARY, onPrimary };
   return { primary: canonical, primaryHover: mix(canonical, '#000000', 0.15), primaryActive: mix(canonical, '#000000', 0.28), primarySubtle: mix(canonical, LIGHT_SURFACE, 0.92), primaryBorder: mix(canonical, LIGHT_SURFACE, 0.72), primaryText, onPrimary };
 }
 export function applyPlatformAppearance(value: PlatformAppearanceValue) {

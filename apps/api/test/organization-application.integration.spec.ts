@@ -917,7 +917,7 @@ describe('public accounts and organization applications', () => {
     for (const scenario of [
       { brandPreset: 'OCEAN' as const, densityPreset: 'COMFORTABLE' as const, radiusPreset: 'LARGE' as const, logoUrl: '/ocean-logo.png', customPrimary: '#204080', effectivePrimary: '#266A91', primarySource: 'PLATFORM' as const },
       { brandPreset: 'TEAL' as const, densityPreset: 'COMPACT' as const, radiusPreset: 'SMALL' as const, logoUrl: '/teal-logo.png', customPrimary: '#1A6F55', effectivePrimary: '#176C68', primarySource: 'PLATFORM' as const },
-      { brandPreset: 'JUPITER' as const, densityPreset: 'STANDARD' as const, radiusPreset: 'MEDIUM' as const, logoUrl: '/jupiter-logo.png', customPrimary: '#204080', effectivePrimary: '#315399', primarySource: 'SYSTEM' as const },
+      { brandPreset: 'JUPITER' as const, densityPreset: 'STANDARD' as const, radiusPreset: 'MEDIUM' as const, logoUrl: '/jupiter-logo.png', customPrimary: '#204080', effectivePrimary: '#014348', primarySource: 'SYSTEM' as const },
     ]) {
       await appearance.save(platformAdminId, scenario);
       const reset = await appearance.resetPlatformPrimary(platformAdminId);

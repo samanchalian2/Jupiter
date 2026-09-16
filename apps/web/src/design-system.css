@@ -2,24 +2,24 @@
    Page-specific legacy styles intentionally remain in styles.css until their
    owning screens are migrated in later UI goals. */
 :root {
-  --color-canvas: #fafafb;
+  --color-canvas: #eff7f7;
   --color-surface: #ffffff;
-  --color-surface-subtle: #f7f6f8;
+  --color-surface-subtle: #f5fafa;
   --color-surface-raised: #ffffff;
-  --color-border: #e4e1e7;
-  --color-border-strong: #d2ccd8;
-  --color-text-primary: #211b2b;
-  --color-text-secondary: #665f6d;
-  --color-text-tertiary: #857d8d;
-  --color-brand: #315399;
-  --color-brand-hover: #2a4782;
-  --color-brand-active: #233c6e;
-  --color-brand-soft: #eff1f7;
-  --color-brand-border: #c5cfe2;
+  --color-border: #d9e8e8;
+  --color-border-strong: #bfd9d9;
+  --color-text-primary: #0b292c;
+  --color-text-secondary: #356165;
+  --color-text-tertiary: #5c7d80;
+  --color-brand: #014348;
+  --color-brand-hover: #00383c;
+  --color-brand-active: #002d31;
+  --color-brand-soft: #eff7f7;
+  --color-brand-border: #bfd9d9;
   --color-success: #087443;
   --color-warning: #9a5d00;
   --color-danger: #b42318;
-  --color-info: #315f9f;
+  --color-info: #17666a;
 
   --font-page-title: 1.35rem;
   --font-section-title: 1.08rem;
@@ -156,7 +156,7 @@
 }
 
 .ui-status-badge.neutral { background: var(--color-surface-subtle); border-color: var(--color-border); color: var(--color-text-secondary); }
-.ui-status-badge.info { background: #edf4ff; border-color: #c9dcfa; color: #315f9f; }
+.ui-status-badge.info { background: #eff7f7; border-color: #bfd9d9; color: #17666a; }
 .ui-status-badge.success { background: #ebf7f0; border-color: #bde3ce; color: #087443; }
 .ui-status-badge.warning { background: #fff6df; border-color: #f0d490; color: #8b5700; }
 .ui-status-badge.danger { background: #fff0ef; border-color: #f3c6c1; color: #a83327; }
@@ -178,7 +178,7 @@
 .ui-alert p { margin: 0; color: var(--color-text-secondary); font-size: var(--font-body-small); }
 .ui-alert.danger { background: #fff5f4; border-color: #f0c9c5; }
 .ui-alert.warning { background: #fff9ec; border-color: #efd99f; }
-.ui-alert.info { background: #f1f6ff; border-color: #cedcf5; }
+.ui-alert.info { background: #eff7f7; border-color: #bfd9d9; }
 .ui-alert.success { background: #eff9f3; border-color: #c4e5d1; }
 
 .ui-loading-state {

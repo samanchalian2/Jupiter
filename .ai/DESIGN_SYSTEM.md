@@ -14,7 +14,7 @@ unnecessary card nesting, large shadows and equally prominent CTAs.
 
 ## Brand and tokens
 
-`#315399` is Jupiter's canonical Light Theme brand accent. It is reserved for primary actions,
+`#014348` is Jupiter's canonical Light Theme brand accent. It is reserved for primary actions,
 selected navigation, focus and controlled emphasis; canvases and ordinary
 surfaces remain neutral. The canonical tokens live in
 `apps/web/src/design-system.css`.
@@ -166,9 +166,11 @@ semantic tokens, security-sensitive UI or layout rules. Adding persisted
 platform appearance settings requires an ADR and a separate Goal because it
 changes API/data contracts.
 
-GOAL-057 makes `#315399` the built-in Jupiter primary and permits only an
+The Teal palette remediation makes `#014348` the built-in Jupiter primary and permits only an
 audited, hex-normalized Custom Primary override. The primary token family is
-derived deterministically; semantic status colors remain independent. Runtime
+derived deterministically; semantic status colors remain independent. Jupiter's fixed
+Teal family is hover `#00383C`, active `#002D31`, soft `#EFF7F7` and emphasis
+border `#BFD9D9`. Runtime
 precedence is System → Platform → Organization, and Organization reset removes
 only its override. Platform reset returns its color configuration to JUPITER
 without changing density, radius or logo. Button foreground is selected

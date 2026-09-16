@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-09-15 — Teal palette remediation
+
+- Rebased Jupiter's canonical primary palette, default logo and favicon on
+  `#014348` without changing existing presets or custom tenant colors.
+
 ## 2026-09-08 — GOAL-059 staging release gate audit
 
 - Recorded the real release candidate identity and an evidence-based staging

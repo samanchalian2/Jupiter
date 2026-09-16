@@ -2,7 +2,7 @@
 
 ## DEC-033 — Governed inherited Custom Primary
 
-Jupiter's built-in Light Theme primary is `#315399`. Appearance stores only a
+Jupiter's built-in Light Theme primary is `#014348`. Appearance stores only a
 nullable, canonical `#RRGGBB` custom primary at Platform and Organization
 scope; it never stores CSS, semantic colors or inherited copies. Resolution is
 System → Platform → Organization. Platform reset intentionally returns the

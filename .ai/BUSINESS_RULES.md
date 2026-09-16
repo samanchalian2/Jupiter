@@ -2,7 +2,7 @@
 
 ## GOAL-057 Appearance primary rules
 
-The built-in Jupiter Light Theme primary is `#315399`. A Custom Primary accepts
+The built-in Jupiter Light Theme primary is `#014348`. A Custom Primary accepts
 only canonical `#RRGGBB`, affects only the derived primary token family and is
 validated server-side. Platform writes require Platform Admin; Organization
 writes require the existing org operator policy. Source precedence is System,
