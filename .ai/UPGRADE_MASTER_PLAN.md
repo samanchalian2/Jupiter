@@ -2,9 +2,10 @@
 
 ## GOAL-059 — Staging Release Readiness & Deployment Gate Acceptance
 
-**Status: BLOCKED (2026-09-08).** The local release candidate is audited, but
-there is no authorized staging deployment environment or Connector host to
-execute the required real release gates. See `docs/GOAL_059_EVIDENCE.md`.
+**Status: BLOCKED (resume audited 2026-09-16).** An authorized staging host is
+available, but canonical `jupiter.pnsoffice.ir` has no usable DNS result from
+that host and its free disk must be restored before image builds. No TLS or
+deployment workaround was used. See `docs/GOAL_059_EVIDENCE.md`.
 
 ## GOAL-058 — Full End-to-End Business Acceptance (complete)
 

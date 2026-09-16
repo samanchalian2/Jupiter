@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-09-16 — GOAL-059 Staging resume audit
+
+- Performed the authorized non-destructive staging-host inventory from the
+  protected local credential source; no existing service was overwritten.
+- Recorded the canonical DNS blocker and host free-disk prerequisite in
+  `docs/GOAL_059_EVIDENCE.md`; GOAL-059 remains blocked and GOAL-060 remains
+  unstarted.
+
 ## 2026-09-15 — Teal palette remediation
 
 - Rebased Jupiter's canonical primary palette, default logo and favicon on

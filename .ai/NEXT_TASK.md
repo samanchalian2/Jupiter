@@ -8,6 +8,12 @@ migration/backup/restore and monitoring access, rollback ownership, and Windows
 Connector host are available. Use `docs/GOAL_059_EVIDENCE.md`; do not start
 GOAL-060.
 
+The 2026-09-16 authorized server audit found a reusable host, but canonical
+`jupiter.pnsoffice.ir` does not yet resolve there. Restore adequate server disk
+capacity and publish the protected-host IPv4 `A` record before continuing;
+HTTPS/TLS and deployment have not been attempted. The release candidate is
+`71f16a345bd8aa1724ecf943c2139a813fb8f598` and matches `origin/main`.
+
 ## GOAL-058 — Full End-to-End Business Acceptance (complete)
 
 GOAL-058 accepted the integrated business flows through supported paths, a

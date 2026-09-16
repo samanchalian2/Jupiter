@@ -215,3 +215,42 @@ registry path, deployment/secret-manager access, a sanitized staging fixture or
 fixture policy, log/monitoring/backup access, a rollback owner/channel/window,
 and an approved Windows/AD Connector host. The next execution must deploy a
 new exact candidate and validate the real environment; GOAL-060 is not started.
+
+## 33. Resume attempt — 2026-09-16
+
+The GOAL-059 resume used the protected local credential source only for the
+authorized server audit. `securedata/` is ignored by Git and the protected file
+is neither tracked nor included in this Evidence, terminal report, source or
+release artifact.
+
+The existing staging host was audited without changing an existing service. It
+already has Docker/Compose, Nginx, PostgreSQL, a restrictive firewall and
+unrelated running services, so no duplicate runtime, database or proxy stack
+was created. Docker has no Jupiter images, containers, volumes or build cache.
+The root filesystem has only about 1.9 GiB free (92% used), which must be
+remediated before building production images on this host.
+
+### DNS gate result
+
+**BLOCKED.** From the staging host, `jupiter.pnsoffice.ir` has no usable IPv4
+or IPv6 DNS result and HTTPS cannot resolve the canonical hostname. The
+canonical hostname must receive an `A` record pointing to the protected
+staging server public IPv4; do not publish an `AAAA` record unless an approved
+IPv6 ingress is provisioned. The protected IP is intentionally not copied into
+this repository or Evidence. No hosts-file, alternate hostname, self-signed
+certificate or TLS workaround was used.
+
+No deployment, migration, bootstrap, public fixture, browser acceptance,
+backup/restore drill, connector pairing or monitoring change was attempted
+after this failed prerequisite. The exact current source release candidate is
+`71f16a345bd8aa1724ecf943c2139a813fb8f598`, which matches `origin/main`.
+
+## 34. Updated verdict
+
+## BLOCKED
+
+GOAL-059 remains blocked specifically on canonical public DNS before any
+staging deployment may proceed. After the DNS record is live and resolves from
+the staging host, first restore adequate free disk capacity, then continue
+from the server audit and deploy the exact release candidate above. GOAL-060
+is not started.
