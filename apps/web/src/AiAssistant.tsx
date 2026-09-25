@@ -5,7 +5,7 @@ type Ticket = { id: string; title: string };
 type AiRequest = { id: string; status: string; redacted_input?: { text?: string }; output?: { title?: string; normalizedDescription?: string; priority?: string; confidence?: number }; usage?: { inputTokens?: number; outputTokens?: number } };
 type Attachment = { id: string; original_filename: string };
 type Job = { id: string; attachment_id: string; status: string; attempts: number; transcript?: string; last_error?: string };
-const api = import.meta.env.VITE_API_URL ?? 'http://localhost:3000/api/v1';
+const api = import.meta.env.VITE_API_URL ?? '/api/v1';
 
 function request(path: string, actor: Actor, init?: RequestInit) {
   return fetch(`${api}${path}`, { ...init, headers: { 'content-type': 'application/json', authorization: `Bearer ${actor.session.accessToken}`, 'x-organization-id': actor.organizationId, ...(init?.headers ?? {}) } }).then(async (response) => {
