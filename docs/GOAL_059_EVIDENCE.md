@@ -278,3 +278,20 @@ This is deliberately **not** a GOAL-059 staging PASS: it has no canonical
 hostname or TLS, immutable image registry, deployment secret manager, managed
 backup/restore proof, monitoring/alert channel or Windows/AD Connector host.
 Those gates remain blocked and GOAL-060 must not start.
+
+## 36. Runtime-role login remediation (2026-09-26)
+
+The initial limited runtime-role configuration applied tenant RLS to the
+unscoped authentication membership lookup. A platform administrator could
+therefore authenticate but received no organization membership in the session,
+which caused the web shell to fall back to Platform-only UI.
+
+The dedicated Jupiter runtime role was corrected to perform only the required
+trusted application platform/login reads. Tenant operations continue to enter
+the database-owned `jupiter_app` role through `SET LOCAL ROLE`; a two-tenant
+check confirmed the active tenant could read its own ticket rows and read zero
+rows for a second tenant. A fresh administrator session returned the active
+`jupiter-demo` membership and opened the full Persian organization dashboard,
+including Tickets, Knowledge, Help, Reports, Organization Administration and
+Platform Administration navigation. No Arandi role or database policy was
+modified.
