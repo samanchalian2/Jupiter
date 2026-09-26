@@ -249,8 +249,32 @@ after this failed prerequisite. The exact current source release candidate is
 
 ## BLOCKED
 
-GOAL-059 remains blocked specifically on canonical public DNS before any
-staging deployment may proceed. After the DNS record is live and resolves from
-the staging host, first restore adequate free disk capacity, then continue
-from the server audit and deploy the exact release candidate above. GOAL-060
-is not started.
+GOAL-059 remains blocked for official staging acceptance. An authorized
+temporary IP preview exists, but it is not a replacement for the canonical
+DNS/TLS, registry, secret-management, managed-backup, monitoring and
+Windows/AD Connector gates. GOAL-060 is not started.
+
+## 35. Authorized temporary IP preview (2026-09-26)
+
+An authorized operational preview was prepared on the existing server without
+changing the co-hosted Arandi application. The project data was copied from the
+local Jupiter PostgreSQL database into a separate `jupiter` database and a
+dedicated limited runtime role. The destination schema has all 65 migrations;
+the source/destination verification matched 30 organizations, 332 users, 103
+tickets and 15 published Help articles.
+
+The API and worker run under a dedicated `jupiter` operating-system account.
+The API listens only on loopback and Nginx serves the built Web application on
+the explicitly authorized temporary HTTP preview port. Process readiness and
+the rendered Persian login page were verified. The server checkout and source
+repository are aligned at `7fc5137`.
+
+The previous empty destination state was retained as a protected server-side
+backup before import. Temporary local transfer artifacts were removed. No
+secret, credential, protected host address or application data is recorded in
+this evidence.
+
+This is deliberately **not** a GOAL-059 staging PASS: it has no canonical
+hostname or TLS, immutable image registry, deployment secret manager, managed
+backup/restore proof, monitoring/alert channel or Windows/AD Connector host.
+Those gates remain blocked and GOAL-060 must not start.

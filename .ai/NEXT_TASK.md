@@ -2,11 +2,13 @@
 
 ## GOAL-059 — Staging Release Readiness & Deployment Gate Acceptance (BLOCKED)
 
-The release candidate has not been deployed to staging. Continue only when the
-authorized staging ingress, immutable image registry, secret injection,
-migration/backup/restore and monitoring access, rollback ownership, and Windows
-Connector host are available. Use `docs/GOAL_059_EVIDENCE.md`; do not start
-GOAL-060.
+An authorized, HTTP-only IP preview is operational with the isolated full
+Jupiter dataset, loopback-only API and dedicated system services. It is not an
+official staging acceptance or a substitute for a canonical deployment.
+Continue only when the authorized staging ingress/DNS/TLS, immutable image
+registry, secret injection, managed backup/restore and monitoring access,
+rollback ownership, and Windows Connector host are available. Use
+`docs/GOAL_059_EVIDENCE.md`; do not start GOAL-060.
 
 The 2026-09-16 authorized server audit found a reusable host, but canonical
 `jupiter.pnsoffice.ir` does not yet resolve there. Restore adequate server disk

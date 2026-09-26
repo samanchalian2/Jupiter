@@ -2,10 +2,11 @@
 
 ## GOAL-059 — Staging Release Readiness & Deployment Gate Acceptance
 
-**Status: BLOCKED (resume audited 2026-09-16).** An authorized staging host is
-available, but canonical `jupiter.pnsoffice.ir` has no usable DNS result from
-that host and its free disk must be restored before image builds. No TLS or
-deployment workaround was used. See `docs/GOAL_059_EVIDENCE.md`.
+**Status: BLOCKED (temporary IP preview deployed 2026-09-26).** An authorized
+host now runs an isolated, HTTP-only IP preview with the verified Jupiter
+dataset and loopback-only API. It is not canonical staging evidence: DNS/TLS,
+immutable registry, secret manager, managed backup/restore, monitoring/alerts
+and Windows/AD Connector host remain unavailable. See `docs/GOAL_059_EVIDENCE.md`.
 
 ## GOAL-058 — Full End-to-End Business Acceptance (complete)
 
