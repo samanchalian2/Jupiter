@@ -38,7 +38,10 @@ async function bootstrap() {
     }
     next();
   });
-  await app.listen(Number(process.env.API_PORT ?? 3000));
+  // The API is normally published through the web reverse proxy.  Binding to
+  // loopback by default keeps a deployment from accidentally exposing its
+  // application port when only the proxy should be reachable.
+  await app.listen(Number(process.env.API_PORT ?? 3000), process.env.API_HOST ?? '127.0.0.1');
 }
 
 void bootstrap();
