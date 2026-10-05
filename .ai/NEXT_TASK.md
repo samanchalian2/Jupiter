@@ -30,7 +30,9 @@ GOAL-057 added tenant-safe, audited Custom Primary validation, inheritance and d
 white/dark foreground selection. Its reset-semantics remediation now makes
 «حذف رنگ سفارشی» preserve preset, density, radius and logo. Quality gates
 passed. Its historical `#315399` canonical color is superseded by the current
-`#014348` Teal palette remediation. Evidence: `docs/GOAL_057_EVIDENCE.md`.
+the 2026-10-05 Lavender/Beige theme remediation. Existing appearance presets and
+tenant overrides remain backward-compatible; the visual remediation does not
+change GOAL-059 evidence or status.
 
 ## GOAL-056 — Help Content Completeness (complete)
 

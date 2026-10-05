@@ -2,15 +2,17 @@
 
 ## DEC-033 — Governed inherited Custom Primary
 
-Jupiter's built-in Light Theme primary is `#014348`. Appearance stores only a
+Jupiter's built-in Light Theme primary is Lavender `#A89BBE`; warm Beige
+`#D8C3A6` is a supporting, non-text surface token. Appearance stores only a
 nullable, canonical `#RRGGBB` custom primary at Platform and Organization
 scope; it never stores CSS, semantic colors or inherited copies. Resolution is
-System → Platform → Organization. Platform reset intentionally returns the
-color configuration to the JUPITER preset, while Organization reset removes
-only the tenant override. A centralized server validator selects white or the
-approved dark foreground deterministically by WCAG contrast and rejects values
-for which neither is safe. The derived primary-text token may darken rendering
-on a light surface but never mutates the saved primary value.
+System → Platform → Organization. Reset Primary intentionally clears only the
+local `custom_primary` and preserves preset, density, radius and logo. A
+centralized server validator selects white or the approved dark foreground
+deterministically by WCAG contrast and rejects values for which neither is
+safe. The derived primary-text token may darken rendering on a light surface
+but never mutates the saved primary value. The personal light/dark preference
+is intentionally local UI state, not a persisted commercial or tenant setting.
 
 ## DEC-031 — Recurring shared Smart Action allowance
 

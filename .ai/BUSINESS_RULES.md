@@ -2,13 +2,16 @@
 
 ## GOAL-057 Appearance primary rules
 
-The built-in Jupiter Light Theme primary is `#014348`. A Custom Primary accepts
-only canonical `#RRGGBB`, affects only the derived primary token family and is
-validated server-side. Platform writes require Platform Admin; Organization
-writes require the existing org operator policy. Source precedence is System,
-then Platform, then Organization. Platform reset restores JUPITER; Organization
-reset clears only its local override. Semantic colors, density, radius and
-logos are independent from a Custom Primary change.
+The built-in Jupiter Light Theme primary is Lavender `#A89BBE`; warm Beige
+`#D8C3A6` is a restrained supporting surface rather than ordinary text. A
+Custom Primary accepts only canonical `#RRGGBB`, affects only the derived
+primary token family and is validated server-side. Platform writes require
+Platform Admin; Organization writes require the existing org operator policy.
+Source precedence is System, then Platform, then Organization. Both Platform
+and Organization «حذف رنگ سفارشی» operations clear only their local override
+and preserve preset, density, radius and logo. Semantic colors are independent
+from a Custom Primary change. Light/dark preference is local to the user and
+does not change a tenant's saved appearance.
 
 ## GOAL-055 سازمان و راه‌اندازی
 

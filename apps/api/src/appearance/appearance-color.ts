@@ -1,7 +1,7 @@
 import { BadRequestException } from '@nestjs/common';
 
-export const JUPITER_PRIMARY = '#014348';
-export const DARK_ON_PRIMARY = '#0B292C';
+export const JUPITER_PRIMARY = '#A89BBE';
+export const DARK_ON_PRIMARY = '#211D25';
 export const LIGHT_SURFACE = '#FFFFFF';
 
 export type PrimaryTokens = {
@@ -57,11 +57,11 @@ export function derivePrimaryTokens(primary: string): PrimaryTokens {
   if (!onPrimary) throw new BadRequestException('رنگ انتخاب‌شده برای استفاده در رابط کاربری کنتراست کافی ندارد.');
   if (canonical === JUPITER_PRIMARY) return {
     primary: JUPITER_PRIMARY,
-    primaryHover: '#00383C',
-    primaryActive: '#002D31',
-    primarySubtle: '#EFF7F7',
-    primaryBorder: '#BFD9D9',
-    primaryText: JUPITER_PRIMARY,
+    primaryHover: '#9181A8',
+    primaryActive: '#796A8F',
+    primarySubtle: '#F4F1F6',
+    primaryBorder: '#D9D1E0',
+    primaryText: '#62546F',
     onPrimary,
   };
   return {

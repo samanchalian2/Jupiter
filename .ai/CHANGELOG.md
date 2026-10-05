@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-10-05 — Lavender/Beige visual theme remediation
+
+- Rebased Jupiter's built-in palette on Lavender `#A89BBE` and supporting
+  Beige `#D8C3A6`, replacing legacy Teal identity tokens in the live UI.
+- Added a compact, local user preference for accessible light and dark
+  surfaces without changing persisted Platform/Organization appearance,
+  existing presets, Custom Primary values or semantic status colors.
+
 ## 2026-09-16 — GOAL-059 Staging resume audit
 
 - Performed the authorized non-destructive staging-host inventory from the

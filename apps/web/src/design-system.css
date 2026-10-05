@@ -2,24 +2,26 @@
    Page-specific legacy styles intentionally remain in styles.css until their
    owning screens are migrated in later UI goals. */
 :root {
-  --color-canvas: #eff7f7;
+  --color-canvas: #fbfafc;
   --color-surface: #ffffff;
-  --color-surface-subtle: #f5fafa;
+  --color-surface-subtle: #f6f3f7;
   --color-surface-raised: #ffffff;
-  --color-border: #d9e8e8;
-  --color-border-strong: #bfd9d9;
-  --color-text-primary: #0b292c;
-  --color-text-secondary: #356165;
-  --color-text-tertiary: #5c7d80;
-  --color-brand: #014348;
-  --color-brand-hover: #00383c;
-  --color-brand-active: #002d31;
-  --color-brand-soft: #eff7f7;
-  --color-brand-border: #bfd9d9;
+  --color-border: #e6e0e9;
+  --color-border-strong: #d9d1e0;
+  --color-text-primary: #28232d;
+  --color-text-secondary: #655d6b;
+  --color-text-tertiary: #807589;
+  --color-brand: #a89bbe;
+  --color-brand-hover: #9181a8;
+  --color-brand-active: #796a8f;
+  --color-brand-soft: #f4f1f6;
+  --color-brand-border: #d9d1e0;
+  --color-warm: #d8c3a6;
+  --color-warm-soft: #f8f2ea;
   --color-success: #087443;
   --color-warning: #9a5d00;
   --color-danger: #b42318;
-  --color-info: #17666a;
+  --color-info: #62546f;
 
   --font-page-title: 1.35rem;
   --font-section-title: 1.08rem;
@@ -44,8 +46,8 @@
   --radius-medium: 10px;
   --radius-large: 14px;
   --elevation-none: none;
-  --elevation-subtle: 0 1px 2px rgba(29, 22, 37, 0.05);
-  --elevation-elevated: 0 8px 24px rgba(29, 22, 37, 0.08);
+  --elevation-subtle: 0 1px 2px rgba(40, 35, 45, 0.05);
+  --elevation-elevated: 0 8px 24px rgba(40, 35, 45, 0.08);
   --ui-control-height: 40px;
   --ui-table-row-height: 48px;
 
@@ -60,13 +62,41 @@
   --primary-dark: var(--color-brand-hover);
   --primary-soft: var(--color-brand-soft);
   --primary-border: var(--color-brand-border);
-  --primary-text: var(--color-brand);
+  --primary-text: #62546f;
   --danger: var(--color-danger);
   --radius-sm: var(--radius-small);
   --radius: var(--radius-medium);
   --radius-lg: var(--radius-large);
   --shadow: var(--elevation-subtle);
-  --focus: 0 0 0 2px var(--color-surface), 0 0 0 4px var(--color-brand);
+  --focus: 0 0 0 2px var(--color-surface), 0 0 0 4px #62546f;
+}
+
+html[data-ui-theme='dark'] {
+  color-scheme: dark;
+  --color-canvas: #111014;
+  --color-surface: #1a181e;
+  --color-surface-subtle: #242128;
+  --color-surface-raised: #201d24;
+  --color-border: #37323c;
+  --color-border-strong: #4a424f;
+  --color-text-primary: #f4f0f5;
+  --color-text-secondary: #d2cad6;
+  --color-text-tertiary: #aca1b2;
+  --color-brand: #c8bdd4;
+  --color-brand-hover: #d5cadf;
+  --color-brand-active: #b19fbe;
+  --color-brand-soft: #29242e;
+  --color-brand-border: #51465a;
+  --color-warm: #d8c3a6;
+  --color-warm-soft: #302923;
+  --color-info: #ded0e8;
+  --color-success: #6fc58c;
+  --color-warning: #f0c16d;
+  --color-danger: #ffaba3;
+  --elevation-subtle: 0 1px 2px rgba(0, 0, 0, 0.26);
+  --elevation-elevated: 0 12px 28px rgba(0, 0, 0, 0.3);
+  --primary-text: #e5dceb;
+  --focus: 0 0 0 2px var(--color-surface), 0 0 0 4px #e5dceb;
 }
 
 [data-ui-density='comfortable'] {
@@ -156,7 +186,7 @@
 }
 
 .ui-status-badge.neutral { background: var(--color-surface-subtle); border-color: var(--color-border); color: var(--color-text-secondary); }
-.ui-status-badge.info { background: #eff7f7; border-color: #bfd9d9; color: #17666a; }
+.ui-status-badge.info { background: var(--color-brand-soft); border-color: var(--color-brand-border); color: var(--primary-text); }
 .ui-status-badge.success { background: #ebf7f0; border-color: #bde3ce; color: #087443; }
 .ui-status-badge.warning { background: #fff6df; border-color: #f0d490; color: #8b5700; }
 .ui-status-badge.danger { background: #fff0ef; border-color: #f3c6c1; color: #a83327; }
@@ -178,7 +208,7 @@
 .ui-alert p { margin: 0; color: var(--color-text-secondary); font-size: var(--font-body-small); }
 .ui-alert.danger { background: #fff5f4; border-color: #f0c9c5; }
 .ui-alert.warning { background: #fff9ec; border-color: #efd99f; }
-.ui-alert.info { background: #eff7f7; border-color: #bfd9d9; }
+.ui-alert.info { background: var(--color-brand-soft); border-color: var(--color-brand-border); }
 .ui-alert.success { background: #eff9f3; border-color: #c4e5d1; }
 
 .ui-loading-state {
@@ -576,3 +606,33 @@ button.drawer-backdrop:focus-visible { background: rgba(33, 27, 43, 0.16); }
     font-weight: 400;
   }
 }
+
+/* Theme preference stays deliberately quiet: surfaces do most of the work;
+   lavender and warm beige only signal action, focus and helpful guidance. */
+.theme-mode-control {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 36px;
+  width: 100%;
+  padding: 7px 10px;
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-small);
+  background: var(--color-surface-subtle);
+  font: inherit;
+  font-size: var(--font-body-small);
+}
+.theme-mode-control:hover,
+.theme-mode-control:focus-visible { color: var(--primary-text); border-color: var(--primary-border); background: var(--primary-soft); }
+
+html[data-ui-theme='dark'] body,
+html[data-ui-theme='dark'] .app-shell,
+html[data-ui-theme='dark'] .login-page { background: var(--color-canvas); color: var(--color-text-primary); }
+html[data-ui-theme='dark'] :where(.card, .ui-card, .login-card, .app-sidebar, .mobile-drawer, .app-header, .account-menu form, .notifications > div, .global-search-panel, .dialog, .ticket-row, .queue-ticket, .history-ticket-row > button, .secondary-ticket-proposals > label, .intake-message.assistant) { background-color: var(--color-surface); color: var(--color-text-primary); border-color: var(--color-border); }
+html[data-ui-theme='dark'] :where(input, select, textarea, .appearance-preview-focus, .brand-logo-preview) { background-color: var(--color-surface-raised); color: var(--color-text-primary); border-color: var(--color-border-strong); }
+html[data-ui-theme='dark'] :where(.login-page, .public-access-page) { background-image: none; }
+html[data-ui-theme='dark'] :where(.hint, .eyebrow, .page-intro p, .login-card p, .ticket-row span, .intake-message small) { color: var(--color-text-secondary); }
+html[data-ui-theme='dark'] :where(.ui-button.secondary, .file-input, .controlled-file, .composer-file) { background: var(--primary-soft); color: var(--primary-text); border-color: var(--primary-border); }
+html[data-ui-theme='dark'] :where(.ai-interpretation, .clarification-context) { background: linear-gradient(135deg, var(--primary-soft), var(--color-warm-soft)); color: var(--primary-text); }

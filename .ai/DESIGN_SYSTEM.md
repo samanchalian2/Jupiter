@@ -14,8 +14,9 @@ unnecessary card nesting, large shadows and equally prominent CTAs.
 
 ## Brand and tokens
 
-`#014348` is Jupiter's canonical Light Theme brand accent. It is reserved for primary actions,
-selected navigation, focus and controlled emphasis; canvases and ordinary
+Jupiter's canonical palette is Lavender `#A89BBE` and warm Beige `#D8C3A6`.
+Lavender is reserved for primary actions, selected navigation and focus; Beige
+is a quiet supporting surface for helpful guidance only. Canvases and ordinary
 surfaces remain neutral. The canonical tokens live in
 `apps/web/src/design-system.css`.
 
@@ -24,7 +25,7 @@ surfaces remain neutral. The canonical tokens live in
 | Surfaces | canvas, surface, surface-subtle, surface-raised |
 | Borders | border, border-strong |
 | Text | text-primary, text-secondary, text-tertiary, technical |
-| Brand | brand, brand-hover, brand-active, brand-soft, brand-border, on-primary |
+| Brand | brand, brand-hover, brand-active, brand-soft, brand-border, warm, warm-soft, on-primary |
 | Semantics | success, warning, danger, info |
 | Spacing | 4, 8, 12, 16, 20, 24, 32, 40 px |
 | Radius | small 6px, medium 10px, large 14px |
@@ -166,16 +167,18 @@ semantic tokens, security-sensitive UI or layout rules. Adding persisted
 platform appearance settings requires an ADR and a separate Goal because it
 changes API/data contracts.
 
-The Teal palette remediation makes `#014348` the built-in Jupiter primary and permits only an
-audited, hex-normalized Custom Primary override. The primary token family is
-derived deterministically; semantic status colors remain independent. Jupiter's fixed
-Teal family is hover `#00383C`, active `#002D31`, soft `#EFF7F7` and emphasis
-border `#BFD9D9`. Runtime
-precedence is System → Platform → Organization, and Organization reset removes
-only its override. Platform reset returns its color configuration to JUPITER
-without changing density, radius or logo. Button foreground is selected
-deterministically between white and the approved dark foreground; primary text
-on light surfaces uses the derived accessible primary-text token.
+The Lavender/Beige remediation makes `#A89BBE` the built-in Jupiter primary and
+permits only an audited, hex-normalized Custom Primary override. The fixed
+Light family is hover `#9181A8`, active `#796A8F`, soft `#F4F1F6` and emphasis
+border `#D9D1E0`; Beige `#D8C3A6` is never used as ordinary body text. The
+Dark family uses black-adjacent neutral surfaces with a lighter Lavender action
+token and the same restrained Beige support token. Theme preference is a
+local, user-controlled visual preference—not a Platform or tenant setting.
+Runtime precedence is System → Platform → Organization, and each reset removes
+only its Custom Primary override while preserving preset, density, radius and
+logo. Button foreground is selected deterministically between white and the
+approved dark foreground; primary text on light surfaces uses the derived
+accessible primary-text token.
 
 ## Do / don't
 
