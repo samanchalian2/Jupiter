@@ -16,8 +16,10 @@ unnecessary card nesting, large shadows and equally prominent CTAs.
 
 Jupiter's canonical palette is Lavender `#A89BBE` and warm Beige `#D8C3A6`.
 Lavender is reserved for primary actions, selected navigation and focus; Beige
-is a quiet supporting surface for helpful guidance only. Canvases and ordinary
-surfaces remain neutral. The canonical tokens live in
+is the visible but quiet companion on secondary controls, page-context washes,
+empty/helpful states and the compact shell header. It must appear often enough
+to establish the two-color identity, but never as body text or a large,
+saturated canvas. Canvases and ordinary work surfaces remain neutral. The canonical tokens live in
 `apps/web/src/design-system.css`.
 
 | Group | Tokens |
@@ -170,7 +172,9 @@ changes API/data contracts.
 The Lavender/Beige remediation makes `#A89BBE` the built-in Jupiter primary and
 permits only an audited, hex-normalized Custom Primary override. The fixed
 Light family is hover `#9181A8`, active `#796A8F`, soft `#F4F1F6` and emphasis
-border `#D9D1E0`; Beige `#D8C3A6` is never used as ordinary body text. The
+border `#D9D1E0`. Beige `#D8C3A6` is paired with soft `#F8F2EA`, border
+`#E7D8C5` and accessible text `#67543F`; the base Beige is never used as
+ordinary body text. The
 Dark family uses black-adjacent neutral surfaces with a lighter Lavender action
 token and the same restrained Beige support token. Theme preference is a
 local, user-controlled visual preference—not a Platform or tenant setting.

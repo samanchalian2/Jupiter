@@ -2,6 +2,10 @@
 
 ## 2026-10-05 — Lavender/Beige visual theme remediation
 
+- Rebalanced the two-color identity after visual review: Beige now appears on
+  secondary controls, page-context washes, empty/helpful states and the compact
+  header, with accessible warm text/border companions and restrained dark-mode
+  equivalents; Lavender remains the sole primary action/selection color.
 - Safely fast-forwarded the authorized HTTP-only IP preview to `e4b8587`, built
   API/Web production artifacts and restarted only the dedicated Jupiter preview
   API/worker services; Web and health checks return HTTP 200.

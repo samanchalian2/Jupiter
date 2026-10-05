@@ -18,6 +18,8 @@
   --color-brand-border: #d9d1e0;
   --color-warm: #d8c3a6;
   --color-warm-soft: #f8f2ea;
+  --color-warm-border: #e7d8c5;
+  --color-warm-text: #67543f;
   --color-success: #087443;
   --color-warning: #9a5d00;
   --color-danger: #b42318;
@@ -89,6 +91,8 @@ html[data-ui-theme='dark'] {
   --color-brand-border: #51465a;
   --color-warm: #d8c3a6;
   --color-warm-soft: #302923;
+  --color-warm-border: #5a4a3c;
+  --color-warm-text: #eadbc7;
   --color-info: #ded0e8;
   --color-success: #6fc58c;
   --color-warning: #f0c16d;
@@ -243,9 +247,9 @@ html[data-ui-theme='dark'] {
   justify-items: start;
   gap: var(--space-2);
   padding: var(--space-6);
-  border: 1px dashed var(--color-border-strong);
+  border: 1px dashed var(--color-warm-border);
   border-radius: var(--radius-medium);
-  background: var(--color-surface-subtle);
+  background: var(--color-warm-soft);
 }
 
 .ui-empty-state h3 { margin: 0; font-size: var(--font-card-title); font-weight: 600; }
@@ -271,13 +275,16 @@ html[data-ui-theme='dark'] {
 
 /* Reference-screen refinement: the sign-in surface stays quiet and utilitarian. */
 .login-page {
-  background: var(--color-canvas);
+  background:
+    radial-gradient(circle at 88% 10%, var(--color-brand-soft) 0, transparent 32%),
+    radial-gradient(circle at 8% 92%, var(--color-warm-soft) 0, transparent 36%),
+    var(--color-canvas);
 }
 
 .login-card {
   gap: var(--space-5);
   padding: 28px;
-  border-color: var(--color-border);
+  border-color: var(--color-warm-border);
   border-radius: var(--radius-large);
   box-shadow: var(--elevation-elevated);
 }
@@ -407,8 +414,8 @@ button.theme-mode-control:focus-visible {
   gap: var(--space-4);
   margin: 0 calc(var(--space-6) * -1) var(--space-5);
   padding: var(--space-2) var(--space-6);
-  background: color-mix(in srgb, var(--color-canvas) 94%, transparent);
-  border-bottom-color: var(--color-border);
+  background: color-mix(in srgb, var(--color-warm-soft) 42%, var(--color-canvas));
+  border-bottom-color: var(--color-warm-border);
   backdrop-filter: none;
 }
 
@@ -671,3 +678,50 @@ html[data-ui-theme='dark'] :where(.login-page, .public-access-page) { background
 html[data-ui-theme='dark'] :where(.hint, .eyebrow, .page-intro p, .login-card p, .ticket-row span, .intake-message small) { color: var(--color-text-secondary); }
 html[data-ui-theme='dark'] :where(.ui-button.secondary, .file-input, .controlled-file, .composer-file) { background: var(--primary-soft); color: var(--primary-text); border-color: var(--primary-border); }
 html[data-ui-theme='dark'] :where(.ai-interpretation, .clarification-context) { background: linear-gradient(135deg, var(--primary-soft), var(--color-warm-soft)); color: var(--primary-text); }
+
+/* Lavender carries action and selection; Beige supplies calm visual warmth.
+   Keep Beige on supporting surfaces only so long sessions remain low-fatigue. */
+:where(.ui-button.secondary, button.secondary) {
+  color: var(--color-warm-text);
+  background: var(--color-warm-soft);
+  border-color: var(--color-warm-border);
+}
+
+:where(.ui-button.secondary, button.secondary):hover:not(:disabled),
+:where(.ui-button.secondary, button.secondary):focus-visible {
+  color: var(--color-text-primary);
+  background: color-mix(in srgb, var(--color-warm) 28%, var(--color-surface));
+  border-color: var(--color-warm);
+}
+
+.page-intro {
+  padding: var(--space-3) var(--space-4);
+  border-inline-start: 3px solid var(--color-warm);
+  border-radius: var(--radius-medium);
+  background: linear-gradient(90deg, transparent, var(--color-warm-soft));
+}
+
+.page-intro .eyebrow { color: var(--color-warm-text); }
+
+:where(.empty-state, .knowledge-detail > .empty-state) {
+  color: var(--color-text-primary);
+  background: var(--color-warm-soft);
+  border-color: var(--color-warm-border);
+}
+
+.theme-mode-control,
+.public-theme-control {
+  background: var(--color-warm-soft);
+  border-color: var(--color-warm-border);
+}
+
+html[data-ui-theme='dark'] .app-header {
+  background: color-mix(in srgb, var(--color-warm-soft) 34%, var(--color-canvas));
+  border-bottom-color: var(--color-warm-border);
+}
+
+html[data-ui-theme='dark'] :where(.ui-button.secondary, button.secondary) {
+  color: var(--color-warm-text);
+  background: var(--color-warm-soft);
+  border-color: var(--color-warm-border);
+}
