@@ -681,14 +681,17 @@ html[data-ui-theme='dark'] :where(.ai-interpretation, .clarification-context) { 
 
 /* Lavender carries action and selection; Beige supplies calm visual warmth.
    Keep Beige on supporting surfaces only so long sessions remain low-fatigue. */
-:where(.ui-button.secondary, button.secondary) {
+.ui-button.secondary,
+button.secondary {
   color: var(--color-warm-text);
   background: var(--color-warm-soft);
   border-color: var(--color-warm-border);
 }
 
-:where(.ui-button.secondary, button.secondary):hover:not(:disabled),
-:where(.ui-button.secondary, button.secondary):focus-visible {
+.ui-button.secondary:hover:not(:disabled),
+button.secondary:hover:not(:disabled),
+.ui-button.secondary:focus-visible,
+button.secondary:focus-visible {
   color: var(--color-text-primary);
   background: color-mix(in srgb, var(--color-warm) 28%, var(--color-surface));
   border-color: var(--color-warm);
@@ -703,7 +706,8 @@ html[data-ui-theme='dark'] :where(.ai-interpretation, .clarification-context) { 
 
 .page-intro .eyebrow { color: var(--color-warm-text); }
 
-:where(.empty-state, .knowledge-detail > .empty-state) {
+.empty-state,
+.knowledge-detail > .empty-state {
   color: var(--color-text-primary);
   background: var(--color-warm-soft);
   border-color: var(--color-warm-border);
@@ -720,7 +724,8 @@ html[data-ui-theme='dark'] .app-header {
   border-bottom-color: var(--color-warm-border);
 }
 
-html[data-ui-theme='dark'] :where(.ui-button.secondary, button.secondary) {
+html[data-ui-theme='dark'] .ui-button.secondary,
+html[data-ui-theme='dark'] button.secondary {
   color: var(--color-warm-text);
   background: var(--color-warm-soft);
   border-color: var(--color-warm-border);
