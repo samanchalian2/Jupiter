@@ -295,3 +295,32 @@ rows for a second tenant. A fresh administrator session returned the active
 including Tickets, Knowledge, Help, Reports, Organization Administration and
 Platform Administration navigation. No Arandi role or database policy was
 modified.
+
+## 37. Authorized preview theme synchronization (2026-10-05)
+
+The protected credential source was used only in memory for the already
+authorized server connection; no credential or secret was written to source,
+Evidence, logs or deployment artifacts. The earlier authentication failure was
+caused by the local SSH client path rather than a rejected server credential.
+
+The existing clean preview checkout was fetched and fast-forwarded only from
+`7fc5137` to `e4b8587`. API and Web production builds completed on the host.
+Only `jupiter-ip-preview-api` and `jupiter-ip-preview-worker` were restarted;
+both services and Nginx were active afterward. The Web root and
+`/api/v1/health` returned HTTP 200, the deployed CSS contained the canonical
+Lavender `#A89BBE`, and the checkout remained clean.
+
+Authenticated server inspection confirmed Jupiter continues to use its
+isolated `jupiter` PostgreSQL database and dedicated runtime role. No migration
+was executed and no unrelated database, role, table, process, service or proxy
+configuration was changed. The co-hosted application remained untouched.
+
+The real preview URL rendered the Persian RTL login with the Lavender/Beige
+identity and available light/dark control. At the exercised browser viewport,
+`document.documentElement.scrollWidth` did not exceed its client width, so
+there was no document-level horizontal overflow.
+
+This synchronization does not change the official verdict: GOAL-059 remains
+**BLOCKED** pending canonical DNS/TLS, immutable image provenance, managed
+secret injection, backup/restore proof, monitoring/alerting and an approved
+Windows/AD Connector host. GOAL-060 is not started.

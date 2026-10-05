@@ -2,6 +2,12 @@
 
 ## 2026-10-05 — Lavender/Beige visual theme remediation
 
+- Safely fast-forwarded the authorized HTTP-only IP preview to `e4b8587`, built
+  API/Web production artifacts and restarted only the dedicated Jupiter preview
+  API/worker services; Web and health checks return HTTP 200.
+- Verified the real Persian login renders the Lavender/Beige identity without
+  document-level horizontal overflow. No migration or unrelated database,
+  service or application change was made.
 - Rebased Jupiter's built-in palette on Lavender `#A89BBE` and supporting
   Beige `#D8C3A6`, replacing legacy Teal identity tokens in the live UI.
 - Added a compact, local user preference for accessible light and dark

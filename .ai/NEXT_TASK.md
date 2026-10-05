@@ -5,20 +5,20 @@
 An authorized, HTTP-only IP preview is operational with the isolated full
 Jupiter dataset, loopback-only API and dedicated system services. It is not an
 official staging acceptance or a substitute for a canonical deployment.
-Source `main` includes the 2026-10-05 Lavender/Beige visual remediation; the
-preview host must be re-authorized for SSH access before that source can be
-synchronized. Do not modify any unrelated host service or database while
-resolving this access issue.
+The authorized preview host is synchronized through source commit `e4b8587`;
+the 2026-10-05 Lavender/Beige remediation is built and live, its Web root and
+health endpoint return HTTP 200, and the Persian login renders without
+horizontal overflow. Do not modify any unrelated host service or database.
 Continue only when the authorized staging ingress/DNS/TLS, immutable image
 registry, secret injection, managed backup/restore and monitoring access,
 rollback ownership, and Windows Connector host are available. Use
 `docs/GOAL_059_EVIDENCE.md`; do not start GOAL-060.
 
 The 2026-09-16 authorized server audit found a reusable host, but canonical
-`jupiter.pnsoffice.ir` does not yet resolve there. Restore adequate server disk
-capacity and publish the protected-host IPv4 `A` record before continuing;
-HTTPS/TLS and deployment have not been attempted. The release candidate is
-`71f16a345bd8aa1724ecf943c2139a813fb8f598` and matches `origin/main`.
+`jupiter.pnsoffice.ir` does not yet resolve there. Publish the protected-host
+IPv4 `A` record before continuing; HTTPS/TLS and an immutable-image staging
+deployment have not been attempted. The temporary IP preview is not an
+official staging substitute.
 
 ## GOAL-058 — Full End-to-End Business Acceptance (complete)
 
