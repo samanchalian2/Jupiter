@@ -324,3 +324,18 @@ This synchronization does not change the official verdict: GOAL-059 remains
 **BLOCKED** pending canonical DNS/TLS, immutable image provenance, managed
 secret injection, backup/restore proof, monitoring/alerting and an approved
 Windows/AD Connector host. GOAL-060 is not started.
+
+## 38. Lavender/Beige balance acceptance (2026-10-05)
+
+Following owner feedback, the supporting Beige was promoted from a mostly
+latent token to visible low-fatigue surfaces: compact shell header,
+page-context wash, secondary controls and empty/helpful states. Lavender
+remains the primary action, selection, focus and logo color; ordinary work
+surfaces remain neutral. The preview was fast-forwarded and rebuilt through
+`e4e712c` without a migration or service/database change.
+
+Authenticated browser acceptance on the organization Knowledge route confirmed
+the canonical Beige `#D8C3A6` and soft Beige `#F8F2EA` are active. Computed
+contrast was `6.47:1` for secondary-control text and `13.80:1` for empty-state
+text. The page had no document-level horizontal overflow. The co-hosted
+application and its PostgreSQL data remained untouched.

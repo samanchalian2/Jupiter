@@ -5,7 +5,7 @@
 An authorized, HTTP-only IP preview is operational with the isolated full
 Jupiter dataset, loopback-only API and dedicated system services. It is not an
 official staging acceptance or a substitute for a canonical deployment.
-The authorized preview host is synchronized through source commit `e4b8587`;
+The authorized preview host is synchronized through source commit `e4e712c`;
 the 2026-10-05 Lavender/Beige remediation is built and live, its Web root and
 health endpoint return HTTP 200, and the Persian login renders without
 horizontal overflow. Do not modify any unrelated host service or database.
