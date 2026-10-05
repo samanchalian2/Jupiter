@@ -7,6 +7,10 @@
 - Added a compact, local user preference for accessible light and dark
   surfaces without changing persisted Platform/Organization appearance,
   existing presets, Custom Primary values or semantic status colors.
+- Exposed the preference on both sign-in and account surfaces, neutralized
+  browser autofill, and removed residual legacy blue identity colors from
+  operational screens. Responsive light/dark acceptance passed at 375 and
+  1440px without document overflow.
 
 ## 2026-09-16 — GOAL-059 Staging resume audit
 
