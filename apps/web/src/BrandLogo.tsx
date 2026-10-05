@@ -27,7 +27,7 @@ export function BrandLogo({ compact = false }: { compact?: boolean }) {
   useEffect(() => {
     document.querySelector<HTMLLinkElement>('#jupiter-favicon')?.setAttribute('href', source);
   }, [source]);
-  return <span className="brand-logo" aria-label="Jupiter">
+  return <span className={`brand-logo ${source === defaultLogo ? 'default-brand-logo' : ''}`} aria-label="Jupiter">
     <img src={source} alt="" onError={() => { try { localStorage.removeItem('jupiter.brand-logo'); } catch { /* ignored */ } setSource(defaultLogo); }} />
     {!compact && <span><strong>JUPITER</strong><small>مرکز خدمات پشتیبانی</small></span>}
   </span>;
