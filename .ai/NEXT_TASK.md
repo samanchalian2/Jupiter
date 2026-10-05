@@ -5,6 +5,10 @@
 An authorized, HTTP-only IP preview is operational with the isolated full
 Jupiter dataset, loopback-only API and dedicated system services. It is not an
 official staging acceptance or a substitute for a canonical deployment.
+The source includes the 2026-10-05 Lavender/Beige visual remediation at
+`90ff94d`; the preview host must be re-authorized for SSH access before that
+source can be synchronized. Do not modify any unrelated host service or
+database while resolving this access issue.
 Continue only when the authorized staging ingress/DNS/TLS, immutable image
 registry, secret injection, managed backup/restore and monitoring access,
 rollback ownership, and Windows Connector host are available. Use
