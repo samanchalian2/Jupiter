@@ -2,7 +2,7 @@
 
 ## GOAL-057 Appearance primary rules
 
-The built-in Jupiter Light Theme primary is Lavender `#A89BBE`; warm Beige
+The built-in Jupiter Light Theme primary is Lavender `#796E89`; warm Beige
 `#D8C3A6` is a restrained supporting surface rather than ordinary text. A
 Custom Primary accepts only canonical `#RRGGBB`, affects only the derived
 primary token family and is validated server-side. Platform writes require

@@ -3,9 +3,9 @@ import { contrastRatio, derivePrimaryTokens, JUPITER_PRIMARY } from './Appearanc
 
 describe('appearance tokens', () => {
   it('derives the canonical Jupiter lavender palette', () => {
-    expect(derivePrimaryTokens(JUPITER_PRIMARY)).toMatchObject({ primary:'#A89BBE', primaryHover:'#9181A8', primaryActive:'#796A8F', primarySubtle:'#F4F1F6', primaryBorder:'#D9D1E0', primaryText:'#62546F', onPrimary:'#211D25' });
-    expect(contrastRatio(JUPITER_PRIMARY, '#211D25')).toBeGreaterThanOrEqual(4.5);
-    expect(derivePrimaryTokens(JUPITER_PRIMARY, 'dark')).toMatchObject({ primary:'#C8BDD4', primarySubtle:'#29242E', primaryBorder:'#51465A', onPrimary:'#211D25' });
+    expect(derivePrimaryTokens(JUPITER_PRIMARY)).toMatchObject({ primary:'#796E89', primaryHover:'#6D627D', primaryActive:'#61566F', primarySubtle:'#F4F1F6', primaryBorder:'#D9D1E0', primaryText:'#796E89', onPrimary:'#FFFFFF' });
+    expect(contrastRatio(JUPITER_PRIMARY, '#FFFFFF')).toBeGreaterThanOrEqual(4.5);
+    expect(derivePrimaryTokens(JUPITER_PRIMARY, 'dark')).toMatchObject({ primary:'#796E89', primaryHover:'#6D627D', primaryActive:'#61566F', primarySubtle:'#29242E', primaryBorder:'#51465A', onPrimary:'#FFFFFF' });
   });
 
   it('selects dark onPrimary for a light but safe custom primary', () => {

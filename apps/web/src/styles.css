@@ -6,8 +6,8 @@
   --surface-muted: #f6f3f7;
   --border: #e6e0e9;
   --text-muted: #655d6b;
-  --primary: #a89bbe;
-  --primary-dark: #9181a8;
+  --primary: #796e89;
+  --primary-dark: #6d627d;
   --danger: #b42318;
   --radius: 10px;
   --shadow: 0 6px 18px #28232d0d;
@@ -15,13 +15,13 @@
 
 /* Jupiter commercial design tokens */
 :root {
-  --primary: #a89bbe;
-  --primary-dark: #9181a8;
+  --primary: #796e89;
+  --primary-dark: #6d627d;
   --primary-soft: #f4f1f6;
   --primary-border: #d9d1e0;
-  --on-primary: #211d25;
-  --primary-text: #62546f;
-  --accent: #a89bbe;
+  --on-primary: #ffffff;
+  --primary-text: #796e89;
+  --accent: #796e89;
   --canvas: #fbfafc;
   --surface: #fff;
   --surface-muted: #f6f3f7;
@@ -35,7 +35,7 @@
   --radius: 14px;
   --radius-lg: 20px;
   --shadow: 0 8px 26px rgba(40, 35, 45, 0.08);
-  --focus: 0 0 0 3px rgba(98, 84, 111, 0.35);
+  --focus: 0 0 0 3px rgba(121, 110, 137, 0.38);
   --sidebar-width: 264px;
   --header-height: 72px;
   --z-drawer: 30;
@@ -2437,13 +2437,13 @@ header {
 
 /* Commercial shell overrides: keep these last so old page styles cannot win. */
 :root {
-  --primary: #a89bbe;
-  --primary-dark: #9181a8;
+  --primary: #796e89;
+  --primary-dark: #6d627d;
   --primary-soft: #f4f1f6;
   --primary-border: #d9d1e0;
-  --on-primary: #211d25;
-  --primary-text: #62546f;
-  --accent: #a89bbe;
+  --on-primary: #ffffff;
+  --primary-text: #796e89;
+  --accent: #796e89;
   --canvas: #fbfafc;
   --surface: #fff;
   --surface-muted: #f6f3f7;
@@ -2457,7 +2457,7 @@ header {
   --radius: 14px;
   --radius-lg: 20px;
   --shadow: 0 8px 26px rgba(40, 35, 45, 0.08);
-  --focus: 0 0 0 3px rgba(98, 84, 111, 0.35);
+  --focus: 0 0 0 3px rgba(121, 110, 137, 0.38);
   --sidebar-width: 264px;
   --header-height: 72px;
   --z-drawer: 30;

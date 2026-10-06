@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-10-06 — Accessible deeper Lavender primary
+
+- Deepened the canonical Jupiter primary from `#A89BBE` to `#796E89`, with
+  hover `#6D627D`, active `#61566F` and deterministic white `onPrimary`.
+- Applied the accessible action family consistently to Light and Dark themes,
+  default logo treatment, runtime/server tokens, appearance previews,
+  validation tests and Persian Appearance Help.
+- Preserved warm Beige `#D8C3A6`, OCEAN/TEAL presets, explicit tenant Custom
+  Primary values and all semantic success/warning/danger colors.
+
 ## 2026-10-05 — Lavender/Beige visual theme remediation
 
 - Rebalanced the two-color identity after visual review: Beige now appears on

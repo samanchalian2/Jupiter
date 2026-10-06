@@ -11,9 +11,9 @@
   --color-text-primary: #28232d;
   --color-text-secondary: #655d6b;
   --color-text-tertiary: #807589;
-  --color-brand: #a89bbe;
-  --color-brand-hover: #9181a8;
-  --color-brand-active: #796a8f;
+  --color-brand: #796e89;
+  --color-brand-hover: #6d627d;
+  --color-brand-active: #61566f;
   --color-brand-soft: #f4f1f6;
   --color-brand-border: #d9d1e0;
   --color-warm: #d8c3a6;
@@ -64,13 +64,13 @@
   --primary-dark: var(--color-brand-hover);
   --primary-soft: var(--color-brand-soft);
   --primary-border: var(--color-brand-border);
-  --primary-text: #62546f;
+  --primary-text: #796e89;
   --danger: var(--color-danger);
   --radius-sm: var(--radius-small);
   --radius: var(--radius-medium);
   --radius-lg: var(--radius-large);
   --shadow: var(--elevation-subtle);
-  --focus: 0 0 0 2px var(--color-surface), 0 0 0 4px #62546f;
+  --focus: 0 0 0 2px var(--color-surface), 0 0 0 4px #796e89;
 }
 
 html[data-ui-theme='dark'] {
@@ -84,9 +84,9 @@ html[data-ui-theme='dark'] {
   --color-text-primary: #f4f0f5;
   --color-text-secondary: #d2cad6;
   --color-text-tertiary: #aca1b2;
-  --color-brand: #c8bdd4;
-  --color-brand-hover: #d5cadf;
-  --color-brand-active: #b19fbe;
+  --color-brand: #796e89;
+  --color-brand-hover: #6d627d;
+  --color-brand-active: #61566f;
   --color-brand-soft: #29242e;
   --color-brand-border: #51465a;
   --color-warm: #d8c3a6;
@@ -667,7 +667,7 @@ button.drawer-backdrop:focus-visible { background: rgba(33, 27, 43, 0.16); }
 
 /* The supplied Jupiter mark stays geometrically unchanged; only the built-in
    raster's color is harmonized. Tenant-provided logos remain untouched. */
-.default-brand-logo img { filter: brightness(0) saturate(100%) invert(68%) sepia(12%) saturate(810%) hue-rotate(221deg) brightness(87%) contrast(88%); }
+.default-brand-logo img { filter: brightness(0) saturate(100%) invert(50%) sepia(11%) saturate(783%) hue-rotate(222deg) brightness(88%) contrast(88%); }
 
 html[data-ui-theme='dark'] body,
 html[data-ui-theme='dark'] .app-shell,

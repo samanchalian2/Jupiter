@@ -339,3 +339,18 @@ the canonical Beige `#D8C3A6` and soft Beige `#F8F2EA` are active. Computed
 contrast was `6.47:1` for secondary-control text and `13.80:1` for empty-state
 text. The page had no document-level horizontal overflow. The co-hosted
 application and its PostgreSQL data remained untouched.
+
+## 39. Deeper Lavender and white-foreground remediation (2026-10-06)
+
+The canonical Jupiter primary was deepened to `#796E89`, with hover
+`#6D627D`, active `#61566F` and white foreground. The primary-to-white contrast
+is `4.77:1`, satisfying WCAG AA for ordinary control text. The same action
+family is used in Light and Dark themes so primary button text does not switch
+to a low-emphasis dark foreground. Beige `#D8C3A6` and its low-fatigue support
+surfaces remain unchanged.
+
+API/Web canonical tokens, server validation, reset behavior expectations,
+appearance placeholders, default-logo treatment, Persian Help and design
+documentation were updated together. OCEAN/TEAL and explicit Custom Primary
+values remain backward-compatible. No migration or commercial, lifecycle,
+authorization or tenant-data behavior changed.

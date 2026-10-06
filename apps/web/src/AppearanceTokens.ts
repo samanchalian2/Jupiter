@@ -1,6 +1,6 @@
 export type AppearanceSource = 'SYSTEM' | 'PLATFORM' | 'ORGANIZATION';
 export type PlatformAppearanceValue = { brandPreset: 'JUPITER' | 'OCEAN' | 'TEAL'; densityPreset: 'COMFORTABLE' | 'STANDARD' | 'COMPACT'; radiusPreset: 'SMALL' | 'MEDIUM' | 'LARGE'; logoUrl: string | null; customPrimary?: string | null; effectivePrimary?: string; primarySource?: AppearanceSource; onPrimary?: string };
-export const JUPITER_PRIMARY = '#A89BBE';
+export const JUPITER_PRIMARY = '#796E89';
 export type ThemeMode = 'light' | 'dark';
 const DARK_ON_PRIMARY = '#211D25'; const LIGHT_SURFACE = '#FFFFFF';
 const presetPrimary: Record<PlatformAppearanceValue['brandPreset'], string> = { JUPITER: JUPITER_PRIMARY, OCEAN: '#266A91', TEAL: '#176C68' };
@@ -16,8 +16,8 @@ export function derivePrimaryTokens(primary: string, mode: ThemeMode = 'light'):
   if (!onPrimary) throw new Error('رنگ انتخاب‌شده برای استفاده در رابط کاربری کنتراست کافی ندارد.');
   let primaryText = canonical;
   if (contrastRatio(primaryText, LIGHT_SURFACE) < 4.5) for (let amount = 0.01; amount <= 1; amount += 0.01) { const candidate = mix(canonical, DARK_ON_PRIMARY, amount); if (contrastRatio(candidate, LIGHT_SURFACE) >= 4.5) { primaryText = candidate; break; } }
-  if (canonical === JUPITER_PRIMARY && mode === 'dark') return { primary: '#C8BDD4', primaryHover: '#D5CADF', primaryActive: '#B19FBE', primarySubtle: '#29242E', primaryBorder: '#51465A', primaryText: '#E5DCEB', onPrimary: DARK_ON_PRIMARY };
-  if (canonical === JUPITER_PRIMARY) return { primary: JUPITER_PRIMARY, primaryHover: '#9181A8', primaryActive: '#796A8F', primarySubtle: '#F4F1F6', primaryBorder: '#D9D1E0', primaryText: '#62546F', onPrimary };
+  if (canonical === JUPITER_PRIMARY && mode === 'dark') return { primary: JUPITER_PRIMARY, primaryHover: '#6D627D', primaryActive: '#61566F', primarySubtle: '#29242E', primaryBorder: '#51465A', primaryText: '#E5DCEB', onPrimary: LIGHT_SURFACE };
+  if (canonical === JUPITER_PRIMARY) return { primary: JUPITER_PRIMARY, primaryHover: '#6D627D', primaryActive: '#61566F', primarySubtle: '#F4F1F6', primaryBorder: '#D9D1E0', primaryText: JUPITER_PRIMARY, onPrimary: LIGHT_SURFACE };
   if (mode === 'dark') return { primary: canonical, primaryHover: mix(canonical, '#FFFFFF', 0.1), primaryActive: mix(canonical, DARK_ON_PRIMARY, 0.12), primarySubtle: mix(canonical, '#1A181E', 0.84), primaryBorder: mix(canonical, '#1A181E', 0.62), primaryText: mix(canonical, '#FFFFFF', 0.35), onPrimary };
   return { primary: canonical, primaryHover: mix(canonical, '#000000', 0.15), primaryActive: mix(canonical, '#000000', 0.28), primarySubtle: mix(canonical, LIGHT_SURFACE, 0.92), primaryBorder: mix(canonical, LIGHT_SURFACE, 0.72), primaryText, onPrimary };
 }

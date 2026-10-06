@@ -2,7 +2,7 @@
 
 ## DEC-033 — Governed inherited Custom Primary
 
-Jupiter's built-in Light Theme primary is Lavender `#A89BBE`; warm Beige
+Jupiter's built-in Light Theme primary is Lavender `#796E89`; warm Beige
 `#D8C3A6` is a supporting, non-text surface token. Appearance stores only a
 nullable, canonical `#RRGGBB` custom primary at Platform and Organization
 scope; it never stores CSS, semantic colors or inherited copies. Resolution is
