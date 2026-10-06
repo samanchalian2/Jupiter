@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-10-06 — Public website training package
+
+- Added a self-contained Persian master prompt and complete website copy for
+  organization onboarding, daily member usage and users without an organization.
+- Grounded the material in the implemented registration, ten-step Setup Wizard,
+  role boundaries, ticket lifecycle, Directory, AI and Assist behavior.
+- Added simplified examples, checklists, troubleshooting, FAQ, screenshot
+  placeholders, configurable CTAs and responsive/WCAG/SEO acceptance rules;
+  no local address, credential or unsupported feature is included.
+
 ## 2026-10-06 — Accessible deeper Lavender primary
 
 - Deepened the canonical Jupiter primary from `#A89BBE` to `#796E89`, with
