@@ -4,11 +4,19 @@
 
 - Added a self-contained Persian master prompt and complete website copy for
   organization onboarding, daily member usage and users without an organization.
+- Added a concise, non-marketing product introduction and a scan-friendly
+  inventory of the delivered ticketing, knowledge, administration, Directory,
+  AI, Assist, commercial and Appearance capabilities.
+- Defined the website hierarchy around Teal `#014348`, limited Purple accent
+  `#867C98`, WCAG-safe white-text Purple `#756A88`, and calm Beige guidance
+  surfaces `#D8C3A6`/`#F8F2EA`.
 - Grounded the material in the implemented registration, ten-step Setup Wizard,
   role boundaries, ticket lifecycle, Directory, AI and Assist behavior.
 - Added simplified examples, checklists, troubleshooting, FAQ, screenshot
   placeholders, configurable CTAs and responsive/WCAG/SEO acceptance rules;
   no local address, credential or unsupported feature is included.
+- Kept the work in the local Jupiter task/repository workflow; no ChatGPT Work
+  Cloud task or website publication is part of this artifact.
 
 ## 2026-10-06 — Accessible deeper Lavender primary
 
