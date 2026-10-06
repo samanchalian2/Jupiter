@@ -5,10 +5,13 @@
 An authorized, HTTP-only IP preview is operational with the isolated full
 Jupiter dataset, loopback-only API and dedicated system services. It is not an
 official staging acceptance or a substitute for a canonical deployment.
-The authorized preview host is synchronized through source commit `e4e712c`;
+The authorized preview host is synchronized through source commit `cb875ce`;
 the 2026-10-06 deeper Lavender/Beige remediation is built and live, its Web root and
 health endpoint return HTTP 200, and the Persian login renders without
 horizontal overflow. Do not modify any unrelated host service or database.
+An observed expired-access-token race may transiently surface the first
+dashboard request as HTTP 500 before refresh succeeds; address it only in a
+separately scoped Goal, not by expanding GOAL-059.
 Continue only when the authorized staging ingress/DNS/TLS, immutable image
 registry, secret injection, managed backup/restore and monitoring access,
 rollback ownership, and Windows Connector host are available. Use

@@ -354,3 +354,18 @@ appearance placeholders, default-logo treatment, Persian Help and design
 documentation were updated together. OCEAN/TEAL and explicit Custom Primary
 values remain backward-compatible. No migration or commercial, lifecycle,
 authorization or tenant-data behavior changed.
+
+The authorized preview was built and deployed at `cb875ce`. Web and API health
+returned HTTP 200 and the checkout remained clean. Runtime Help publication
+created one new revision for `platform-appearance`; 14 other published articles
+were unchanged. No credential or protected environment value was recorded.
+
+Authenticated dashboard acceptance computed primary `#796E89`, hover
+`#6D627D`, active `#61566F`, white `onPrimary`, a primary-button background of
+`rgb(121, 110, 137)` and white text. The dashboard loaded successfully after
+session refresh and had no document-level horizontal overflow. The first
+request exposed an existing session-expiry presentation weakness: an expired
+access token reached the dashboard as HTTP 500 before concurrent refreshes
+completed; retry with the refreshed session succeeded immediately. This is not
+caused by the palette remediation, but should be normalized to a 401/transparent
+single-flight refresh in a future scoped Goal.
