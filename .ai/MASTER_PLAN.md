@@ -1,5 +1,15 @@
 # Master Plan
 
+## Approved Personal Service program
+
+GOAL-060 fixes the architecture and decisions. Delivery then proceeds one Goal
+at a time through GOAL-061 personal workspace identity/provisioning/routing,
+GOAL-062 personal support/catalog/agent access, GOAL-063 allowances/packages
+and Platform controls, GOAL-064 payment core/Zarinpal, GOAL-065 personal UX and
+Help, and GOAL-066 hardening/E2E acceptance. Defaults are 3 support cases and
+10 AI Smart Actions per UTC month; Platform Admin owns configurable commercial
+and operational policy, never security invariants.
+
 The MVP progresses through: (1) execution/documentation baseline, (2)
 foundation and local runtime, (3) tenant-aware identity and directory, (4)
 ticket lifecycle, (5) conversation/audit, (6) media, (7) requester and staff

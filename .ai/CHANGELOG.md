@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-10-07 — GOAL-060 Personal Service architecture
+
+- Approved one private personal workspace per verified account while retaining
+  the existing Organization tenant/RLS boundary and organization memberships.
+- Recorded separate Personal Support, support/AI allowance and package models,
+  configurable Platform policy, and immutable security/settlement rules.
+- Selected adapter-based, server-verified payment with Zarinpal first, Toman
+  `IRT` order snapshots and exactly-once fulfillment.
+- Added DEC-034 through DEC-037, GOAL-060 evidence and the GOAL-061–066 delivery
+  sequence. No production code, migration, API or runtime data changed.
+
 ## 2026-10-06 — Public website training package
 
 - Added a self-contained Persian master prompt and complete website copy for

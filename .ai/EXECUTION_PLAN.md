@@ -1,5 +1,19 @@
 # Execution Plan
 
+## GOAL-061 — Personal workspace identity, provisioning and routing
+
+**Status:** READY after GOAL-060. Add the backward-compatible workspace type,
+unique personal owner, verified-account idempotent provisioning and canonical
+`/personal` resolution. Preserve `/o/{slug}`, organization memberships,
+applications, RLS and all organization behavior. Do not start GOAL-062.
+
+## GOAL-060 — Personal Service architecture and delivery plan
+
+**Status:** DONE (documentation/architecture only, 2026-10-07). Recorded
+DEC-034 through DEC-037, exact product defaults, Platform-configurable fields,
+immutable security boundaries and GOAL-061 through GOAL-066 sequencing. No
+production code, migration, API or runtime data changed.
+
 ## GOAL-001 — Project control plane and executable MVP roadmap
 
 **Status:** DONE

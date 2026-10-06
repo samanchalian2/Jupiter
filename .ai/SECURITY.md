@@ -1,5 +1,26 @@
 # Security and Privacy
 
+## GOAL-060 Personal Service security
+
+Personal workspaces retain the normal tenant boundary: every ticket, message,
+attachment, allowance, package allocation, support case and support grant is
+bound to the personal workspace and protected by backend authorization,
+composite tenant integrity and RLS. The canonical `/personal` route is only a
+resolver convenience and never substitutes for authenticated ownership.
+
+Email verification is required before automatic personal-workspace ownership.
+Provisioning is idempotent and the unique owner constraint prevents duplicate
+personal tenants. Jupiter agents receive no membership; each support read/write
+requires an active, unexpired and unrevoked grant for the exact ticket.
+
+Payment amount, package identity, units and validity are snapshotted server-side
+before provider creation. Callback query values are untrusted until the server
+verifies authority and amount with the provider. Order transitions and package
+fulfillment are locked and idempotent. Provider secrets are environment-managed
+and excluded from database rows, logs, audit metadata and client responses;
+card data is never stored. Production callbacks require HTTPS and an allowlisted
+public origin. Platform settings cannot weaken these controls.
+
 ## GOAL-057 Appearance input boundary
 
 Appearance accepts only server-normalized uppercase six-digit hex values.

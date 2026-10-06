@@ -1,6 +1,26 @@
 # Next Task
 
-## GOAL-059 — Staging Release Readiness & Deployment Gate Acceptance (BLOCKED)
+## GOAL-061 — Personal Workspace Identity, Provisioning & Routing (READY)
+
+Implement only the backward-compatible personal workspace foundation approved
+by GOAL-060:
+
+- add `ORGANIZATION`/`PERSONAL` workspace type and unique personal owner while
+  preserving required tenant identifiers, composite integrity and RLS;
+- idempotently provision one personal workspace only for a verified public
+  account, with a safe lazy path for eligible legacy accounts;
+- create only the personal owner's active `REQUESTER` membership and preserve
+  every organization membership/application;
+- add canonical `/personal` resolution without changing `/o/{slug}` behavior;
+- deny organization administration, Directory, team and SLA configuration for
+  personal workspaces on the server;
+- add migration rehearsal, identity/routing/authorization/isolation tests and
+  update `.ai` plus `docs/GOAL_061_EVIDENCE.md`.
+
+Do not implement support capacity, packages, payment or the full personal UI in
+GOAL-061, and do not start GOAL-062.
+
+## Deferred deployment gate — GOAL-059 remains BLOCKED
 
 An authorized, HTTP-only IP preview is operational with the isolated full
 Jupiter dataset, loopback-only API and dedicated system services. It is not an
@@ -12,10 +32,11 @@ horizontal overflow. Do not modify any unrelated host service or database.
 An observed expired-access-token race may transiently surface the first
 dashboard request as HTTP 500 before refresh succeeds; address it only in a
 separately scoped Goal, not by expanding GOAL-059.
-Continue only when the authorized staging ingress/DNS/TLS, immutable image
+Resume GOAL-059 only when the authorized staging ingress/DNS/TLS, immutable image
 registry, secret injection, managed backup/restore and monitoring access,
 rollback ownership, and Windows Connector host are available. Use
-`docs/GOAL_059_EVIDENCE.md`; do not start GOAL-060.
+`docs/GOAL_059_EVIDENCE.md`; the personal-service product sequence does not
+claim or replace staging acceptance.
 
 The 2026-09-16 authorized server audit found a reusable host, but canonical
 `jupiter.pnsoffice.ir` does not yet resolve there. Publish the protected-host

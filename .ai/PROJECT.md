@@ -1,8 +1,10 @@
 # Jupiter
 
-Jupiter is a centralized multi-tenant SaaS for organizational support tickets.
-Requesters submit text, voice, image, and file requests; experts resolve them
-in-ticket. Commercial AI assists, but never replaces, the human workflow.
+Jupiter is a centralized multi-tenant SaaS for organizational and personal
+support tickets. Organization members work in organization workspaces, while a
+verified person may also use a private personal workspace backed by the same
+tenant-isolation boundary. Commercial AI assists, but never replaces, the
+human workflow.
 
 ## MVP scope
 
@@ -28,9 +30,23 @@ SCIM or SSO, AD password synchronization, broad identity-provider integrations,
 payment-gateway implementation, arbitrary theming, autonomous ticket
 resolution, and a general AI help chatbot.
 
+## Approved Personal Service extension
+
+The post-upgrade Personal Service program adds one private personal workspace
+per verified public account, Jupiter-operated personal support, separate
+monthly/purchased support and AI capacity, and adapter-based online payment.
+It preserves organization workspaces and memberships, uses the existing
+tenant boundary and does not turn a personal user into an organization admin.
+Platform Admin owns the personal catalog, monthly defaults, per-workspace
+overrides, package validity, pricing, service availability and operational SLA.
+Authorization, tenant isolation, settlement idempotency and payment
+verification are fixed security invariants and are not configurable.
+
 ## Actors
 
 Platform Admin manages tenants and global AI provider settings. Organization
 Admin manages tenant configuration. Supervisors manage queues and assignments.
 Experts work permitted department queues and assigned tickets. Requesters only
-work their authorized tickets.
+work their authorized tickets. Personal Users use their own private workspace,
+may retain organization memberships at the same time, and may later submit an
+organization application.

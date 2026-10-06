@@ -1,5 +1,42 @@
 # Business Rules
 
+## GOAL-060 Personal Service rules
+
+- A verified public account owns at most one personal workspace. Provisioning
+  is idempotent after verification and may be lazily ensured for eligible legacy
+  accounts. The workspace coexists with every organization membership.
+- A personal workspace is deliberately focused: personal tickets,
+  conversation, attachments, notifications, Product Help and optional AI. It
+  exposes no organization administration, Directory, team or SLA configuration.
+- A personal ticket is supported by Jupiter. Draft creation consumes nothing;
+  submit reserves monthly support capacity first and then the valid purchased
+  allocation with the nearest expiry. Zero capacity preserves the draft and
+  offers purchase instead of silently creating an unserviceable case.
+- Agent acceptance settles exactly one support unit. Cancellation, rejection
+  and pre-accept failure release the reservation. Retry or concurrent accept
+  can never settle a second unit.
+- A Jupiter agent is not a personal-workspace member. Access is a bounded,
+  revocable, ticket-scoped grant and is removed on completion or revocation.
+- Monthly defaults are 3 personal support cases and 10 AI Smart Actions per UTC
+  calendar month, without rollover. Platform Admin may change future defaults
+  and explicit workspace overrides; provisioned history is never overwritten.
+- Support and AI packages are separate. New packages default to 365 days of
+  validity; Platform Admin may set a bounded package-specific period. Allocation
+  snapshots units, Toman price and expiry so later catalog edits do not rewrite
+  purchases.
+- Platform Admin may configure availability, catalog, operational SLA, package
+  catalog, pricing, validity bounds, future allowance defaults and explicit
+  workspace overrides. Users can only read their effective projection.
+- Payment is fulfilled only after server-side provider verification. One order
+  creates at most one allocation. Provider retries and duplicate callbacks are
+  idempotent. A successful redirect alone is never proof of payment.
+- Jupiter sends the snapshotted Toman amount to Zarinpal with currency `IRT`.
+  The product issues a payment receipt, not an official tax invoice. Refund is
+  manual outside the gateway and is recorded with reason and external reference.
+- Tenant isolation, verified ownership, role enforcement, capacity settlement,
+  payment verification, secret policy and audit actor identity are fixed and
+  cannot be disabled from Platform Admin.
+
 ## GOAL-057 Appearance primary rules
 
 The built-in Jupiter Light Theme primary is Lavender `#796E89`; warm Beige

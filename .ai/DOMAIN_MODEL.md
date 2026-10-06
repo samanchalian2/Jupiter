@@ -1,5 +1,32 @@
 # Domain Model
 
+## GOAL-060 Personal Service model
+
+`Organization.workspace_type` distinguishes `ORGANIZATION` from `PERSONAL`.
+A personal workspace has a unique `personal_owner_user_id`, one active
+`REQUESTER` membership for that user and no owner/admin membership. A verified
+public account owns at most one personal workspace; provisioning is idempotent
+and does not remove later or existing organization memberships.
+
+`PersonalServiceCatalog` is the Platform-owned support catalog and operational
+SLA projection. `PersonalSupportCase` links one personal ticket to Jupiter
+support without becoming an organization Assist case. A
+`PersonalSupportReservation` reserves either current monthly capacity or a
+purchased allocation and settles at most once when an authorized agent accepts
+the case.
+
+`PersonalAllowancePolicy` and nullable `PersonalAllowanceOverride` define
+future monthly support and AI capacity. Immutable monthly allowance windows
+preserve history. `PersonalPackage` defines either `SUPPORT` or `AI` units,
+price in Toman and a bounded validity period; `PersonalPackageAllocation`
+captures the purchased snapshot and expiry.
+
+`PaymentOrder` stores an immutable commercial snapshot and lifecycle;
+`PaymentAttempt` stores safe provider references and verification outcomes;
+`PaymentFulfillment` links one verified order to exactly one package allocation.
+No entity stores card data or a payment-provider credential. A manual refund
+record stores only amount, reason, external reference, actor and timestamps.
+
 ## GOAL-057 Appearance overrides
 
 `PlatformAppearanceSettings.custom_primary` is an optional global canonical

@@ -1,5 +1,27 @@
 # System Architecture
 
+## GOAL-060 Personal Service architecture
+
+Personal service remains inside the modular monolith. A personal workspace is
+an `Organization` tenant with an explicit `PERSONAL` workspace type and one
+verified owner identity; it therefore keeps required `organization_id`,
+composite tenant relations and PostgreSQL RLS. Its canonical client route is
+`/personal`, while `/o/{slug}` remains reserved for organization workspaces.
+
+The extension adds Personal Support and Payments application modules. Personal
+Support owns its case/reservation lifecycle and reuses the global Jupiter agent
+registry plus ticket-scoped, time-bound support grants; it does not reuse the
+organization Assist commercial policy or grant organization membership to an
+agent. Payments use a provider adapter, immutable order snapshots, server-side
+verification and idempotent fulfillment. Zarinpal is the first adapter and
+receives Toman as `IRT`; provider credentials remain environment-managed.
+
+Platform configuration covers service availability, catalog/SLA, monthly
+defaults, per-workspace overrides, package units/prices/validity and bounded
+grant duration. Tenant isolation, verified account ownership, server-side
+authorization, settlement/fulfillment idempotency, HTTPS callback validation
+and secret handling are architecture invariants rather than settings.
+
 ## GOAL-057 Appearance runtime
 
 The Appearance module remains inside the modular monolith. It owns canonical

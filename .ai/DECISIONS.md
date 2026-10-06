@@ -1,5 +1,50 @@
 # Architecture Decisions
 
+## DEC-037 — Verified adapter-based payment and idempotent fulfillment
+
+**Decision:** Online payment uses an internal provider adapter. Zarinpal is the
+first implementation; Jupiter snapshots package, units, validity and Toman
+amount, sends currency `IRT`, verifies callbacks server-side, and fulfills at
+most once. Provider credentials remain environment-managed. The product issues
+a receipt; refund is performed externally and recorded manually.
+
+**Reason:** Provider isolation and immutable snapshots prevent catalog drift,
+duplicate callbacks and a future gateway change from corrupting capacity.
+
+## DEC-036 — Separate configurable personal support and AI capacity
+
+**Decision:** Personal support and AI use separate monthly pools and packages.
+Initial monthly defaults are 3 support cases and 10 Smart Actions, UTC calendar
+month, no rollover. New purchased packages default to 365 days, with bounded
+validity configurable per package. Platform Admin can manage future defaults,
+explicit personal-workspace overrides, availability and package catalog; issued
+history and security rules are immutable.
+
+**Reason:** The two services have different cost and fulfillment semantics, so
+a shared balance would obscure pricing and operational liability.
+
+## DEC-035 — Personal support is distinct from organization Assist
+
+**Decision:** Personal Support owns a separate case/reservation lifecycle but
+reuses the platform Jupiter-agent registry and ticket-scoped support-grant
+mechanism. Submission reserves monthly then purchased capacity; agent acceptance
+settles exactly once. Agents never gain tenant membership.
+
+**Reason:** Organization Assist depends on owner policy and commercial agreement,
+whereas personal support is the core fulfillment path for a private customer.
+
+## DEC-034 — Personal workspace preserves the Organization tenant boundary
+
+**Decision:** A personal workspace is an `Organization` tenant with explicit
+`PERSONAL` type, one unique verified owner and one active `REQUESTER`
+membership. It uses canonical `/personal`; `/o/{slug}` stays organizational.
+Provisioning is idempotent after verification and coexists with organization
+memberships and applications.
+
+**Reason:** Reusing the proven required `organization_id`, composite integrity
+and RLS boundary is safer than introducing nullable tenant ownership or a
+parallel ticket model. Organization-only features remain hidden and forbidden.
+
 ## DEC-033 — Governed inherited Custom Primary
 
 Jupiter's built-in Light Theme primary is Lavender `#796E89`; warm Beige

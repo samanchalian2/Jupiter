@@ -1,5 +1,15 @@
 # Jupiter Master Upgrade Plan
 
+## Post-upgrade Personal Service program
+
+Owner reprioritization starts an architecture-first personal service program
+without declaring the blocked GOAL-059 staging gate complete. GOAL-060 records
+the design only; implementation is sequenced as GOAL-061 workspace foundation,
+GOAL-062 support operations, GOAL-063 commercial capacity, GOAL-064 payment,
+GOAL-065 UX/Help and GOAL-066 hardening. Platform Admin controls operational
+and commercial policy; authorization, RLS, settlement and payment verification
+remain fixed.
+
 ## GOAL-059 — Staging Release Readiness & Deployment Gate Acceptance
 
 **Status: BLOCKED (temporary IP preview deployed 2026-09-26).** An authorized

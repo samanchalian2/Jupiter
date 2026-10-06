@@ -27,3 +27,18 @@
     is approved, scoped and auditable before a Jupiter agent can view data.
 14. A user or administrator reads only audience-permitted Persian product help
     and opens contextual help from an approved feature mapping.
+
+## Personal Service use cases (approved by GOAL-060)
+
+15. A public user verifies email and receives exactly one private personal
+    workspace, without losing any organization membership.
+16. A personal user creates a draft, attaches files, optionally uses AI and
+    submits a support request to Jupiter when capacity is available.
+17. A Jupiter agent accepts a personal support case through a time-bound,
+    ticket-scoped grant; exactly one reserved support unit settles.
+18. A personal user buys a support or AI package, returns through a verified
+    payment callback and receives one idempotent allocation and receipt.
+19. A Platform Admin configures personal service availability, catalog/SLA,
+    monthly defaults, workspace overrides and separate package catalogs.
+20. The same account uses `/personal`, belongs to one or more organizations and
+    may submit an organization application without merging tenant data.
