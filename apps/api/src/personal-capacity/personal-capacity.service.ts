@@ -18,6 +18,7 @@ type PackageInput = {
 };
 
 type Reservation = { id:string;status:'RESERVED'|'SETTLED'|'RELEASED';source:'MONTHLY'|'PURCHASED' };
+type PersonalAiCapability = 'AI_TICKET_REVIEW' | 'AI_SMART_INTAKE';
 
 @Injectable()
 export class PersonalCapacityService {
@@ -213,6 +214,42 @@ export class PersonalCapacityService {
     return this.database.withOrganization(actor.organizationId,client=>this.summary(client,actor.organizationId,actor.userId));
   }
 
+  async reserveAiAction(actor:TicketActor,capability:PersonalAiCapability,idempotencyKey:string) {
+    await this.personalOwner(actor);
+    return this.database.withOrganization(actor.organizationId,client=>this.reserve(client,{
+      organizationId:actor.organizationId,
+      poolCode:'AI',
+      subjectType:'AI_ACTION',
+      idempotencyKey:this.aiKey(capability,idempotencyKey),
+      actorId:actor.userId,
+    }));
+  }
+
+  async settleAiAction(organizationId:string,idempotencyKey:string,subjectId:string) {
+    return this.database.withOrganization(organizationId,async client=>{
+      const reservation=await this.aiReservation(client,idempotencyKey);
+      if(!reservation) throw new NotFoundException('رزرو ظرفیت هوش مصنوعی یافت نشد.');
+      const record=await this.settle(client,reservation.id,subjectId,null);
+      return {id:record.id,idempotent:reservation.status==='SETTLED'};
+    });
+  }
+
+  async releaseAiAction(organizationId:string,idempotencyKey:string) {
+    return this.database.withOrganization(organizationId,async client=>{
+      const reservation=await this.aiReservation(client,idempotencyKey);
+      if(!reservation) return {released:false};
+      const record=await this.release(client,reservation.id,null,'AI_ACTION_NOT_DELIVERED');
+      return {released:record?.status==='RELEASED'&&reservation.status==='RESERVED'};
+    });
+  }
+
+  async aiActionReference(organizationId:string,idempotencyKey:string) {
+    return this.database.withOrganization(organizationId,async client=>{
+      const reservation=await this.aiReservation(client,idempotencyKey);
+      return {actionId:reservation?.id??null};
+    });
+  }
+
   async platformSummary(actorId:string,organizationId:string) {
     await this.platform(actorId);
     await this.personalWorkspace(organizationId);
@@ -254,7 +291,7 @@ export class PersonalCapacityService {
     });
   }
 
-  async settle(client:PoolClient,reservationId:string,subjectId:string,actorId:string) {
+  async settle(client:PoolClient,reservationId:string,subjectId:string,actorId:string|null) {
     const reservation=(await client.query<Reservation & {organization_id:string}>(
       'SELECT id,status,source,organization_id FROM personal_capacity_reservations WHERE id=$1 FOR UPDATE',[reservationId],
     )).rows[0];
@@ -270,7 +307,7 @@ export class PersonalCapacityService {
     return record;
   }
 
-  async release(client:PoolClient,reservationId:string,actorId:string,reason:string) {
+  async release(client:PoolClient,reservationId:string,actorId:string|null,reason:string) {
     const reservation=(await client.query<Reservation & {organization_id:string}>(
       'SELECT id,status,source,organization_id FROM personal_capacity_reservations WHERE id=$1 FOR UPDATE',[reservationId],
     )).rows[0];
@@ -316,7 +353,7 @@ export class PersonalCapacityService {
       };
     }));
     const packages=(await client.query(
-      `SELECT code,name,description,pool_code,unit_count,price_irt::text,validity_days
+      `SELECT id,code,name,description,pool_code,unit_count,price_irt::text,validity_days
        FROM personal_packages WHERE status='ACTIVE' ORDER BY pool_code,name`,
     )).rows;
     const allocations=(await client.query(
@@ -384,6 +421,19 @@ export class PersonalCapacityService {
     return value;
   }
 
+  private aiKey(capability:PersonalAiCapability,idempotencyKey:string) {
+    return `PERSONAL_AI:${capability}:${idempotencyKey}`;
+  }
+
+  private async aiReservation(client:PoolClient,idempotencyKey:string) {
+    const keys=(['AI_TICKET_REVIEW','AI_SMART_INTAKE'] as PersonalAiCapability[]).map(capability=>this.aiKey(capability,idempotencyKey));
+    return (await client.query<Reservation>(
+      `SELECT id,status,source FROM personal_capacity_reservations
+       WHERE pool_code='AI' AND subject_type='AI_ACTION' AND idempotency_key=ANY($1::text[])
+       ORDER BY created_at DESC LIMIT 1`,[keys],
+    )).rows[0];
+  }
+
   private async personalWorkspace(organizationId:string) {
     const row=(await this.database.query<{id:string}>(
       `SELECT id FROM organizations WHERE id=$1 AND workspace_type='PERSONAL'`,[organizationId],
@@ -407,7 +457,7 @@ export class PersonalCapacityService {
     if(!row?.is_platform_admin) throw new ForbiddenException();
   }
 
-  private audit(client:PoolClient,organizationId:string|null,actorId:string,action:string,targetType:string,targetId:string|null,metadata:object) {
+  private audit(client:PoolClient,organizationId:string|null,actorId:string|null,action:string,targetType:string,targetId:string|null,metadata:object) {
     return client.query(
       `INSERT INTO audit_logs(organization_id,actor_user_id,action,target_type,target_id,metadata)
        VALUES($1,$2,$3,$4,$5,$6)`,[organizationId,actorId,action,targetType,targetId,metadata],

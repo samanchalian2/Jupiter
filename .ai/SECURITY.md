@@ -175,3 +175,14 @@ Explicit re-pair is tenant-bound and owner/admin-only; it can issue a new
 hashed one-time code only for a revoked connector. Pairing creates a fresh
 device identity/token in the same record, so the revoked credential never
 becomes valid again and audit metadata contains no secret material.
+
+## GOAL-065 personal UI and AI boundary
+
+Personal routes require the canonical active owner/REQUESTER membership and do
+not expose organization administration. AI reserve/settle/release re-check the
+workspace type and personal owner boundary server-side; UI visibility is never
+authorization. Platform AI credentials remain write-only and are not returned
+to personal projections. Payment callback redirects contain only a normalized
+status and optional order ID, never provider authority, merchant credential or
+raw provider error. Contextual Help is global published content filtered by the
+caller's active audience.

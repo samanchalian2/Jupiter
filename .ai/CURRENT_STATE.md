@@ -1,5 +1,18 @@
 # Current State
 
+**GOAL-065 — Complete Personal Workspace UX & Product Help (complete,
+2026-10-07):** `/personal` now provides a compact Persian dashboard and
+services workspace for personal tickets, monthly/purchased SUPPORT and AI
+capacity, packages, payment return states, receipts and Personal Support case
+state/cancellation. Ticket Review and Smart Intake use the personal AI pool
+with idempotent reserve/release/settle while organization behavior is
+unchanged. Platform Admin can configure personal AI through the existing
+secure provider panel. Four published Help guides and contextual triggers are
+live. 135 API tests, 13 Web tests, typechecks, builds, diff validation and
+authenticated RTL browser acceptance at 375/768/1024/1440 passed; the temporary
+personal fixture was fully removed. Evidence: `docs/GOAL_065_EVIDENCE.md`.
+GOAL-066 is ready but not started.
+
 **GOAL-064 — Personal Payment Core & Zarinpal Adapter (complete,
 2026-10-07):** Personal package payment now uses a provider-neutral adapter,
 Zarinpal live implementation and a deterministic non-production local adapter.

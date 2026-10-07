@@ -1,32 +1,29 @@
 # Next Task
 
-## GOAL-065 — Complete Personal Workspace UX & Product Help (READY)
+## GOAL-066 — Personal Service Cross-domain Hardening & E2E Acceptance (READY)
 
-Implement only the complete Persian personal-user experience on top of the
-approved GOAL-061 through GOAL-064 backend boundaries:
+Perform only the final hardening and end-to-end acceptance of the approved
+GOAL-060 through GOAL-065 Personal Service program:
 
-- make `/personal` a focused, responsive workspace for personal tickets,
-  support, AI capacity and packages without exposing organization-only
-  administration, Directory, team, SLA, Commercial or Assist controls;
-- present monthly/purchased SUPPORT and AI capacity, expiry and service
-  availability in simple user language while preserving manual ticketing;
-- add the purchase journey for active packages: server-created order,
-  redirect, safe return/pending/failure/expiry states and readable receipt;
-- expose Personal Support request/cancel/state and available agent-help context
-  without changing ticket lifecycle or granting agents tenant membership;
-- wire eligible personal AI actions to the existing personal AI capacity
-  reserve/release/settle boundary; retries/failures must not double-consume;
-- add/update Persian Product Help and contextual triggers for independent-user
-  onboarding, personal tickets, capacity/packages, payment/receipt, AI and
-  Jupiter support;
-- keep UI RTL, compact and accessible at 375/768/1024/1440 with no document
-  overflow; test owner/organization/platform isolation and all fallback states;
-- run API/Web tests, typechecks, builds, migration rehearsal as applicable and
-  record `docs/GOAL_065_EVIDENCE.md` plus `.ai` updates.
+- exercise verified-account provisioning, canonical `/personal` routing,
+  ticket creation, Personal Support request/agent access, SUPPORT/AI capacity,
+  package purchase/callback/receipt and contextual Help as one supported flow;
+- prove personal-owner, organization-member, Platform Admin and Jupiter-agent
+  isolation across APIs, RLS and rendered routes without changing the approved
+  domain boundaries;
+- cover retries, concurrency, expiry, cancellation, provider failure and manual
+  ticket fallback, including exact-once support/AI/payment settlement;
+- verify runtime Help, audits and stored metadata contain no credential,
+  provider authority, prompt, ticket body or prohibited secret/content;
+- run a clean migration rehearsal through migration 060, full API/Web tests,
+  typechecks, production builds, health smoke and `git diff --check`;
+- complete authenticated Persian RTL browser acceptance at
+  375/768/1024/1440, remove all temporary fixtures, and record
+  `docs/GOAL_066_EVIDENCE.md` plus final `.ai` status.
 
-Do not add subscription billing, wallet, discount/tax/accounting, official tax
-invoice, card storage, automatic refund or change organization behavior. Do not
-start GOAL-066.
+Do not add a new product capability, payment provider, subscription billing,
+wallet, discount/tax/accounting, official invoice, card storage or automatic
+refund. Do not claim the separate blocked GOAL-059 canonical staging gate.
 
 ## Deferred deployment gate — GOAL-059 remains BLOCKED
 

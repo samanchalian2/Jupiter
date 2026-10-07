@@ -167,3 +167,13 @@ tenant-scoped record for an identity correction.
 `DirectoryConnector` retains its identity across explicit re-pair: a revoked
 record receives new hashed one-time pairing material and only a successful
 pair establishes its replacement device identity.
+
+## GOAL-065 personal UX projections
+
+`PersonalWorkspaceSummary` is a read projection over personal allowance
+windows, active package allocations, service catalog and support cases; it is
+not a second commercial aggregate. `PersonalPaymentReceipt` is a safe paid-order
+projection and explicitly not an accounting or tax-invoice entity. Personal AI
+actions reuse `PersonalCapacityReservation` with `subject_type=AI_ACTION` and a
+capability-qualified idempotency key; no organization Commercial Smart Action
+row is created for the personal pool.

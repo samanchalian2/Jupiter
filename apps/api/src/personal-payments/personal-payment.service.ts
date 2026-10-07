@@ -110,7 +110,7 @@ export class PersonalPaymentService {
         await client.query(`INSERT INTO personal_payment_attempts(organization_id,order_id,operation,outcome,provider_code,failure_code) VALUES($1,$2,'VERIFY','FAILED','ZARINPAL','CUSTOMER_CANCELLED')`,[order.organization_id,order.id]);
         await this.audit(client,order.organization_id,null,'personal_payment.callback_cancelled','personal_payment_order',order.id,{provider:'ZARINPAL'});
       });
-      return {status:'CANCELLED',message:'پرداخت تکمیل نشد.'};
+      return {status:'CANCELLED',orderId:order.id,message:'پرداخت تکمیل نشد.'};
     }
     order=await this.claimVerification(order.id);
     if(order.status==='EXPIRED') throw new ConflictException('سفارش منقضی شده است.');

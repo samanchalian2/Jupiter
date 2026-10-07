@@ -200,3 +200,18 @@ does not change a tenant's saved appearance.
 
 Assist request, approval, queueing and assignment attempts do not consume commercial capacity. Exactly one unit is settled only when a permitted Jupiter agent accepts a queued case. New acceptance needs both an effective `JUPITER_ASSIST` commercial capability and valid package capacity; accepted cases remain operable after later capacity expiry or suspension. Capacity order is valid included package, promotional/manual/legacy credit, then purchased package, each by nearest expiry and stable creation/id tie-breakers. No Assist emergency or overage exists.
 Existing organizations may remain ownerless. Only Platform Admin may explicitly assign or revoke `ORG_OWNER`; both actions are audited and revocation never changes the member's other organization roles.
+
+## GOAL-065 personal experience
+
+- A personal workspace consumes Ticket Review and Smart Intake only from its
+  `AI` personal-capacity pool. One delivered logical action settles one unit;
+  retry, failure or cancellation releases the reservation. Organization Smart
+  Action commercial policy is unchanged.
+- Platform Admin owns personal AI enablement and provider configuration. A
+  personal user can view capacity and buy active packages but cannot change
+  allowance policy, package definition, provider settings or settlement.
+- A personal payment callback returns only a safe result/order reference to the
+  Web route. Provider authority and raw provider failures never appear in the
+  browser URL. A receipt is not a tax invoice.
+- Personal Support request and cancellation do not change ticket lifecycle.
+  Cancellation is available only while queued and releases reserved capacity.

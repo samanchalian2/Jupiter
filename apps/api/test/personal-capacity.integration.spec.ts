@@ -5,10 +5,12 @@ import { DatabaseService } from '../src/database/database.service.js';
 import { NotificationService } from '../src/notifications/notification.service.js';
 import { PersonalCapacityService } from '../src/personal-capacity/personal-capacity.service.js';
 import { PersonalSupportService } from '../src/personal-support/personal-support.service.js';
+import { CommercialService } from '../src/commercial/commercial.service.js';
 
 const database=new DatabaseService();
 const capacity=new PersonalCapacityService(database);
 const support=new PersonalSupportService(database,new NotificationService(database),capacity);
+const commercial=new CommercialService(database,undefined,undefined,capacity);
 const marker=randomUUID().replace(/-/g,'').slice(0,12);
 let platformId='',outsiderId='',ownerAId='',ownerBId='',ownerCId='',agentId='';
 let personalAId='',personalBId='',personalCId='',organizationId='';
@@ -193,5 +195,27 @@ describe('GOAL-063 personal recurring allowance and package capacity',()=>{
     await expect(database.withOrganization(personalAId,client=>capacity.reserve(client,{organizationId:personalAId,poolCode:'AI',subjectType:'AI_ACTION',idempotencyKey:`expired-ai-${marker}`,actorId:ownerAId}))).rejects.toBeInstanceOf(ConflictException);
     await expect(database.withOrganization(personalAId,client=>client.query(`UPDATE personal_package_allocations SET status='REVOKED' WHERE id=$1`,[expiredAllocation.id]))).rejects.toThrow(/permission denied/i);
     await expect(capacity.revokeAllocation(platformId,expiredAllocation.id,'پایان تخصیص آزمایشی')).resolves.toMatchObject({status:'REVOKED'});
+  });
+
+  it('meters personal Ticket Review and Smart Intake against AI capacity exactly once',async()=>{
+    const actorC={userId:ownerCId,organizationId:personalCId,roles:['REQUESTER']};
+    const reviewKey=randomUUID();
+    const intakeKey=randomUUID();
+    const first=await commercial.reserveSmartAction(actorC,'AI_TICKET_REVIEW',reviewKey,{type:'ticket',id:randomUUID()});
+    const duplicate=await commercial.reserveSmartAction(actorC,'AI_TICKET_REVIEW',reviewKey,{type:'ticket',id:randomUUID()});
+    expect(duplicate.id).toBe(first.id);
+    expect((await capacity.ownerSummary(actorC)).pools.find(item=>item.poolCode==='AI')?.monthlyRemaining).toBe(3);
+    await commercial.settleSmartAction(personalCId,reviewKey,randomUUID());
+    await expect(commercial.settleSmartAction(personalCId,reviewKey,randomUUID())).resolves.toMatchObject({idempotent:true});
+    await commercial.reserveSmartAction(actorC,'AI_SMART_INTAKE',intakeKey,{type:'ticket_intake',id:randomUUID()});
+    await commercial.releaseSmartAction(personalCId,intakeKey);
+    await commercial.releaseSmartAction(personalCId,intakeKey);
+    const rows=(await database.query<{status:string;count:number}>(
+      `SELECT status,count(*)::int AS count FROM personal_capacity_reservations
+       WHERE organization_id=$1 AND subject_type='AI_ACTION' GROUP BY status`,[personalCId],
+    )).rows;
+    expect(rows).toEqual(expect.arrayContaining([{status:'SETTLED',count:1},{status:'RELEASED',count:1}]));
+    expect((await capacity.ownerSummary(actorC)).pools.find(item=>item.poolCode==='AI')?.monthlyRemaining).toBe(3);
+    await expect(commercial.reserveSmartAction({userId:ownerBId,organizationId:personalCId,roles:['REQUESTER']},'AI_TICKET_REVIEW',randomUUID())).rejects.toBeInstanceOf(ForbiddenException);
   });
 });

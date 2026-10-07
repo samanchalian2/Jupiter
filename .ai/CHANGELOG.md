@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-10-07 — GOAL-065 Personal workspace UX and Help
+
+- Added focused Persian `/personal` dashboard and services routes with simple
+  monthly/purchased capacity, package expiry, service state and manual-ticket
+  fallback presentation.
+- Added active-package purchase redirect/return handling, safe order states,
+  cancellation and readable non-tax payment receipts without provider authority
+  or secrets in Web URLs.
+- Connected Personal Ticket Review and Smart Intake to the separate AI capacity
+  pool with idempotent reserve, exact-once settle and failure release.
+- Routed personal ticket help to Personal Support, exposed case state and
+  queued cancellation, and retained organization Assist unchanged.
+- Added four published Persian personal-workspace Help guides/context triggers
+  and Platform AI configuration for personal workspaces.
+- Passed 135 API tests, 13 Web tests, API/Web typechecks and builds, diff check,
+  plus authenticated RTL/no-overflow browser acceptance at 375/768/1024/1440;
+  removed the temporary acceptance workspace completely.
+
 ## 2026-10-07 — GOAL-064 Personal payment core
 
 - Added provider-neutral payment contracts with Zarinpal v4 as the first live

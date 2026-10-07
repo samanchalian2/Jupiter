@@ -333,6 +333,40 @@ button.drawer-backdrop:hover:not(:disabled),
 button.drawer-backdrop:focus-visible {
   background: rgba(15, 23, 42, 0.10);
 }
+
+/* GOAL-065: the personal workspace stays light, compact and free of
+   organization-administration decoration. */
+.personal-workspace { display: grid; gap: 16px; min-width: 0; }
+.personal-quick-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.personal-quick-actions a { text-decoration: none; }
+.personal-capacity-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; }
+.personal-capacity-card { display: grid; grid-template-columns: auto minmax(0,1fr); gap: 8px 12px; align-items: center; }
+.personal-capacity-card > strong,.personal-capacity-card > small { grid-column: 2; }
+.personal-service-icon { width: 40px; height: 40px; display: grid; place-items: center; border-radius: var(--radius-md); color: var(--primary); background: var(--primary-soft); }
+.personal-summary { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; margin: 0; }
+.personal-summary > div { padding: 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface-subtle); }
+.personal-summary dt,.personal-summary dd { margin: 0; }
+.personal-summary dt { color: var(--text-muted); font-size: .85rem; }
+.personal-summary dd { margin-top: 4px; font-weight: 600; }
+.personal-package-list,.personal-order-list { display: grid; gap: 8px; }
+.personal-package-list > article,.personal-order-list > article { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-block: 12px; border-bottom: 1px solid var(--border); }
+.personal-package-list > article:last-child,.personal-order-list > article:last-child { border-bottom: 0; }
+.personal-package-list article > div,.personal-order-list article > div { display: grid; gap: 4px; min-width: 0; }
+.personal-package-list p,.personal-package-list small,.personal-order-list small { margin: 0; color: var(--text-muted); }
+.personal-allocation-list p { display: flex; gap: 8px; align-items: flex-start; }
+.personal-allocation-list span { display: grid; gap: 3px; }
+.personal-allocation-list small { color: var(--text-muted); }
+.personal-case-list { display: grid; grid-template-columns: repeat(auto-fit,minmax(190px,1fr)); gap: 8px; }
+.personal-case-list article { display: grid; gap: 6px; padding: 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); }
+.personal-case-list a { display: grid; gap: 3px; color: inherit; text-decoration: none; }
+.personal-case-list small { color: var(--text-muted); }
+.personal-receipt { margin-top: 12px; padding: 14px; border-inline-start: 3px solid var(--primary); background: var(--primary-soft); border-radius: var(--radius-sm); }
+.personal-receipt p { overflow-wrap: anywhere; }
+@media (max-width: 700px) {
+  .personal-capacity-grid { grid-template-columns: minmax(0,1fr); }
+  .personal-summary { grid-template-columns: minmax(0,1fr); }
+  .personal-package-list > article,.personal-order-list > article { align-items: stretch; flex-direction: column; }
+}
 .appearance-preview { display: grid; gap: 10px; padding: 12px; border: 1px solid var(--primary-border); border-radius: var(--radius-sm); background: var(--surface-muted); }
 .appearance-preview-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
 .appearance-preview-row > button, .appearance-preview-row > a, .appearance-preview-nav, .appearance-preview-chip { min-height: 36px; padding: 7px 10px; border-radius: var(--radius-sm); font: inherit; }

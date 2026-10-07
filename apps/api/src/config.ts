@@ -60,3 +60,14 @@ export function personalPaymentEnvironment() {
   if (process.env.NODE_ENV === 'production' && callbackUrl.protocol !== 'https:') throw new Error('Production payment callback must use HTTPS.');
   return { merchantId, callbackUrl: callbackUrl.toString(), liveReady: Boolean(merchantId) };
 }
+
+export function personalPaymentWebReturnUrl(status:'paid'|'pending'|'cancelled'|'failed',orderId?:string) {
+  loadLocalEnvironment();
+  const origin=process.env.WEB_ORIGIN?.split(',')[0]?.trim()||'http://127.0.0.1:5173';
+  const url=new URL('/personal/services',origin);
+  if(!['http:','https:'].includes(url.protocol)) throw new Error('Payment return URL must use HTTP or HTTPS.');
+  if(process.env.NODE_ENV==='production'&&url.protocol!=='https:') throw new Error('Production payment return URL must use HTTPS.');
+  url.searchParams.set('payment',status);
+  if(orderId)url.searchParams.set('orderId',orderId);
+  return url.toString();
+}

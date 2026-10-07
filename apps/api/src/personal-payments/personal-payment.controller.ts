@@ -1,7 +1,10 @@
-import { Body, Controller, Get, Headers, Param, Post, Query, UnauthorizedException } from '@nestjs/common';
+import { Body, Controller, Get, Headers, Param, Post, Query, Res, UnauthorizedException } from '@nestjs/common';
 import { AuthService } from '../auth/auth.service.js';
 import { TicketActorService } from '../tickets/ticket-actor.service.js';
 import { PersonalPaymentService } from './personal-payment.service.js';
+import { personalPaymentWebReturnUrl } from '../config.js';
+
+type RedirectResponse={redirect:(status:number,url:string)=>void};
 
 @Controller('personal/payments')
 export class PersonalPaymentController {
@@ -10,7 +13,15 @@ export class PersonalPaymentController {
   @Post('orders') create(@Body() body:{packageId?:string},@Headers('idempotency-key') key:string|undefined,@Headers('authorization') authorization?:string,@Headers('x-organization-id') organizationId?:string){return this.actors.fromHeaders(authorization,organizationId).then(actor=>this.payments.createOrder(actor,body.packageId,key));}
   @Post('orders/:id/cancel') cancel(@Param('id') id:string,@Headers('authorization') authorization?:string,@Headers('x-organization-id') organizationId?:string){return this.actors.fromHeaders(authorization,organizationId).then(actor=>this.payments.cancel(actor,id));}
   @Get('orders/:id/receipt') receipt(@Param('id') id:string,@Headers('authorization') authorization?:string,@Headers('x-organization-id') organizationId?:string){return this.actors.fromHeaders(authorization,organizationId).then(actor=>this.payments.receipt(actor,id));}
-  @Get('callback') callback(@Query('Authority') authority?:string,@Query('Status') status?:string){return this.payments.callback(authority,status);}
+  @Get('callback') async callback(@Res() response:RedirectResponse,@Query('Authority') authority?:string,@Query('Status') status?:string){
+    try {
+      const result=await this.payments.callback(authority,status);
+      const state=result.status==='PAID'?'paid':result.status==='CANCELLED'?'cancelled':'pending';
+      response.redirect(302,personalPaymentWebReturnUrl(state,result.orderId));
+    } catch {
+      response.redirect(302,personalPaymentWebReturnUrl('failed'));
+    }
+  }
 }
 
 @Controller('platform/personal-payments')

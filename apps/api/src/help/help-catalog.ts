@@ -19,12 +19,16 @@ export const HELP_CONTEXT_FEATURES = [
   'PLATFORM_COMMERCIAL',
   'PLATFORM_HELP_AUTHORING',
   'PLATFORM_APPEARANCE',
+  'PERSONAL_WORKSPACE',
+  'PERSONAL_CAPACITY',
+  'PERSONAL_PAYMENT',
+  'PERSONAL_SUPPORT',
 ] as const;
 
 export type HelpContextFeature = (typeof HELP_CONTEXT_FEATURES)[number];
 
 export const HELP_RELATED_ROUTES = [
-  '/', '/help', '/tickets', '/tickets/new',
+  '/', '/help', '/tickets', '/tickets/new', '/personal', '/personal/services',
   '/admin/members', '/admin/catalog', '/admin/teams', '/admin/automation',
   '/admin/directory', '/admin/settings', '/admin/commercial', '/admin/setup-wizard',
   '/platform', '/platform/applications', '/platform/commercial', '/platform/appearance', '/platform/help',

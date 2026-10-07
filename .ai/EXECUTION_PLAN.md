@@ -1,5 +1,15 @@
 # Execution Plan
 
+## GOAL-065 — Complete personal workspace UX and Product Help
+
+**Status:** DONE (2026-10-07). Added the focused Persian personal dashboard
+and services route, monthly/purchased capacity and package presentation,
+purchase return/receipt states, Personal Support affordances and four runtime
+Help guides. Personal AI now consumes the dedicated AI pool with exact-once
+settlement and failure release; organization AI/Assist behavior is unchanged.
+Evidence: `docs/GOAL_065_EVIDENCE.md`. GOAL-066 was not started in this
+execution.
+
 ## GOAL-064 — Personal payment core and Zarinpal adapter
 
 **Status:** DONE (2026-10-07). Added the provider adapter, immutable personal

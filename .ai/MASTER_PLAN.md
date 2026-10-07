@@ -10,8 +10,8 @@ Help, and GOAL-066 hardening/E2E acceptance. Defaults are 3 support cases and
 10 AI Smart Actions per UTC month; Platform Admin owns configurable commercial
 and operational policy, never security invariants.
 
-GOAL-061 through GOAL-064 are complete. GOAL-065 is the next implementation
-Goal; final hardening GOAL-066 has not started.
+GOAL-061 through GOAL-065 are complete. GOAL-066 is the next and final
+cross-domain hardening/E2E acceptance Goal; it has not started.
 
 The MVP progresses through: (1) execution/documentation baseline, (2)
 foundation and local runtime, (3) tenant-aware identity and directory, (4)

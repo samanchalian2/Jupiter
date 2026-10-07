@@ -22,6 +22,7 @@ beforeAll(async () => {
   platformId = (await database.query<{id:string}>('INSERT INTO users(email,display_name,password_hash,is_platform_admin) VALUES($1,$2,$3,true) RETURNING id', [`help-platform-${suffix}@jupiter.test`, 'Help Platform', 'scrypt$AA$AA'])).rows[0].id;
   await database.query(`INSERT INTO memberships(organization_id,user_id,status) VALUES($1,$2,'active')`, [organizationId, ownerId]);
   await database.query(`INSERT INTO membership_roles(membership_id,role_id) SELECT m.id,r.id FROM memberships m JOIN roles r ON r.code='ORG_OWNER' WHERE m.organization_id=$1 AND m.user_id=$2`, [organizationId, ownerId]);
+  await database.query(`INSERT INTO membership_roles(membership_id,role_id) SELECT m.id,r.id FROM memberships m JOIN roles r ON r.code='REQUESTER' WHERE m.organization_id=$1 AND m.user_id=$2`, [organizationId, ownerId]);
   hiddenArticleId = (await database.query<{id:string}>(`INSERT INTO product_help_articles(slug,status) VALUES($1,'PUBLISHED') RETURNING id`, [`unpublished-${suffix}`])).rows[0].id;
   const revision = (await database.query<{id:string}>(`INSERT INTO product_help_article_revisions(article_id,version,title,summary,content,category,audience,tags,product_area,publication_status,source) VALUES($1,1,'پیش‌نویس خصوصی','این محتوا نباید دیده شود','متن پیش‌نویس','آزمون',ARRAY['ALL'],ARRAY[]::text[],'آزمون','DRAFT','RUNTIME') RETURNING id`, [hiddenArticleId])).rows[0];
   await database.query('UPDATE product_help_articles SET current_published_revision_id=$1 WHERE id=$2', [revision.id, hiddenArticleId]);
@@ -88,8 +89,8 @@ describe('Product Help publication and audience isolation', () => {
   });
 
   it('ranks Persian domain matches and exposes a published article for every contextual feature', async () => {
-    const expectations: Array<[string,string]> = [['دایرکتوری','organization-directory'],['جفت‌سازی','organization-directory'],['تیکت','ticket-lifecycle'],['SLA','sla-business-calendar'],['هوش مصنوعی','ai-ticket-review'],['Assist','jupiter-assist'],['اشتراک','commercial-allowances'],['سهمیه','commercial-allowances'],['راه‌اندازی سازمان','organization-setup-wizard']];
+    const expectations: Array<[string,string]> = [['دایرکتوری','organization-directory'],['جفت‌سازی','organization-directory'],['تیکت','ticket-lifecycle'],['SLA','sla-business-calendar'],['هوش مصنوعی','personal-capacity'],['Assist','jupiter-assist'],['اشتراک','commercial-allowances'],['سهمیه','commercial-allowances'],['راه‌اندازی سازمان','organization-setup-wizard']];
     for (const [query,slug] of expectations) expect((await help.list(ownerId, { q:query }))[0]?.slug).toBe(slug);
-    for (const feature of ['TICKET_LIFECYCLE','AI_TICKET_REVIEW','ORGANIZATION_MEMBERSHIP','TICKET_CONFIGURATION','SLA_ADMINISTRATION','DIRECTORY_CONNECTOR','COMMERCIAL_DASHBOARD','JUPITER_ASSIST','PLATFORM_APPEARANCE']) await expect(help.list(ownerId, { relatedFeature:feature })).resolves.toHaveLength(1);
+    for (const feature of ['TICKET_LIFECYCLE','AI_TICKET_REVIEW','ORGANIZATION_MEMBERSHIP','TICKET_CONFIGURATION','SLA_ADMINISTRATION','DIRECTORY_CONNECTOR','COMMERCIAL_DASHBOARD','JUPITER_ASSIST','PLATFORM_APPEARANCE','PERSONAL_WORKSPACE','PERSONAL_CAPACITY','PERSONAL_PAYMENT','PERSONAL_SUPPORT']) await expect(help.list(ownerId, { relatedFeature:feature })).resolves.toHaveLength(1);
   });
 });

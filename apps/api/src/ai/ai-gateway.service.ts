@@ -43,11 +43,13 @@ export class AiGatewayService {
     providerBaseUrl: string;
     analysisModel: string;
     transcriptionModel: string;
+    smartIntakeEnabled?: boolean;
     apiKey?: string;
     removeApiKey?: boolean;
   }) {
     await this.platformAdmin(actorId);
-    if (!(await this.database.query("SELECT 1 FROM organizations WHERE id=$1 AND workspace_type='ORGANIZATION'",[input.organizationId])).rowCount) throw new BadRequestException('تنظیم AI سازمانی برای این فضای کاری مجاز نیست.');
+    const workspace=(await this.database.query<{workspace_type:'ORGANIZATION'|'PERSONAL'}>("SELECT workspace_type FROM organizations WHERE id=$1 AND status='active' AND workspace_type IN ('ORGANIZATION','PERSONAL')",[input.organizationId])).rows[0];
+    if (!workspace) throw new BadRequestException('فضای کاری فعال برای تنظیم AI یافت نشد.');
     const providerBaseUrl = this.validProviderBaseUrl(input.providerBaseUrl);
     const analysisModel = this.validModel(input.analysisModel);
     const transcriptionModel = this.validModel(input.transcriptionModel);
@@ -55,6 +57,8 @@ export class AiGatewayService {
     if (apiKey && input.removeApiKey) throw new BadRequestException('Choose either replacing or removing the API key');
     const encrypted = apiKey ? this.credentials.encrypt(apiKey) : undefined;
     const enabled = input.removeApiKey ? false : input.enabled;
+    const smartIntakeEnabled=input.removeApiKey?false:(input.smartIntakeEnabled??(workspace.workspace_type==='PERSONAL'?enabled:false));
+    const updateSmartIntake=input.smartIntakeEnabled!==undefined||workspace.workspace_type==='PERSONAL';
     return this.database.withOrganization(input.organizationId, async (client) => {
       const existing = (await client.query<{ has_api_key: boolean }>(
         'SELECT api_key_ciphertext IS NOT NULL AS has_api_key FROM organization_ai_settings WHERE organization_id=$1',
@@ -65,8 +69,8 @@ export class AiGatewayService {
       const setting = (await client.query(
         `INSERT INTO organization_ai_settings(
            organization_id,enabled,model,provider_base_url,analysis_model,transcription_model,
-           api_key_ciphertext,api_key_iv,api_key_auth_tag,updated_by_user_id
-         ) VALUES($1,$2,$3,$4,$3,$5,$6,$7,$8,$9)
+           api_key_ciphertext,api_key_iv,api_key_auth_tag,updated_by_user_id,smart_intake_enabled
+         ) VALUES($1,$2,$3,$4,$3,$5,$6,$7,$8,$9,$11)
          ON CONFLICT(organization_id) DO UPDATE SET
            enabled=EXCLUDED.enabled,model=EXCLUDED.analysis_model,provider_base_url=EXCLUDED.provider_base_url,
            analysis_model=EXCLUDED.analysis_model,transcription_model=EXCLUDED.transcription_model,
@@ -74,18 +78,21 @@ export class AiGatewayService {
            api_key_iv=CASE WHEN $10 THEN NULL WHEN $7::bytea IS NOT NULL THEN $7 ELSE organization_ai_settings.api_key_iv END,
            api_key_auth_tag=CASE WHEN $10 THEN NULL WHEN $8::bytea IS NOT NULL THEN $8 ELSE organization_ai_settings.api_key_auth_tag END,
            credential_version=CASE WHEN $10 OR $6::bytea IS NOT NULL THEN organization_ai_settings.credential_version+1 ELSE organization_ai_settings.credential_version END,
+           smart_intake_enabled=CASE WHEN $12 THEN $11 ELSE organization_ai_settings.smart_intake_enabled END,
            updated_by_user_id=EXCLUDED.updated_by_user_id,updated_at=now()
          RETURNING organization_id AS "organizationId",enabled,provider_base_url AS "providerBaseUrl",
            analysis_model AS "analysisModel",transcription_model AS "transcriptionModel",
-           api_key_ciphertext IS NOT NULL AS "hasApiKey",updated_at AS "updatedAt"`,
-        [input.organizationId, enabled, analysisModel, providerBaseUrl, transcriptionModel,
-          encrypted?.ciphertext ?? null, encrypted?.iv ?? null, encrypted?.authTag ?? null, actorId, Boolean(input.removeApiKey)],
+            api_key_ciphertext IS NOT NULL AS "hasApiKey",smart_intake_enabled AS "smartIntakeEnabled",updated_at AS "updatedAt"`,
+         [input.organizationId, enabled, analysisModel, providerBaseUrl, transcriptionModel,
+           encrypted?.ciphertext ?? null, encrypted?.iv ?? null, encrypted?.authTag ?? null, actorId, Boolean(input.removeApiKey),smartIntakeEnabled,updateSmartIntake],
       )).rows[0];
       await this.audit(client, { userId: actorId, organizationId: input.organizationId }, 'ai.settings_changed', 'organization', input.organizationId, {
         enabled,
         providerBaseUrl,
         analysisModel,
-        transcriptionModel,
+         transcriptionModel,
+         smartIntakeEnabled,
+         workspaceType: workspace.workspace_type,
         credentialChanged: Boolean(encrypted),
         credentialRemoved: Boolean(input.removeApiKey),
       });
@@ -96,7 +103,8 @@ export class AiGatewayService {
   async platformSettings(actorId: string) {
     await this.platformAdmin(actorId);
     return (await this.database.query(
-      `SELECT o.id AS "organizationId",o.name,o.slug,COALESCE(s.enabled,false) AS enabled,
+      `SELECT o.id AS "organizationId",o.name,o.slug,o.workspace_type AS "workspaceType",COALESCE(s.enabled,false) AS enabled,
+        COALESCE(s.smart_intake_enabled,false) AS "smartIntakeEnabled",
         COALESCE(s.provider_base_url,'https://api.openai.com/v1') AS "providerBaseUrl",
         COALESCE(s.analysis_model,s.model,'gpt-4.1-mini') AS "analysisModel",
         COALESCE(s.transcription_model,'gpt-4o-mini-transcribe') AS "transcriptionModel",
@@ -104,7 +112,7 @@ export class AiGatewayService {
         COALESCE((SELECT count(*)::int FROM ai_requests r WHERE r.organization_id=o.id),0) AS "requestCount",
         COALESCE((SELECT sum(COALESCE((result.usage->>'inputTokens')::int,0)+COALESCE((result.usage->>'outputTokens')::int,0))::int FROM ai_results result WHERE result.organization_id=o.id),0) AS "tokenCount"
        FROM organizations o LEFT JOIN organization_ai_settings s ON s.organization_id=o.id
-       WHERE o.workspace_type='ORGANIZATION' ORDER BY o.name`,
+       WHERE o.workspace_type IN ('ORGANIZATION','PERSONAL') ORDER BY o.workspace_type,o.name`,
     )).rows;
   }
 

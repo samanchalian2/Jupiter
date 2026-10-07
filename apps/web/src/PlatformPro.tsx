@@ -1,49 +1,1355 @@
-import { FormEvent, useEffect, useState } from 'react';
-import type { Actor } from './App';
-import { request } from './App';
-import { ConfirmDialog } from './ui';
-import { PlatformCommercial } from './PlatformCommercial';
-import { PlatformAppearance } from './PlatformAppearance';
-import { PlatformHelpAdmin } from './PlatformHelpAdmin';
+import { FormEvent, useEffect, useState } from "react";
+import type { Actor } from "./App";
+import { request } from "./App";
+import { ConfirmDialog } from "./ui";
+import { PlatformCommercial } from "./PlatformCommercial";
+import { PlatformAppearance } from "./PlatformAppearance";
+import { PlatformHelpAdmin } from "./PlatformHelpAdmin";
 
-type Organization={id:string;name:string;slug:string;status:'setup'|'active'|'suspended';workspace_type?:'ORGANIZATION'|'PERSONAL';created_at:string}; type User={id:string;email:string;display_name:string;is_platform_admin:boolean;is_active:boolean}; type AiSetting={organizationId:string;name:string;slug:string;enabled:boolean;providerBaseUrl:string;analysisModel:string;transcriptionModel:string;hasApiKey:boolean;updatedAt?:string;requestCount:number;tokenCount:number}; type Audit={id:string;action:string;organization_name?:string;actor_display_name?:string;created_at:string};
-type ApplicationStatus='SUBMITTED'|'UNDER_REVIEW'|'NEEDS_INFORMATION'|'APPROVED'|'REJECTED'|'CANCELLED';
-type PlatformApplication={id:string;organizationName:string;preferredSlug:string|null;contactName:string;contactPhone:string|null;details:Record<string,unknown>;status:ApplicationStatus;submittedAt:string|null;reviewNote:string|null;reviewedAt:string|null;assignedSlug:string|null;applicant:{email:string|null;displayName:string}};
-const applicationLabel:Record<ApplicationStatus,string>={SUBMITTED:'ارسال‌شده',UNDER_REVIEW:'در حال بررسی',NEEDS_INFORMATION:'نیازمند اطلاعات',APPROVED:'تأییدشده',REJECTED:'ردشده',CANCELLED:'لغوشده'};
-const reviewKey=()=>crypto.randomUUID();
-const platformTabs=[['orgs','سازمان‌ها'],['applications','درخواست‌های سازمان'],['commercial','تجاری'],['appearance','ظاهر و هویت بصری'],['help','راهنمای محصول'],['users','کاربران پلتفرم'],['ai','سیاست AI'],['audit','ردپای ممیزی']] as const;
-type PlatformTab=typeof platformTabs[number][0];
+type Organization = {
+  id: string;
+  name: string;
+  slug: string;
+  status: "setup" | "active" | "suspended";
+  workspace_type?: "ORGANIZATION" | "PERSONAL";
+  created_at: string;
+};
+type User = {
+  id: string;
+  email: string;
+  display_name: string;
+  is_platform_admin: boolean;
+  is_active: boolean;
+};
+type AiSetting = {
+  organizationId: string;
+  name: string;
+  slug: string;
+  workspaceType: "ORGANIZATION" | "PERSONAL";
+  enabled: boolean;
+  smartIntakeEnabled: boolean;
+  providerBaseUrl: string;
+  analysisModel: string;
+  transcriptionModel: string;
+  hasApiKey: boolean;
+  updatedAt?: string;
+  requestCount: number;
+  tokenCount: number;
+};
+type Audit = {
+  id: string;
+  action: string;
+  organization_name?: string;
+  actor_display_name?: string;
+  created_at: string;
+};
+type ApplicationStatus =
+  | "SUBMITTED"
+  | "UNDER_REVIEW"
+  | "NEEDS_INFORMATION"
+  | "APPROVED"
+  | "REJECTED"
+  | "CANCELLED";
+type PlatformApplication = {
+  id: string;
+  organizationName: string;
+  preferredSlug: string | null;
+  contactName: string;
+  contactPhone: string | null;
+  details: Record<string, unknown>;
+  status: ApplicationStatus;
+  submittedAt: string | null;
+  reviewNote: string | null;
+  reviewedAt: string | null;
+  assignedSlug: string | null;
+  applicant: { email: string | null; displayName: string };
+};
+const applicationLabel: Record<ApplicationStatus, string> = {
+  SUBMITTED: "ارسال‌شده",
+  UNDER_REVIEW: "در حال بررسی",
+  NEEDS_INFORMATION: "نیازمند اطلاعات",
+  APPROVED: "تأییدشده",
+  REJECTED: "ردشده",
+  CANCELLED: "لغوشده",
+};
+const reviewKey = () => crypto.randomUUID();
+const platformTabs = [
+  ["orgs", "سازمان‌ها"],
+  ["applications", "درخواست‌های سازمان"],
+  ["commercial", "تجاری"],
+  ["appearance", "ظاهر و هویت بصری"],
+  ["help", "راهنمای محصول"],
+  ["users", "کاربران پلتفرم"],
+  ["ai", "سیاست AI"],
+  ["audit", "ردپای ممیزی"],
+] as const;
+type PlatformTab = (typeof platformTabs)[number][0];
 
-export function PlatformPro({actor}:{actor:Actor}){const [tab,setTab]=useState<PlatformTab>('orgs');const [organizations,setOrganizations]=useState<Organization[]>([]);const [applications,setApplications]=useState<PlatformApplication[]>([]);const [users,setUsers]=useState<User[]>([]);const [settings,setSettings]=useState<AiSetting[]>([]);const [audit,setAudit]=useState<Audit[]>([]);const [error,setError]=useState('');const [notice,setNotice]=useState('');const organizationTenants=organizations.filter(item=>item.workspace_type!=='PERSONAL');const selectTab=(next:PlatformTab)=>{setTab(next);setError('');};const moveTab=(event:React.KeyboardEvent<HTMLButtonElement>,value:PlatformTab)=>{const index=platformTabs.findIndex(([candidate])=>candidate===value);const delta=event.key==='ArrowLeft'||event.key==='ArrowUp'?-1:event.key==='ArrowRight'||event.key==='ArrowDown'?1:0;let next:PlatformTab|undefined;if(event.key==='Home')next=platformTabs[0][0];if(event.key==='End')next=platformTabs[platformTabs.length-1][0];if(delta)next=platformTabs[(index+delta+platformTabs.length)%platformTabs.length][0];if(event.key==='Enter'||event.key===' '){event.preventDefault();next=value;}if(next){event.preventDefault();selectTab(next);requestAnimationFrame(()=>document.getElementById(`platform-tab-${next}`)?.focus());}};const load=()=>Promise.all([request('/admin/platform/organizations',actor.session,actor.organizationId),request('/platform/organization-applications',actor.session,actor.organizationId),request('/admin/platform/users',actor.session,actor.organizationId),request('/platform/ai-settings',actor.session,actor.organizationId),request('/platform/ai-settings/audit',actor.session,actor.organizationId)]).then(([orgs,nextApplications,nextUsers,nextSettings,nextAudit])=>{setOrganizations(orgs as Organization[]);setApplications(nextApplications as PlatformApplication[]);setUsers(nextUsers as User[]);setSettings(nextSettings as AiSetting[]);setAudit(nextAudit as Audit[]);}).catch((cause)=>setError(cause.message));useEffect(()=>{void load();},[actor.session.accessToken]);const saved=(message:string)=>{setNotice(message);void load();};return <section className="page platform-pro"><div className="page-intro"><div><p className="eyebrow">مدیریت پلتفرم</p><h2>کنترل امن سرویس و سازمان‌ها</h2><p>دسترسی‌ها، وضعیت سازمان‌ها و استفاده از هوش مصنوعی در سطح پلتفرم مدیریت می‌شوند.</p></div></div><label className="platform-tab-selector">بخش مدیریت پلتفرم<select value={tab} onChange={(event)=>selectTab(event.target.value as PlatformTab)}>{platformTabs.map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label><div className="admin-tabs" role="tablist">{platformTabs.map(([value,label])=><button type="button" role="tab" id={`platform-tab-${value}`} key={value} className={tab===value?'active-tab':'secondary'} aria-selected={tab===value} tabIndex={tab===value?0:-1} onClick={()=>selectTab(value)} onKeyDown={(event)=>moveTab(event,value)}>{label}</button>)}</div>{notice&&<p className="notice" role="status">{notice}</p>}{error&&<p className="error" role="alert">{error}</p>}{tab==='orgs'&&<Organizations actor={actor} organizations={organizations} onSaved={saved} onError={setError}/>} {tab==='applications'&&<PlatformApplications actor={actor} applications={applications} onSaved={saved} onError={setError}/>} {tab==='commercial'&&<PlatformCommercial actor={actor} organizations={organizationTenants} users={users} onSaved={saved} onError={setError}/>} {tab==='appearance'&&<PlatformAppearance actor={actor} onSaved={saved} onError={setError}/>} {tab==='help'&&<PlatformHelpAdmin actor={actor} onSaved={saved} onError={setError}/>} {tab==='users'&&<PlatformUsers actor={actor} users={users} onSaved={saved} onError={setError}/>} {tab==='ai'&&<AiPolicies actor={actor} settings={settings} onSaved={saved} onError={setError}/>} {tab==='audit'&&<AuditList audit={audit}/>}</section>}
-
-function PlatformApplications({actor,applications,onSaved,onError}:{actor:Actor;applications:PlatformApplication[];onSaved:(message:string)=>void;onError:(message:string)=>void}) { const [selected,setSelected]=useState<PlatformApplication|null>(null); const [note,setNote]=useState(''); const [slug,setSlug]=useState(''); const [busy,setBusy]=useState(false); const open=(application:PlatformApplication)=>{setSelected(application);setNote(application.reviewNote??'');setSlug(application.assignedSlug??application.preferredSlug??'');}; const perform=async(action:'start-review'|'request-information'|'reject'|'approve')=>{if(!selected)return;setBusy(true);try{const body=action==='approve'?{slug,note:note||undefined}:action==='start-review'?undefined:{note};await request(`/platform/organization-applications/${selected.id}/${action}`,actor.session,actor.organizationId,{method:'POST',headers:{'idempotency-key':reviewKey()},body:body?JSON.stringify(body):undefined});setSelected(null);onSaved(action==='approve'?'سازمان در وضعیت راه‌اندازی ایجاد و مالک اولیه تعیین شد.':'وضعیت درخواست به‌روزرسانی شد.');}catch(cause){onError(cause instanceof Error?cause.message:'به‌روزرسانی درخواست ناموفق بود.');}finally{setBusy(false);}}; return <div className="admin-stack"><section className="card"><h3>صف درخواست‌های سازمان</h3><p className="hint">تأیید فقط پس از بررسی انجام می‌شود و سازمان تازه را در وضعیت «راه‌اندازی» ایجاد می‌کند.</p><div className="table-wrap"><table><thead><tr><th>سازمان</th><th>متقاضی</th><th>وضعیت</th><th>شناسهٔ درخواستی/تخصیصی</th><th></th></tr></thead><tbody>{applications.map(application=><tr key={application.id}><td>{application.organizationName}<small className="table-subtitle">{application.contactName}</small></td><td dir="ltr">{application.applicant.email??'—'}</td><td><span className={`status-pill ${application.status.toLowerCase()}`}>{applicationLabel[application.status]}</span></td><td dir="ltr">{application.assignedSlug??application.preferredSlug??'—'}</td><td><button className="secondary" type="button" onClick={()=>open(application)}>{application.status==='SUBMITTED'?'شروع بررسی':application.status==='UNDER_REVIEW'?'تصمیم بررسی':'مشاهده'}</button></td></tr>)}{!applications.length&&<tr><td colSpan={5}>درخواستی برای بررسی وجود ندارد.</td></tr>}</tbody></table></div></section>{selected&&<section className="card platform-application-review"><div className="ui-section-header"><div><h3>{selected.organizationName}</h3><p>{selected.applicant.displayName} · <span dir="ltr">{selected.applicant.email}</span></p></div><button type="button" className="secondary" onClick={()=>setSelected(null)}>بستن</button></div><dl className="summary-list"><div><dt>وضعیت</dt><dd>{applicationLabel[selected.status]}</dd></div><div><dt>شماره تماس</dt><dd dir="ltr">{selected.contactPhone??'—'}</dd></div><div><dt>توضیحات</dt><dd>{typeof selected.details.description==='string'?selected.details.description:'—'}</dd></div></dl>{selected.status==='SUBMITTED'&&<div className="inline-actions"><button type="button" onClick={()=>void perform('start-review')} disabled={busy}>شروع بررسی</button></div>}{selected.status==='UNDER_REVIEW'&&<><label>پیام برای متقاضی<textarea value={note} onChange={event=>setNote(event.target.value)} rows={3} maxLength={1000} placeholder="برای درخواست اطلاعات یا رد، این پیام الزامی است."/></label><label>شناسهٔ تخصیص‌داده‌شده برای تأیید<input dir="ltr" value={slug} onChange={event=>setSlug(event.target.value.toLowerCase())} pattern="[a-z0-9-]{3,63}" placeholder="acme-support"/></label><div className="inline-actions"><button type="button" className="secondary" onClick={()=>void perform('request-information')} disabled={busy||!note.trim()}>درخواست اطلاعات</button><button type="button" className="secondary" onClick={()=>void perform('reject')} disabled={busy||!note.trim()}>رد درخواست</button><button type="button" onClick={()=>void perform('approve')} disabled={busy||!slug}>تأیید و ساخت سازمان</button></div></>}{selected.status==='NEEDS_INFORMATION'&&<p className="hint">منتظر تکمیل اطلاعات و ارسال دوباره از سوی متقاضی است.</p>}{selected.status==='APPROVED'&&<p className="notice">سازمان با شناسهٔ <span dir="ltr">{selected.assignedSlug}</span> در وضعیت راه‌اندازی ساخته شده است.</p>}{selected.status==='REJECTED'&&<p className="hint">پیام ثبت‌شده برای متقاضی: {selected.reviewNote??'—'}</p>}</section>}</div>; }
-
-function Organizations({actor,organizations,onSaved,onError}:{actor:Actor;organizations:Organization[];onSaved:(message:string)=>void;onError:(message:string)=>void}){const [form,setForm]=useState({name:'',slug:''});const [pending,setPending]=useState<Organization|null>(null);const create=async(event:FormEvent)=>{event.preventDefault();try{await request('/admin/platform/organizations',actor.session,actor.organizationId,{method:'POST',body:JSON.stringify(form)});setForm({name:'',slug:''});onSaved('سازمان جدید ساخته شد.');}catch(cause){onError(cause instanceof Error?cause.message:'ساخت سازمان ناموفق بود.')}};const toggle=async()=>{if(!pending)return;try{await request(`/admin/platform/organizations/${pending.id}/status`,actor.session,actor.organizationId,{method:'POST',body:JSON.stringify({status:pending.status==='active'?'suspended':'active'})});setPending(null);onSaved('وضعیت سازمان به‌روزرسانی شد.');}catch(cause){onError(cause instanceof Error?cause.message:'به‌روزرسانی ناموفق بود.')}};const label=(status:Organization['status'])=>status==='active'?'فعال':status==='suspended'?'معلق':'راه‌اندازی';return <><div className="admin-grid"><section className="card"><h3>سازمان‌های پلتفرم</h3><div className="table-wrap"><table><thead><tr><th>نام</th><th>شناسه</th><th>وضعیت</th><th>عملیات</th></tr></thead><tbody>{organizations.map((org)=><tr key={org.id}><td>{org.name}</td><td dir="ltr">{org.slug}</td><td><span className={`status-pill ${org.status}`}>{label(org.status)}</span></td><td>{org.status==='setup'?<span className="hint">تکمیل راه‌اندازی</span>:<button className="secondary" type="button" onClick={()=>setPending(org)}>{org.status==='active'?'تعلیق':'فعال‌سازی'}</button>}</td></tr>)}</tbody></table></div></section><section className="card"><h3>ساخت سازمان</h3><form onSubmit={create}><label>نام سازمان<input value={form.name} onChange={(event)=>setForm({...form,name:event.target.value})} required/></label><label>Slug یکتا<input dir="ltr" value={form.slug} onChange={(event)=>setForm({...form,slug:event.target.value.toLowerCase()})} placeholder="acme-support" required/></label><button>ساخت سازمان</button></form></section></div><OwnerTransition actor={actor} organizations={organizations} onSaved={onSaved} onError={onError}/><ConfirmDialog open={Boolean(pending)} title={pending?.status==='active'?'تعلیق سازمان':'فعال‌سازی سازمان'} body={pending?.status==='active'?`تعلیق «${pending?.name}» دسترسی اعضای آن سازمان را متوقف می‌کند تا دوباره فعال شود.`:`«${pending?.name}» دوباره برای اعضای مجاز در دسترس قرار می‌گیرد.`} confirmLabel={pending?.status==='active'?'تعلیق سازمان':'فعال‌سازی'} danger={pending?.status==='active'} onConfirm={()=>void toggle()} onClose={()=>setPending(null)}/></>}
-
-function OwnerTransition({actor,organizations,onSaved,onError}:{actor:Actor;organizations:Organization[];onSaved:(message:string)=>void;onError:(message:string)=>void}) { const [organizationId,setOrganizationId]=useState('');const [members,setMembers]=useState<{user_id:string;display_name:string;email:string;roles:string[]}[]>([]);const [ownerId,setOwnerId]=useState('');const load=async(id:string)=>{setOrganizationId(id);setOwnerId('');try{setMembers(await request(`/admin/platform/organizations/${id}/members`,actor.session,actor.organizationId) as typeof members);}catch(cause){onError(cause instanceof Error?cause.message:'دریافت اعضای سازمان ناموفق بود.');}};const assign=async()=>{if(!organizationId||!ownerId)return;try{await request(`/admin/platform/organizations/${organizationId}/owner`,actor.session,actor.organizationId,{method:'POST',body:JSON.stringify({userId:ownerId})});onSaved('مالک سازمان به‌صورت صریح تعیین شد.');}catch(cause){onError(cause instanceof Error?cause.message:'انتساب مالک ناموفق بود.');}};const revoke=async()=>{if(!organizationId)return;try{const result=await request(`/admin/platform/organizations/${organizationId}/owner/revoke`,actor.session,actor.organizationId,{method:'POST'} ) as {revoked:number};onSaved(result.revoked?'مالک سازمان حذف شد.':'مالک فعالی برای حذف وجود نداشت.');await load(organizationId);}catch(cause){onError(cause instanceof Error?cause.message:'حذف مالک ناموفق بود.');}};return <section className="card owner-transition"><h3>انتساب مالک سازمان‌های موجود</h3><p className="hint">هیچ مدیر سازمانی به‌طور خودکار مالک نمی‌شود؛ یک عضو فعال را آگاهانه انتخاب کنید.</p><div className="inline-actions"><label>سازمان<select value={organizationId} onChange={(event)=>void load(event.target.value)}><option value="">انتخاب سازمان</option>{organizations.map((organization)=><option key={organization.id} value={organization.id}>{organization.name}</option>)}</select></label><label>عضو فعال<select value={ownerId} onChange={(event)=>setOwnerId(event.target.value)} disabled={!organizationId}><option value="">انتخاب عضو</option>{members.map((member)=><option key={member.user_id} value={member.user_id}>{member.display_name} — {member.email}</option>)}</select></label><button type="button" onClick={()=>void assign()} disabled={!ownerId}>تعیین مالک</button><button type="button" className="secondary" onClick={()=>void revoke()} disabled={!organizationId}>حذف مالک</button></div></section>; }
-
-function PlatformUsers({actor,users,onSaved,onError}:{actor:Actor;users:User[];onSaved:(message:string)=>void;onError:(message:string)=>void}) {
-  const [form,setForm]=useState({displayName:'',email:'',password:'',isPlatformAdmin:false});
-  const [managed,setManaged]=useState<User|null>(null);
-  const [password,setPassword]=useState('');
-  const create=async(event:FormEvent)=>{event.preventDefault();try{await request('/admin/platform/users',actor.session,actor.organizationId,{method:'POST',body:JSON.stringify(form)});setForm({displayName:'',email:'',password:'',isPlatformAdmin:false});onSaved('کاربر پلتفرم ساخته شد.');}catch(cause){onError(cause instanceof Error?cause.message:'ساخت کاربر ناموفق بود.')}};
-  const toggle=async(user:User)=>{try{await request(`/admin/platform/users/${user.id}`,actor.session,actor.organizationId,{method:'POST',body:JSON.stringify({isActive:!user.is_active})});onSaved('وضعیت کاربر تغییر کرد.');}catch(cause){onError(cause instanceof Error?cause.message:'به‌روزرسانی ناموفق بود.')}};
-  const saveManagement=async()=>{if(!managed)return;try{await request(`/admin/platform/users/${managed.id}`,actor.session,actor.organizationId,{method:'POST',body:JSON.stringify({isActive:managed.is_active,password:password||undefined})});setPassword('');setManaged(null);onSaved('تنظیمات کاربر به‌روزرسانی شد.');}catch(cause){onError(cause instanceof Error?cause.message:'به‌روزرسانی ناموفق بود.')}};
-  return <><div className="admin-grid"><section className="card"><h3>کاربران پلتفرم</h3><div className="table-wrap"><table><thead><tr><th>نام</th><th>ایمیل</th><th>دسترسی</th><th>وضعیت</th><th></th></tr></thead><tbody>{users.map((user)=><tr key={user.id}><td>{user.display_name}</td><td dir="ltr">{user.email}</td><td>{user.is_platform_admin?'مدیر پلتفرم':'کاربر عادی'}</td><td><span className={`status-pill ${user.is_active?'active':'inactive'}`}>{user.is_active?'فعال':'غیرفعال'}</span></td><td><div className="member-actions"><button className="secondary" type="button" onClick={()=>{setPassword('');setManaged(user);}}>مدیریت</button><button className="secondary" type="button" onClick={()=>toggle(user)}>{user.is_active?'غیرفعال‌سازی':'فعال‌سازی'}</button></div></td></tr>)}</tbody></table></div></section><section className="card"><h3>افزودن کاربر پلتفرم</h3><form onSubmit={create}><label>نام<input value={form.displayName} onChange={(event)=>setForm({...form,displayName:event.target.value})} required/></label><label>ایمیل<input type="email" value={form.email} onChange={(event)=>setForm({...form,email:event.target.value})} required/></label><label>رمز موقت<input type="password" minLength={10} value={form.password} onChange={(event)=>setForm({...form,password:event.target.value})} required/></label><label className="check-label"><input type="checkbox" checked={form.isPlatformAdmin} onChange={(event)=>setForm({...form,isPlatformAdmin:event.target.checked})}/>دسترسی مدیر پلتفرم</label><button>افزودن کاربر</button></form></section></div>{managed&&<section className="card"><h3>مدیریت حساب: {managed.display_name}</h3><p className="hint">رمز جدید را فقط در صورت نیاز وارد کنید. با ذخیرهٔ آن، نشست‌های فعال این کاربر باطل می‌شوند.</p><label>رمز جدید (اختیاری)<input type="password" minLength={10} value={password} onChange={(event)=>setPassword(event.target.value)} autoComplete="new-password"/></label><div className="inline-actions"><button type="button" onClick={saveManagement} disabled={password.length>0&&password.length<10}>ذخیره</button><button type="button" className="secondary" onClick={()=>{setPassword('');setManaged(null);}}>انصراف</button></div></section>}</>;
+export function PlatformPro({ actor }: { actor: Actor }) {
+  const [tab, setTab] = useState<PlatformTab>("orgs");
+  const [organizations, setOrganizations] = useState<Organization[]>([]);
+  const [applications, setApplications] = useState<PlatformApplication[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [settings, setSettings] = useState<AiSetting[]>([]);
+  const [audit, setAudit] = useState<Audit[]>([]);
+  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+  const organizationTenants = organizations.filter(
+    (item) => item.workspace_type !== "PERSONAL",
+  );
+  const selectTab = (next: PlatformTab) => {
+    setTab(next);
+    setError("");
+  };
+  const moveTab = (
+    event: React.KeyboardEvent<HTMLButtonElement>,
+    value: PlatformTab,
+  ) => {
+    const index = platformTabs.findIndex(([candidate]) => candidate === value);
+    const delta =
+      event.key === "ArrowLeft" || event.key === "ArrowUp"
+        ? -1
+        : event.key === "ArrowRight" || event.key === "ArrowDown"
+          ? 1
+          : 0;
+    let next: PlatformTab | undefined;
+    if (event.key === "Home") next = platformTabs[0][0];
+    if (event.key === "End") next = platformTabs[platformTabs.length - 1][0];
+    if (delta)
+      next =
+        platformTabs[
+          (index + delta + platformTabs.length) % platformTabs.length
+        ][0];
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      next = value;
+    }
+    if (next) {
+      event.preventDefault();
+      selectTab(next);
+      requestAnimationFrame(() =>
+        document.getElementById(`platform-tab-${next}`)?.focus(),
+      );
+    }
+  };
+  const load = () =>
+    Promise.all([
+      request(
+        "/admin/platform/organizations",
+        actor.session,
+        actor.organizationId,
+      ),
+      request(
+        "/platform/organization-applications",
+        actor.session,
+        actor.organizationId,
+      ),
+      request("/admin/platform/users", actor.session, actor.organizationId),
+      request("/platform/ai-settings", actor.session, actor.organizationId),
+      request(
+        "/platform/ai-settings/audit",
+        actor.session,
+        actor.organizationId,
+      ),
+    ])
+      .then(([orgs, nextApplications, nextUsers, nextSettings, nextAudit]) => {
+        setOrganizations(orgs as Organization[]);
+        setApplications(nextApplications as PlatformApplication[]);
+        setUsers(nextUsers as User[]);
+        setSettings(nextSettings as AiSetting[]);
+        setAudit(nextAudit as Audit[]);
+      })
+      .catch((cause) => setError(cause.message));
+  useEffect(() => {
+    void load();
+  }, [actor.session.accessToken]);
+  const saved = (message: string) => {
+    setNotice(message);
+    void load();
+  };
+  return (
+    <section className="page platform-pro">
+      <div className="page-intro">
+        <div>
+          <p className="eyebrow">مدیریت پلتفرم</p>
+          <h2>کنترل امن سرویس و سازمان‌ها</h2>
+          <p>
+            دسترسی‌ها، وضعیت سازمان‌ها و استفاده از هوش مصنوعی در سطح پلتفرم
+            مدیریت می‌شوند.
+          </p>
+        </div>
+      </div>
+      <label className="platform-tab-selector">
+        بخش مدیریت پلتفرم
+        <select
+          value={tab}
+          onChange={(event) => selectTab(event.target.value as PlatformTab)}
+        >
+          {platformTabs.map(([value, label]) => (
+            <option key={value} value={value}>
+              {label}
+            </option>
+          ))}
+        </select>
+      </label>
+      <div className="admin-tabs" role="tablist">
+        {platformTabs.map(([value, label]) => (
+          <button
+            type="button"
+            role="tab"
+            id={`platform-tab-${value}`}
+            key={value}
+            className={tab === value ? "active-tab" : "secondary"}
+            aria-selected={tab === value}
+            tabIndex={tab === value ? 0 : -1}
+            onClick={() => selectTab(value)}
+            onKeyDown={(event) => moveTab(event, value)}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+      {notice && (
+        <p className="notice" role="status">
+          {notice}
+        </p>
+      )}
+      {error && (
+        <p className="error" role="alert">
+          {error}
+        </p>
+      )}
+      {tab === "orgs" && (
+        <Organizations
+          actor={actor}
+          organizations={organizations}
+          onSaved={saved}
+          onError={setError}
+        />
+      )}{" "}
+      {tab === "applications" && (
+        <PlatformApplications
+          actor={actor}
+          applications={applications}
+          onSaved={saved}
+          onError={setError}
+        />
+      )}{" "}
+      {tab === "commercial" && (
+        <PlatformCommercial
+          actor={actor}
+          organizations={organizationTenants}
+          users={users}
+          onSaved={saved}
+          onError={setError}
+        />
+      )}{" "}
+      {tab === "appearance" && (
+        <PlatformAppearance actor={actor} onSaved={saved} onError={setError} />
+      )}{" "}
+      {tab === "help" && (
+        <PlatformHelpAdmin actor={actor} onSaved={saved} onError={setError} />
+      )}{" "}
+      {tab === "users" && (
+        <PlatformUsers
+          actor={actor}
+          users={users}
+          onSaved={saved}
+          onError={setError}
+        />
+      )}{" "}
+      {tab === "ai" && (
+        <AiPolicies
+          actor={actor}
+          settings={settings}
+          onSaved={saved}
+          onError={setError}
+        />
+      )}{" "}
+      {tab === "audit" && <AuditList audit={audit} />}
+    </section>
+  );
 }
 
-type AiDraft={enabled:boolean;providerBaseUrl:string;analysisModel:string;transcriptionModel:string;apiKey:string};
-type AiConnectionTest={success:boolean;code:string;message:string};
-function AiPolicies({actor,settings,onSaved,onError}:{actor:Actor;settings:AiSetting[];onSaved:(message:string)=>void;onError:(message:string)=>void}){
-  const [selectedId,setSelectedId]=useState('');
-  const [draft,setDraft]=useState<AiDraft>({enabled:false,providerBaseUrl:'https://api.openai.com/v1',analysisModel:'gpt-4.1-mini',transcriptionModel:'gpt-4o-mini-transcribe',apiKey:''});
-  const [removePending,setRemovePending]=useState(false);
-  const [testing,setTesting]=useState(false);
-  const [testResult,setTestResult]=useState<AiConnectionTest|null>(null);
-  const selected=settings.find((item)=>item.organizationId===selectedId)??settings[0];
-  useEffect(()=>{if(!selected)return;setSelectedId(selected.organizationId);setDraft({enabled:selected.enabled,providerBaseUrl:selected.providerBaseUrl,analysisModel:selected.analysisModel,transcriptionModel:selected.transcriptionModel,apiKey:''});setTestResult(null);},[selected?.organizationId,selected?.updatedAt]);
-  const save=async(removeApiKey=false)=>{if(!selected)return;try{await request('/platform/ai-settings',actor.session,actor.organizationId,{method:'PUT',body:JSON.stringify({organizationId:selected.organizationId,enabled:removeApiKey?false:draft.enabled,providerBaseUrl:draft.providerBaseUrl,analysisModel:draft.analysisModel,transcriptionModel:draft.transcriptionModel,apiKey:draft.apiKey||undefined,removeApiKey})});setDraft({...draft,apiKey:'',enabled:removeApiKey?false:draft.enabled});setTestResult(null);setRemovePending(false);onSaved(removeApiKey?'کلید API حذف و قابلیت AI غیرفعال شد.':'تنظیمات امن AI ذخیره شد.');}catch(cause){onError(cause instanceof Error?cause.message:'ذخیره تنظیمات AI ناموفق بود.')}};
-  const testConnection=async()=>{if(!selected)return;setTesting(true);setTestResult(null);try{setTestResult(await request('/platform/ai-settings/test',actor.session,actor.organizationId,{method:'POST',body:JSON.stringify({organizationId:selected.organizationId})}) as AiConnectionTest);}catch(cause){onError(cause instanceof Error?cause.message:'آزمون اتصال AI ناموفق بود.');}finally{setTesting(false);}};
-  return <><div className="admin-grid"><section className="card"><h3>سازمان و مصرف AI</h3><p className="hint">تنظیم credentials فقط برای مدیر پلتفرم قابل دسترسی است.</p><label>سازمان<select value={selected?.organizationId??''} onChange={(event)=>setSelectedId(event.target.value)}>{settings.map((item)=><option key={item.organizationId} value={item.organizationId}>{item.name}</option>)}</select></label>{selected&&<dl className="summary-list"><div><dt>وضعیت کلید</dt><dd><span className={`status-pill ${selected.hasApiKey?'active':'inactive'}`}>{selected.hasApiKey?'تنظیم شده':'تنظیم نشده'}</span></dd></div><div><dt>درخواست‌ها</dt><dd>{selected.requestCount}</dd></div><div><dt>توکن ثبت‌شده</dt><dd>{selected.tokenCount}</dd></div></dl>}</section><section className="card"><h3>ارائه‌دهنده OpenAI-compatible</h3><p className="hint">کلید ذخیره‌شده هرگز نمایش داده نمی‌شود. خالی گذاشتن فیلد کلید، مقدار قبلی را حفظ می‌کند.</p><form onSubmit={(event)=>{event.preventDefault();void save();}}><label className="check-label"><input type="checkbox" checked={draft.enabled} onChange={(event)=>setDraft({...draft,enabled:event.target.checked})}/>فعال‌سازی AI برای این سازمان</label><label>Base URL<input dir="ltr" type="url" value={draft.providerBaseUrl} onChange={(event)=>setDraft({...draft,providerBaseUrl:event.target.value})} required/></label><label>مدل تحلیل<input dir="ltr" value={draft.analysisModel} onChange={(event)=>setDraft({...draft,analysisModel:event.target.value})} required/></label><label>مدل تبدیل صوت<input dir="ltr" value={draft.transcriptionModel} onChange={(event)=>setDraft({...draft,transcriptionModel:event.target.value})} required/></label><label>API key جدید (اختیاری)<input dir="ltr" type="password" autoComplete="new-password" value={draft.apiKey} onChange={(event)=>setDraft({...draft,apiKey:event.target.value})} placeholder={selected?.hasApiKey?'برای حفظ کلید فعلی خالی بگذارید':'کلید سازمان را وارد کنید'}/></label><div className="inline-actions"><button type="submit">ذخیره تنظیمات</button><button type="button" className="secondary" onClick={()=>void testConnection()} disabled={testing}>{testing?'در حال آزمون…':'آزمون اتصال'}</button>{selected?.hasApiKey&&<button type="button" className="secondary" onClick={()=>setRemovePending(true)}>حذف کلید</button>}</div></form><p className="hint">پس از ذخیرهٔ تنظیمات، «آزمون اتصال» فقط Base URL، کلید API و مدل تحلیل ذخیره‌شده را با یک درخواست کوتاه بررسی می‌کند؛ کلید نمایش یا ثبت نمی‌شود.</p>{testResult&&<p className={testResult.success?'notice':'error'} role={testResult.success?'status':'alert'}>{testResult.message}</p>}</section></div><ConfirmDialog open={removePending} title="حذف کلید API" body="کلید این سازمان به‌صورت غیرقابل‌بازگشت حذف و قابلیت AI غیرفعال می‌شود." confirmLabel="حذف کلید" danger onConfirm={()=>void save(true)} onClose={()=>setRemovePending(false)}/></>;
+function PlatformApplications({
+  actor,
+  applications,
+  onSaved,
+  onError,
+}: {
+  actor: Actor;
+  applications: PlatformApplication[];
+  onSaved: (message: string) => void;
+  onError: (message: string) => void;
+}) {
+  const [selected, setSelected] = useState<PlatformApplication | null>(null);
+  const [note, setNote] = useState("");
+  const [slug, setSlug] = useState("");
+  const [busy, setBusy] = useState(false);
+  const open = (application: PlatformApplication) => {
+    setSelected(application);
+    setNote(application.reviewNote ?? "");
+    setSlug(application.assignedSlug ?? application.preferredSlug ?? "");
+  };
+  const perform = async (
+    action: "start-review" | "request-information" | "reject" | "approve",
+  ) => {
+    if (!selected) return;
+    setBusy(true);
+    try {
+      const body =
+        action === "approve"
+          ? { slug, note: note || undefined }
+          : action === "start-review"
+            ? undefined
+            : { note };
+      await request(
+        `/platform/organization-applications/${selected.id}/${action}`,
+        actor.session,
+        actor.organizationId,
+        {
+          method: "POST",
+          headers: { "idempotency-key": reviewKey() },
+          body: body ? JSON.stringify(body) : undefined,
+        },
+      );
+      setSelected(null);
+      onSaved(
+        action === "approve"
+          ? "سازمان در وضعیت راه‌اندازی ایجاد و مالک اولیه تعیین شد."
+          : "وضعیت درخواست به‌روزرسانی شد.",
+      );
+    } catch (cause) {
+      onError(
+        cause instanceof Error
+          ? cause.message
+          : "به‌روزرسانی درخواست ناموفق بود.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <div className="admin-stack">
+      <section className="card">
+        <h3>صف درخواست‌های سازمان</h3>
+        <p className="hint">
+          تأیید فقط پس از بررسی انجام می‌شود و سازمان تازه را در وضعیت
+          «راه‌اندازی» ایجاد می‌کند.
+        </p>
+        <div className="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>سازمان</th>
+                <th>متقاضی</th>
+                <th>وضعیت</th>
+                <th>شناسهٔ درخواستی/تخصیصی</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {applications.map((application) => (
+                <tr key={application.id}>
+                  <td>
+                    {application.organizationName}
+                    <small className="table-subtitle">
+                      {application.contactName}
+                    </small>
+                  </td>
+                  <td dir="ltr">{application.applicant.email ?? "—"}</td>
+                  <td>
+                    <span
+                      className={`status-pill ${application.status.toLowerCase()}`}
+                    >
+                      {applicationLabel[application.status]}
+                    </span>
+                  </td>
+                  <td dir="ltr">
+                    {application.assignedSlug ??
+                      application.preferredSlug ??
+                      "—"}
+                  </td>
+                  <td>
+                    <button
+                      className="secondary"
+                      type="button"
+                      onClick={() => open(application)}
+                    >
+                      {application.status === "SUBMITTED"
+                        ? "شروع بررسی"
+                        : application.status === "UNDER_REVIEW"
+                          ? "تصمیم بررسی"
+                          : "مشاهده"}
+                    </button>
+                  </td>
+                </tr>
+              ))}
+              {!applications.length && (
+                <tr>
+                  <td colSpan={5}>درخواستی برای بررسی وجود ندارد.</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </section>
+      {selected && (
+        <section className="card platform-application-review">
+          <div className="ui-section-header">
+            <div>
+              <h3>{selected.organizationName}</h3>
+              <p>
+                {selected.applicant.displayName} ·{" "}
+                <span dir="ltr">{selected.applicant.email}</span>
+              </p>
+            </div>
+            <button
+              type="button"
+              className="secondary"
+              onClick={() => setSelected(null)}
+            >
+              بستن
+            </button>
+          </div>
+          <dl className="summary-list">
+            <div>
+              <dt>وضعیت</dt>
+              <dd>{applicationLabel[selected.status]}</dd>
+            </div>
+            <div>
+              <dt>شماره تماس</dt>
+              <dd dir="ltr">{selected.contactPhone ?? "—"}</dd>
+            </div>
+            <div>
+              <dt>توضیحات</dt>
+              <dd>
+                {typeof selected.details.description === "string"
+                  ? selected.details.description
+                  : "—"}
+              </dd>
+            </div>
+          </dl>
+          {selected.status === "SUBMITTED" && (
+            <div className="inline-actions">
+              <button
+                type="button"
+                onClick={() => void perform("start-review")}
+                disabled={busy}
+              >
+                شروع بررسی
+              </button>
+            </div>
+          )}
+          {selected.status === "UNDER_REVIEW" && (
+            <>
+              <label>
+                پیام برای متقاضی
+                <textarea
+                  value={note}
+                  onChange={(event) => setNote(event.target.value)}
+                  rows={3}
+                  maxLength={1000}
+                  placeholder="برای درخواست اطلاعات یا رد، این پیام الزامی است."
+                />
+              </label>
+              <label>
+                شناسهٔ تخصیص‌داده‌شده برای تأیید
+                <input
+                  dir="ltr"
+                  value={slug}
+                  onChange={(event) =>
+                    setSlug(event.target.value.toLowerCase())
+                  }
+                  pattern="[a-z0-9-]{3,63}"
+                  placeholder="acme-support"
+                />
+              </label>
+              <div className="inline-actions">
+                <button
+                  type="button"
+                  className="secondary"
+                  onClick={() => void perform("request-information")}
+                  disabled={busy || !note.trim()}
+                >
+                  درخواست اطلاعات
+                </button>
+                <button
+                  type="button"
+                  className="secondary"
+                  onClick={() => void perform("reject")}
+                  disabled={busy || !note.trim()}
+                >
+                  رد درخواست
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void perform("approve")}
+                  disabled={busy || !slug}
+                >
+                  تأیید و ساخت سازمان
+                </button>
+              </div>
+            </>
+          )}
+          {selected.status === "NEEDS_INFORMATION" && (
+            <p className="hint">
+              منتظر تکمیل اطلاعات و ارسال دوباره از سوی متقاضی است.
+            </p>
+          )}
+          {selected.status === "APPROVED" && (
+            <p className="notice">
+              سازمان با شناسهٔ <span dir="ltr">{selected.assignedSlug}</span> در
+              وضعیت راه‌اندازی ساخته شده است.
+            </p>
+          )}
+          {selected.status === "REJECTED" && (
+            <p className="hint">
+              پیام ثبت‌شده برای متقاضی: {selected.reviewNote ?? "—"}
+            </p>
+          )}
+        </section>
+      )}
+    </div>
+  );
 }
-function AuditList({audit}:{audit:Audit[]}){return <section className="card"><h3>ردپای ممیزی AI و تبدیل صوت</h3><div className="table-wrap"><table><thead><tr><th>رویداد</th><th>سازمان</th><th>عامل</th><th>زمان</th></tr></thead><tbody>{audit.map((item)=><tr key={item.id}><td>{item.action}</td><td>{item.organization_name??'پلتفرم'}</td><td>{item.actor_display_name??'سامانه'}</td><td>{new Date(item.created_at).toLocaleString('fa-IR')}</td></tr>)}{!audit.length&&<tr><td colSpan={4}>رویدادی ثبت نشده است.</td></tr>}</tbody></table></div></section>}
+
+function Organizations({
+  actor,
+  organizations,
+  onSaved,
+  onError,
+}: {
+  actor: Actor;
+  organizations: Organization[];
+  onSaved: (message: string) => void;
+  onError: (message: string) => void;
+}) {
+  const [form, setForm] = useState({ name: "", slug: "" });
+  const [pending, setPending] = useState<Organization | null>(null);
+  const create = async (event: FormEvent) => {
+    event.preventDefault();
+    try {
+      await request(
+        "/admin/platform/organizations",
+        actor.session,
+        actor.organizationId,
+        { method: "POST", body: JSON.stringify(form) },
+      );
+      setForm({ name: "", slug: "" });
+      onSaved("سازمان جدید ساخته شد.");
+    } catch (cause) {
+      onError(
+        cause instanceof Error ? cause.message : "ساخت سازمان ناموفق بود.",
+      );
+    }
+  };
+  const toggle = async () => {
+    if (!pending) return;
+    try {
+      await request(
+        `/admin/platform/organizations/${pending.id}/status`,
+        actor.session,
+        actor.organizationId,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            status: pending.status === "active" ? "suspended" : "active",
+          }),
+        },
+      );
+      setPending(null);
+      onSaved("وضعیت سازمان به‌روزرسانی شد.");
+    } catch (cause) {
+      onError(
+        cause instanceof Error ? cause.message : "به‌روزرسانی ناموفق بود.",
+      );
+    }
+  };
+  const label = (status: Organization["status"]) =>
+    status === "active"
+      ? "فعال"
+      : status === "suspended"
+        ? "معلق"
+        : "راه‌اندازی";
+  return (
+    <>
+      <div className="admin-grid">
+        <section className="card">
+          <h3>سازمان‌های پلتفرم</h3>
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>نام</th>
+                  <th>شناسه</th>
+                  <th>وضعیت</th>
+                  <th>عملیات</th>
+                </tr>
+              </thead>
+              <tbody>
+                {organizations.map((org) => (
+                  <tr key={org.id}>
+                    <td>{org.name}</td>
+                    <td dir="ltr">{org.slug}</td>
+                    <td>
+                      <span className={`status-pill ${org.status}`}>
+                        {label(org.status)}
+                      </span>
+                    </td>
+                    <td>
+                      {org.status === "setup" ? (
+                        <span className="hint">تکمیل راه‌اندازی</span>
+                      ) : (
+                        <button
+                          className="secondary"
+                          type="button"
+                          onClick={() => setPending(org)}
+                        >
+                          {org.status === "active" ? "تعلیق" : "فعال‌سازی"}
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+        <section className="card">
+          <h3>ساخت سازمان</h3>
+          <form onSubmit={create}>
+            <label>
+              نام سازمان
+              <input
+                value={form.name}
+                onChange={(event) =>
+                  setForm({ ...form, name: event.target.value })
+                }
+                required
+              />
+            </label>
+            <label>
+              Slug یکتا
+              <input
+                dir="ltr"
+                value={form.slug}
+                onChange={(event) =>
+                  setForm({ ...form, slug: event.target.value.toLowerCase() })
+                }
+                placeholder="acme-support"
+                required
+              />
+            </label>
+            <button>ساخت سازمان</button>
+          </form>
+        </section>
+      </div>
+      <OwnerTransition
+        actor={actor}
+        organizations={organizations}
+        onSaved={onSaved}
+        onError={onError}
+      />
+      <ConfirmDialog
+        open={Boolean(pending)}
+        title={
+          pending?.status === "active" ? "تعلیق سازمان" : "فعال‌سازی سازمان"
+        }
+        body={
+          pending?.status === "active"
+            ? `تعلیق «${pending?.name}» دسترسی اعضای آن سازمان را متوقف می‌کند تا دوباره فعال شود.`
+            : `«${pending?.name}» دوباره برای اعضای مجاز در دسترس قرار می‌گیرد.`
+        }
+        confirmLabel={
+          pending?.status === "active" ? "تعلیق سازمان" : "فعال‌سازی"
+        }
+        danger={pending?.status === "active"}
+        onConfirm={() => void toggle()}
+        onClose={() => setPending(null)}
+      />
+    </>
+  );
+}
+
+function OwnerTransition({
+  actor,
+  organizations,
+  onSaved,
+  onError,
+}: {
+  actor: Actor;
+  organizations: Organization[];
+  onSaved: (message: string) => void;
+  onError: (message: string) => void;
+}) {
+  const [organizationId, setOrganizationId] = useState("");
+  const [members, setMembers] = useState<
+    { user_id: string; display_name: string; email: string; roles: string[] }[]
+  >([]);
+  const [ownerId, setOwnerId] = useState("");
+  const load = async (id: string) => {
+    setOrganizationId(id);
+    setOwnerId("");
+    try {
+      setMembers(
+        (await request(
+          `/admin/platform/organizations/${id}/members`,
+          actor.session,
+          actor.organizationId,
+        )) as typeof members,
+      );
+    } catch (cause) {
+      onError(
+        cause instanceof Error
+          ? cause.message
+          : "دریافت اعضای سازمان ناموفق بود.",
+      );
+    }
+  };
+  const assign = async () => {
+    if (!organizationId || !ownerId) return;
+    try {
+      await request(
+        `/admin/platform/organizations/${organizationId}/owner`,
+        actor.session,
+        actor.organizationId,
+        { method: "POST", body: JSON.stringify({ userId: ownerId }) },
+      );
+      onSaved("مالک سازمان به‌صورت صریح تعیین شد.");
+    } catch (cause) {
+      onError(
+        cause instanceof Error ? cause.message : "انتساب مالک ناموفق بود.",
+      );
+    }
+  };
+  const revoke = async () => {
+    if (!organizationId) return;
+    try {
+      const result = (await request(
+        `/admin/platform/organizations/${organizationId}/owner/revoke`,
+        actor.session,
+        actor.organizationId,
+        { method: "POST" },
+      )) as { revoked: number };
+      onSaved(
+        result.revoked
+          ? "مالک سازمان حذف شد."
+          : "مالک فعالی برای حذف وجود نداشت.",
+      );
+      await load(organizationId);
+    } catch (cause) {
+      onError(cause instanceof Error ? cause.message : "حذف مالک ناموفق بود.");
+    }
+  };
+  return (
+    <section className="card owner-transition">
+      <h3>انتساب مالک سازمان‌های موجود</h3>
+      <p className="hint">
+        هیچ مدیر سازمانی به‌طور خودکار مالک نمی‌شود؛ یک عضو فعال را آگاهانه
+        انتخاب کنید.
+      </p>
+      <div className="inline-actions">
+        <label>
+          سازمان
+          <select
+            value={organizationId}
+            onChange={(event) => void load(event.target.value)}
+          >
+            <option value="">انتخاب سازمان</option>
+            {organizations.map((organization) => (
+              <option key={organization.id} value={organization.id}>
+                {organization.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          عضو فعال
+          <select
+            value={ownerId}
+            onChange={(event) => setOwnerId(event.target.value)}
+            disabled={!organizationId}
+          >
+            <option value="">انتخاب عضو</option>
+            {members.map((member) => (
+              <option key={member.user_id} value={member.user_id}>
+                {member.display_name} — {member.email}
+              </option>
+            ))}
+          </select>
+        </label>
+        <button type="button" onClick={() => void assign()} disabled={!ownerId}>
+          تعیین مالک
+        </button>
+        <button
+          type="button"
+          className="secondary"
+          onClick={() => void revoke()}
+          disabled={!organizationId}
+        >
+          حذف مالک
+        </button>
+      </div>
+    </section>
+  );
+}
+
+function PlatformUsers({
+  actor,
+  users,
+  onSaved,
+  onError,
+}: {
+  actor: Actor;
+  users: User[];
+  onSaved: (message: string) => void;
+  onError: (message: string) => void;
+}) {
+  const [form, setForm] = useState({
+    displayName: "",
+    email: "",
+    password: "",
+    isPlatformAdmin: false,
+  });
+  const [managed, setManaged] = useState<User | null>(null);
+  const [password, setPassword] = useState("");
+  const create = async (event: FormEvent) => {
+    event.preventDefault();
+    try {
+      await request(
+        "/admin/platform/users",
+        actor.session,
+        actor.organizationId,
+        { method: "POST", body: JSON.stringify(form) },
+      );
+      setForm({
+        displayName: "",
+        email: "",
+        password: "",
+        isPlatformAdmin: false,
+      });
+      onSaved("کاربر پلتفرم ساخته شد.");
+    } catch (cause) {
+      onError(
+        cause instanceof Error ? cause.message : "ساخت کاربر ناموفق بود.",
+      );
+    }
+  };
+  const toggle = async (user: User) => {
+    try {
+      await request(
+        `/admin/platform/users/${user.id}`,
+        actor.session,
+        actor.organizationId,
+        { method: "POST", body: JSON.stringify({ isActive: !user.is_active }) },
+      );
+      onSaved("وضعیت کاربر تغییر کرد.");
+    } catch (cause) {
+      onError(
+        cause instanceof Error ? cause.message : "به‌روزرسانی ناموفق بود.",
+      );
+    }
+  };
+  const saveManagement = async () => {
+    if (!managed) return;
+    try {
+      await request(
+        `/admin/platform/users/${managed.id}`,
+        actor.session,
+        actor.organizationId,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            isActive: managed.is_active,
+            password: password || undefined,
+          }),
+        },
+      );
+      setPassword("");
+      setManaged(null);
+      onSaved("تنظیمات کاربر به‌روزرسانی شد.");
+    } catch (cause) {
+      onError(
+        cause instanceof Error ? cause.message : "به‌روزرسانی ناموفق بود.",
+      );
+    }
+  };
+  return (
+    <>
+      <div className="admin-grid">
+        <section className="card">
+          <h3>کاربران پلتفرم</h3>
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>نام</th>
+                  <th>ایمیل</th>
+                  <th>دسترسی</th>
+                  <th>وضعیت</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {users.map((user) => (
+                  <tr key={user.id}>
+                    <td>{user.display_name}</td>
+                    <td dir="ltr">{user.email}</td>
+                    <td>
+                      {user.is_platform_admin ? "مدیر پلتفرم" : "کاربر عادی"}
+                    </td>
+                    <td>
+                      <span
+                        className={`status-pill ${user.is_active ? "active" : "inactive"}`}
+                      >
+                        {user.is_active ? "فعال" : "غیرفعال"}
+                      </span>
+                    </td>
+                    <td>
+                      <div className="member-actions">
+                        <button
+                          className="secondary"
+                          type="button"
+                          onClick={() => {
+                            setPassword("");
+                            setManaged(user);
+                          }}
+                        >
+                          مدیریت
+                        </button>
+                        <button
+                          className="secondary"
+                          type="button"
+                          onClick={() => toggle(user)}
+                        >
+                          {user.is_active ? "غیرفعال‌سازی" : "فعال‌سازی"}
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+        <section className="card">
+          <h3>افزودن کاربر پلتفرم</h3>
+          <form onSubmit={create}>
+            <label>
+              نام
+              <input
+                value={form.displayName}
+                onChange={(event) =>
+                  setForm({ ...form, displayName: event.target.value })
+                }
+                required
+              />
+            </label>
+            <label>
+              ایمیل
+              <input
+                type="email"
+                value={form.email}
+                onChange={(event) =>
+                  setForm({ ...form, email: event.target.value })
+                }
+                required
+              />
+            </label>
+            <label>
+              رمز موقت
+              <input
+                type="password"
+                minLength={10}
+                value={form.password}
+                onChange={(event) =>
+                  setForm({ ...form, password: event.target.value })
+                }
+                required
+              />
+            </label>
+            <label className="check-label">
+              <input
+                type="checkbox"
+                checked={form.isPlatformAdmin}
+                onChange={(event) =>
+                  setForm({ ...form, isPlatformAdmin: event.target.checked })
+                }
+              />
+              دسترسی مدیر پلتفرم
+            </label>
+            <button>افزودن کاربر</button>
+          </form>
+        </section>
+      </div>
+      {managed && (
+        <section className="card">
+          <h3>مدیریت حساب: {managed.display_name}</h3>
+          <p className="hint">
+            رمز جدید را فقط در صورت نیاز وارد کنید. با ذخیرهٔ آن، نشست‌های فعال
+            این کاربر باطل می‌شوند.
+          </p>
+          <label>
+            رمز جدید (اختیاری)
+            <input
+              type="password"
+              minLength={10}
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              autoComplete="new-password"
+            />
+          </label>
+          <div className="inline-actions">
+            <button
+              type="button"
+              onClick={saveManagement}
+              disabled={password.length > 0 && password.length < 10}
+            >
+              ذخیره
+            </button>
+            <button
+              type="button"
+              className="secondary"
+              onClick={() => {
+                setPassword("");
+                setManaged(null);
+              }}
+            >
+              انصراف
+            </button>
+          </div>
+        </section>
+      )}
+    </>
+  );
+}
+
+type AiDraft = {
+  enabled: boolean;
+  smartIntakeEnabled: boolean;
+  providerBaseUrl: string;
+  analysisModel: string;
+  transcriptionModel: string;
+  apiKey: string;
+};
+type AiConnectionTest = { success: boolean; code: string; message: string };
+function AiPolicies({
+  actor,
+  settings,
+  onSaved,
+  onError,
+}: {
+  actor: Actor;
+  settings: AiSetting[];
+  onSaved: (message: string) => void;
+  onError: (message: string) => void;
+}) {
+  const [selectedId, setSelectedId] = useState("");
+  const [draft, setDraft] = useState<AiDraft>({
+    enabled: false,
+    smartIntakeEnabled: false,
+    providerBaseUrl: "https://api.openai.com/v1",
+    analysisModel: "gpt-4.1-mini",
+    transcriptionModel: "gpt-4o-mini-transcribe",
+    apiKey: "",
+  });
+  const [removePending, setRemovePending] = useState(false);
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState<AiConnectionTest | null>(null);
+  const selected =
+    settings.find((item) => item.organizationId === selectedId) ?? settings[0];
+  useEffect(() => {
+    if (!selected) return;
+    setSelectedId(selected.organizationId);
+    setDraft({
+      enabled: selected.enabled,
+      smartIntakeEnabled: selected.smartIntakeEnabled,
+      providerBaseUrl: selected.providerBaseUrl,
+      analysisModel: selected.analysisModel,
+      transcriptionModel: selected.transcriptionModel,
+      apiKey: "",
+    });
+    setTestResult(null);
+  }, [selected?.organizationId, selected?.updatedAt]);
+  const save = async (removeApiKey = false) => {
+    if (!selected) return;
+    try {
+      await request(
+        "/platform/ai-settings",
+        actor.session,
+        actor.organizationId,
+        {
+          method: "PUT",
+          body: JSON.stringify({
+            organizationId: selected.organizationId,
+            enabled: removeApiKey ? false : draft.enabled,
+            smartIntakeEnabled:
+              selected.workspaceType === "PERSONAL"
+                ? draft.smartIntakeEnabled
+                : undefined,
+            providerBaseUrl: draft.providerBaseUrl,
+            analysisModel: draft.analysisModel,
+            transcriptionModel: draft.transcriptionModel,
+            apiKey: draft.apiKey || undefined,
+            removeApiKey,
+          }),
+        },
+      );
+      setDraft({
+        ...draft,
+        apiKey: "",
+        enabled: removeApiKey ? false : draft.enabled,
+      });
+      setTestResult(null);
+      setRemovePending(false);
+      onSaved(
+        removeApiKey
+          ? "کلید API حذف و قابلیت AI غیرفعال شد."
+          : "تنظیمات امن AI ذخیره شد.",
+      );
+    } catch (cause) {
+      onError(
+        cause instanceof Error ? cause.message : "ذخیره تنظیمات AI ناموفق بود.",
+      );
+    }
+  };
+  const testConnection = async () => {
+    if (!selected) return;
+    setTesting(true);
+    setTestResult(null);
+    try {
+      setTestResult(
+        (await request(
+          "/platform/ai-settings/test",
+          actor.session,
+          actor.organizationId,
+          {
+            method: "POST",
+            body: JSON.stringify({ organizationId: selected.organizationId }),
+          },
+        )) as AiConnectionTest,
+      );
+    } catch (cause) {
+      onError(
+        cause instanceof Error ? cause.message : "آزمون اتصال AI ناموفق بود.",
+      );
+    } finally {
+      setTesting(false);
+    }
+  };
+  return (
+    <>
+      <div className="admin-grid">
+        <section className="card">
+          <h3>فضای کاری و مصرف AI</h3>
+          <p className="hint">
+            تنظیم credentials فقط برای مدیر پلتفرم قابل دسترسی است.
+          </p>
+          <label>
+            فضای کاری
+            <select
+              value={selected?.organizationId ?? ""}
+              onChange={(event) => setSelectedId(event.target.value)}
+            >
+              {settings.map((item) => (
+                <option key={item.organizationId} value={item.organizationId}>
+                  {item.name} — {item.workspaceType === "PERSONAL" ? "شخصی" : "سازمانی"}
+                </option>
+              ))}
+            </select>
+          </label>
+          {selected && (
+            <dl className="summary-list">
+              <div>
+                <dt>نوع فضا</dt>
+                <dd>{selected.workspaceType === "PERSONAL" ? "شخصی" : "سازمانی"}</dd>
+              </div>
+              <div>
+                <dt>وضعیت کلید</dt>
+                <dd>
+                  <span
+                    className={`status-pill ${selected.hasApiKey ? "active" : "inactive"}`}
+                  >
+                    {selected.hasApiKey ? "تنظیم شده" : "تنظیم نشده"}
+                  </span>
+                </dd>
+              </div>
+              <div>
+                <dt>درخواست‌ها</dt>
+                <dd>{selected.requestCount}</dd>
+              </div>
+              <div>
+                <dt>توکن ثبت‌شده</dt>
+                <dd>{selected.tokenCount}</dd>
+              </div>
+            </dl>
+          )}
+        </section>
+        <section className="card">
+          <h3>ارائه‌دهنده OpenAI-compatible</h3>
+          <p className="hint">
+            کلید ذخیره‌شده هرگز نمایش داده نمی‌شود. خالی گذاشتن فیلد کلید، مقدار
+            قبلی را حفظ می‌کند.
+          </p>
+          <form
+            onSubmit={(event) => {
+              event.preventDefault();
+              void save();
+            }}
+          >
+            <label className="check-label">
+              <input
+                type="checkbox"
+                checked={draft.enabled}
+                onChange={(event) =>
+                  setDraft({ ...draft, enabled: event.target.checked })
+                }
+              />
+              فعال‌سازی AI برای این فضای کاری
+            </label>
+            {selected?.workspaceType === "PERSONAL" && (
+              <label className="check-label">
+                <input
+                  type="checkbox"
+                  checked={draft.smartIntakeEnabled}
+                  onChange={(event) =>
+                    setDraft({ ...draft, smartIntakeEnabled: event.target.checked })
+                  }
+                />
+                فعال‌سازی دریافت هوشمند تیکت شخصی
+              </label>
+            )}
+            <label>
+              Base URL
+              <input
+                dir="ltr"
+                type="url"
+                value={draft.providerBaseUrl}
+                onChange={(event) =>
+                  setDraft({ ...draft, providerBaseUrl: event.target.value })
+                }
+                required
+              />
+            </label>
+            <label>
+              مدل تحلیل
+              <input
+                dir="ltr"
+                value={draft.analysisModel}
+                onChange={(event) =>
+                  setDraft({ ...draft, analysisModel: event.target.value })
+                }
+                required
+              />
+            </label>
+            <label>
+              مدل تبدیل صوت
+              <input
+                dir="ltr"
+                value={draft.transcriptionModel}
+                onChange={(event) =>
+                  setDraft({ ...draft, transcriptionModel: event.target.value })
+                }
+                required
+              />
+            </label>
+            <label>
+              API key جدید (اختیاری)
+              <input
+                dir="ltr"
+                type="password"
+                autoComplete="new-password"
+                value={draft.apiKey}
+                onChange={(event) =>
+                  setDraft({ ...draft, apiKey: event.target.value })
+                }
+                placeholder={
+                  selected?.hasApiKey
+                    ? "برای حفظ کلید فعلی خالی بگذارید"
+                    : "کلید سازمان را وارد کنید"
+                }
+              />
+            </label>
+            <div className="inline-actions">
+              <button type="submit">ذخیره تنظیمات</button>
+              <button
+                type="button"
+                className="secondary"
+                onClick={() => void testConnection()}
+                disabled={testing}
+              >
+                {testing ? "در حال آزمون…" : "آزمون اتصال"}
+              </button>
+              {selected?.hasApiKey && (
+                <button
+                  type="button"
+                  className="secondary"
+                  onClick={() => setRemovePending(true)}
+                >
+                  حذف کلید
+                </button>
+              )}
+            </div>
+          </form>
+          <p className="hint">
+            پس از ذخیرهٔ تنظیمات، «آزمون اتصال» فقط Base URL، کلید API و مدل
+            تحلیل ذخیره‌شده را با یک درخواست کوتاه بررسی می‌کند؛ کلید نمایش یا
+            ثبت نمی‌شود.
+          </p>
+          {testResult && (
+            <p
+              className={testResult.success ? "notice" : "error"}
+              role={testResult.success ? "status" : "alert"}
+            >
+              {testResult.message}
+            </p>
+          )}
+        </section>
+      </div>
+      <ConfirmDialog
+        open={removePending}
+        title="حذف کلید API"
+        body="کلید این سازمان به‌صورت غیرقابل‌بازگشت حذف و قابلیت AI غیرفعال می‌شود."
+        confirmLabel="حذف کلید"
+        danger
+        onConfirm={() => void save(true)}
+        onClose={() => setRemovePending(false)}
+      />
+    </>
+  );
+}
+function AuditList({ audit }: { audit: Audit[] }) {
+  return (
+    <section className="card">
+      <h3>ردپای ممیزی AI و تبدیل صوت</h3>
+      <div className="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>رویداد</th>
+              <th>سازمان</th>
+              <th>عامل</th>
+              <th>زمان</th>
+            </tr>
+          </thead>
+          <tbody>
+            {audit.map((item) => (
+              <tr key={item.id}>
+                <td>{item.action}</td>
+                <td>{item.organization_name ?? "پلتفرم"}</td>
+                <td>{item.actor_display_name ?? "سامانه"}</td>
+                <td>{new Date(item.created_at).toLocaleString("fa-IR")}</td>
+              </tr>
+            ))}
+            {!audit.length && (
+              <tr>
+                <td colSpan={4}>رویدادی ثبت نشده است.</td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
