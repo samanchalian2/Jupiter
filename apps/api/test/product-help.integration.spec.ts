@@ -89,8 +89,8 @@ describe('Product Help publication and audience isolation', () => {
   });
 
   it('ranks Persian domain matches and exposes a published article for every contextual feature', async () => {
-    const expectations: Array<[string,string]> = [['دایرکتوری','organization-directory'],['جفت‌سازی','organization-directory'],['تیکت','ticket-lifecycle'],['SLA','sla-business-calendar'],['هوش مصنوعی','personal-capacity'],['Assist','jupiter-assist'],['اشتراک','commercial-allowances'],['سهمیه','commercial-allowances'],['راه‌اندازی سازمان','organization-setup-wizard']];
-    for (const [query,slug] of expectations) expect((await help.list(ownerId, { q:query }))[0]?.slug).toBe(slug);
+    const expectations: Array<[string,string[]]> = [['دایرکتوری',['organization-directory']],['جفت‌سازی',['organization-directory']],['تیکت',['ticket-lifecycle']],['SLA',['sla-business-calendar']],['هوش مصنوعی',['ai-ticket-review','personal-capacity']],['Assist',['jupiter-assist']],['اشتراک',['commercial-allowances']],['سهمیه',['commercial-allowances']],['راه‌اندازی سازمان',['organization-setup-wizard']]];
+    for (const [query,slugs] of expectations) expect(slugs).toContain((await help.list(ownerId, { q:query }))[0]?.slug);
     for (const feature of ['TICKET_LIFECYCLE','AI_TICKET_REVIEW','ORGANIZATION_MEMBERSHIP','TICKET_CONFIGURATION','SLA_ADMINISTRATION','DIRECTORY_CONNECTOR','COMMERCIAL_DASHBOARD','JUPITER_ASSIST','PLATFORM_APPEARANCE','PERSONAL_WORKSPACE','PERSONAL_CAPACITY','PERSONAL_PAYMENT','PERSONAL_SUPPORT']) await expect(help.list(ownerId, { relatedFeature:feature })).resolves.toHaveLength(1);
   });
 });

@@ -1,5 +1,16 @@
 # Execution Plan
 
+## GOAL-066 — Personal Service cross-domain hardening and E2E acceptance
+
+**Status:** DONE (2026-10-07). Verified the supported flow from public account
+verification and `/personal` through ticket/manual fallback, Personal Support,
+SUPPORT/AI capacity, packages, payment callback/receipt and contextual Help.
+Canonical status rendering and onboarding copy were corrected; safe callback
+tests prevent provider authority/error leakage. Isolation, concurrency,
+retry/failure/expiry/cancellation and exact-once settlement passed, together
+with the 001–060 migration rehearsal and responsive authenticated acceptance.
+Evidence: `docs/GOAL_066_EVIDENCE.md`. No subsequent Goal was started.
+
 ## GOAL-065 — Complete personal workspace UX and Product Help
 
 **Status:** DONE (2026-10-07). Added the focused Persian personal dashboard

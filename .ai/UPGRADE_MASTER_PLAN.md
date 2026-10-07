@@ -17,7 +17,9 @@ organization tenants or Assist, and separate personal SUPPORT/AI monthly and
 purchased capacity, plus adapter-isolated Zarinpal payment with server
 verification and exact-once fulfillment. The focused personal UX, personal AI
 metering, safe payment return/receipt flow and published Persian Help are also
-complete. GOAL-066 retains its approved final hardening/E2E sequence.
+complete. GOAL-066 also passed cross-domain hardening, security/isolation,
+migration and responsive authenticated acceptance. The Personal Service program
+is complete; this does not alter the separate blocked GOAL-059 staging gate.
 
 ## GOAL-059 — Staging Release Readiness & Deployment Gate Acceptance
 

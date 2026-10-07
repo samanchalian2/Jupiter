@@ -1,5 +1,18 @@
 # Current State
 
+**GOAL-066 — Personal Service Cross-domain Hardening & E2E Acceptance
+(complete, 2026-10-07):** The full GOAL-060–065 personal flow passed clean
+migration rehearsal, cross-tenant/role isolation, concurrency, retry, expiry,
+cancellation, provider-failure/manual-fallback and exact-once support/AI/payment
+coverage. Personal Support status labels now match the canonical backend states;
+public onboarding clearly provisions the personal workspace before optional
+organization application; safe callback tests prevent provider authority/error
+leakage. Runtime Help/security scans, 137 API tests, 14 Web tests, typechecks,
+builds, health smoke, diff validation and authenticated Persian RTL acceptance
+at 375/768/1024/1440 passed. The temporary PERSONAL fixture was fully removed.
+Evidence: `docs/GOAL_066_EVIDENCE.md`. The Personal Service program is complete;
+GOAL-059 remains a separate blocked deployment gate.
+
 **GOAL-065 — Complete Personal Workspace UX & Product Help (complete,
 2026-10-07):** `/personal` now provides a compact Persian dashboard and
 services workspace for personal tickets, monthly/purchased SUPPORT and AI

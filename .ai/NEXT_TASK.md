@@ -1,29 +1,14 @@
 # Next Task
 
-## GOAL-066 — Personal Service Cross-domain Hardening & E2E Acceptance (READY)
+## Personal Service program — COMPLETE
 
-Perform only the final hardening and end-to-end acceptance of the approved
-GOAL-060 through GOAL-065 Personal Service program:
+GOAL-060 through GOAL-066 are complete. Cross-domain acceptance, migration
+rehearsal, isolation/security checks, authenticated responsive browser coverage
+and fixture cleanup are recorded in `docs/GOAL_066_EVIDENCE.md`.
 
-- exercise verified-account provisioning, canonical `/personal` routing,
-  ticket creation, Personal Support request/agent access, SUPPORT/AI capacity,
-  package purchase/callback/receipt and contextual Help as one supported flow;
-- prove personal-owner, organization-member, Platform Admin and Jupiter-agent
-  isolation across APIs, RLS and rendered routes without changing the approved
-  domain boundaries;
-- cover retries, concurrency, expiry, cancellation, provider failure and manual
-  ticket fallback, including exact-once support/AI/payment settlement;
-- verify runtime Help, audits and stored metadata contain no credential,
-  provider authority, prompt, ticket body or prohibited secret/content;
-- run a clean migration rehearsal through migration 060, full API/Web tests,
-  typechecks, production builds, health smoke and `git diff --check`;
-- complete authenticated Persian RTL browser acceptance at
-  375/768/1024/1440, remove all temporary fixtures, and record
-  `docs/GOAL_066_EVIDENCE.md` plus final `.ai` status.
-
-Do not add a new product capability, payment provider, subscription billing,
-wallet, discount/tax/accounting, official invoice, card storage or automatic
-refund. Do not claim the separate blocked GOAL-059 canonical staging gate.
+No repository implementation Goal is approved to start automatically. Preserve
+the established architecture and wait for an explicitly scoped next Goal. Do
+not treat the Personal Service completion as GOAL-059 staging acceptance.
 
 ## Deferred deployment gate — GOAL-059 remains BLOCKED
 

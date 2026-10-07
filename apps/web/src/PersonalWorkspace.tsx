@@ -123,13 +123,12 @@ const orderLabel: Record<string, string> = {
   CANCELLED: "لغوشده",
   EXPIRED: "منقضی",
 };
-const caseLabel: Record<string, string> = {
+export const personalSupportCaseLabels: Record<string, string> = {
   QUEUED: "در صف",
   ACCEPTED: "پذیرفته‌شده",
   IN_PROGRESS: "در حال رسیدگی",
-  WAITING_FOR_REQUESTER: "منتظر پاسخ شما",
-  RESOLVED: "حل‌شده",
-  CLOSED: "بسته",
+  WAITING_FOR_USER: "منتظر پاسخ شما",
+  COMPLETED: "تکمیل‌شده",
   CANCELLED: "لغوشده",
   REJECTED: "ردشده",
   REVOKED: "متوقف‌شده",
@@ -617,7 +616,9 @@ export function PersonalServices({ actor }: { actor: Actor }) {
               {data.cases.map((item) => (
                 <article key={item.id}>
                   <Link to={`/tickets/${item.ticket_id}?tab=conversation`}>
-                    <span>{caseLabel[item.status] ?? item.status}</span>
+                    <span>
+                      {personalSupportCaseLabels[item.status] ?? item.status}
+                    </span>
                     <small>
                       {item.assigned_agent_name
                         ? `کارشناس: ${item.assigned_agent_name}`

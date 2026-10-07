@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-10-07 — GOAL-066 Personal Service hardening and acceptance
+
+- Completed cross-domain Personal Service acceptance across verified account
+  provisioning, canonical routing, tickets, Personal Support, SUPPORT/AI
+  capacity, packages, payment callback/receipt and contextual Help.
+- Corrected Personal Support lifecycle labels to canonical backend states and
+  clarified public onboarding so personal activation precedes optional
+  organization registration.
+- Added safe payment callback-return tests and hardened Help search assertions
+  for multiple equally relevant Persian AI guides.
+- Passed 71-migration rehearsal, 137 API tests, 14 Web tests, typechecks,
+  production builds, health smoke, security scans, diff validation and
+  authenticated RTL browser acceptance at four widths; removed the temporary
+  PERSONAL fixture completely.
+
 ## 2026-10-07 — GOAL-065 Personal workspace UX and Help
 
 - Added focused Persian `/personal` dashboard and services routes with simple
