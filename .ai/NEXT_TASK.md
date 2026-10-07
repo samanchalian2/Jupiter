@@ -1,26 +1,33 @@
 # Next Task
 
-## GOAL-062 — Personal Service Catalog, Support Cases & Agent Access (READY)
+## GOAL-063 — Personal Recurring Allowance & Package Capacity (READY)
 
-Implement only the Personal Support operational boundary approved by GOAL-060
-and enabled by the completed GOAL-061 foundation:
+Implement only the approved personal commercial-capacity boundary on top of
+GOAL-061/062:
 
-- add a minimal Platform-managed personal service catalog with availability,
-  visible description and operational SLA fields that are safe to configure;
-- add a tenant-scoped Personal Support case lifecycle linked to the personal
-  ticket and owned by a separate Personal Support module, not organization
-  Assist;
-- reuse the global Jupiter support-agent registry without making an agent a
-  personal-workspace member;
-- issue only ticket-scoped, time-bound and revocable support access after the
-  supported case transition, and revoke it on completion/revocation;
-- preserve personal manual ticketing, organization Assist and all organization
-  workflows; enforce tenant isolation and actor-accurate audit;
-- add migration rehearsal, lifecycle/concurrency/access/isolation tests and
-  update `.ai` plus `docs/GOAL_062_EVIDENCE.md`.
+- add separate personal `SUPPORT` and `AI` allowance pools; never share units
+  between them or with organization Commercial/Assist;
+- provision immutable UTC calendar-month windows with defaults of 3 Personal
+  Support cases and 10 personal AI Smart Actions, no rollover;
+- let Platform Admin configure future defaults and explicit personal-workspace
+  overrides; never rewrite an already provisioned window or historical usage;
+- add a minimal Platform-managed support/AI package catalog with units, price
+  snapshot in Toman/`IRT`, active status and bounded validity (default 365
+  days), plus tenant-scoped allocations;
+- reserve capacity in deterministic order: current monthly allowance, then
+  valid purchased allocation with nearest expiry and stable tie-breakers;
+- integrate Personal Support request with atomic/idempotent reservation,
+  release on cancellation/rejection/pre-accept failure and exactly-once settle
+  when an authorized agent accepts; concurrent retries must not double-use;
+- preserve draft/manual ticketing when capacity is zero and return a safe
+  reason/projection instead of creating an unserviceable case;
+- expose compact Platform controls and permitted personal capacity projection;
+  enforce RLS, composite integrity, actor-accurate audit and tenant isolation;
+- add migration rehearsal, monthly-boundary/override/expiry/order/concurrency
+  tests and update `.ai` plus `docs/GOAL_063_EVIDENCE.md`.
 
-Do not implement monthly/purchased capacity, package allocation, payment,
-checkout or the full personal UI in GOAL-062, and do not start GOAL-063.
+Do not add a payment gateway, checkout, provider callback, receipt/refund flow
+or the full personal UX in GOAL-063. Do not start GOAL-064.
 
 ## Deferred deployment gate — GOAL-059 remains BLOCKED
 

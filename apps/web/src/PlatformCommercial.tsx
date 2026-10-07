@@ -2,6 +2,7 @@ import { FormEvent, type ReactNode, useEffect, useState } from 'react';
 import type { Actor } from './App';
 import { request } from './App';
 import { PlatformAssistControls } from './PlatformAssistControls';
+import { PlatformPersonalSupportControls } from './PlatformPersonalSupportControls';
 import { ContextualHelpTrigger } from './ContextualHelp';
 
 type Organization = { id: string; name: string; slug: string };
@@ -35,6 +36,7 @@ export function PlatformCommercial({ actor, organizations, users = [], onSaved, 
     <CommercialRequestQueue actor={actor} onSaved={onSaved} onError={onError} />
     <SmartActionReport actor={actor} onError={onError} />
     <div className="contextual-help-row"><span>راهنمای سیاست پشتیبانی Jupiter</span><ContextualHelpTrigger actor={actor} relatedFeature="PLATFORM_COMMERCIAL" label="راهنمای پشتیبانی Jupiter"/></div>
+    <PlatformPersonalSupportControls actor={actor} onSaved={onSaved} onError={onError} />
     <PlatformAssistControls actor={actor} organizations={organizations} users={users} onSaved={onSaved} onError={onError} />
   </div>;
 }

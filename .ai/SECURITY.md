@@ -13,6 +13,14 @@ Provisioning is idempotent and the unique owner constraint prevents duplicate
 personal tenants. Jupiter agents receive no membership; each support read/write
 requires an active, unexpired and unrevoked grant for the exact ticket.
 
+GOAL-062 enforces the exact case/ticket relationship with a composite
+organization/case/ticket foreign key and a unique personal-case grant. Catalog
+writes require Platform Admin and are also revoked from the tenant application
+role. Case content authorization, grant row lock and content read/write occur
+in one tenant transaction, preventing access from surviving concurrent revoke
+or expiry. Organization Assist queries explicitly exclude Personal Support
+grants.
+
 Payment amount, package identity, units and validity are snapshotted server-side
 before provider creation. Callback query values are untrusted until the server
 verifies authority and amount with the provider. Order transitions and package

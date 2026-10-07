@@ -17,6 +17,13 @@
   can never settle a second unit.
 - A Jupiter agent is not a personal-workspace member. Access is a bounded,
   revocable, ticket-scoped grant and is removed on completion or revocation.
+- The operational Personal Support request is idempotent per submitted personal
+  ticket and leaves ticket status unchanged. Until GOAL-063 attaches capacity,
+  request/queue/cancel consume no unit. Only an active global Jupiter agent may
+  accept; concurrent acceptance produces one assigned agent and one grant.
+- Platform Admin can suspend the service and configure its visible copy,
+  operational SLA and bounded grant duration. Authorization, exact-ticket
+  scope, tenant isolation, revocation and audit actor identity are not settings.
 - Monthly defaults are 3 personal support cases and 10 AI Smart Actions per UTC
   calendar month, without rollover. Platform Admin may change future defaults
   and explicit workspace overrides; provisioned history is never overwritten.

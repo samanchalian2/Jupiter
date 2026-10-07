@@ -22,9 +22,10 @@ import { CommercialModule } from './commercial/commercial.module.js';
 import { AssistModule } from './assist/assist.module.js';
 import { AppearanceModule } from './appearance/appearance.module.js';
 import { ProductHelpModule } from './help/help.module.js';
+import { PersonalSupportModule } from './personal-support/personal-support.module.js';
 
 @Module({
-  imports: [DatabaseModule, AuthModule, TicketModule, NotificationModule, ConversationModule, AttachmentModule, AiModule, TranscriptionModule, ReportingModule, OrganizationModule, KnowledgeModule, SlaModule, EmailModule, TicketIntakeModule, OrganizationApplicationModule, DirectoryConnectorModule, CommercialModule, AssistModule, AppearanceModule, ProductHelpModule],
+  imports: [DatabaseModule, AuthModule, TicketModule, NotificationModule, ConversationModule, AttachmentModule, AiModule, TranscriptionModule, ReportingModule, OrganizationModule, KnowledgeModule, SlaModule, EmailModule, TicketIntakeModule, OrganizationApplicationModule, DirectoryConnectorModule, CommercialModule, AssistModule, AppearanceModule, ProductHelpModule, PersonalSupportModule],
   controllers: [HealthController],
   providers: [HealthService, QueueWorker],
 })

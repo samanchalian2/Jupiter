@@ -1,15 +1,25 @@
 # Execution Plan
 
+## GOAL-063 — Personal recurring allowance and package capacity
+
+**Status:** READY after GOAL-062. Add separate `SUPPORT` and `AI` personal
+capacity pools, UTC monthly allowance windows with approved defaults of 3 and
+10, Platform future-default and explicit-workspace overrides, and a minimal
+Platform-managed package catalog with units, Toman price and bounded validity.
+Integrate idempotent support reservation/release/settlement with GOAL-062 and
+preserve manual drafts/ticketing at zero capacity. Add tenant isolation,
+concurrency, expiry and deterministic monthly-then-purchased consumption tests,
+admin controls, migration rehearsal and evidence. Do not add gateway payment,
+checkout, callback fulfillment or start GOAL-064.
+
 ## GOAL-062 — Personal service catalog, support cases and agent access
 
-**Status:** READY after GOAL-061. Implement the Personal Support operational
-boundary approved by DEC-035: a minimal Platform-managed service catalog and
-SLA/availability policy, personal support case lifecycle, reuse of the global
-Jupiter-agent registry, and ticket-scoped/time-bound/revocable access grants.
-Submission, queueing and assignment must not reuse organization Assist or
-grant tenant membership. Preserve manual personal ticketing and all
-organization behavior. Capacity settlement, packages and payment remain later
-Goals. Do not start GOAL-063.
+**Status:** DONE (2026-10-07). Added the separate Personal Support module,
+Platform-managed catalog/SLA/availability, tenant case lifecycle and
+exact-ticket/time-bound/revocable agent grants without tenant membership or
+organization Assist reuse. Capacity/packages/payment remain later Goals.
+Evidence: `docs/GOAL_062_EVIDENCE.md`. GOAL-063 was not started in this
+execution.
 
 ## GOAL-061 — Personal workspace identity, provisioning and routing
 

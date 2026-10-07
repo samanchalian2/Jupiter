@@ -22,6 +22,13 @@ grant duration. Tenant isolation, verified account ownership, server-side
 authorization, settlement/fulfillment idempotency, HTTPS callback validation
 and secret handling are architecture invariants rather than settings.
 
+GOAL-062 implements the Personal Support operational module before commercial
+capacity. Its global catalog is Platform-owned; cases are tenant-scoped.
+Acceptance uses the global Jupiter-agent registry, snapshots SLA/access
+duration and issues one exact-ticket grant. The case/grant transaction never
+creates a membership and organization Assist explicitly ignores Personal
+Support grants. Capacity reservation and settlement are attached in GOAL-063.
+
 ## GOAL-057 Appearance runtime
 
 The Appearance module remains inside the modular monolith. It owns canonical

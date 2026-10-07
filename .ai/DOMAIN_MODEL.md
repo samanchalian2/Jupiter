@@ -9,11 +9,16 @@ public account owns at most one personal workspace; provisioning is idempotent
 and does not remove later or existing organization memberships.
 
 `PersonalServiceCatalog` is the Platform-owned support catalog and operational
-SLA projection. `PersonalSupportCase` links one personal ticket to Jupiter
-support without becoming an organization Assist case. A
+SLA/access-duration projection. `PersonalSupportCase` links one submitted
+personal ticket to Jupiter support without becoming an organization Assist
+case. It records a fixed operational lifecycle, requesting owner, real assigned
+Jupiter agent and snapshotted SLA/access terms. A Personal Support
+`SupportAccessGrant` has an explicit source, exactly matches the case ticket and
+is time-bound/revocable; it is not an Assist grant. A
 `PersonalSupportReservation` reserves either current monthly capacity or a
 purchased allocation and settles at most once when an authorized agent accepts
-the case.
+the case; this reservation is the next GOAL-063 extension and is not yet a
+GOAL-062 runtime entity.
 
 `PersonalAllowancePolicy` and nullable `PersonalAllowanceOverride` define
 future monthly support and AI capacity. Immutable monthly allowance windows

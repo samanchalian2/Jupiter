@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-10-07 — GOAL-062 Personal Support operations
+
+- Added a minimal Platform-owned Personal Support catalog with configurable
+  availability, visible copy, operational SLA and bounded access duration.
+- Added tenant-scoped Personal Support cases and a separate lifecycle without
+  reusing organization Assist or changing ticket lifecycle.
+- Reused the global Jupiter-agent registry while issuing only exact-ticket,
+  time-bound, revocable grants and never creating tenant memberships.
+- Hardened case/ticket composite integrity, RLS, application-role privileges,
+  concurrency-safe acceptance, actor-accurate audit and Assist grant-source
+  separation.
+- Added compact Platform controls and passed the 68/68 migration rehearsal,
+  126 API tests, 13 Web tests, typechecks, builds and authenticated RTL browser
+  acceptance without horizontal overflow.
+
 ## 2026-10-07 — GOAL-061 Personal workspace foundation
 
 - Added explicit organization/personal workspace typing and a unique verified

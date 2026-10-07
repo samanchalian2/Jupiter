@@ -1,5 +1,17 @@
 # Current State
 
+**GOAL-062 — Personal Service Catalog, Support Cases & Agent Access (complete,
+2026-10-07):** Personal Support now has a Platform-managed catalog with safe
+availability/name/description/SLA/grant-duration controls, a tenant-scoped case
+lifecycle and exact-ticket, time-bound, revocable agent grants. It remains
+separate from organization Assist; agents use the global registry and never
+become tenant members. Concurrent acceptance creates at most one assignment
+and grant, and content authorization plus access executes transactionally.
+The isolated 001–058a rehearsal produced 68 migration records; 126 API tests,
+13 Web tests, typechecks, builds and authenticated RTL Platform acceptance
+passed. Evidence: `docs/GOAL_062_EVIDENCE.md`. GOAL-063 is ready but not
+started.
+
 **GOAL-061 — Personal Workspace Identity, Provisioning & Routing (complete,
 2026-10-07):** Migration 057 adds backward-compatible `ORGANIZATION`/`PERSONAL`
 workspace typing, one unique verified owner and database-enforced active
@@ -11,7 +23,7 @@ and organization Commercial/Assist/AI semantics are unavailable to personal
 workspaces. Existing organization memberships and applications are preserved.
 The isolated 001–057 rehearsal produced 66 migration records; 122 API tests,
 13 Web tests, typechecks, builds, API health smoke and diff checks passed.
-Evidence: `docs/GOAL_061_EVIDENCE.md`. GOAL-062 is ready but not started.
+Evidence: `docs/GOAL_061_EVIDENCE.md`.
 
 **GOAL-060 — Personal Service architecture and delivery plan (complete,
 2026-10-07):** The approved architecture gives every verified public account
