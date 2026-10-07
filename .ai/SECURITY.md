@@ -21,6 +21,15 @@ in one tenant transaction, preventing access from surviving concurrent revoke
 or expiry. Organization Assist queries explicitly exclude Personal Support
 grants.
 
+GOAL-063 applies RLS and composite tenant FKs to personal override, monthly
+window, allocation and reservation rows. Tenant-role writes are revoked from
+Platform-owned overrides and allocations. Organization/pool advisory locks,
+unique idempotency keys and immutable issued windows/snapshots prevent quota
+oversubscription and history rewriting. Owner projections are membership-bound;
+Platform operations require an explicit personal workspace and real actor.
+Capacity audit metadata contains only pool/source/unit/commercial facts, never
+ticket content or credentials.
+
 Payment amount, package identity, units and validity are snapshotted server-side
 before provider creation. Callback query values are untrusted until the server
 verifies authority and amount with the provider. Order transitions and package

@@ -23,9 +23,10 @@ import { AssistModule } from './assist/assist.module.js';
 import { AppearanceModule } from './appearance/appearance.module.js';
 import { ProductHelpModule } from './help/help.module.js';
 import { PersonalSupportModule } from './personal-support/personal-support.module.js';
+import { PersonalCapacityModule } from './personal-capacity/personal-capacity.module.js';
 
 @Module({
-  imports: [DatabaseModule, AuthModule, TicketModule, NotificationModule, ConversationModule, AttachmentModule, AiModule, TranscriptionModule, ReportingModule, OrganizationModule, KnowledgeModule, SlaModule, EmailModule, TicketIntakeModule, OrganizationApplicationModule, DirectoryConnectorModule, CommercialModule, AssistModule, AppearanceModule, ProductHelpModule, PersonalSupportModule],
+  imports: [DatabaseModule, AuthModule, TicketModule, NotificationModule, ConversationModule, AttachmentModule, AiModule, TranscriptionModule, ReportingModule, OrganizationModule, KnowledgeModule, SlaModule, EmailModule, TicketIntakeModule, OrganizationApplicationModule, DirectoryConnectorModule, CommercialModule, AssistModule, AppearanceModule, ProductHelpModule, PersonalCapacityModule, PersonalSupportModule],
   controllers: [HealthController],
   providers: [HealthService, QueueWorker],
 })

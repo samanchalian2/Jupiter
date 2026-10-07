@@ -1,5 +1,14 @@
 # AI Architecture
 
+## GOAL-063 personal AI capacity foundation
+
+Personal AI owns a separate `AI` allowance/package pool with a generic
+idempotent `AI_ACTION` reservation boundary. It does not reuse the organization
+`AI_SMART_ACTIONS` pool, commercial entitlement model or provider credential.
+GOAL-063 implements/proves the capacity boundary only; later personal-product
+integration must reserve before provider work, settle only a delivered action
+and release failures through the same service.
+
 ## GOAL-051 complete AI Smart Action coverage
 
 `AI_TICKET_REVIEW` and `AI_SMART_INTAKE` now use the same commercial boundary: effective capability resolution, one idempotent reservation before queue/provider work, safe telemetry, and one settlement only after a valid persisted result is available to the requester. Smart Intake's text, conversation, title, taxonomy, secondary-issue and voice stages share its single reservation. Standalone attachment transcription remains non-commercial. Telemetry deliberately stores only provider/model, token counts, audio duration, estimated cost and outcome; it stores no prompt, ticket text, transcript, file or credential.

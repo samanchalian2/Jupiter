@@ -10,6 +10,9 @@ Help, and GOAL-066 hardening/E2E acceptance. Defaults are 3 support cases and
 10 AI Smart Actions per UTC month; Platform Admin owns configurable commercial
 and operational policy, never security invariants.
 
+GOAL-061 through GOAL-063 are complete. GOAL-064 is the next implementation
+Goal; the later UX/Help and hardening Goals have not started.
+
 The MVP progresses through: (1) execution/documentation baseline, (2)
 foundation and local runtime, (3) tenant-aware identity and directory, (4)
 ticket lifecycle, (5) conversation/audit, (6) media, (7) requester and staff

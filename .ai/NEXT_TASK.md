@@ -1,33 +1,37 @@
 # Next Task
 
-## GOAL-063 — Personal Recurring Allowance & Package Capacity (READY)
+## GOAL-064 — Personal Payment Core & Zarinpal Adapter (READY)
 
-Implement only the approved personal commercial-capacity boundary on top of
-GOAL-061/062:
+Implement only the payment boundary approved by DEC-037 on top of GOAL-063:
 
-- add separate personal `SUPPORT` and `AI` allowance pools; never share units
-  between them or with organization Commercial/Assist;
-- provision immutable UTC calendar-month windows with defaults of 3 Personal
-  Support cases and 10 personal AI Smart Actions, no rollover;
-- let Platform Admin configure future defaults and explicit personal-workspace
-  overrides; never rewrite an already provisioned window or historical usage;
-- add a minimal Platform-managed support/AI package catalog with units, price
-  snapshot in Toman/`IRT`, active status and bounded validity (default 365
-  days), plus tenant-scoped allocations;
-- reserve capacity in deterministic order: current monthly allowance, then
-  valid purchased allocation with nearest expiry and stable tie-breakers;
-- integrate Personal Support request with atomic/idempotent reservation,
-  release on cancellation/rejection/pre-accept failure and exactly-once settle
-  when an authorized agent accepts; concurrent retries must not double-use;
-- preserve draft/manual ticketing when capacity is zero and return a safe
-  reason/projection instead of creating an unserviceable case;
-- expose compact Platform controls and permitted personal capacity projection;
-  enforce RLS, composite integrity, actor-accurate audit and tenant isolation;
-- add migration rehearsal, monthly-boundary/override/expiry/order/concurrency
-  tests and update `.ai` plus `docs/GOAL_063_EVIDENCE.md`.
+- add an internal payment-provider adapter and implement Zarinpal first without
+  coupling the domain model or UI to provider-specific response shapes;
+- add tenant-scoped payment orders that snapshot the active package ID/code/
+  name, SUPPORT/AI pool, units, Toman amount, currency `IRT`, validity and
+  personal workspace before any provider request;
+- model idempotent order/attempt/verification/fulfillment transitions; a
+  redirect or callback alone must never mark an order paid;
+- create orders only for the authenticated owner of the active personal
+  workspace and an active package; derive amount and units server-side;
+- verify callback authority, amount and final status server-side through the
+  adapter, reject replay/mismatch/cross-tenant attempts and fulfill at most once
+  into one `personal_package_allocations` row with source `PAYMENT`;
+- keep provider credentials and signing material environment-managed and out of
+  database, client, logs and audit metadata; let Platform Admin configure only
+  non-secret availability/mode and inspect safe operational state;
+- add a user-readable receipt projection (not an official tax invoice) and a
+  Platform-only record of externally completed manual refund with reason,
+  amount, reference and real actor; do not pretend Jupiter sends gateway refund;
+- provide a deterministic local fake adapter for integration tests without a
+  real transaction or secret;
+- test create/retry/cancel/expiry, callback replay, failed verification, amount
+  mismatch, exact-once allocation, snapshots, isolation, audit and secret
+  absence; run migration rehearsal and update `.ai` plus
+  `docs/GOAL_064_EVIDENCE.md`.
 
-Do not add a payment gateway, checkout, provider callback, receipt/refund flow
-or the full personal UX in GOAL-063. Do not start GOAL-064.
+Do not add subscriptions, recurring billing, wallet, discount/tax/accounting,
+official invoicing, card data, automatic refunds or the full personal UX in
+GOAL-064. Do not start GOAL-065.
 
 ## Deferred deployment gate — GOAL-059 remains BLOCKED
 

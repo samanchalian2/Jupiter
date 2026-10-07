@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-10-07 — GOAL-063 Personal capacity and packages
+
+- Added separate SUPPORT and AI monthly pools with immutable UTC windows,
+  defaults 3/10, no rollover and future-only Platform policy/overrides.
+- Added Platform-owned support/AI package catalog and tenant allocations with
+  immutable unit, Toman price and bounded-validity snapshots.
+- Connected Personal Support to atomic monthly-then-nearest-expiry reservation,
+  pre-accept release and exactly-once acceptance settlement.
+- Added compact Platform controls for defaults, override/reset, package
+  catalog, manual allocation/revocation and current capacity projection.
+- Hardened RLS/composite integrity and revoked tenant writes to Platform-owned
+  commercial rows; passed 70/70 migrations, 130 API tests, 13 Web tests,
+  typechecks, builds and responsive authenticated browser acceptance.
+
 ## 2026-10-07 — GOAL-062 Personal Support operations
 
 - Added a minimal Platform-owned Personal Support catalog with configurable

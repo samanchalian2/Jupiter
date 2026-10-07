@@ -5,9 +5,11 @@ import { DatabaseService } from '../src/database/database.service.js';
 import { NotificationService } from '../src/notifications/notification.service.js';
 import { PersonalSupportService } from '../src/personal-support/personal-support.service.js';
 import { AssistService } from '../src/assist/assist.service.js';
+import { PersonalCapacityService } from '../src/personal-capacity/personal-capacity.service.js';
 
 const database=new DatabaseService();
-const support=new PersonalSupportService(database,new NotificationService(database));
+const capacity=new PersonalCapacityService(database);
+const support=new PersonalSupportService(database,new NotificationService(database),capacity);
 const assist=new AssistService(database);
 const marker=randomUUID().replace(/-/g,'').slice(0,12);
 let platformId='',ownerId='',otherOwnerId='',agentAId='',agentBId='',outsiderId='';

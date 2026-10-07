@@ -2,6 +2,7 @@ import { BadRequestException, ForbiddenException, Injectable, NotFoundException 
 import { PoolClient } from 'pg';
 import { DatabaseService } from '../database/database.service.js';
 import { NotificationService } from '../notifications/notification.service.js';
+import { PersonalCapacityService } from '../personal-capacity/personal-capacity.service.js';
 import { TicketActor } from '../tickets/ticket-actor.service.js';
 
 type CatalogInput = {
@@ -16,7 +17,7 @@ type AgentCase = { organization_id:string;ticket_id:string;requested_by_user_id:
 
 @Injectable()
 export class PersonalSupportService {
-  constructor(private readonly database: DatabaseService, private readonly notifications: NotificationService) {}
+  constructor(private readonly database: DatabaseService, private readonly notifications: NotificationService, private readonly capacity: PersonalCapacityService) {}
 
   async effectiveCatalog(actor: TicketActor) {
     await this.personalOwner(actor);
@@ -54,14 +55,22 @@ export class PersonalSupportService {
          WHERE code='PERSONAL_SUPPORT' AND status='ACTIVE'`,
       )).rows[0];
       if (!catalog) throw new ForbiddenException('پشتیبانی شخصی در حال حاضر در دسترس نیست.');
+      const existing=(await client.query<{id:string;status:string}>(
+        'SELECT id,status FROM personal_support_cases WHERE ticket_id=$1',[ticket.id],
+      )).rows[0];
+      if(existing) return existing;
+      const reservation=await this.capacity.reserve(client,{
+        organizationId:actor.organizationId,poolCode:'SUPPORT',subjectType:'SUPPORT_CASE',
+        idempotencyKey:`PERSONAL_SUPPORT:${ticket.id}`,actorId:actor.userId,
+      });
       const inserted = (await client.query<{id:string;status:string}>(
         `INSERT INTO personal_support_cases(
           organization_id,ticket_id,requested_by_user_id,service_code,status,request_note,
-          sla_minutes_snapshot,access_grant_minutes_snapshot
-         ) VALUES($1,$2,$3,$4,'QUEUED',$5,$6,$7)
+          sla_minutes_snapshot,access_grant_minutes_snapshot,capacity_reservation_id
+         ) VALUES($1,$2,$3,$4,'QUEUED',$5,$6,$7,$8)
          ON CONFLICT(organization_id,ticket_id) DO NOTHING
          RETURNING id,status`,
-        [actor.organizationId,ticket.id,actor.userId,catalog.code,requestNote,catalog.sla_minutes,catalog.access_grant_minutes],
+        [actor.organizationId,ticket.id,actor.userId,catalog.code,requestNote,catalog.sla_minutes,catalog.access_grant_minutes,reservation.id],
       )).rows[0];
       const record = inserted ?? (await client.query<{id:string;status:string}>(
         'SELECT id,status FROM personal_support_cases WHERE ticket_id=$1', [ticket.id],
@@ -74,12 +83,13 @@ export class PersonalSupportService {
   async cancel(actor: TicketActor, caseId: string) {
     await this.personalOwner(actor);
     return this.database.withOrganization(actor.organizationId, async (client) => {
-      const record = (await client.query<{id:string;status:string}>(
+      const record = (await client.query<{id:string;status:string;capacity_reservation_id:string|null}>(
         `UPDATE personal_support_cases SET status='CANCELLED',cancelled_at=now(),updated_at=now()
          WHERE id=$1 AND requested_by_user_id=$2 AND status='QUEUED'
-         RETURNING id,status`, [caseId,actor.userId],
+         RETURNING id,status,capacity_reservation_id`, [caseId,actor.userId],
       )).rows[0];
       if (!record) throw new NotFoundException('درخواست قابل لغو نیست.');
+      if(record.capacity_reservation_id) await this.capacity.release(client,record.capacity_reservation_id,actor.userId,'USER_CANCELLED');
       await this.audit(client,actor.organizationId,actor.userId,'personal_support.cancelled',caseId,{status:'CANCELLED'});
       return record;
     });
@@ -143,13 +153,14 @@ export class PersonalSupportService {
     await this.activeAgent(agentId);
     const raw=await this.rawCase(caseId);
     return this.database.withOrganization(raw.organization_id, async (client) => {
-      const personalCase=(await client.query<AgentCase & {access_grant_minutes_snapshot:number;sla_minutes_snapshot:number}>(
+      const personalCase=(await client.query<AgentCase & {access_grant_minutes_snapshot:number;sla_minutes_snapshot:number;capacity_reservation_id:string|null}>(
         `SELECT organization_id,ticket_id,requested_by_user_id,status,assigned_support_agent_user_id,
-          access_grant_minutes_snapshot,sla_minutes_snapshot
+          access_grant_minutes_snapshot,sla_minutes_snapshot,capacity_reservation_id
          FROM personal_support_cases WHERE id=$1 FOR UPDATE`, [caseId],
       )).rows[0];
       if (!personalCase || personalCase.status!=='QUEUED') throw new NotFoundException('پرونده برای پذیرش در دسترس نیست.');
       await this.activeAgent(agentId,client);
+      if(personalCase.capacity_reservation_id) await this.capacity.settle(client,personalCase.capacity_reservation_id,caseId,agentId);
       const grant=(await client.query<{id:string}>(
         `INSERT INTO support_access_grants(
           organization_id,support_agent_user_id,scope,ticket_id,allows_restricted,
@@ -176,8 +187,8 @@ export class PersonalSupportService {
     await this.activeAgent(agentId);
     const raw=await this.rawCase(caseId);
     return this.database.withOrganization(raw.organization_id, async (client) => {
-      const personalCase=(await client.query<AgentCase>(
-        `SELECT organization_id,ticket_id,requested_by_user_id,status,assigned_support_agent_user_id
+      const personalCase=(await client.query<AgentCase & {capacity_reservation_id:string|null}>(
+        `SELECT organization_id,ticket_id,requested_by_user_id,status,assigned_support_agent_user_id,capacity_reservation_id
          FROM personal_support_cases WHERE id=$1 FOR UPDATE`, [caseId],
       )).rows[0];
       if (!personalCase || personalCase.assigned_support_agent_user_id!==agentId) throw new ForbiddenException('این پرونده به کارشناس دیگری اختصاص دارد.');
@@ -254,8 +265,8 @@ export class PersonalSupportService {
     if (closureNote.length<2 || closureNote.length>1000) throw new BadRequestException('دلیل معتبر الزامی است.');
     const raw=await this.rawCase(caseId);
     return this.database.withOrganization(raw.organization_id,async client=>{
-      const personalCase=(await client.query<AgentCase>(
-        `SELECT organization_id,ticket_id,requested_by_user_id,status,assigned_support_agent_user_id
+      const personalCase=(await client.query<AgentCase & {capacity_reservation_id:string|null}>(
+        `SELECT organization_id,ticket_id,requested_by_user_id,status,assigned_support_agent_user_id,capacity_reservation_id
          FROM personal_support_cases WHERE id=$1 FOR UPDATE`,[caseId],
       )).rows[0];
       const allowed=status==='REJECTED' ? ['QUEUED'] : ['ACCEPTED','IN_PROGRESS','WAITING_FOR_USER'];
@@ -265,6 +276,7 @@ export class PersonalSupportService {
           revoked_at=CASE WHEN $2='REVOKED' THEN now() ELSE revoked_at END,updated_at=now()
          WHERE id=$1 RETURNING id,status`,[caseId,status,closureNote],
       )).rows[0];
+      if(status==='REJECTED'&&personalCase.capacity_reservation_id) await this.capacity.release(client,personalCase.capacity_reservation_id,actorId,'PLATFORM_REJECTED');
       if(status==='REVOKED') await this.revokeGrant(client,caseId,actorId);
       await this.audit(client,raw.organization_id,actorId,`personal_support.${status.toLowerCase()}`,caseId,{status});
       return record;

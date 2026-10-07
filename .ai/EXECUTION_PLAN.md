@@ -1,16 +1,24 @@
 # Execution Plan
 
+## GOAL-064 — Personal payment core and Zarinpal adapter
+
+**Status:** READY after GOAL-063. Add the provider adapter, immutable personal
+payment order snapshot, safe attempt/verification lifecycle, Zarinpal as the
+first adapter, server-verified callback and exactly-once fulfillment into one
+PAYMENT package allocation. Keep credentials environment-managed and expose
+only non-secret payment availability/mode to Platform Admin. Add receipt and
+manual external-refund recording, idempotency/replay/amount/tenant tests,
+migration rehearsal and evidence. Do not build official tax invoicing, card
+storage, subscription billing or start GOAL-065.
+
 ## GOAL-063 — Personal recurring allowance and package capacity
 
-**Status:** READY after GOAL-062. Add separate `SUPPORT` and `AI` personal
-capacity pools, UTC monthly allowance windows with approved defaults of 3 and
-10, Platform future-default and explicit-workspace overrides, and a minimal
-Platform-managed package catalog with units, Toman price and bounded validity.
-Integrate idempotent support reservation/release/settlement with GOAL-062 and
-preserve manual drafts/ticketing at zero capacity. Add tenant isolation,
-concurrency, expiry and deterministic monthly-then-purchased consumption tests,
-admin controls, migration rehearsal and evidence. Do not add gateway payment,
-checkout, callback fulfillment or start GOAL-064.
+**Status:** DONE (2026-10-07). Added independent personal SUPPORT/AI UTC
+monthly windows, future policy/overrides, package catalog and snapshotted
+allocations. Personal Support consumes monthly then nearest-expiry purchased
+capacity with atomic release/settlement and zero-capacity manual-ticket safety.
+Platform controls and evidence are complete. Evidence:
+`docs/GOAL_063_EVIDENCE.md`. GOAL-064 was not started in this execution.
 
 ## GOAL-062 — Personal service catalog, support cases and agent access
 

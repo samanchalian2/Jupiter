@@ -26,6 +26,13 @@ preserve history. `PersonalPackage` defines either `SUPPORT` or `AI` units,
 price in Toman and a bounded validity period; `PersonalPackageAllocation`
 captures the purchased snapshot and expiry.
 
+`PersonalCapacityReservation` binds one logical SUPPORT case or future personal
+AI action to either one current `PersonalAllowanceWindow` or one active
+`PersonalPackageAllocation`. It is uniquely idempotent per tenant and is
+`RESERVED`, `SETTLED` or `RELEASED`; one support case references at most one
+reservation. Allocation snapshots preserve package code/name, pool, units,
+Toman price, validity and source even after catalog edits.
+
 `PaymentOrder` stores an immutable commercial snapshot and lifecycle;
 `PaymentAttempt` stores safe provider references and verification outcomes;
 `PaymentFulfillment` links one verified order to exactly one package allocation.

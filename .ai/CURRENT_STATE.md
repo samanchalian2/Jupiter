@@ -1,5 +1,18 @@
 # Current State
 
+**GOAL-063 — Personal Recurring Allowance & Package Capacity (complete,
+2026-10-07):** Personal SUPPORT and AI have separate tenant-isolated monthly
+pools, seeded at 3 and 10 units per UTC month without rollover. Platform Admin
+can configure future defaults, explicit personal-space overrides, package
+units/Toman price/validity/status, manual allocation and revocation; issued
+windows and snapshots remain immutable. Personal Support now reserves monthly
+then nearest-expiry purchased capacity, releases before acceptance and settles
+exactly once on agent acceptance. Zero capacity preserves manual tickets. The
+isolated 001–059a rehearsal produced 70 migrations; 130 API tests, 13 Web
+tests, typechecks, builds, API startup and authenticated RTL acceptance at
+desktop/mobile widths passed. Evidence: `docs/GOAL_063_EVIDENCE.md`. GOAL-064
+is ready but not started.
+
 **GOAL-062 — Personal Service Catalog, Support Cases & Agent Access (complete,
 2026-10-07):** Personal Support now has a Platform-managed catalog with safe
 availability/name/description/SLA/grant-duration controls, a tenant-scoped case

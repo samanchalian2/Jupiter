@@ -29,6 +29,13 @@ duration and issues one exact-ticket grant. The case/grant transaction never
 creates a membership and organization Assist explicitly ignores Personal
 Support grants. Capacity reservation and settlement are attached in GOAL-063.
 
+GOAL-063 adds a `PersonalCapacityModule` inside the modular monolith. It owns
+two explicit pools (`SUPPORT`, `AI`), immutable UTC monthly windows, future
+policy/override resolution, package catalog/allocation snapshots and atomic
+reservation state. Personal Support calls this application service inside the
+same tenant transaction; organization Commercial and Assist remain separate.
+Payment fulfillment will target the same allocation aggregate in GOAL-064.
+
 ## GOAL-057 Appearance runtime
 
 The Appearance module remains inside the modular monolith. It owns canonical

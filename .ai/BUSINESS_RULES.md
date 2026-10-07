@@ -27,6 +27,14 @@
 - Monthly defaults are 3 personal support cases and 10 AI Smart Actions per UTC
   calendar month, without rollover. Platform Admin may change future defaults
   and explicit workspace overrides; provisioned history is never overwritten.
+- Current capacity consumption is deterministic: the current monthly window,
+  then active purchased allocation by nearest expiry, creation time and ID.
+  `RESERVED` and `SETTLED` occupy one unit; expiry/revocation blocks only new
+  reservation. SUPPORT and AI pools never share units.
+- A Personal Support request atomically reserves capacity before its case is
+  queued. User cancellation or Platform rejection releases it; agent acceptance
+  settles it exactly once. Zero capacity leaves the manual ticket unchanged and
+  creates no support case.
 - Support and AI packages are separate. New packages default to 365 days of
   validity; Platform Admin may set a bounded package-specific period. Allocation
   snapshots units, Toman price and expiry so later catalog edits do not rewrite
