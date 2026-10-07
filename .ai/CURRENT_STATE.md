@@ -1,5 +1,18 @@
 # Current State
 
+**GOAL-061 — Personal Workspace Identity, Provisioning & Routing (complete,
+2026-10-07):** Migration 057 adds backward-compatible `ORGANIZATION`/`PERSONAL`
+workspace typing, one unique verified owner and database-enforced active
+`REQUESTER` membership. Verification provisions atomically; login/refresh
+provide an idempotent legacy ensure. Sessions and the Web client resolve the
+canonical `/personal` route while `/o/{slug}` remains organization-only.
+Organization administration, owner assignment, Directory/team/SLA authority
+and organization Commercial/Assist/AI semantics are unavailable to personal
+workspaces. Existing organization memberships and applications are preserved.
+The isolated 001–057 rehearsal produced 66 migration records; 122 API tests,
+13 Web tests, typechecks, builds, API health smoke and diff checks passed.
+Evidence: `docs/GOAL_061_EVIDENCE.md`. GOAL-062 is ready but not started.
+
 **GOAL-060 — Personal Service architecture and delivery plan (complete,
 2026-10-07):** The approved architecture gives every verified public account
 at most one private personal workspace while preserving the existing

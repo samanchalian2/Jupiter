@@ -1,24 +1,26 @@
 # Next Task
 
-## GOAL-061 — Personal Workspace Identity, Provisioning & Routing (READY)
+## GOAL-062 — Personal Service Catalog, Support Cases & Agent Access (READY)
 
-Implement only the backward-compatible personal workspace foundation approved
-by GOAL-060:
+Implement only the Personal Support operational boundary approved by GOAL-060
+and enabled by the completed GOAL-061 foundation:
 
-- add `ORGANIZATION`/`PERSONAL` workspace type and unique personal owner while
-  preserving required tenant identifiers, composite integrity and RLS;
-- idempotently provision one personal workspace only for a verified public
-  account, with a safe lazy path for eligible legacy accounts;
-- create only the personal owner's active `REQUESTER` membership and preserve
-  every organization membership/application;
-- add canonical `/personal` resolution without changing `/o/{slug}` behavior;
-- deny organization administration, Directory, team and SLA configuration for
-  personal workspaces on the server;
-- add migration rehearsal, identity/routing/authorization/isolation tests and
-  update `.ai` plus `docs/GOAL_061_EVIDENCE.md`.
+- add a minimal Platform-managed personal service catalog with availability,
+  visible description and operational SLA fields that are safe to configure;
+- add a tenant-scoped Personal Support case lifecycle linked to the personal
+  ticket and owned by a separate Personal Support module, not organization
+  Assist;
+- reuse the global Jupiter support-agent registry without making an agent a
+  personal-workspace member;
+- issue only ticket-scoped, time-bound and revocable support access after the
+  supported case transition, and revoke it on completion/revocation;
+- preserve personal manual ticketing, organization Assist and all organization
+  workflows; enforce tenant isolation and actor-accurate audit;
+- add migration rehearsal, lifecycle/concurrency/access/isolation tests and
+  update `.ai` plus `docs/GOAL_062_EVIDENCE.md`.
 
-Do not implement support capacity, packages, payment or the full personal UI in
-GOAL-061, and do not start GOAL-062.
+Do not implement monthly/purchased capacity, package allocation, payment,
+checkout or the full personal UI in GOAL-062, and do not start GOAL-063.
 
 ## Deferred deployment gate — GOAL-059 remains BLOCKED
 

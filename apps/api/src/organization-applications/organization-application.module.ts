@@ -4,9 +4,10 @@ import { publicAccountVerificationDeliveryMode } from '../config.js';
 import { OrganizationApplicationController, PlatformOrganizationApplicationController, PublicAccountController } from './organization-application.controller.js';
 import { OrganizationApplicationService } from './organization-application.service.js';
 import { DeferredVerificationNotificationDelivery, LocalVerificationNotificationDelivery, VERIFICATION_NOTIFICATION_DELIVERY, WebhookVerificationNotificationDelivery } from './verification-notification.service.js';
+import { PersonalWorkspaceModule } from '../personal-workspaces/personal-workspace.module.js';
 
 @Module({
-  imports: [AuthModule],
+  imports: [AuthModule, PersonalWorkspaceModule],
   controllers: [PublicAccountController, OrganizationApplicationController, PlatformOrganizationApplicationController],
   providers: [
     OrganizationApplicationService,

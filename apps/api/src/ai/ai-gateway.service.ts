@@ -47,6 +47,7 @@ export class AiGatewayService {
     removeApiKey?: boolean;
   }) {
     await this.platformAdmin(actorId);
+    if (!(await this.database.query("SELECT 1 FROM organizations WHERE id=$1 AND workspace_type='ORGANIZATION'",[input.organizationId])).rowCount) throw new BadRequestException('تنظیم AI سازمانی برای این فضای کاری مجاز نیست.');
     const providerBaseUrl = this.validProviderBaseUrl(input.providerBaseUrl);
     const analysisModel = this.validModel(input.analysisModel);
     const transcriptionModel = this.validModel(input.transcriptionModel);
@@ -102,7 +103,8 @@ export class AiGatewayService {
         (s.api_key_ciphertext IS NOT NULL) AS "hasApiKey",s.updated_at AS "updatedAt",
         COALESCE((SELECT count(*)::int FROM ai_requests r WHERE r.organization_id=o.id),0) AS "requestCount",
         COALESCE((SELECT sum(COALESCE((result.usage->>'inputTokens')::int,0)+COALESCE((result.usage->>'outputTokens')::int,0))::int FROM ai_results result WHERE result.organization_id=o.id),0) AS "tokenCount"
-       FROM organizations o LEFT JOIN organization_ai_settings s ON s.organization_id=o.id ORDER BY o.name`,
+       FROM organizations o LEFT JOIN organization_ai_settings s ON s.organization_id=o.id
+       WHERE o.workspace_type='ORGANIZATION' ORDER BY o.name`,
     )).rows;
   }
 

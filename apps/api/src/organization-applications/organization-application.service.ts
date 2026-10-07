@@ -1,9 +1,10 @@
-import { BadRequestException, ConflictException, ForbiddenException, HttpException, HttpStatus, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, HttpException, HttpStatus, Inject, Injectable, NotFoundException, Optional } from '@nestjs/common';
 import { createHash, randomBytes } from 'node:crypto';
 import { PoolClient } from 'pg';
 import { hashPassword } from '../auth/password.js';
 import { DatabaseService } from '../database/database.service.js';
 import { VERIFICATION_NOTIFICATION_DELIVERY, VerificationNotificationDelivery } from './verification-notification.service.js';
+import { PersonalWorkspaceService } from '../personal-workspaces/personal-workspace.service.js';
 
 type ApplicationStatus = 'DRAFT' | 'SUBMITTED' | 'UNDER_REVIEW' | 'NEEDS_INFORMATION' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
 type DeliveryStatus = 'DELIVERED' | 'PENDING_CONFIGURATION' | 'FAILED';
@@ -37,6 +38,7 @@ export class OrganizationApplicationService {
   constructor(
     private readonly database: DatabaseService,
     @Inject(VERIFICATION_NOTIFICATION_DELIVERY) private readonly verificationDelivery: VerificationNotificationDelivery,
+    @Optional() private readonly personalWorkspaces?: PersonalWorkspaceService,
   ) {}
 
   async createPublicAccount(input: { email?: string; displayName?: string; password?: string }) {
@@ -109,6 +111,7 @@ export class OrganizationApplicationService {
       await client.query('UPDATE public_account_verification_tokens SET consumed_at=now() WHERE id=$1', [row.id]);
       await client.query('UPDATE authentication_identities SET email_verified_at=COALESCE(email_verified_at,now()),updated_at=now() WHERE id=$1', [row.identity_id]);
       await this.audit(client,row.user_id,'public_account.email_verified','user',row.user_id,{});
+      await this.personalWorkspaces?.ensureVerifiedWithClient(client,row.user_id);
       return { verified: true };
     });
     return result;

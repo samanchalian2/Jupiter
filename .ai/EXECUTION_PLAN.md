@@ -1,11 +1,23 @@
 # Execution Plan
 
+## GOAL-062 — Personal service catalog, support cases and agent access
+
+**Status:** READY after GOAL-061. Implement the Personal Support operational
+boundary approved by DEC-035: a minimal Platform-managed service catalog and
+SLA/availability policy, personal support case lifecycle, reuse of the global
+Jupiter-agent registry, and ticket-scoped/time-bound/revocable access grants.
+Submission, queueing and assignment must not reuse organization Assist or
+grant tenant membership. Preserve manual personal ticketing and all
+organization behavior. Capacity settlement, packages and payment remain later
+Goals. Do not start GOAL-063.
+
 ## GOAL-061 — Personal workspace identity, provisioning and routing
 
-**Status:** READY after GOAL-060. Add the backward-compatible workspace type,
+**Status:** DONE (2026-10-07). Added the backward-compatible workspace type,
 unique personal owner, verified-account idempotent provisioning and canonical
-`/personal` resolution. Preserve `/o/{slug}`, organization memberships,
-applications, RLS and all organization behavior. Do not start GOAL-062.
+`/personal` resolution. `/o/{slug}`, organization memberships, applications,
+RLS and organization behavior are preserved. Evidence:
+`docs/GOAL_061_EVIDENCE.md`. GOAL-062 was not started in this execution.
 
 ## GOAL-060 — Personal Service architecture and delivery plan
 

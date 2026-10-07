@@ -277,7 +277,7 @@ export class OrganizationService {
   private suggestionTable(kind:string) { if(!suggestionKinds.has(kind)||kind==='subcategory') throw new BadRequestException('Invalid suggestion kind.'); return `${kind}s`; }
   private async replaceRoles(client: { query(query: string, values?: unknown[]): Promise<unknown> }, membershipId: string, roles: string[]) { await client.query('DELETE FROM membership_roles WHERE membership_id=$1',[membershipId]); await client.query('INSERT INTO membership_roles(membership_id,role_id) SELECT $1,id FROM roles WHERE code=ANY($2::text[])',[membershipId,roles]); }
   private async platform(userId:string) { const user=(await this.database.query<{is_platform_admin:boolean}>('SELECT is_platform_admin FROM users WHERE id=$1 AND is_active=true',[userId])).rows[0]; if(!user?.is_platform_admin) throw new ForbiddenException(); }
-  async platformOrganizations(userId:string) { await this.platform(userId); return (await this.database.query('SELECT id,slug,name,status,created_at FROM organizations ORDER BY created_at DESC')).rows; }
+  async platformOrganizations(userId:string) { await this.platform(userId); return (await this.database.query('SELECT id,slug,name,status,workspace_type,created_at FROM organizations ORDER BY created_at DESC')).rows; }
   async createPlatformOrganization(userId: string, input: { name: string; slug: string }) { await this.platform(userId); if(!input.name?.trim() || !/^[a-z0-9-]{3,63}$/.test(input.slug ?? '')) throw new BadRequestException('Organization name and slug are invalid.'); const result=(await this.database.query<{id:string;name:string;slug:string;status:string}>('INSERT INTO organizations(name,slug) VALUES($1,$2) RETURNING id,name,slug,status',[input.name.trim(),input.slug.trim()])); await this.database.query('INSERT INTO audit_logs(actor_user_id,action,target_type,target_id,metadata) VALUES($1,\'platform.organization_created\',\'organization\',$2,$3)',[userId,result.rows[0].id,{slug:input.slug.trim()}]); return result.rows[0]; }
   async platformUsers(userId: string) { await this.platform(userId); return (await this.database.query('SELECT id,email,display_name,is_platform_admin,is_active,created_at FROM users ORDER BY display_name')).rows; }
   async createPlatformUser(actorUserId: string, input: { email: string; username?: string; displayName: string; password: string; isPlatformAdmin?: boolean }) { await this.platform(actorUserId); if(!/^\S+@\S+\.\S+$/.test(input.email ?? '') || !input.displayName?.trim() || !input.password || input.password.length<10) throw new BadRequestException('Provide valid user details and a password of at least 10 characters.'); try { const result=(await this.database.query<{id:string;email:string;display_name:string;is_platform_admin:boolean;is_active:boolean}>('INSERT INTO users(email,username,display_name,password_hash,is_platform_admin) VALUES($1,$2,$3,$4,$5) RETURNING id,email,display_name,is_platform_admin,is_active',[input.email.toLowerCase(),this.username(input.username)??null,input.displayName.trim(),await hashPassword(input.password),input.isPlatformAdmin??false])).rows[0]; await this.database.query('INSERT INTO audit_logs(actor_user_id,action,target_type,target_id,metadata) VALUES($1,\'platform.user_created\',\'user\',$2,$3)',[actorUserId,result.id,{isPlatformAdmin:result.is_platform_admin}]); return result; } catch (cause) { this.usernameConflict(cause); } }
@@ -299,7 +299,8 @@ export class OrganizationService {
         array_remove(array_agg(r.code ORDER BY r.code),NULL) AS role_codes
        FROM memberships m JOIN organizations o ON o.id=m.organization_id
        LEFT JOIN membership_roles mr ON mr.membership_id=m.id LEFT JOIN roles r ON r.id=mr.role_id
-       WHERE m.user_id=$1 AND m.status='active' AND o.slug=$2 GROUP BY m.organization_id,o.name,o.slug,o.status`,[userId,slug],
+       WHERE m.user_id=$1 AND m.status='active' AND o.slug=$2 AND o.workspace_type='ORGANIZATION'
+       GROUP BY m.organization_id,o.name,o.slug,o.status`,[userId,slug],
     )).rows[0];
     if(!context) throw new NotFoundException('سازمان در دسترس نیست.');
     return context;
@@ -345,6 +346,9 @@ export class OrganizationService {
   async assignPlatformOwner(actorUserId:string,organizationId:string,targetUserId:string) {
     await this.platform(actorUserId);
     return this.database.transaction(async client=>{
+      const organization=(await client.query<{workspace_type:string}>('SELECT workspace_type FROM organizations WHERE id=$1 FOR UPDATE',[organizationId])).rows[0];
+      if(!organization) throw new NotFoundException('Organization not found.');
+      if(organization.workspace_type==='PERSONAL') throw new BadRequestException('فضای شخصی مالک یا مدیر سازمانی نمی‌پذیرد.');
       const member=(await client.query<{id:string}>('SELECT id FROM memberships WHERE organization_id=$1 AND user_id=$2 AND status=\'active\' FOR UPDATE',[organizationId,targetUserId])).rows[0];
       if(!member) throw new BadRequestException('مالک باید عضو فعال همین سازمان باشد.');
       const ownerRole=(await client.query<{id:string}>('SELECT id FROM roles WHERE code=\'ORG_OWNER\'')).rows[0]; if(!ownerRole) throw new NotFoundException('Owner role not found.');
@@ -357,6 +361,9 @@ export class OrganizationService {
   async revokePlatformOwner(actorUserId:string,organizationId:string) {
     await this.platform(actorUserId);
     return this.database.transaction(async client=>{
+      const organization=(await client.query<{workspace_type:string}>('SELECT workspace_type FROM organizations WHERE id=$1 FOR UPDATE',[organizationId])).rows[0];
+      if(!organization) throw new NotFoundException('Organization not found.');
+      if(organization.workspace_type==='PERSONAL') throw new BadRequestException('فضای شخصی نقش مالک سازمانی ندارد.');
       const ownerRole=(await client.query<{id:string}>('SELECT id FROM roles WHERE code=\'ORG_OWNER\'')).rows[0]; if(!ownerRole) throw new NotFoundException('Owner role not found.');
       const owners=(await client.query<{id:string,user_id:string}>('SELECT m.id,m.user_id FROM memberships m JOIN membership_roles mr ON mr.membership_id=m.id WHERE m.organization_id=$1 AND mr.role_id=$2 FOR UPDATE',[organizationId,ownerRole.id])).rows;
       await client.query('DELETE FROM membership_roles WHERE role_id=$1 AND membership_id IN (SELECT id FROM memberships WHERE organization_id=$2)',[ownerRole.id,organizationId]);

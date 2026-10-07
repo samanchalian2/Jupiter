@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-10-07 — GOAL-061 Personal workspace foundation
+
+- Added explicit organization/personal workspace typing and a unique verified
+  personal owner without replacing the existing tenant/RLS boundary.
+- Added transactional verification-time provisioning plus an idempotent
+  login/refresh path for eligible legacy accounts.
+- Added canonical `/personal` selection while preserving organization
+  memberships, applications and `/o/{slug}` behavior.
+- Enforced requester-only personal membership and blocked organization admin,
+  owner, Commercial, Assist and organization AI semantics for personal tenants.
+- Passed the isolated 001–057 migration rehearsal, 122 API tests, 13 Web tests,
+  both typechecks/builds, built-API health smoke and diff validation.
+
 ## 2026-10-07 — GOAL-060 Personal Service architecture
 
 - Approved one private personal workspace per verified account while retaining

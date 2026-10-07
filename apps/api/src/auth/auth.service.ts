@@ -1,16 +1,18 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, Optional, UnauthorizedException } from '@nestjs/common';
 import { createHash, randomBytes } from 'node:crypto';
 import { JwtService } from '@nestjs/jwt';
 import { DatabaseService } from '../database/database.service.js';
 import { hashPassword, verifyPassword } from './password.js';
+import { PersonalWorkspaceService } from '../personal-workspaces/personal-workspace.service.js';
 
 @Injectable()
 export class AuthService {
-  constructor(private readonly database: DatabaseService, private readonly jwt: JwtService) {}
+  constructor(private readonly database: DatabaseService, private readonly jwt: JwtService, @Optional() private readonly personalWorkspaces?: PersonalWorkspaceService) {}
   async login(identifier: string, password: string) {
     const normalizedIdentifier = identifier.trim().toLowerCase();
     const user = await this.passwordUser(normalizedIdentifier);
     if (!user || !(await verifyPassword(password, user.password_hash))) throw new UnauthorizedException('Invalid credentials');
+    await this.personalWorkspaces?.ensureForEligibleUser(user.id);
     const memberships = await this.memberships(user.id);
     return this.issueSession(user, memberships);
   }
@@ -22,6 +24,7 @@ export class AuthService {
        WHERE s.token_hash=$1 AND s.revoked_at IS NULL AND s.expires_at>now() AND u.is_active=true`, [tokenHash],
     )).rows[0];
     if (!session) throw new UnauthorizedException('Session expired. Please sign in again.');
+    await this.personalWorkspaces?.ensureForEligibleUser(session.user_id);
     const memberships = await this.memberships(session.user_id);
     const next = await this.issueSession({ id: session.user_id, email: session.email, display_name: session.display_name, is_platform_admin: session.is_platform_admin }, memberships);
     await this.database.query('UPDATE refresh_sessions SET revoked_at=now(),replaced_by_session_id=$2,last_used_at=now() WHERE id=$1', [session.id, next.refreshSessionId]);
@@ -31,8 +34,8 @@ export class AuthService {
     if (token) await this.database.query('UPDATE refresh_sessions SET revoked_at=now() WHERE token_hash=$1 AND revoked_at IS NULL', [this.hashToken(token)]);
   }
   private async memberships(userId: string) {
-    return (await this.database.query<{organization_id:string;organization_name:string;organization_slug:string;organization_status:string;role_codes:string[]}>(
-      'SELECT m.organization_id,o.name AS organization_name,o.slug AS organization_slug,o.status AS organization_status,array_agg(r.code ORDER BY r.code) AS role_codes FROM memberships m JOIN organizations o ON o.id=m.organization_id LEFT JOIN membership_roles mr ON mr.membership_id=m.id LEFT JOIN roles r ON r.id=mr.role_id WHERE m.user_id=$1 AND m.status=\'active\' GROUP BY m.organization_id,o.name,o.slug,o.status ORDER BY o.name', [userId],
+    return (await this.database.query<{organization_id:string;organization_name:string;organization_slug:string;organization_status:string;workspace_type:'ORGANIZATION'|'PERSONAL';role_codes:string[]}>(
+      'SELECT m.organization_id,o.name AS organization_name,o.slug AS organization_slug,o.status AS organization_status,o.workspace_type,array_remove(array_agg(r.code ORDER BY r.code),NULL) AS role_codes FROM memberships m JOIN organizations o ON o.id=m.organization_id LEFT JOIN membership_roles mr ON mr.membership_id=m.id LEFT JOIN roles r ON r.id=mr.role_id WHERE m.user_id=$1 AND m.status=\'active\' GROUP BY m.organization_id,o.name,o.slug,o.status,o.workspace_type ORDER BY o.workspace_type DESC,o.name', [userId],
     )).rows;
   }
   private async passwordUser(identifier: string) {

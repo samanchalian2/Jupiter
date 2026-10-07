@@ -10,6 +10,11 @@ GOAL-065 UX/Help and GOAL-066 hardening. Platform Admin controls operational
 and commercial policy; authorization, RLS, settlement and payment verification
 remain fixed.
 
+GOAL-061 is complete: verified public accounts have one tenant-isolated
+personal workspace and canonical `/personal` routing without changing
+organization tenants. GOAL-062 is ready for Personal Support operations;
+GOAL-063 through GOAL-066 retain their approved sequence.
+
 ## GOAL-059 — Staging Release Readiness & Deployment Gate Acceptance
 
 **Status: BLOCKED (temporary IP preview deployed 2026-09-26).** An authorized

@@ -48,7 +48,7 @@ const account = async (suffix: string) => {
   const email = `application-${suffix}-${fixtureId}@jupiter.test`;
   createdEmails.push(email);
   const result = await applications.createPublicAccount({ email, displayName: `Applicant ${suffix}`, password: 'safe-password-123' });
-  const notification = delivery.notifications.at(-1)!;
+  const notification = delivery.notifications.find((item) => item.email === email)!;
   return { ...result, email, token: notification.token, response: result };
 };
 
