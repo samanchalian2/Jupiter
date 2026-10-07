@@ -30,13 +30,15 @@ Platform operations require an explicit personal workspace and real actor.
 Capacity audit metadata contains only pool/source/unit/commercial facts, never
 ticket content or credentials.
 
-Payment amount, package identity, units and validity are snapshotted server-side
+GOAL-064 snapshots payment amount, package identity, units and validity server-side
 before provider creation. Callback query values are untrusted until the server
 verifies authority and amount with the provider. Order transitions and package
 fulfillment are locked and idempotent. Provider secrets are environment-managed
 and excluded from database rows, logs, audit metadata and client responses;
-card data is never stored. Production callbacks require HTTPS and an allowlisted
-public origin. Platform settings cannot weaken these controls.
+card data and raw provider payloads are never stored. Production callbacks
+require HTTPS. The deterministic local adapter is unavailable in production.
+Platform settings cannot weaken these controls, and the tenant application role
+cannot write payment or Platform-owned allocation rows.
 
 ## GOAL-057 Appearance input boundary
 

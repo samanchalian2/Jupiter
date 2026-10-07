@@ -1,5 +1,17 @@
 # Current State
 
+**GOAL-064 — Personal Payment Core & Zarinpal Adapter (complete,
+2026-10-07):** Personal package payment now uses a provider-neutral adapter,
+Zarinpal live implementation and a deterministic non-production local adapter.
+Tenant orders snapshot the active package, pool, units, Toman/IRT amount and
+validity before provider creation; callbacks require server verification and
+fulfill exactly once into one PAYMENT allocation. Platform Admin can configure
+only availability/mode, inspect safe order state and record externally completed
+refunds. Credentials remain environment-only. The isolated 001–060 rehearsal
+produced 71 migrations; 134 API tests, 13 Web tests, typechecks, builds and
+diff checks passed. Evidence: `docs/GOAL_064_EVIDENCE.md`. GOAL-065 is ready
+but not started.
+
 **GOAL-063 — Personal Recurring Allowance & Package Capacity (complete,
 2026-10-07):** Personal SUPPORT and AI have separate tenant-isolated monthly
 pools, seeded at 3 and 10 units per UTC month without rollover. Platform Admin

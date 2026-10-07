@@ -2,14 +2,12 @@
 
 ## GOAL-064 — Personal payment core and Zarinpal adapter
 
-**Status:** READY after GOAL-063. Add the provider adapter, immutable personal
-payment order snapshot, safe attempt/verification lifecycle, Zarinpal as the
-first adapter, server-verified callback and exactly-once fulfillment into one
-PAYMENT package allocation. Keep credentials environment-managed and expose
-only non-secret payment availability/mode to Platform Admin. Add receipt and
-manual external-refund recording, idempotency/replay/amount/tenant tests,
-migration rehearsal and evidence. Do not build official tax invoicing, card
-storage, subscription billing or start GOAL-065.
+**Status:** DONE (2026-10-07). Added the provider adapter, immutable personal
+payment snapshot/lifecycle, Zarinpal live and deterministic local adapters,
+server-verified callback and exact-once PAYMENT allocation. Credentials remain
+environment-managed; Platform controls only non-secret availability/mode and
+safe operations. Receipt and external-refund recording are complete. Evidence:
+`docs/GOAL_064_EVIDENCE.md`. GOAL-065 was not started in this execution.
 
 ## GOAL-063 — Personal recurring allowance and package capacity
 

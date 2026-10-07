@@ -10,12 +10,13 @@ GOAL-065 UX/Help and GOAL-066 hardening. Platform Admin controls operational
 and commercial policy; authorization, RLS, settlement and payment verification
 remain fixed.
 
-GOAL-061 through GOAL-063 are complete: verified public accounts have one
+GOAL-061 through GOAL-064 are complete: verified public accounts have one
 tenant-isolated personal workspace and canonical `/personal` routing, plus a
 separate Personal Support catalog/case/access boundary that does not change
 organization tenants or Assist, and separate personal SUPPORT/AI monthly and
-purchased capacity. GOAL-064 is ready for the adapter-based Zarinpal payment
-core; GOAL-065 and GOAL-066 retain their approved sequence.
+purchased capacity, plus adapter-isolated Zarinpal payment with server
+verification and exact-once fulfillment. GOAL-065 is ready for the complete
+personal UX and Help; GOAL-066 retains its approved final sequence.
 
 ## GOAL-059 — Staging Release Readiness & Deployment Gate Acceptance
 

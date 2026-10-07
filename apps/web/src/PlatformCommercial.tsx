@@ -4,6 +4,7 @@ import { request } from './App';
 import { PlatformAssistControls } from './PlatformAssistControls';
 import { PlatformPersonalSupportControls } from './PlatformPersonalSupportControls';
 import { PlatformPersonalCapacityControls } from './PlatformPersonalCapacityControls';
+import { PlatformPersonalPaymentControls } from './PlatformPersonalPaymentControls';
 import { ContextualHelpTrigger } from './ContextualHelp';
 
 type Organization = { id: string; name: string; slug: string };
@@ -39,6 +40,7 @@ export function PlatformCommercial({ actor, organizations, users = [], onSaved, 
     <div className="contextual-help-row"><span>راهنمای سیاست پشتیبانی Jupiter</span><ContextualHelpTrigger actor={actor} relatedFeature="PLATFORM_COMMERCIAL" label="راهنمای پشتیبانی Jupiter"/></div>
     <PlatformPersonalSupportControls actor={actor} onSaved={onSaved} onError={onError} />
     <PlatformPersonalCapacityControls actor={actor} onSaved={onSaved} onError={onError} />
+    <PlatformPersonalPaymentControls actor={actor} onSaved={onSaved} onError={onError} />
     <PlatformAssistControls actor={actor} organizations={organizations} users={users} onSaved={onSaved} onError={onError} />
   </div>;
 }

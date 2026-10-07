@@ -49,3 +49,14 @@ export function publicAccountVerificationUrl(token: string) {
   url.searchParams.set('verify', token);
   return url.toString();
 }
+
+export function personalPaymentEnvironment() {
+  loadLocalEnvironment();
+  const merchantId = process.env.ZARINPAL_MERCHANT_ID?.trim();
+  const configured = process.env.PERSONAL_PAYMENT_CALLBACK_URL?.trim();
+  const origin = process.env.WEB_ORIGIN?.split(',')[0]?.trim() || 'http://127.0.0.1:5173';
+  const callbackUrl = new URL(configured || '/api/v1/personal/payments/callback', origin);
+  if (!['http:','https:'].includes(callbackUrl.protocol)) throw new Error('Payment callback URL must use HTTP or HTTPS.');
+  if (process.env.NODE_ENV === 'production' && callbackUrl.protocol !== 'https:') throw new Error('Production payment callback must use HTTPS.');
+  return { merchantId, callbackUrl: callbackUrl.toString(), liveReady: Boolean(merchantId) };
+}

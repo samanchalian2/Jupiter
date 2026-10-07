@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-10-07 — GOAL-064 Personal payment core
+
+- Added provider-neutral payment contracts with Zarinpal v4 as the first live
+  adapter and a deterministic, credential-free local adapter forbidden in
+  production.
+- Added immutable tenant payment-order snapshots, safe attempts, server-side
+  authority/amount verification, callback replay defense and exact-once
+  fulfillment into one PAYMENT package allocation.
+- Added owner receipt/cancel APIs and Platform-only non-secret availability/
+  mode, safe order inspection and recording of externally completed refunds.
+- Kept merchant credentials environment-only and excluded provider payloads,
+  card data and secrets from storage, client, logs and audit metadata.
+- Passed the isolated 71/71 migration rehearsal, 134 API tests, 13 Web tests,
+  API/Web typechecks, builds and diff validation.
+
 ## 2026-10-07 — GOAL-063 Personal capacity and packages
 
 - Added separate SUPPORT and AI monthly pools with immutable UTC windows,

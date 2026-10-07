@@ -1,37 +1,32 @@
 # Next Task
 
-## GOAL-064 — Personal Payment Core & Zarinpal Adapter (READY)
+## GOAL-065 — Complete Personal Workspace UX & Product Help (READY)
 
-Implement only the payment boundary approved by DEC-037 on top of GOAL-063:
+Implement only the complete Persian personal-user experience on top of the
+approved GOAL-061 through GOAL-064 backend boundaries:
 
-- add an internal payment-provider adapter and implement Zarinpal first without
-  coupling the domain model or UI to provider-specific response shapes;
-- add tenant-scoped payment orders that snapshot the active package ID/code/
-  name, SUPPORT/AI pool, units, Toman amount, currency `IRT`, validity and
-  personal workspace before any provider request;
-- model idempotent order/attempt/verification/fulfillment transitions; a
-  redirect or callback alone must never mark an order paid;
-- create orders only for the authenticated owner of the active personal
-  workspace and an active package; derive amount and units server-side;
-- verify callback authority, amount and final status server-side through the
-  adapter, reject replay/mismatch/cross-tenant attempts and fulfill at most once
-  into one `personal_package_allocations` row with source `PAYMENT`;
-- keep provider credentials and signing material environment-managed and out of
-  database, client, logs and audit metadata; let Platform Admin configure only
-  non-secret availability/mode and inspect safe operational state;
-- add a user-readable receipt projection (not an official tax invoice) and a
-  Platform-only record of externally completed manual refund with reason,
-  amount, reference and real actor; do not pretend Jupiter sends gateway refund;
-- provide a deterministic local fake adapter for integration tests without a
-  real transaction or secret;
-- test create/retry/cancel/expiry, callback replay, failed verification, amount
-  mismatch, exact-once allocation, snapshots, isolation, audit and secret
-  absence; run migration rehearsal and update `.ai` plus
-  `docs/GOAL_064_EVIDENCE.md`.
+- make `/personal` a focused, responsive workspace for personal tickets,
+  support, AI capacity and packages without exposing organization-only
+  administration, Directory, team, SLA, Commercial or Assist controls;
+- present monthly/purchased SUPPORT and AI capacity, expiry and service
+  availability in simple user language while preserving manual ticketing;
+- add the purchase journey for active packages: server-created order,
+  redirect, safe return/pending/failure/expiry states and readable receipt;
+- expose Personal Support request/cancel/state and available agent-help context
+  without changing ticket lifecycle or granting agents tenant membership;
+- wire eligible personal AI actions to the existing personal AI capacity
+  reserve/release/settle boundary; retries/failures must not double-consume;
+- add/update Persian Product Help and contextual triggers for independent-user
+  onboarding, personal tickets, capacity/packages, payment/receipt, AI and
+  Jupiter support;
+- keep UI RTL, compact and accessible at 375/768/1024/1440 with no document
+  overflow; test owner/organization/platform isolation and all fallback states;
+- run API/Web tests, typechecks, builds, migration rehearsal as applicable and
+  record `docs/GOAL_065_EVIDENCE.md` plus `.ai` updates.
 
-Do not add subscriptions, recurring billing, wallet, discount/tax/accounting,
-official invoicing, card data, automatic refunds or the full personal UX in
-GOAL-064. Do not start GOAL-065.
+Do not add subscription billing, wallet, discount/tax/accounting, official tax
+invoice, card storage, automatic refund or change organization behavior. Do not
+start GOAL-066.
 
 ## Deferred deployment gate — GOAL-059 remains BLOCKED
 

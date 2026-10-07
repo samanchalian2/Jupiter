@@ -15,10 +15,9 @@ case. It records a fixed operational lifecycle, requesting owner, real assigned
 Jupiter agent and snapshotted SLA/access terms. A Personal Support
 `SupportAccessGrant` has an explicit source, exactly matches the case ticket and
 is time-bound/revocable; it is not an Assist grant. A
-`PersonalSupportReservation` reserves either current monthly capacity or a
+`PersonalCapacityReservation` reserves either current monthly capacity or a
 purchased allocation and settles at most once when an authorized agent accepts
-the case; this reservation is the next GOAL-063 extension and is not yet a
-GOAL-062 runtime entity.
+the case.
 
 `PersonalAllowancePolicy` and nullable `PersonalAllowanceOverride` define
 future monthly support and AI capacity. Immutable monthly allowance windows
@@ -33,9 +32,12 @@ AI action to either one current `PersonalAllowanceWindow` or one active
 reservation. Allocation snapshots preserve package code/name, pool, units,
 Toman price, validity and source even after catalog edits.
 
-`PaymentOrder` stores an immutable commercial snapshot and lifecycle;
-`PaymentAttempt` stores safe provider references and verification outcomes;
-`PaymentFulfillment` links one verified order to exactly one package allocation.
+`PersonalPaymentOrder` stores an immutable tenant/owner/package/pool/unit/
+Toman-amount/IRT/validity/provider-mode snapshot and lifecycle.
+`PersonalPaymentAttempt` stores safe create/verify outcomes;
+`PersonalPaymentFulfillment` links one verified order to exactly one PAYMENT
+package allocation. `PersonalPaymentSettings` stores only Platform-controlled
+availability and mode, never a credential.
 No entity stores card data or a payment-provider credential. A manual refund
 record stores only amount, reason, external reference, actor and timestamps.
 
