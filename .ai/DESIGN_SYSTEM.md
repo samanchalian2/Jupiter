@@ -22,6 +22,13 @@ to establish the two-color identity, but never as body text or a large,
 saturated canvas. Canvases and ordinary work surfaces remain neutral. The canonical tokens live in
 `apps/web/src/design-system.css`.
 
+The canonical built-in brand asset is `apps/web/public/jupiter-logo.png`: the
+Lavender/cream/gold planet and Jupiter wordmark supplied by the product owner.
+Full-size brand placements use the asset without adjacent duplicate product
+text. Compact shell and mobile placements reveal its planet symbol from the
+same asset. Tenant-provided overrides remain standalone; wide wordmarks use a
+bounded leading-symbol crop only in icon-sized contexts.
+
 | Group | Tokens |
 | --- | --- |
 | Surfaces | canvas, surface, surface-subtle, surface-raised |

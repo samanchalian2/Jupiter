@@ -7,6 +7,7 @@ export function BrandLogo({ compact = false }: { compact?: boolean }) {
     try { return localStorage.getItem('jupiter.brand-logo') || localStorage.getItem('jupiter.platform-logo') || defaultLogo; }
     catch { return defaultLogo; }
   });
+  const [wide, setWide] = useState(source === defaultLogo);
   useEffect(() => {
     const update = (event: Event) => {
       const next = (event as CustomEvent<{ logoUrl?: string | null }>).detail?.logoUrl || defaultLogo;
@@ -27,8 +28,10 @@ export function BrandLogo({ compact = false }: { compact?: boolean }) {
   useEffect(() => {
     document.querySelector<HTMLLinkElement>('#jupiter-favicon')?.setAttribute('href', source);
   }, [source]);
-  return <span className={`brand-logo ${source === defaultLogo ? 'default-brand-logo' : ''}`} aria-label="Jupiter">
-    <img src={source} alt="" onError={() => { try { localStorage.removeItem('jupiter.brand-logo'); } catch { /* ignored */ } setSource(defaultLogo); }} />
-    {!compact && <span><strong>JUPITER</strong><small>مرکز خدمات پشتیبانی</small></span>}
+  useEffect(() => { setWide(source === defaultLogo); }, [source]);
+  return <span className={`brand-logo ${compact ? 'brand-logo-compact' : ''} ${wide ? 'brand-logo-wide' : ''} ${source === defaultLogo ? 'default-brand-logo' : ''}`} aria-label="Jupiter">
+    <span className="brand-logo-visual">
+      <img src={source} alt="" onLoad={(event) => setWide(event.currentTarget.naturalWidth / event.currentTarget.naturalHeight >= 1.5)} onError={() => { try { localStorage.removeItem('jupiter.brand-logo'); } catch { /* ignored */ } setSource(defaultLogo); }} />
+    </span>
   </span>;
 }

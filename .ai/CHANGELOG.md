@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-10-09 — Canonical Jupiter logo remediation
+
+- Replaced the built-in Web logo with the owner-supplied Lavender/cream/gold
+  Jupiter planet and wordmark asset.
+- Removed duplicate product/support-center text beside the canonical wordmark,
+  while preserving a planet-only compact presentation and organization logo
+  override behavior.
+- Pointed the initial and runtime favicon identity at the canonical asset.
+- Updated only the local `jupiter-demo` logo through the supported audited
+  organization-branding upload flow; other tenant branding was untouched.
+
 ## 2026-10-07 — GOAL-066 Personal Service hardening and acceptance
 
 - Completed cross-domain Personal Service acceptance across verified account

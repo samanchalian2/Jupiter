@@ -1,5 +1,14 @@
 # Current State
 
+**Canonical Jupiter logo remediation (2026-10-09):** The owner-supplied
+Lavender/cream/gold planet-and-wordmark PNG is now the built-in Web identity.
+Full brand placements no longer repeat a separate JUPITER/support-center label;
+compact shell/mobile placements expose the planet symbol from the same asset,
+and the favicon follows the canonical asset. The existing organization override
+mechanism is preserved; the local `jupiter-demo` override was updated through
+the supported audited upload flow, while other organizations were untouched.
+This visual remediation does not alter GOAL-059 status or product behavior.
+
 **GOAL-066 — Personal Service Cross-domain Hardening & E2E Acceptance
 (complete, 2026-10-07):** The full GOAL-060–065 personal flow passed clean
 migration rehearsal, cross-tenant/role isolation, concurrency, retry, expiry,
