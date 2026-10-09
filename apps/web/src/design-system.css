@@ -707,12 +707,38 @@ button.drawer-backdrop:focus-visible { background: rgba(33, 27, 43, 0.16); }
 
 .brand-logo-wide.brand-logo-compact .brand-logo-visual img {
   position: absolute;
-  top: -14px;
+  top: -10px;
   left: 0;
-  width: 140px;
+  width: 124px;
   max-width: none;
-  height: 70px;
+  height: 62px;
   object-position: left center;
+}
+
+/* A compact brand and its menu trigger are separate, fixed-size controls.
+   This prevents the cropped planet symbol from appearing beneath the menu. */
+.mobile-only {
+  flex: 0 0 auto;
+  min-width: 90px;
+}
+
+.mobile-only > :where(.mobile-menu-trigger, .brand-logo) {
+  flex: 0 0 auto;
+}
+
+@media (max-width: 720px) {
+  .app-header .page-context { display: none; }
+  .organization-context span { display: none; }
+  .organization-context { max-width: 160px; }
+  .account-menu summary {
+    width: 40px;
+    padding: 0;
+    font-size: 0;
+  }
+}
+
+@media (max-width: 520px) {
+  .app-header .organization-context { display: none; }
 }
 
 html[data-ui-theme='dark'] body,

@@ -7,6 +7,10 @@ compact shell/mobile placements expose the planet symbol from the same asset,
 and the favicon follows the canonical asset. The existing organization override
 mechanism is preserved; the local `jupiter-demo` override was updated through
 the supported audited upload flow, while other organizations were untouched.
+The compact crop now contains the complete planet inside its fixed frame, and
+headers at 720px or below remove redundant page/account context before space
+pressure can collide with the menu; the 375/654/768/1440 responsive checks have
+no document-level horizontal overflow.
 This visual remediation does not alter GOAL-059 status or product behavior.
 
 **GOAL-066 — Personal Service Cross-domain Hardening & E2E Acceptance

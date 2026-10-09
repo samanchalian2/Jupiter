@@ -123,6 +123,10 @@ label/structure, not by a separate theme.
   bottom navigation or decorative shortcuts; it focuses its first control when
   opened, closes with Escape or its backdrop, and returns focus to the menu
   trigger. Its rows retain a 44px touch target.
+- The compact brand symbol and mobile menu are separate fixed-size header
+  targets with visible spacing; image cropping must remain contained within the
+  brand frame. At narrow widths, remove the redundant page title and then the
+  single-organization label instead of shrinking or overlapping these targets.
 
 ### Organization administration workspace
 

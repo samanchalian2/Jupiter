@@ -10,6 +10,9 @@
 - Pointed the initial and runtime favicon identity at the canonical asset.
 - Updated only the local `jupiter-demo` logo through the supported audited
   organization-branding upload flow; other tenant branding was untouched.
+- Corrected compact-symbol cropping and mobile-header containment so the
+  planet no longer appears clipped beneath the menu; narrow headers now omit
+  redundant context labels before compressing navigation or account targets.
 
 ## 2026-10-07 — GOAL-066 Personal Service hardening and acceptance
 
