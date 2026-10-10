@@ -1,5 +1,16 @@
 # Current State
 
+**Authorized IP preview synchronization (2026-10-10):** The protected preview
+checkout is deployed through application commit `f64d218`. A database-only
+rollback backup was created before migrations 057–060 were applied to the
+isolated `jupiter` database, bringing it to 71 migration records. The four
+Personal Service Help guides were published at runtime (19 published guides in
+total). API, worker and Nginx are active; Web, health and readiness return HTTP
+200 from both the host and the client. The canonical logo loads at its expected
+1774×887 dimensions without document overflow. No co-hosted application,
+database, role or service was changed. This remains an HTTP-only operational
+preview and does not satisfy the blocked GOAL-059 staging gates.
+
 **Canonical Jupiter logo remediation (2026-10-09):** The owner-supplied
 Lavender/cream/gold planet-and-wordmark PNG is now the built-in Web identity.
 Full brand placements no longer repeat a separate JUPITER/support-center label;

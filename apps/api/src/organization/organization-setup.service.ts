@@ -20,15 +20,13 @@ export class OrganizationSetupService {
   private name(value:unknown) { const name=typeof value==='string'?value.trim():''; if(name.length<2||name.length>160) throw new BadRequestException('نام سازمان معتبر نیست.'); return name; }
   private async ownerExists(c:PoolClient,org:string) { return Boolean((await c.query("SELECT EXISTS(SELECT 1 FROM memberships m JOIN membership_roles mr ON mr.membership_id=m.id JOIN roles r ON r.id=mr.role_id JOIN users u ON u.id=m.user_id WHERE m.organization_id=$1 AND m.status='active' AND u.is_active AND r.code='ORG_OWNER') x",[org])).rows[0]?.x); }
   private async snapshot(c:PoolClient,org:string) {
-    const [organization,settings,categories,teams,members,slas,connectors]=await Promise.all([
-      c.query<{name:string;status:string}>('SELECT name,status FROM organizations WHERE id=$1',[org]),
-      c.query<{business_timezone:string;contact_phone:string|null;logo_storage_key:string|null}>('SELECT business_timezone,contact_phone,logo_storage_key FROM organization_settings WHERE organization_id=$1',[org]),
-      c.query<{count:string}>('SELECT count(*) count FROM categories',[ ]),
-      c.query<{count:string}>('SELECT count(*) count FROM teams WHERE is_active=true'),
-      c.query<{count:string}>('SELECT count(*) count FROM memberships WHERE status=\'active\''),
-      c.query<{count:string}>('SELECT count(*) count FROM sla_policies WHERE is_active=true'),
-      c.query<{status:string;operational_status?:string}>('SELECT status FROM directory_connectors ORDER BY created_at DESC LIMIT 1'),
-    ]);
+    const organization=await c.query<{name:string;status:string}>('SELECT name,status FROM organizations WHERE id=$1',[org]);
+    const settings=await c.query<{business_timezone:string;contact_phone:string|null;logo_storage_key:string|null}>('SELECT business_timezone,contact_phone,logo_storage_key FROM organization_settings WHERE organization_id=$1',[org]);
+    const categories=await c.query<{count:string}>('SELECT count(*) count FROM categories');
+    const teams=await c.query<{count:string}>('SELECT count(*) count FROM teams WHERE is_active=true');
+    const members=await c.query<{count:string}>('SELECT count(*) count FROM memberships WHERE status=\'active\'');
+    const slas=await c.query<{count:string}>('SELECT count(*) count FROM sla_policies WHERE is_active=true');
+    const connectors=await c.query<{status:string;operational_status?:string}>('SELECT status FROM directory_connectors ORDER BY created_at DESC LIMIT 1');
     const row=organization.rows[0]; if(!row) throw new NotFoundException('سازمان یافت نشد.');
     const setting=settings.rows[0]; let timezoneValid=false; try { timezoneValid=Boolean(setting?.business_timezone)&&Intl.DateTimeFormat(undefined,{timeZone:setting.business_timezone}).resolvedOptions().timeZone===setting.business_timezone; } catch { timezoneValid=false; }
     const [ticketReview,smartIntake,assist]=await Promise.all(['AI_TICKET_REVIEW','AI_SMART_INTAKE','JUPITER_ASSIST'].map(code=>this.commercial.resolve(org,code)));

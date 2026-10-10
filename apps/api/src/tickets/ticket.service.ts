@@ -164,10 +164,8 @@ export class TicketService {
       const scope = manager ? '' : expert ? 'JOIN ticket_assignments mine ON mine.ticket_id=t.id AND mine.ended_at IS NULL AND mine.assigned_to_user_id=$1' : '';
       const requester = manager || expert ? '' : ' AND t.requester_user_id=$1';
       const joins = `${scope} LEFT JOIN ticket_assignments assignment ON assignment.ticket_id=t.id AND assignment.ended_at IS NULL LEFT JOIN users assignee ON assignee.id=assignment.assigned_to_user_id`;
-      const [items,total] = await Promise.all([
-        client.query(`SELECT ${fields} FROM tickets t ${joins} WHERE ${base}${requester} ORDER BY ${orderBy} LIMIT $6 OFFSET $7`, values),
-        client.query<{total:number}>(`SELECT count(*)::int AS total FROM tickets t ${scope} WHERE ${base}${requester}`, values.slice(0, 5)),
-      ]);
+      const items = await client.query(`SELECT ${fields} FROM tickets t ${joins} WHERE ${base}${requester} ORDER BY ${orderBy} LIMIT $6 OFFSET $7`, values);
+      const total = await client.query<{total:number}>(`SELECT count(*)::int AS total FROM tickets t ${scope} WHERE ${base}${requester}`, values.slice(0, 5));
       return { items: items.rows, total: total.rows[0]?.total ?? 0, page, pageSize };
     });
   }

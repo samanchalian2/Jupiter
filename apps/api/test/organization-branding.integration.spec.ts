@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { BadRequestException, ForbiddenException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, ServiceUnavailableException } from '@nestjs/common';
 import { OrganizationService } from '../src/organization/organization.service.js';
 import { AttachmentStorage, StoredObject } from '../src/attachments/attachment-storage.js';
 import { DatabaseService } from '../src/database/database.service.js';
@@ -63,5 +63,17 @@ describe('Organization branding', () => {
     const completed = await organizations.completeBrandingUpload(actor(adminId, ['ORG_ADMIN']), { storageKey: pending.storageKey, contentType: 'image/png', byteSize: 100 });
     expect(completed.logo_url).toContain('/view/organizations/');
     expect((await organizations.branding(actor(requesterId, ['REQUESTER']))).logo_url).toContain('/view/organizations/');
+  });
+
+  it('falls back to the canonical identity when optional logo storage is not configured', async () => {
+    const unavailable = new OrganizationService(database, {
+      createUploadUrl: storage.createUploadUrl.bind(storage),
+      createDownloadUrl: storage.createDownloadUrl.bind(storage),
+      createViewUrl: async () => { throw new ServiceUnavailableException('Attachment storage is not configured'); },
+      head: storage.head.bind(storage),
+      read: storage.read.bind(storage),
+      delete: storage.delete.bind(storage),
+    });
+    expect(await unavailable.branding(actor(requesterId, ['REQUESTER']))).toEqual({ logo_url: null });
   });
 });

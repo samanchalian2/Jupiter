@@ -79,13 +79,13 @@ export class ReportingService {
     if (!actor.roles.some((role) => ['ORG_ADMIN', 'SUPERVISOR'].includes(role))) throw new ForbiddenException();
     const window = reportWindow(range);
     return this.database.withOrganization(actor.organizationId, async (client) => {
-      const [status, priority, tags, trend, recent] = await Promise.all([
-        client.query<{label:string;count:number}>(`SELECT status AS label,count(*)::int AS count FROM tickets WHERE created_at >= $1 AND created_at < $2 GROUP BY status ORDER BY count DESC`, [window.from,window.to]),
-        client.query<{label:string;count:number}>(`SELECT priority AS label,count(*)::int AS count FROM tickets WHERE created_at >= $1 AND created_at < $2 GROUP BY priority ORDER BY count DESC`, [window.from,window.to]),
-        client.query<{label:string;kind:string;count:number}>(`SELECT tag.name AS label,tag.kind,count(*)::int AS count FROM ticket_tag_links link JOIN ticket_tags tag ON tag.id=link.tag_id JOIN tickets ticket ON ticket.id=link.ticket_id WHERE ticket.created_at >= $1 AND ticket.created_at < $2 GROUP BY tag.name,tag.kind ORDER BY count DESC,tag.name LIMIT 20`, [window.from,window.to]),
-        client.query<{day:string;created:number;completed:number}>(`SELECT to_char(day,'YYYY-MM-DD') AS day,COALESCE(created,0)::int AS created,COALESCE(completed,0)::int AS completed FROM generate_series($1::date,$2::date-1,interval '1 day') day LEFT JOIN LATERAL (SELECT count(*) AS created FROM tickets WHERE created_at >= day AND created_at < day+interval '1 day') c ON true LEFT JOIN LATERAL (SELECT count(*) AS completed FROM tickets WHERE status IN ('RESOLVED','CLOSED') AND updated_at >= day AND updated_at < day+interval '1 day') d ON true ORDER BY day`, [window.from,window.to]),
-        client.query(`SELECT ticket_number,title,status,priority,created_at FROM tickets WHERE created_at >= $1 AND created_at < $2 ORDER BY created_at DESC LIMIT 50`, [window.from,window.to]),
-      ]);
+      // A checked-out pg client executes one query at a time. Keep tenant RLS
+      // context on this client and avoid deprecated concurrent client.query().
+      const status = await client.query<{label:string;count:number}>(`SELECT status AS label,count(*)::int AS count FROM tickets WHERE created_at >= $1 AND created_at < $2 GROUP BY status ORDER BY count DESC`, [window.from,window.to]);
+      const priority = await client.query<{label:string;count:number}>(`SELECT priority AS label,count(*)::int AS count FROM tickets WHERE created_at >= $1 AND created_at < $2 GROUP BY priority ORDER BY count DESC`, [window.from,window.to]);
+      const tags = await client.query<{label:string;kind:string;count:number}>(`SELECT tag.name AS label,tag.kind,count(*)::int AS count FROM ticket_tag_links link JOIN ticket_tags tag ON tag.id=link.tag_id JOIN tickets ticket ON ticket.id=link.ticket_id WHERE ticket.created_at >= $1 AND ticket.created_at < $2 GROUP BY tag.name,tag.kind ORDER BY count DESC,tag.name LIMIT 20`, [window.from,window.to]);
+      const trend = await client.query<{day:string;created:number;completed:number}>(`SELECT to_char(day,'YYYY-MM-DD') AS day,COALESCE(created,0)::int AS created,COALESCE(completed,0)::int AS completed FROM generate_series($1::date,$2::date-1,interval '1 day') day LEFT JOIN LATERAL (SELECT count(*) AS created FROM tickets WHERE created_at >= day AND created_at < day+interval '1 day') c ON true LEFT JOIN LATERAL (SELECT count(*) AS completed FROM tickets WHERE status IN ('RESOLVED','CLOSED') AND updated_at >= day AND updated_at < day+interval '1 day') d ON true ORDER BY day`, [window.from,window.to]);
+      const recent = await client.query(`SELECT ticket_number,title,status,priority,created_at FROM tickets WHERE created_at >= $1 AND created_at < $2 ORDER BY created_at DESC LIMIT 50`, [window.from,window.to]);
       return { status: status.rows, priority: priority.rows, tags: tags.rows, trend: trend.rows, tickets: recent.rows };
     });
   }

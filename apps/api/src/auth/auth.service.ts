@@ -85,5 +85,13 @@ export class AuthService {
     }
     return this.profile(userId);
   }
-  async verify(token: string) { return this.jwt.verifyAsync<{sub:string}>(token); }
+  async verify(token: string) {
+    try {
+      return await this.jwt.verifyAsync<{sub:string}>(token);
+    } catch {
+      // JWT library errors are implementation details. Protected endpoints must
+      // consistently return 401 so the Web client can refresh or sign in again.
+      throw new UnauthorizedException('Session is invalid or expired');
+    }
+  }
 }

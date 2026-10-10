@@ -1,4 +1,4 @@
-import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException, Optional } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException, Optional, ServiceUnavailableException } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service.js';
 import { hashPassword } from '../auth/password.js';
 import { AttachmentStorage } from '../attachments/attachment-storage.js';
@@ -236,7 +236,16 @@ export class OrganizationService {
   async branding(actor: Actor) {
     return this.database.withOrganization(actor.organizationId, async (client) => {
       const row = (await client.query<{ logo_storage_key: string | null }>('SELECT logo_storage_key FROM organization_settings WHERE organization_id=$1', [actor.organizationId])).rows[0];
-      return { logo_url: row?.logo_storage_key ? await this.storage.createViewUrl(row.logo_storage_key, 60 * 60) : null };
+      if (!row?.logo_storage_key) return { logo_url: null };
+      try {
+        return { logo_url: await this.storage.createViewUrl(row.logo_storage_key, 60 * 60) };
+      } catch (cause) {
+        // A tenant logo is an optional enhancement. If object storage is not
+        // configured in a preview/degraded environment, keep the shell and
+        // organization settings usable with the canonical built-in identity.
+        if (cause instanceof ServiceUnavailableException) return { logo_url: null };
+        throw cause;
+      }
     });
   }
   async requestBrandingUpload(actor: Actor, input: { filename: string; contentType: string; byteSize: number }) {

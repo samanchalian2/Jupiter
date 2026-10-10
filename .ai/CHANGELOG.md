@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-10-10 — Authorized IP preview synchronization
+
+- Synchronized the existing isolated HTTP Preview through application commit
+  `f64d218` and rebuilt API and Web in place.
+- Created a protected `jupiter`-only rollback backup, applied migrations
+  057–060 and verified all 71 migration records without touching the co-hosted
+  application or its database.
+- Published four Personal Service Help guides, restarted only the Jupiter API
+  and worker, and verified Web, health and readiness HTTP 200 responses plus
+  canonical-logo rendering without document overflow.
+
 ## 2026-10-09 — Canonical Jupiter logo remediation
 
 - Replaced the built-in Web logo with the owner-supplied Lavender/cream/gold

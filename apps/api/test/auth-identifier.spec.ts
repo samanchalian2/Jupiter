@@ -23,4 +23,15 @@ describe('Authentication identifiers', () => {
     const service = new AuthService(database as never, {} as never);
     await expect(service.login('missing', 'anything')).rejects.toMatchObject({message:'Invalid credentials'});
   });
+
+  it('maps expired or otherwise invalid access tokens to an authentication response', async () => {
+    const database = { query: async () => ({ rows:[] }) };
+    const service = new AuthService(database as never, {
+      verifyAsync: async () => { throw new Error('jwt expired'); },
+    } as never);
+    await expect(service.verify('expired-token')).rejects.toMatchObject({
+      status:401,
+      message:'Session is invalid or expired',
+    });
+  });
 });

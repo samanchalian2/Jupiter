@@ -322,8 +322,10 @@ export class PersonalCapacityService {
   }
 
   private async summary(client:PoolClient,organizationId:string,actorId:string) {
-    const windows=await Promise.all((['SUPPORT','AI'] as PersonalCapacityPool[]).map(pool=>this.ensureWindow(client,organizationId,pool,actorId)));
-    const poolRows=await Promise.all(windows.map(async window=>{
+    const windows=[];
+    for(const pool of ['SUPPORT','AI'] as PersonalCapacityPool[]) windows.push(await this.ensureWindow(client,organizationId,pool,actorId));
+    const poolRows=[];
+    for(const window of windows) {
       const used=(await client.query<{reserved:string;settled:string}>(
         `SELECT count(*) FILTER(WHERE status='RESERVED')::text AS reserved,
           count(*) FILTER(WHERE status='SETTLED')::text AS settled
@@ -344,14 +346,14 @@ export class PersonalCapacityService {
       )).rows[0];
       const monthlyReserved=Number(used.reserved),monthlySettled=Number(used.settled);
       const purchasedGranted=Number(purchased.granted),purchasedReserved=Number(purchased.reserved),purchasedSettled=Number(purchased.settled);
-      return {
+      poolRows.push({
         poolCode:window.pool_code,periodStartsAt:window.period_starts_at,periodEndsAt:window.period_ends_at,
         policySource:window.policy_source,monthlyGranted:window.granted_units,
         monthlyReserved,monthlySettled,monthlyRemaining:Math.max(0,window.granted_units-monthlyReserved-monthlySettled),
         purchasedGranted,purchasedReserved,purchasedSettled,
         purchasedRemaining:Math.max(0,purchasedGranted-purchasedReserved-purchasedSettled),
-      };
-    }));
+      });
+    }
     const packages=(await client.query(
       `SELECT id,code,name,description,pool_code,unit_count,price_irt::text,validity_days
        FROM personal_packages WHERE status='ACTIVE' ORDER BY pool_code,name`,

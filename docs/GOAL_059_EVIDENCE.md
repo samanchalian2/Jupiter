@@ -369,3 +369,34 @@ access token reached the dashboard as HTTP 500 before concurrent refreshes
 completed; retry with the refreshed session succeeded immediately. This is not
 caused by the palette remediation, but should be normalized to a 401/transparent
 single-flight refresh in a future scoped Goal.
+
+## 40. Authorized final-preview synchronization (2026-10-10)
+
+The existing clean Preview checkout was fetched and detached at application
+commit `f64d218`. Dependency installation used the repository-pinned pnpm
+version; API and Web production builds completed successfully on the host.
+
+Before changing schema, a protected custom-format rollback backup was created
+from the isolated `jupiter` database. Migrations
+`057_personal_workspace_foundation.sql` through
+`060_personal_payments.sql` then applied successfully, bringing the migration
+ledger to 71 records. No other database was backed up, migrated or queried for
+application data. Runtime Help publication created the four Personal Service
+guides and left the 15 existing guides unchanged, for 19 published guides.
+
+Only `jupiter-ip-preview-api` and `jupiter-ip-preview-worker` were restarted.
+Those services and Nginx reported active; `/`, `/api/v1/health` and
+`/api/v1/health/ready` returned HTTP 200 from both the host and the deployment
+client. The checkout remained clean and exactly at `f64d218`; service journals
+contained no warning-or-higher entries from the synchronization window.
+
+The in-app browser opened the real Preview URL. The Persian login rendered the
+canonical 1774×887 Jupiter asset successfully and the exercised viewport had
+equal document client/scroll widths, proving no document-level horizontal
+overflow. The co-hosted application, its PostgreSQL database, roles, services
+and proxy configuration were not changed.
+
+This operational synchronization does not convert the temporary HTTP Preview
+into official staging. GOAL-059 remains **BLOCKED** on canonical DNS/TLS,
+immutable image provenance, managed secret injection, managed backup/restore
+proof, monitoring/alerting and the approved Windows/AD Connector host.

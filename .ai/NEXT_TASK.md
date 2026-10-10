@@ -15,10 +15,11 @@ not treat the Personal Service completion as GOAL-059 staging acceptance.
 An authorized, HTTP-only IP preview is operational with the isolated full
 Jupiter dataset, loopback-only API and dedicated system services. It is not an
 official staging acceptance or a substitute for a canonical deployment.
-The authorized preview host is synchronized through source commit `cb875ce`;
-the 2026-10-06 deeper Lavender/Beige remediation is built and live, its Web root and
-health endpoint return HTTP 200, and the Persian login renders without
-horizontal overflow. Do not modify any unrelated host service or database.
+The authorized preview host is synchronized through application commit
+`f64d218`; migrations 057–060 and the Personal Service Help catalog are live,
+its Web, health and readiness endpoints return HTTP 200, and the Persian login
+renders the canonical logo without horizontal overflow. Do not modify any
+unrelated host service or database.
 An observed expired-access-token race may transiently surface the first
 dashboard request as HTTP 500 before refresh succeeds; address it only in a
 separately scoped Goal, not by expanding GOAL-059.
