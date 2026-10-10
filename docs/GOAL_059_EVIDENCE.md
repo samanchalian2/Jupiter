@@ -400,3 +400,58 @@ This operational synchronization does not convert the temporary HTTP Preview
 into official staging. GOAL-059 remains **BLOCKED** on canonical DNS/TLS,
 immutable image provenance, managed secret injection, managed backup/restore
 proof, monitoring/alerting and the approved Windows/AD Connector host.
+
+## 41. Preview regression hardening and repeat acceptance (2026-10-10)
+
+An authenticated route sweep and API journal review after the final-preview
+synchronization exposed two hidden Preview defects even though most pages
+visually recovered: `GET /api/v1/admin/branding` returned HTTP 503 when the
+optional S3-compatible store was not configured, and several tenant read
+models used `Promise.all` against the same checked-out PostgreSQL client. The
+former was swallowed by the Web fallback; the latter emitted the pg warning
+that overlapping client queries will become an error in a future pg release.
+The previously recorded expired-access-token presentation weakness was also
+included in this bounded reliability remediation.
+
+The API now returns `{logo_url:null}` only when the optional storage adapter is
+not configured, allowing the built-in canonical identity to render. It does
+not suppress other storage failures and does not make logo upload available
+without configured storage. Tenant queries in commercial summaries, reporting,
+tickets, setup and personal capacity now run sequentially on their owned
+client. Central JWT verification maps invalid or expired token-library errors
+to `UnauthorizedException`/HTTP 401.
+
+Verification before deployment:
+
+- API: 32 files, 139 tests passed.
+- Web: 4 files, 14 tests passed.
+- API and Web typechecks passed.
+- API and Web production builds passed.
+- `git diff --check` passed.
+- New regression coverage verifies canonical branding fallback and JWT error
+  normalization.
+
+Commit `73c93a0` was pushed and deployed into the existing clean Preview
+checkout. No migration or Help publication was required for this remediation.
+Only the Jupiter API and worker were restarted; Nginx and the co-hosted
+application were not changed. Root, health and readiness checks returned HTTP
+200 after startup, and the checkout remained clean at the deployed commit.
+
+Authenticated in-app browser acceptance covered the dashboard, tickets,
+knowledge, reports, organization members, organization settings/branding,
+catalog, Directory, Help and Platform surfaces. The earlier responsive sweep
+covered 375, 768, 1024 and 1440 widths; the repeat post-deployment sweep used
+the active 597×754 viewport because this remediation did not change Web/CSS.
+All checked pages were Persian RTL with zero document-level horizontal
+overflow, zero broken images and no visible generic/internal loading error.
+Browser console output was empty. The dashboard was left open for owner review.
+
+Server-side acceptance after the browser sweep showed recent branding reads as
+HTTP 304/200 cache-success responses rather than 503, an invalid protected
+request as HTTP 401, no post-ready 5xx, no warning-or-higher API journal entry,
+and zero `client already executing a query` warnings. PostgreSQL, roles and all
+data belonging to the co-hosted application were untouched.
+
+This remediation does not represent the IP Preview as official Staging.
+GOAL-059 remains **BLOCKED** on its external infrastructure gates, and no later
+Goal is started by this evidence update.

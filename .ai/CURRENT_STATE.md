@@ -1,7 +1,7 @@
 # Current State
 
 **Authorized IP preview synchronization (2026-10-10):** The protected preview
-checkout is deployed through application commit `f64d218`. A database-only
+checkout is deployed through application commit `73c93a0`. A database-only
 rollback backup was created before migrations 057–060 were applied to the
 isolated `jupiter` database, bringing it to 71 migration records. The four
 Personal Service Help guides were published at runtime (19 published guides in
@@ -10,6 +10,18 @@ total). API, worker and Nginx are active; Web, health and readiness return HTTP
 1774×887 dimensions without document overflow. No co-hosted application,
 database, role or service was changed. This remains an HTTP-only operational
 preview and does not satisfy the blocked GOAL-059 staging gates.
+
+**Preview regression remediation (2026-10-10):** Authenticated route and
+service-log review found and corrected three hidden reliability defects: an
+optional organization logo could make branding reads fail when object storage
+was intentionally absent, tenant reports could overlap queries on one checked-
+out PostgreSQL client, and raw JWT expiry errors could surface as HTTP 500.
+Canonical-logo fallback now remains available without weakening upload
+validation, tenant-client queries are sequential, and invalid/expired access
+tokens consistently map to HTTP 401. API/Web tests, typechecks and production
+builds pass; the deployed Preview route matrix is RTL, has no broken images or
+document-level overflow, and produced no post-ready 5xx or warning-level API
+logs. The co-hosted application and database were not changed.
 
 **Canonical Jupiter logo remediation (2026-10-09):** The owner-supplied
 Lavender/cream/gold planet-and-wordmark PNG is now the built-in Web identity.
@@ -116,7 +128,7 @@ reprioritization makes GOAL-061 the next repository implementation Goal.
 
 **Public website training artifact (complete and revised, 2026-10-06):** A self-contained Persian master prompt and publication-ready training copy covers the complete organization-owner setup journey, simplified daily usage for organization members and explicit next steps for a user without organization membership. The revision adds a grounded product introduction, a scan-friendly inventory of delivered capabilities and a low-fatigue Teal/Purple/Beige website hierarchy: Teal `#014348` is primary, Purple `#867C98` is a limited accent, accessible `#756A88` is used for ordinary white-text secondary buttons, and Beige supports calm guidance surfaces. It retains the canonical ten-step Setup Wizard, roles, ticket lifecycle, secure Directory guidance, optional AI/Assist behavior, troubleshooting, FAQ, real-screenshot placeholders and responsive/WCAG/SEO acceptance rules without secrets. Artifact: `docs/JUPITER_WEBSITE_TRAINING_PAGE_PROMPT_FA.md`. The work remains a repository artifact; it creates no ChatGPT Work Cloud task and publishes no website.
 
-**GOAL-059 — Authorized temporary IP preview (updated 2026-10-06):** The complete local Jupiter dataset remains in the isolated `jupiter` database on the authorized host. API and worker run as dedicated preview system services under limited Jupiter roles; API binds only loopback and Nginx serves the temporary HTTP-only IP preview. The preview carries the deeper Lavender/Beige identity through deployed commit `cb875ce`; production builds, Web/API HTTP 200 checks, runtime Appearance Help revision and authenticated real-browser acceptance pass without document-level horizontal overflow. No migration ran and no unrelated database, role, service or application configuration was changed. An existing expired-token race can surface the first dashboard request as HTTP 500 before refresh completes; immediate retry succeeds, and remediation is deferred to a scoped future Goal. This is operational preview evidence only: canonical DNS/TLS, deployment secret manager, managed backup/restore, monitoring/alerting and the Windows/AD Connector host remain required for official GOAL-059 staging acceptance.
+**GOAL-059 — Authorized temporary IP preview (updated 2026-10-10):** The complete local Jupiter dataset remains in the isolated `jupiter` database on the authorized host. API and worker run as dedicated preview system services under limited Jupiter roles; API binds only loopback and Nginx serves the temporary HTTP-only IP preview. The preview carries the deeper Lavender/Beige identity through deployed commit `73c93a0`; production builds, Web/API HTTP 200 checks, runtime Help publication and authenticated real-browser acceptance pass without document-level horizontal overflow. Migrations 057–060 are applied only to Jupiter's database; no unrelated database, role, service or application configuration was changed. Expired or invalid access tokens now consistently map to HTTP 401, optional branding storage absence falls back to the canonical identity, and tenant queries no longer overlap on a checked-out PostgreSQL client. This is operational preview evidence only: canonical DNS/TLS, deployment secret manager, managed backup/restore, monitoring/alerting and the Windows/AD Connector host remain required for official GOAL-059 staging acceptance.
 
 **Lavender/Beige theme remediation (updated 2026-10-06):** Jupiter's built-in primary is the deeper Lavender `#796E89`, with hover `#6D627D`, active `#61566F` and white `onPrimary` at `4.77:1`. Beige `#D8C3A6` remains visibly balanced through low-fatigue secondary controls, page-context washes, empty/helpful states and the compact shell header. Light and Dark themes use the same accessible action family; neutral work surfaces preserve readability. Existing OCEAN/TEAL presets and explicit Custom Primary values remain backward-compatible, and semantic success/warning/danger remain independent. GOAL-059 remains blocked and is not changed by this visual remediation.
 

@@ -16,13 +16,18 @@ An authorized, HTTP-only IP preview is operational with the isolated full
 Jupiter dataset, loopback-only API and dedicated system services. It is not an
 official staging acceptance or a substitute for a canonical deployment.
 The authorized preview host is synchronized through application commit
-`f64d218`; migrations 057–060 and the Personal Service Help catalog are live,
+`73c93a0`; migrations 057–060 and the Personal Service Help catalog are live,
 its Web, health and readiness endpoints return HTTP 200, and the Persian login
 renders the canonical logo without horizontal overflow. Do not modify any
 unrelated host service or database.
 An observed expired-access-token race may transiently surface the first
 dashboard request as HTTP 500 before refresh succeeds; address it only in a
 separately scoped Goal, not by expanding GOAL-059.
+The same preview has passed an authenticated regression pass for dashboard,
+tickets, knowledge, reports, organization administration, branding, Help and
+Platform routes. Optional-logo fallback, sequential tenant-client queries and
+401 normalization for invalid/expired access tokens are deployed. No similar
+5xx or PostgreSQL overlap warning remained after the post-ready route sweep.
 Resume GOAL-059 only when the authorized staging ingress/DNS/TLS, immutable image
 registry, secret injection, managed backup/restore and monitoring access,
 rollback ownership, and Windows Connector host are available. Use

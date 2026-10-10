@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-10-10 — Preview regression hardening
+
+- Deployed commit `73c93a0` to the authorized IP Preview after 139 API tests,
+  14 Web tests, both typechecks, both production builds and `git diff --check`
+  passed.
+- Made organization-branding reads fall back to the canonical Jupiter logo
+  when optional object storage is not configured; upload operations remain
+  gated by storage availability and validation.
+- Removed overlapping `client.query()` calls from tenant transactions across
+  commercial summaries, reporting, tickets, setup and personal capacity.
+- Normalized invalid and expired JWT verification failures to HTTP 401.
+- Rechecked authenticated product routes and server journals: no broken images,
+  visible loading errors, document overflow, post-ready 5xx, API warnings or
+  PostgreSQL overlap warnings were found. No co-hosted application or database
+  was changed.
+
 ## 2026-10-10 — Authorized IP preview synchronization
 
 - Synchronized the existing isolated HTTP Preview through application commit
