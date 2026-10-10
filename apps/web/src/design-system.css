@@ -666,8 +666,8 @@ button.drawer-backdrop:focus-visible { background: rgba(33, 27, 43, 0.16); }
 .theme-mode-control:focus-visible { color: var(--primary-text); border-color: var(--primary-border); background: var(--primary-soft); }
 
 /* The canonical asset already contains the Jupiter wordmark. Avoid repeating
-   product text beside it; compact contexts reveal only its planet symbol.
-   Wide tenant wordmarks use the same compact leading-symbol treatment. */
+   product text beside it. A truly collapsed sidebar may use the planet symbol,
+   while the mobile header keeps the complete planet-and-wordmark visible. */
 .brand-logo {
   display: inline-flex;
   align-items: center;
@@ -724,6 +724,14 @@ button.drawer-backdrop:focus-visible { background: rgba(33, 27, 43, 0.16); }
 
 .mobile-only > :where(.mobile-menu-trigger, .brand-logo) {
   flex: 0 0 auto;
+}
+
+/* The source image has transparent vertical breathing room. Reuse the existing
+   vertical crop, but give the mobile header the full image width so "Jupiter"
+   is not cut off after the planet. The 42px symbol crop remains exclusive to
+   the genuinely collapsed desktop sidebar. */
+.mobile-only .brand-logo-wide.brand-logo-compact .brand-logo-visual {
+  width: 124px;
 }
 
 @media (max-width: 720px) {
