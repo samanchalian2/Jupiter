@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-10-10 — Complete mobile Jupiter wordmark
+
+- Corrected the mobile Header logo frame so it exposes the complete canonical
+  planet-and-`Jupiter` wordmark instead of cropping the asset after the planet.
+- Kept the symbol-only treatment only for the genuinely collapsed desktop
+  sidebar; the mobile drawer and Login continue to use the full identity.
+- Web tests, typecheck, production build and diff validation passed. Preview
+  commit `955ce4b` returned HTTP 200 for Web, health and readiness; authenticated
+  Browser inspection confirmed the complete Header/drawer logo, no broken
+  images, no visible generic error and zero document-level overflow.
+
 ## 2026-10-10 — Preview regression hardening
 
 - Deployed commit `73c93a0` to the authorized IP Preview after 139 API tests,

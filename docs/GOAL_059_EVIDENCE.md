@@ -455,3 +455,28 @@ data belonging to the co-hosted application were untouched.
 This remediation does not represent the IP Preview as official Staging.
 GOAL-059 remains **BLOCKED** on its external infrastructure gates, and no later
 Goal is started by this evidence update.
+
+## 42. Complete mobile wordmark remediation (2026-10-10)
+
+Owner review identified that the canonical wide logo was still incomplete in
+the mobile Header: the shared `compact` crop intentionally exposed only the
+planet and therefore hid the `Jupiter` wordmark. The source asset was healthy;
+the defect was the 42px mobile frame inherited from the collapsed-sidebar
+variant.
+
+The mobile Header now reuses the existing safe vertical transparent-margin crop
+but exposes the full 124px image width. The symbol-only 42px crop remains scoped
+to the genuinely collapsed desktop sidebar, where a full wordmark cannot fit.
+The mobile drawer, Login and expanded desktop brand placements remain full-logo
+contexts.
+
+Web tests (14), Web typecheck, Web production build and `git diff --check`
+passed. Commit `955ce4b` was pushed and only the Jupiter Web build was updated
+on Preview; API, worker, Nginx configuration, PostgreSQL and the co-hosted
+application were not changed. Web, health and readiness returned HTTP 200.
+
+Authenticated Browser inspection showed the complete planet-and-`Jupiter`
+wordmark in both the Header and opened mobile drawer. The canonical image had
+its expected 1774×887 natural dimensions, no image was broken, no generic
+application error appeared and document-level horizontal overflow was zero.
+This visual fix does not change GOAL-059's blocked staging verdict.

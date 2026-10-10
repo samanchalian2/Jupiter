@@ -26,7 +26,8 @@ logs. The co-hosted application and database were not changed.
 **Canonical Jupiter logo remediation (2026-10-09):** The owner-supplied
 Lavender/cream/gold planet-and-wordmark PNG is now the built-in Web identity.
 Full brand placements no longer repeat a separate JUPITER/support-center label;
-compact shell/mobile placements expose the planet symbol from the same asset,
+the mobile shell now preserves the complete planet-and-wordmark, while only a
+genuinely collapsed desktop sidebar uses the planet symbol from the same asset,
 and the favicon follows the canonical asset. The existing organization override
 mechanism is preserved; the local `jupiter-demo` override was updated through
 the supported audited upload flow, while other organizations were untouched.
