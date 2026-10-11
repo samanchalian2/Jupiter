@@ -12,13 +12,15 @@ not treat the Personal Service completion as GOAL-059 staging acceptance.
 
 ## Deferred deployment gate — GOAL-059 remains BLOCKED
 
-An owner-authorized user-facing publication is operational at
-`https://arandi.io:8443`. It is isolated from the co-hosted Arandi application
+An owner-authorized user-facing publication is operational at the canonical
+`https://jupiter.arandi.io` hostname with an automatically renewable dedicated
+TLS certificate. The former port-based endpoint redirects to the canonical
+hostname. It is isolated from the co-hosted Arandi application
 by OS user, filesystem path, system services, loopback API port, Nginx listener,
 PostgreSQL database and role. Use the local workstation for development and
 initial tests, the authorized IP host for preview acceptance, and update this
 main-host publication only after an explicit owner instruction. This deployment
-does not replace the remaining canonical-hostname, secret-management,
+does not replace the remaining managed-secret, immutable-provenance,
 backup/restore, monitoring and Windows Connector acceptance gates.
 
 An authorized, HTTP-only IP preview is operational with the isolated full
