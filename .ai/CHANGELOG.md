@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-10-11 — Canonical Login wordmark framing correction
+
+- Corrected the remaining Login defect where a 77px-tall image was rendered
+  inside a 54px overflow-hidden frame, clipping the artwork while retaining too
+  much transparent canvas.
+- Added a dedicated 184×60 Login wordmark frame using `object-fit: cover`; this
+  trims only the source PNG's transparent margins and keeps the complete planet
+  and Jupiter lettering visible.
+- Web tests (14), typecheck, production build and diff validation passed.
+  Preview commit `63ce07f` returned HTTP 200 for Web, health and readiness.
+  Browser measurement confirmed identical 184×60 image/frame bounds, natural
+  1774×887 source dimensions, zero broken images and zero horizontal overflow.
+
 ## 2026-10-10 — Complete mobile Jupiter wordmark
 
 - Corrected the mobile Header logo frame so it exposes the complete canonical

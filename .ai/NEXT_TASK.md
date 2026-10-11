@@ -16,7 +16,7 @@ An authorized, HTTP-only IP preview is operational with the isolated full
 Jupiter dataset, loopback-only API and dedicated system services. It is not an
 official staging acceptance or a substitute for a canonical deployment.
 The authorized preview host is synchronized through application commit
-`955ce4b`; migrations 057–060 and the Personal Service Help catalog are live,
+`63ce07f`; migrations 057–060 and the Personal Service Help catalog are live,
 its Web, health and readiness endpoints return HTTP 200, and the Persian login
 renders the canonical logo without horizontal overflow. Do not modify any
 unrelated host service or database.
@@ -31,6 +31,8 @@ Platform routes. Optional-logo fallback, sequential tenant-client queries and
 The canonical mobile Header and drawer both show the full Jupiter
 planet-and-wordmark; the symbol-only crop remains limited to the collapsed
 desktop sidebar.
+The Login placement also uses a verified 184×60 wordmark frame that trims the
+source PNG's transparent margins without clipping its visible artwork.
 Resume GOAL-059 only when the authorized staging ingress/DNS/TLS, immutable image
 registry, secret injection, managed backup/restore and monitoring access,
 rollback ownership, and Windows Connector host are available. Use

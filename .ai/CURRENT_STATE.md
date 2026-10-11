@@ -35,6 +35,10 @@ The compact crop now contains the complete planet inside its fixed frame, and
 headers at 720px or below remove redundant page/account context before space
 pressure can collide with the menu; the 375/654/768/1440 responsive checks have
 no document-level horizontal overflow.
+The 2026-10-11 Login framing correction now removes only the PNG's oversized
+transparent canvas through a wordmark-shaped `object-fit: cover` frame. The
+rendered image and frame are both 184×60 in the exercised Login viewport, so
+neither the planet nor any Jupiter lettering is clipped.
 This visual remediation does not alter GOAL-059 status or product behavior.
 
 **GOAL-066 — Personal Service Cross-domain Hardening & E2E Acceptance

@@ -480,3 +480,30 @@ wordmark in both the Header and opened mobile drawer. The canonical image had
 its expected 1774×887 natural dimensions, no image was broken, no generic
 application error appeared and document-level horizontal overflow was zero.
 This visual fix does not change GOAL-059's blocked staging verdict.
+
+## 43. Login wordmark frame correction after owner review (2026-10-11)
+
+The first mobile-Header remediation did not resolve the owner's selected Login
+placement. Browser measurement proved the remaining defect rather than relying
+on visual inference: the Login image rendered at 154×77 inside a 154×54
+overflow-hidden frame. Its lower artwork could therefore be clipped while the
+source PNG's large transparent canvas still made the visible logo feel
+undersized and poorly balanced.
+
+The canonical source asset and its colors/geometry remain unchanged. Full-logo
+placements now use a wordmark-shaped frame with absolute 100% image bounds and
+centered `object-fit: cover`, which removes only transparent outer canvas. Login
+uses a dedicated 184×60 frame; compact Header and collapsed-sidebar behavior
+remain separately scoped.
+
+Web tests (14), Web typecheck, Web production build and `git diff --check`
+passed. Commit `63ce07f` was pushed and only the Jupiter Web bundle was rebuilt
+on Preview. Web, API health and readiness returned HTTP 200; API, PostgreSQL,
+Nginx configuration and the co-hosted application were not changed.
+
+The repeated Browser screenshot visibly showed the complete planet and entire
+`Jupiter` lettering without the former blank frame. Computed browser evidence
+reported equal 184×60 bounds for the frame and image, natural source dimensions
+1774×887, zero broken images, no generic application error and zero
+document-level horizontal overflow. This correction does not change the
+official GOAL-059 staging verdict.
