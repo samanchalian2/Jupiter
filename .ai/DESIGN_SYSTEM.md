@@ -195,6 +195,10 @@ logo. Button foreground is selected deterministically between white and the
 approved dark foreground; canonical Jupiter primary controls use white at
 `4.77:1`, while primary text on light surfaces uses the derived accessible
 primary-text token.
+Strong brand hover and active surfaces must always use the matching
+`on-primary` foreground for both text and icons. Soft brand surfaces retain an
+accessible `primary-text` foreground; never combine a strong brand background
+with an inherited dark or muted foreground.
 
 ## Do / don't
 

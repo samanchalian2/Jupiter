@@ -829,3 +829,26 @@ html[data-ui-theme='dark'] button.secondary {
   background: var(--color-warm-soft);
   border-color: var(--color-warm-border);
 }
+
+/* Icon buttons inherit the global button hover rule. Keep the foreground and
+   the strong brand hover surface paired so glyphs never retain a dark color
+   on the brand background. */
+.icon-button:hover:not(:disabled),
+.icon-button:focus-visible:not(:disabled) {
+  color: var(--on-primary);
+  background: var(--color-brand-hover);
+  border-color: var(--color-brand-hover);
+}
+
+.icon-button:hover:not(:disabled) > svg,
+.icon-button:focus-visible:not(:disabled) > svg,
+.icon-button:active:not(:disabled) > svg {
+  color: var(--on-primary);
+  stroke: currentColor;
+}
+
+.icon-button:active:not(:disabled) {
+  color: var(--on-primary);
+  background: var(--color-brand-active);
+  border-color: var(--color-brand-active);
+}
