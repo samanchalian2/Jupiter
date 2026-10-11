@@ -6,8 +6,11 @@ control and its SVG glyph. This removes the cascade conflict that could leave
 the password-visibility icon and other icon buttons dark on a dark Lavender
 surface. Fourteen Web tests, Web typecheck/build and diff validation pass;
 Preview is deployed at commit `93e41dd`, and Web/API health return HTTP 200.
-The main-host publication is intentionally unchanged pending an explicit owner
-instruction to publish this preview-approved visual fix.
+Following the owner's explicit publication instruction, the same Web bundle is
+live at `https://jupiter.arandi.io` in release `93e41dd-hover`; Browser
+acceptance visibly confirmed a white password-visibility glyph on the filled
+Lavender hover state. Jupiter Web/API health, Nginx and the isolated
+`arandi-platform` service/site remained healthy.
 
 **Authorized IP preview synchronization (2026-10-10):** The protected preview
 checkout is deployed through application commit `73c93a0`. A database-only

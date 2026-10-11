@@ -570,6 +570,16 @@ on the isolated IP Preview. Web and API health returned HTTP 200; no API,
 migration, PostgreSQL, Nginx configuration or co-hosted application change was
 made. Browser interaction on the real Preview Login exercised the
 password-visibility control and displayed its filled hover state. The canonical
-main-host publication remains unchanged until the owner explicitly requests
-promotion, and the GOAL-059 verdict remains **BLOCKED** on its separate external
-infrastructure gates.
+main-host publication was initially left unchanged.
+
+The owner then explicitly requested publication. The identical tested Web
+bundle was placed in immutable release directory `93e41dd-hover` and the
+Jupiter `current` symlink was switched atomically; the prior release remains
+available for rollback. API/worker processes and the database were not
+restarted or changed. Nginx validation passed before reload. Canonical Jupiter
+Web and health, plus the co-hosted Arandi Web endpoint, returned HTTP 200 and
+Jupiter API/worker, Nginx and `arandi-platform` services all remained active.
+Browser acceptance on `https://jupiter.arandi.io` visibly confirmed the
+password-visibility button's filled Lavender hover state with a white glyph.
+This remediation does not alter the GOAL-059 **BLOCKED** verdict on its separate
+external infrastructure gates.

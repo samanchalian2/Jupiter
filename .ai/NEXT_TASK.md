@@ -10,10 +10,9 @@ No repository implementation Goal is approved to start automatically. Preserve
 the established architecture and wait for an explicitly scoped next Goal. Do
 not treat the Personal Service completion as GOAL-059 staging acceptance.
 
-The icon-button hover-contrast remediation is committed and deployed to the IP
-Preview at `93e41dd`. Publish it to the canonical main host only after an
-explicit owner instruction; do not infer production publication from the
-browser defect report alone.
+The icon-button hover-contrast remediation is committed at `93e41dd` and is
+deployed to both the IP Preview and the owner-authorized canonical main-host
+publication. No further promotion action remains for this remediation.
 
 ## Deferred deployment gate — GOAL-059 remains BLOCKED
 

@@ -9,8 +9,11 @@
 - Fourteen Web tests, Web typecheck/build and diff validation passed. Preview
   commit `93e41dd` returns HTTP 200 for Web and API health; no API, migration,
   database or co-hosted application change was made.
-- Kept the canonical main-host publication unchanged until the owner explicitly
-  requests promotion of this preview-approved visual remediation.
+- After explicit owner authorization, promoted the identical Web bundle to the
+  canonical main-host release `93e41dd-hover`. Browser acceptance visibly
+  confirmed the white password-visibility glyph on the filled Lavender hover
+  state. Jupiter and Arandi endpoints remained HTTP 200 and all bounded
+  services stayed active.
 
 ## 2026-10-11 — Isolated main-host publication
 
