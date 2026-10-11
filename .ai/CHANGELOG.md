@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-10-11 — Isolated main-host publication
+
+- Published release `5ba3ae8011dc` and the preview-approved Jupiter dataset to
+  the authorized main host on the separate HTTPS endpoint
+  `https://arandi.io:8443`.
+- Added dedicated Jupiter OS/runtime boundaries: release path, API and worker
+  services, loopback API port, PostgreSQL database/roles and Nginx listener.
+- Preserved the co-hosted `arandi-platform` service, files, port and database;
+  its service and public HTTPS endpoint remained healthy throughout.
+- Verified Web and API HTTP 200, administrator login, authenticated profile,
+  refresh rotation, Secure Cookie behavior and the in-app browser Login page.
+- Kept GOAL-059 blocked on the remaining dedicated hostname, managed secrets,
+  backup/restore, monitoring/alerting and Windows Connector evidence.
+
 ## 2026-10-11 — Canonical Login wordmark framing correction
 
 - Corrected the remaining Login defect where a 77px-tall image was rendered

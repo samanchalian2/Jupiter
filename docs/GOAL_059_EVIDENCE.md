@@ -507,3 +507,35 @@ reported equal 184×60 bounds for the frame and image, natural source dimensions
 1774×887, zero broken images, no generic application error and zero
 document-level horizontal overflow. This correction does not change the
 official GOAL-059 staging verdict.
+
+## 44. Owner-authorized isolated main-host publication (2026-10-11)
+
+The preview-approved dataset and release `5ba3ae8011dc` were published to the
+authorized main host for user access at `https://arandi.io:8443`. The existing
+co-hosted application was first mapped read-only and remained bounded to its
+own filesystem tree, service, loopback port, Nginx virtual host, PostgreSQL
+database and database role. Jupiter received a distinct system account,
+`/srv/jupiter` release tree, `jupiter-main-api` and `jupiter-main-worker`
+services, loopback API port 3100, PostgreSQL database/runtime roles and an
+independent TLS listener on 8443. No co-hosted application table or application
+file was read or changed.
+
+The Jupiter database restore retained 71 migration records, 30 workspaces and
+332 users from the accepted preview dataset. Runtime dependencies were rebuilt
+inside Jupiter's release after a Windows pnpm archive failed to preserve two
+transitive module links; no build or package operation ran in the co-hosted
+application directory. Temporary database dumps were removed from the hosts
+and their local temporary copies were zeroed after restore.
+
+Acceptance returned HTTP 200 for Jupiter Web and `/api/v1/health`; the stored
+Platform administrator completed login, authenticated profile and refresh
+rotation with a Secure refresh cookie. The in-app browser rendered the Persian
+Jupiter Login page from the HTTPS endpoint. The co-hosted application service
+remained active and its public HTTPS endpoint returned HTTP 200 before and after
+the deployment. Final Jupiter services and Nginx were active, and the host had
+9.5 GiB free at 75% filesystem utilization.
+
+This is an owner-authorized operational publication, not an official GOAL-059
+staging PASS. A dedicated Jupiter hostname, managed secret injection,
+backup/restore rehearsal, monitoring/alerting and a validated Windows Directory
+Connector host remain outstanding acceptance gates.
