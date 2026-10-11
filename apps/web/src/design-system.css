@@ -695,8 +695,27 @@ button.drawer-backdrop:focus-visible { background: rgba(33, 27, 43, 0.16); }
 }
 
 .brand-logo-wide:not(.brand-logo-compact) .brand-logo-visual {
+  position: relative;
   width: 154px;
-  height: 54px;
+  height: 50px;
+}
+
+/* The supplied PNG intentionally keeps a generous transparent canvas around
+   the artwork. Covering a wordmark-shaped frame trims only that transparent
+   breathing room; the planet and the full Jupiter lettering remain intact. */
+.brand-logo-wide:not(.brand-logo-compact) .brand-logo-visual img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+.login-brand-row .brand-logo-wide:not(.brand-logo-compact) .brand-logo-visual {
+  width: 184px;
+  height: 60px;
 }
 
 .brand-logo-wide.brand-logo-compact .brand-logo-visual {
