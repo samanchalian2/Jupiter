@@ -550,3 +550,26 @@ This is an owner-authorized operational publication, not an official GOAL-059
 staging PASS. Managed secret injection, immutable release provenance,
 backup/restore rehearsal, monitoring/alerting and a validated Windows Directory
 Connector host remain outstanding acceptance gates.
+
+## 45. Icon-button hover contrast remediation (2026-10-11)
+
+Owner review on the canonical Login identified an unreadable password-visibility
+icon when Hover applied a strong brand background while the glyph retained a
+dark foreground. The cause was a specificity conflict between the global
+`button:hover:not(:disabled)` rule and the softer shared icon-button rule.
+
+Shared icon buttons now pair strong hover, keyboard-focus and active surfaces
+with the deterministic `on-primary` foreground. The rule also targets the SVG
+glyph explicitly, preventing a nested icon from retaining a stale brand color.
+Soft brand and Beige secondary controls keep their existing accessible dark
+foregrounds.
+
+Fourteen Web tests, Web typecheck, Web production build and `git diff --check`
+passed. Commit `93e41dd` was pushed and only the Jupiter Web bundle was rebuilt
+on the isolated IP Preview. Web and API health returned HTTP 200; no API,
+migration, PostgreSQL, Nginx configuration or co-hosted application change was
+made. Browser interaction on the real Preview Login exercised the
+password-visibility control and displayed its filled hover state. The canonical
+main-host publication remains unchanged until the owner explicitly requests
+promotion, and the GOAL-059 verdict remains **BLOCKED** on its separate external
+infrastructure gates.

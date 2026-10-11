@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-10-11 — Icon-button hover contrast remediation
+
+- Corrected the CSS cascade conflict that could combine a strong Lavender
+  hover surface with an inherited dark icon/text foreground.
+- Icon-button hover, keyboard focus and active states now explicitly use the
+  deterministic `on-primary` foreground, including their SVG glyphs.
+- Fourteen Web tests, Web typecheck/build and diff validation passed. Preview
+  commit `93e41dd` returns HTTP 200 for Web and API health; no API, migration,
+  database or co-hosted application change was made.
+- Kept the canonical main-host publication unchanged until the owner explicitly
+  requests promotion of this preview-approved visual remediation.
+
 ## 2026-10-11 — Isolated main-host publication
 
 - Published release `5ba3ae8011dc` and the preview-approved Jupiter dataset to

@@ -10,6 +10,11 @@ No repository implementation Goal is approved to start automatically. Preserve
 the established architecture and wait for an explicitly scoped next Goal. Do
 not treat the Personal Service completion as GOAL-059 staging acceptance.
 
+The icon-button hover-contrast remediation is committed and deployed to the IP
+Preview at `93e41dd`. Publish it to the canonical main host only after an
+explicit owner instruction; do not infer production publication from the
+browser defect report alone.
+
 ## Deferred deployment gate — GOAL-059 remains BLOCKED
 
 An owner-authorized user-facing publication is operational at the canonical
@@ -27,7 +32,7 @@ An authorized, HTTP-only IP preview is operational with the isolated full
 Jupiter dataset, loopback-only API and dedicated system services. It is not an
 official staging acceptance or a substitute for a canonical deployment.
 The authorized preview host is synchronized through application commit
-`63ce07f`; migrations 057–060 and the Personal Service Help catalog are live,
+`93e41dd`; migrations 057–060 and the Personal Service Help catalog are live,
 its Web, health and readiness endpoints return HTTP 200, and the Persian login
 renders the canonical logo without horizontal overflow. Do not modify any
 unrelated host service or database.

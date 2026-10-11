@@ -1,5 +1,14 @@
 # Current State
 
+**Icon-button hover contrast remediation (2026-10-11):** Strong brand hover,
+focus and active surfaces now explicitly pair with `on-primary` for both the
+control and its SVG glyph. This removes the cascade conflict that could leave
+the password-visibility icon and other icon buttons dark on a dark Lavender
+surface. Fourteen Web tests, Web typecheck/build and diff validation pass;
+Preview is deployed at commit `93e41dd`, and Web/API health return HTTP 200.
+The main-host publication is intentionally unchanged pending an explicit owner
+instruction to publish this preview-approved visual fix.
+
 **Authorized IP preview synchronization (2026-10-10):** The protected preview
 checkout is deployed through application commit `73c93a0`. A database-only
 rollback backup was created before migrations 057–060 were applied to the
