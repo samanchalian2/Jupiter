@@ -9,9 +9,11 @@ root-owned DKIM private key outside the repository/database. Release
 `f4ad0e1-smtp` is live with SMTP delivery enabled. A real isolated registration
 returned HTTP 201/`DELIVERED`, OpenDKIM recorded a signature, and its temporary
 database rows and queued bounce were removed. Jupiter/Arandi stayed HTTP 200
-and all bounded services are active. Cloudflare SPF, DKIM and DMARC TXT records
-for `jupiter.arandi.io` are still pending; mailbox placement cannot be accepted
-until the owner publishes them and DNS validation passes.
+and all bounded services are active. Cloudflare now publishes aligned SPF,
+DKIM and strict DMARC records for `jupiter.arandi.io` through both 1.1.1.1 and
+8.8.8.8. The SHA-256 of the published DKIM key exactly matches the public key
+derived from the protected server key. Final mailbox placement is exercised by
+the account owner's normal «ارسال دوباره» action.
 
 **Public registration RLS remediation (2026-10-12):** Public account creation
 was failing on the canonical site because its required unscoped audit record

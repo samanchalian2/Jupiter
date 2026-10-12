@@ -709,13 +709,19 @@ messages were then removed; the database fixture count and mail queue both
 returned zero. Jupiter Web/health and Arandi Web returned HTTP 200; Jupiter API,
 worker, Postfix, OpenDKIM, Nginx and `arandi-platform` were active.
 
-DNS is the remaining external acceptance dependency. The authoritative
-Cloudflare zone does not yet publish SPF at `jupiter.arandi.io`, selector TXT at
-`jupiter._domainkey.jupiter.arandi.io`, or DMARC at
-`_dmarc.jupiter.arandi.io`. Until those deployment-generated records propagate,
-SMTP handoff is operational but inbox placement/DMARC alignment is not a PASS.
-After publication, validate public DNS, request one authenticated resend, open
-the received canonical link and verify that email confirmation provisions the
-personal workspace. No raw token, credential or private DKIM key belongs in
-this Evidence. This operational delivery work does not change GOAL-059's
-separate **BLOCKED** infrastructure verdict.
+The owner then published the deployment-generated SPF, DKIM and strict DMARC
+records in the authoritative Cloudflare zone. Both Cloudflare public DNS
+(1.1.1.1) and Google public DNS (8.8.8.8) return the expected records. The
+SHA-256 digest of the DKIM `p=` value is
+`df55b8f8eee310b4837ebc7c18845fffa3320e38bfc1143ff4e5e2a2a6879d13`;
+the public key derived on-host from the protected private key has exactly the
+same digest. This validates selector/key alignment without exposing private
+material. The Postfix queue remained empty and canonical Jupiter Web/health,
+Arandi Web and all six bounded services remained healthy.
+
+The remaining user-visible check is the account owner's normal authenticated
+«ارسال دوباره» action, mailbox receipt and consumption of the canonical link;
+this is deliberately not replaced by a token/database bypass. No raw token,
+credential or private DKIM key belongs in this Evidence. This operational
+delivery work does not change GOAL-059's separate **BLOCKED** infrastructure
+verdict.

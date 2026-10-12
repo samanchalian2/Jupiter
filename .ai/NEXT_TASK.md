@@ -22,11 +22,11 @@ No follow-up deployment remains for this audit.
 The public-registration RLS defect is remediated and the canonical main host
 now runs release `f4ad0e1-smtp`: account creation returns HTTP 201, SMTP handoff
 and DKIM signing are active, and an isolated registration returned
-`DELIVERED`. Preview remains non-delivering. Before declaring mailbox
-acceptance complete, publish and validate the deployment-generated SPF, DKIM
-and DMARC TXT records for `jupiter.arandi.io`, then use the authenticated resend
-action and consume the resulting verification link. Do not expose the DKIM
-private key or verification token.
+`DELIVERED`. Preview remains non-delivering. SPF, DKIM and DMARC now resolve
+from both Cloudflare and Google public DNS, and the published DKIM key matches
+the server key. Final user-visible acceptance is the authenticated resend and
+consumption of the received verification link. Do not expose the DKIM private
+key or verification token.
 
 ## Deferred deployment gate — GOAL-059 remains BLOCKED
 

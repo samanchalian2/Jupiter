@@ -17,8 +17,9 @@
   recorded its signature, and all fixture database/queue data was removed.
   Jupiter and Arandi endpoints stayed HTTP 200 and their bounded services
   remained active.
-- Final mailbox acceptance awaits publication of the generated SPF, DKIM and
-  DMARC TXT records in Cloudflare DNS.
+- Cloudflare now publishes the generated SPF, DKIM and strict DMARC records.
+  Both 1.1.1.1 and 8.8.8.8 return them, and the SHA-256 of the DNS DKIM public
+  key exactly matches the public key derived from the protected server key.
 
 ## 2026-10-12 — Public registration audit-scope remediation
 
