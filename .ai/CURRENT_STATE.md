@@ -1,5 +1,18 @@
 # Current State
 
+**Production email-verification delivery (2026-10-12):** Jupiter now has a
+deployment-owned SMTP verification adapter with Persian text/HTML messages,
+canonical HTTPS links, explicit acceptance checks and a loopback-only plaintext
+exception; any non-loopback TLS bypass is rejected. The main host runs Postfix
+and OpenDKIM only on loopback, with relay restricted to localhost and a
+root-owned DKIM private key outside the repository/database. Release
+`f4ad0e1-smtp` is live with SMTP delivery enabled. A real isolated registration
+returned HTTP 201/`DELIVERED`, OpenDKIM recorded a signature, and its temporary
+database rows and queued bounce were removed. Jupiter/Arandi stayed HTTP 200
+and all bounded services are active. Cloudflare SPF, DKIM and DMARC TXT records
+for `jupiter.arandi.io` are still pending; mailbox placement cannot be accepted
+until the owner publishes them and DNS validation passes.
+
 **Public registration RLS remediation (2026-10-12):** Public account creation
 was failing on the canonical site because its required unscoped audit record
 could not pass the tenant audit-log RLS policy. Migration 061 now uses

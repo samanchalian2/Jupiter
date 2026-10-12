@@ -1,5 +1,25 @@
 # Changelog
 
+## 2026-10-12 — Production email-verification delivery
+
+- Added an SMTP adapter to the existing verification-delivery boundary with a
+  Persian text/HTML message, canonical HTTPS verification URL, recipient
+  acceptance checking and bounded connection timeouts.
+- Added DEC-034 and deployment documentation. SMTP credentials remain optional
+  only for a loopback MTA; TLS bypass is rejected for all non-loopback hosts.
+- Added three delivery tests. The complete gate passed 142 API tests, 16 Web
+  tests, both lint/typecheck/build pipelines and diff validation.
+- Deployed commit `f4ad0e1` to Preview and canonical release
+  `f4ad0e1-smtp`. The main host now runs loopback-only Postfix/OpenDKIM with no
+  public SMTP listener or open relay and with the private DKIM key outside the
+  repository and database.
+- An isolated canonical registration returned HTTP 201/`DELIVERED`, OpenDKIM
+  recorded its signature, and all fixture database/queue data was removed.
+  Jupiter and Arandi endpoints stayed HTTP 200 and their bounded services
+  remained active.
+- Final mailbox acceptance awaits publication of the generated SPF, DKIM and
+  DMARC TXT records in Cloudflare DNS.
+
 ## 2026-10-12 — Public registration audit-scope remediation
 
 - Fixed canonical public account creation, which rolled back with HTTP 500

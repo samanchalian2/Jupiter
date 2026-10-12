@@ -19,13 +19,14 @@ strong brand Hover/Focus/Active rule is guarded by a source-level regression
 test and the tested Web bundle is live on Preview and the canonical main host.
 No follow-up deployment remains for this audit.
 
-The public-registration RLS defect is also remediated and deployed at
-`7642bca`. Canonical account creation now returns HTTP 201, the cross-scope RLS
-matrix is covered by integration tests, and temporary acceptance data was
-removed. Verification delivery remains `PENDING_CONFIGURATION` because both
-authorized hosts explicitly run with delivery disabled; enabling email needs
-an approved HTTPS webhook/provider configuration and is not to be bypassed by
-weakening verification.
+The public-registration RLS defect is remediated and the canonical main host
+now runs release `f4ad0e1-smtp`: account creation returns HTTP 201, SMTP handoff
+and DKIM signing are active, and an isolated registration returned
+`DELIVERED`. Preview remains non-delivering. Before declaring mailbox
+acceptance complete, publish and validate the deployment-generated SPF, DKIM
+and DMARC TXT records for `jupiter.arandi.io`, then use the authenticated resend
+action and consume the resulting verification link. Do not expose the DKIM
+private key or verification token.
 
 ## Deferred deployment gate — GOAL-059 remains BLOCKED
 

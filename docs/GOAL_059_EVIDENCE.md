@@ -665,10 +665,57 @@ Final canonical Jupiter Web and health and the co-hosted Arandi Web endpoint
 all returned HTTP 200. Jupiter API, worker, Nginx and `arandi-platform` were all
 active. No Arandi file, table, role or service configuration was changed.
 
-Both authorized Jupiter hosts currently set public verification delivery to
-`DISABLED`, and no approved provider/webhook secret exists in the project
+At the time of this RLS-only remediation, both authorized Jupiter hosts set
+public verification delivery to `DISABLED`, and no approved provider/webhook
+secret exists in the project
 secure inventory. Successful registration therefore returns
 `PENDING_CONFIGURATION`; sending a verification email requires a separately
 authorized delivery-provider configuration. The remediation neither exposes a
 token nor bypasses the verified-email activation invariant. This operational
 fix does not change GOAL-059's separate **BLOCKED** infrastructure verdict.
+
+## 48. Production email-verification delivery (2026-10-12)
+
+The owner requested completion of the verification delivery mechanism after
+the canonical registration fix. DEC-034 extends the existing adapter boundary
+with deployment-owned SMTP; token creation, hashing, single-use consumption,
+24-hour expiry, resend throttling, audit and verified personal-workspace
+provisioning remain unchanged. The adapter emits Persian text and HTML with the
+canonical HTTPS verification URL, checks that SMTP accepted the intended
+recipient, disables file/URL content access and uses bounded timeouts. Its
+plaintext exception is accepted only for `localhost`, `127.0.0.1` or `::1`;
+every non-loopback TLS bypass is rejected.
+
+Three focused delivery tests cover the message projection, recipient rejection
+and non-loopback TLS-bypass denial. The full release gate passed 142 API tests,
+16 Web tests, API/Web lint and typecheck, both production builds and
+`git diff --check`. Commits `88db77a` and `f4ad0e1` were pushed; Preview was
+synchronized to `f4ad0e1` with delivery still disabled there.
+
+The canonical host had no existing mail listener or MTA and outbound SMTP was
+reachable. Postfix and OpenDKIM were installed without changing Nginx,
+PostgreSQL, Jupiter database data or any Arandi file/service. Postfix listens
+only at `127.0.0.1:25`, relays only for loopback, and hands outbound messages to
+OpenDKIM at `127.0.0.1:8891`. The 2048-bit selector is `jupiter`; its private
+key is root/service-owned under `/etc/opendkim`, mode 0600, and is not present
+in Git, the database, application environment, audit metadata or logs.
+
+Release `f4ad0e1-smtp` enabled canonical SMTP delivery from
+`no-reply@jupiter.arandi.io`. A reserved-domain registration fixture exercised
+the real public API, Persian message, local SMTP handoff and DKIM milter. It
+returned HTTP 201 with `DELIVERED`, and OpenDKIM recorded that a DKIM signature
+was added. The fixture account/audit/delivery records and its queued test/bounce
+messages were then removed; the database fixture count and mail queue both
+returned zero. Jupiter Web/health and Arandi Web returned HTTP 200; Jupiter API,
+worker, Postfix, OpenDKIM, Nginx and `arandi-platform` were active.
+
+DNS is the remaining external acceptance dependency. The authoritative
+Cloudflare zone does not yet publish SPF at `jupiter.arandi.io`, selector TXT at
+`jupiter._domainkey.jupiter.arandi.io`, or DMARC at
+`_dmarc.jupiter.arandi.io`. Until those deployment-generated records propagate,
+SMTP handoff is operational but inbox placement/DMARC alignment is not a PASS.
+After publication, validate public DNS, request one authenticated resend, open
+the received canonical link and verify that email confirmation provisions the
+personal workspace. No raw token, credential or private DKIM key belongs in
+this Evidence. This operational delivery work does not change GOAL-059's
+separate **BLOCKED** infrastructure verdict.
