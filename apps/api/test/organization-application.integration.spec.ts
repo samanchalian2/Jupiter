@@ -186,6 +186,31 @@ afterAll(async () => {
 });
 
 describe('public accounts and organization applications', () => {
+  it('keeps platform/public audit rows writable without exposing them in a tenant scope', async () => {
+    const action = `public_account.rls_scope_${fixtureId}`;
+    await database.transaction(async (client) => {
+      await client.query('SET LOCAL ROLE jupiter_app');
+      await client.query("SELECT set_config('app.organization_id','',true)");
+      await client.query(
+        `INSERT INTO audit_logs(organization_id,actor_user_id,action,target_type,target_id,metadata)
+         VALUES(NULL,$1,$2,'user',$1,'{}'::jsonb)`,
+        [platformAdminId, action],
+      );
+      expect((await client.query<{count:number}>('SELECT count(*)::int count FROM audit_logs WHERE action=$1', [action])).rows[0].count).toBe(1);
+
+      await client.query("SELECT set_config('app.organization_id',$1,true)", [directoryOrganizationA]);
+      expect((await client.query<{count:number}>('SELECT count(*)::int count FROM audit_logs WHERE action=$1', [action])).rows[0].count).toBe(0);
+      await client.query('SAVEPOINT rejected_platform_audit');
+      await expect(client.query(
+        `INSERT INTO audit_logs(organization_id,actor_user_id,action,target_type,target_id,metadata)
+         VALUES(NULL,$1,$2,'user',$1,'{}'::jsonb)`,
+        [platformAdminId, `${action}.tenant_rejected`],
+      )).rejects.toMatchObject({ code: '42501' });
+      await client.query('ROLLBACK TO SAVEPOINT rejected_platform_audit');
+    });
+    await database.query('DELETE FROM audit_logs WHERE action=$1', [action]);
+  });
+
   it('runs the GOAL-058 supported three-tenant onboarding, role, lifecycle, isolation and integrity journey', async () => {
     const [tenantA, tenantB, tenantC] = await Promise.all([
       provisionOrganization('setup-a', platformAdminId),

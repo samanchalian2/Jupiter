@@ -68,7 +68,7 @@ export class OrganizationApplicationService {
       const deliveryStatus = await this.dispatch(created.tokenId, email, rawToken, created.expiresAt);
       return { id: created.user.id, email: created.user.email, displayName: created.user.display_name, verificationDeliveryStatus: deliveryStatus };
     } catch (cause) {
-      if (this.uniqueViolation(cause)) throw new ConflictException('This email is already registered.');
+      if (this.uniqueViolation(cause)) throw new ConflictException('این ایمیل قبلاً ثبت شده است.');
       throw cause;
     }
   }
