@@ -622,3 +622,53 @@ interaction with the password-visibility control measured button background
 health and the co-hosted Arandi endpoint all returned HTTP 200; Jupiter API,
 worker, Nginx and `arandi-platform` services remained active. This visual audit
 does not change the separate GOAL-059 **BLOCKED** infrastructure verdict.
+
+## 47. Public registration audit-scope remediation (2026-10-12)
+
+Canonical Browser feedback exposed HTTP 500 while creating a personal Jupiter
+account. The API journal identified the exact failure without recording any
+credential: insertion of the required public account audit event was rejected
+by `audit_logs_tenant`. Public account creation deliberately has no tenant
+scope, but SQL equality does not make two NULL scopes equal, so the transaction
+rolled back and no partial user remained.
+
+Migration `061_audit_log_scope_policy.sql` replaces ordinary equality with
+`IS NOT DISTINCT FROM` for both policy visibility and insertion. This does not
+open audit data across organizations: an unscoped audit row can be inserted and
+read only in an unscoped request context, disappears after switching to a
+tenant context, and an attempt to create an unscoped row while tenant-scoped is
+rejected with PostgreSQL RLS error `42501`. The integration test exercises all
+three invariants through the runtime role. Duplicate-email conflicts are also
+translated to a Persian user-facing message rather than leaking a database
+error.
+
+The focused organization-application integration suite passed 35 tests. The
+complete verification then passed 140 API tests, 16 Web tests, API/Web
+typechecks, both production builds and `git diff --check`. Commit `7642bca`
+was pushed.
+
+Preview received migration 061 and the rebuilt API/worker after a protected
+Jupiter-only backup. A real public registration returned HTTP 201 with delivery
+status `PENDING_CONFIGURATION`; its user and audit rows were then deleted and
+the cleanup query returned zero. No unrelated service or database changed.
+
+The canonical main host received immutable release
+`7642bca-registration`. Before applying migration 061, a Jupiter-only database
+backup was stored at
+`/srv/jupiter/backups/pre-061-20261012T104722Z.dump`; the release symlink was
+switched atomically and only Jupiter API/worker were restarted. A real request
+to `https://jupiter.arandi.io/api/v1/public/accounts` then returned HTTP 201.
+The fixture cleanup trap completed and the authoritative database query found
+zero `main-accept-*` users. Migration 061 is recorded exactly once.
+
+Final canonical Jupiter Web and health and the co-hosted Arandi Web endpoint
+all returned HTTP 200. Jupiter API, worker, Nginx and `arandi-platform` were all
+active. No Arandi file, table, role or service configuration was changed.
+
+Both authorized Jupiter hosts currently set public verification delivery to
+`DISABLED`, and no approved provider/webhook secret exists in the project
+secure inventory. Successful registration therefore returns
+`PENDING_CONFIGURATION`; sending a verification email requires a separately
+authorized delivery-provider configuration. The remediation neither exposes a
+token nor bypasses the verified-email activation invariant. This operational
+fix does not change GOAL-059's separate **BLOCKED** infrastructure verdict.

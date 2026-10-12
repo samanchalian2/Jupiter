@@ -19,6 +19,14 @@ strong brand Hover/Focus/Active rule is guarded by a source-level regression
 test and the tested Web bundle is live on Preview and the canonical main host.
 No follow-up deployment remains for this audit.
 
+The public-registration RLS defect is also remediated and deployed at
+`7642bca`. Canonical account creation now returns HTTP 201, the cross-scope RLS
+matrix is covered by integration tests, and temporary acceptance data was
+removed. Verification delivery remains `PENDING_CONFIGURATION` because both
+authorized hosts explicitly run with delivery disabled; enabling email needs
+an approved HTTPS webhook/provider configuration and is not to be bypassed by
+weakening verification.
+
 ## Deferred deployment gate — GOAL-059 remains BLOCKED
 
 An owner-authorized user-facing publication is operational at the canonical

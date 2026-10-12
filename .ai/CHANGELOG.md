@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-10-12 — Public registration audit-scope remediation
+
+- Fixed canonical public account creation, which rolled back with HTTP 500
+  when the required unscoped audit row was rejected by tenant RLS.
+- Added migration 061 with NULL-safe audit scope comparison: unscoped rows are
+  available only in unscoped request context and remain isolated from every
+  tenant context.
+- Added integration coverage for public insert/read, tenant invisibility and
+  denial of an unscoped insert from tenant context; duplicate emails now return
+  a Persian conflict message.
+- All 140 API tests, all 16 Web tests, both typechecks/builds and diff checks
+  passed. Commit `7642bca` was deployed to Preview and the canonical main host
+  after Jupiter-only backups. A real canonical registration returned HTTP 201,
+  the temporary fixture was fully removed, and the co-hosted Arandi endpoint
+  remained HTTP 200 with its service untouched.
+- Verification delivery remains disabled on both authorized hosts, so account
+  creation reports `PENDING_CONFIGURATION` until a delivery provider is
+  explicitly configured; no secret or verification bypass was introduced.
+
 ## 2026-10-12 — Program-wide interaction contrast audit
 
 - Made the global button Hover foreground explicit so every control that falls

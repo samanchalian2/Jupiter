@@ -1,5 +1,20 @@
 # Current State
 
+**Public registration RLS remediation (2026-10-12):** Public account creation
+was failing on the canonical site because its required unscoped audit record
+could not pass the tenant audit-log RLS policy. Migration 061 now uses
+NULL-safe scope comparison: public/platform audit rows are accepted only while
+the request is also unscoped, remain invisible in tenant context, and tenant
+requests cannot forge an unscoped row. The API maps duplicate email conflicts
+to a Persian user-facing message. Focused integration coverage, all 140 API
+tests, all 16 Web tests, both typechecks/builds and diff validation pass.
+Commit `7642bca` is deployed on Preview and the canonical main host; a real
+registration returned HTTP 201 and its temporary user/audit data was removed.
+Jupiter and the isolated Arandi site remained HTTP 200 with all bounded
+services active. Email verification delivery is still intentionally
+`DISABLED` on these hosts, so successful registrations report
+`PENDING_CONFIGURATION` until an authorized delivery provider is configured.
+
 **Program-wide interaction contrast audit (2026-10-12):** The Web-wide
 `button:hover` contract now explicitly pairs its strong brand background with
 the deterministic `on-primary` foreground, and nested SVG glyphs inherit the
