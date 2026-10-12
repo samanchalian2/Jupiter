@@ -583,3 +583,42 @@ Browser acceptance on `https://jupiter.arandi.io` visibly confirmed the
 password-visibility button's filled Lavender hover state with a white glyph.
 This remediation does not alter the GOAL-059 **BLOCKED** verdict on its separate
 external infrastructure gates.
+
+## 46. Program-wide interaction contrast audit (2026-10-12)
+
+The owner expanded the selected Login defect into a program-wide requirement:
+whenever Hover changes a control to a dark brand surface, its text and icon must
+become the matching readable foreground. The follow-up audit enumerated all
+Hover, Focus and Active rules in both Web stylesheets rather than limiting the
+fix to the password icon.
+
+The global `button:hover:not(:disabled)` contract now declares both the strong
+brand background and `on-primary` foreground. Nested SVGs inherit that resolved
+foreground. Primary-button states explicitly repeat the invariant, and brand
+states that previously hard-coded white in composer utilities, send controls,
+mobile navigation and header disclosures now use `on-primary`; this preserves
+the deterministic dark foreground selected for an approved light Custom
+Primary. Soft brand, warm Beige and neutral hover surfaces retain their
+accessible dark semantic foregrounds.
+
+`interactionContrast.test.ts` parses both shipped stylesheets. It fails if any
+Hover/Focus/Active rule uses a strong `primary`, `primary-dark`, `color-brand`,
+`color-brand-hover` or `color-brand-active` surface without `on-primary`, and
+also protects SVG foreground inheritance. All 16 Web tests, Web typecheck,
+production build and `git diff --check` passed.
+
+Commit `5c6eb6e` was built on the isolated IP Preview; Web and API health
+returned HTTP 200. After the previously explicit owner instruction to update
+the Web version, the identical tested bundle was promoted through immutable
+canonical release `5c6eb6e-hover-audit`, preserving the previous release for
+rollback. Nginx validation passed and only the Jupiter Web release symlink was
+changed; API, worker, PostgreSQL and migrations were untouched.
+
+On live `https://jupiter.arandi.io`, CSSOM inspection evaluated all 12 strong
+brand interaction rules and found zero foreground mismatch. Direct Browser
+interaction with the password-visibility control measured button background
+`rgb(109, 98, 125)`, button/SVG color and SVG stroke
+`rgb(255, 255, 255)`, and equal document client/scroll width. Jupiter Web/API
+health and the co-hosted Arandi endpoint all returned HTTP 200; Jupiter API,
+worker, Nginx and `arandi-platform` services remained active. This visual audit
+does not change the separate GOAL-059 **BLOCKED** infrastructure verdict.

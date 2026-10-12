@@ -1,5 +1,19 @@
 # Current State
 
+**Program-wide interaction contrast audit (2026-10-12):** The Web-wide
+`button:hover` contract now explicitly pairs its strong brand background with
+the deterministic `on-primary` foreground, and nested SVG glyphs inherit the
+resolved control color. Primary, composer utility/send, mobile navigation and
+header disclosure states use the same semantic token rather than fixed white;
+soft/Beige surfaces retain accessible dark text. A new regression test parses
+both Web stylesheets and rejects every strong-brand Hover/Focus/Active rule
+without `on-primary`. Sixteen Web tests, typecheck/build and diff validation
+pass. Preview commit `5c6eb6e` and canonical release
+`5c6eb6e-hover-audit` are live. Production CSSOM audited 12 strong interaction
+rules with zero mismatch; the real password control computed to white text and
+SVG on `rgb(109, 98, 125)`, with no horizontal overflow. Jupiter and Arandi
+Web/health remained HTTP 200 and no API/database change occurred.
+
 **Icon-button hover contrast remediation (2026-10-11):** Strong brand hover,
 focus and active surfaces now explicitly pair with `on-primary` for both the
 control and its SVG glyph. This removes the cascade conflict that could leave

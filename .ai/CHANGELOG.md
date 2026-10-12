@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-10-12 — Program-wide interaction contrast audit
+
+- Made the global button Hover foreground explicit so every control that falls
+  through to the strong Lavender hover surface receives `on-primary` text.
+- Made nested SVG glyphs follow the resolved control foreground and replaced
+  fixed-white brand states in composer, mobile navigation and header controls
+  with the deterministic semantic token, preserving light Custom Primary
+  compatibility.
+- Added a stylesheet regression test that rejects any strong-brand
+  Hover/Focus/Active rule without `on-primary`; 16 Web tests, typecheck, build
+  and diff validation passed.
+- Deployed commit `5c6eb6e` to Preview and canonical release
+  `5c6eb6e-hover-audit`. Live production CSSOM inspection checked 12 strong
+  interaction rules with zero mismatch; the password icon computed white on
+  Lavender. Jupiter and Arandi stayed HTTP 200 with all bounded services active.
+
 ## 2026-10-11 — Icon-button hover contrast remediation
 
 - Corrected the CSS cascade conflict that could combine a strong Lavender

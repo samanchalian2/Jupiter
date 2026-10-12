@@ -14,6 +14,11 @@ The icon-button hover-contrast remediation is committed at `93e41dd` and is
 deployed to both the IP Preview and the owner-authorized canonical main-host
 publication. No further promotion action remains for this remediation.
 
+The broader interaction-state audit is also complete at `5c6eb6e`: every
+strong brand Hover/Focus/Active rule is guarded by a source-level regression
+test and the tested Web bundle is live on Preview and the canonical main host.
+No follow-up deployment remains for this audit.
+
 ## Deferred deployment gate — GOAL-059 remains BLOCKED
 
 An owner-authorized user-facing publication is operational at the canonical
@@ -31,7 +36,7 @@ An authorized, HTTP-only IP preview is operational with the isolated full
 Jupiter dataset, loopback-only API and dedicated system services. It is not an
 official staging acceptance or a substitute for a canonical deployment.
 The authorized preview host is synchronized through application commit
-`93e41dd`; migrations 057–060 and the Personal Service Help catalog are live,
+`5c6eb6e`; migrations 057–060 and the Personal Service Help catalog are live,
 its Web, health and readiness endpoints return HTTP 200, and the Persian login
 renders the canonical logo without horizontal overflow. Do not modify any
 unrelated host service or database.
