@@ -86,6 +86,7 @@ summary:focus-visible {
 }
 .ui-button.primary:hover:not(:disabled) {
   background: var(--primary-dark);
+  color: var(--on-primary);
 }
 .ui-button.secondary {
   background: var(--primary-soft);
@@ -707,7 +708,7 @@ button.drawer-backdrop:focus-visible {
 .message-utility-button:hover:not(:has(input:disabled)),
 .message-utility-button:focus-visible,
 .message-utility-button.recording {
-  color: #fff;
+  color: var(--on-primary);
   background: var(--primary);
 }
 .message-utility-button.recording { background: var(--danger); }
@@ -720,7 +721,7 @@ button.drawer-backdrop:focus-visible {
   margin-inline-start: auto;
   padding: 7px 12px;
   font-size: .82rem;
-  color: #fff;
+  color: var(--on-primary);
   background: var(--primary);
 }
 .message-send-button.ui-button:hover:not(:disabled),
@@ -952,7 +953,7 @@ button.drawer-backdrop:focus-visible {
    strokes remain legible against the Jupiter-purple surface. */
 .mobile-only > .icon-button:hover,
 .mobile-only > .icon-button:focus-visible {
-  color: #fff;
+  color: var(--on-primary);
   background: var(--primary);
 }
 
@@ -980,7 +981,7 @@ button.drawer-backdrop:focus-visible {
 .header-actions .global-search summary:hover,
 .header-actions .notifications[open] summary,
 .header-actions .global-search[open] summary {
-  color: #fff;
+  color: var(--on-primary);
   background: var(--primary);
 }
 .header-actions .notifications b {
@@ -1400,6 +1401,13 @@ button {
 }
 button:hover:not(:disabled) {
   background: var(--primary-dark);
+  color: var(--on-primary);
+}
+button:hover:not(:disabled) > svg,
+button:focus-visible > svg,
+button:active:not(:disabled) > svg {
+  color: currentColor;
+  stroke: currentColor;
 }
 button:disabled {
   cursor: wait;
@@ -2532,6 +2540,7 @@ summary:focus-visible {
 }
 .ui-button.primary:hover:not(:disabled) {
   background: var(--primary-dark);
+  color: var(--on-primary);
 }
 .ui-button.secondary {
   background: var(--primary-soft);

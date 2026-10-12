@@ -198,7 +198,9 @@ primary-text token.
 Strong brand hover and active surfaces must always use the matching
 `on-primary` foreground for both text and icons. Soft brand surfaces retain an
 accessible `primary-text` foreground; never combine a strong brand background
-with an inherited dark or muted foreground.
+with an inherited dark or muted foreground. The Web contrast regression test
+audits every Hover/Focus/Active rule that uses a strong brand surface and must
+remain in the release gate.
 
 ## Do / don't
 
