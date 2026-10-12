@@ -1,19 +1,33 @@
 # Current State
 
+**Verification-to-personal-workspace RLS remediation (2026-10-12):** A real
+mailbox receipt proved SMTP delivery, but consuming the link returned HTTP 500
+because the unscoped public transaction attempted to create the tenant-owned
+personal membership before selecting the new personal tenant context. The
+service now changes only the tenant-owned provisioning segment to the resolved
+workspace context and restores any prior context on success; the runtime role
+continues to enforce RLS and the verification transaction remains atomic. A
+runtime-role integration test reproduces the production boundary. All 144 API
+tests, 16 Web tests, lint/typechecks/builds and diff validation pass. Commit
+`fe39351` is live on Preview and canonical release
+`fe39351-verify-rls`; Jupiter Web/health/readiness and the isolated Arandi site
+return HTTP 200 with all bounded services active. The failed production
+attempt rolled back, so no token, identity or partial workspace was consumed.
+
 **Production email-verification delivery (2026-10-12):** Jupiter now has a
 deployment-owned SMTP verification adapter with Persian text/HTML messages,
 canonical HTTPS links, explicit acceptance checks and a loopback-only plaintext
 exception; any non-loopback TLS bypass is rejected. The main host runs Postfix
 and OpenDKIM only on loopback, with relay restricted to localhost and a
 root-owned DKIM private key outside the repository/database. Release
-`f4ad0e1-smtp` is live with SMTP delivery enabled. A real isolated registration
+`fe39351-verify-rls` is live with SMTP delivery enabled. A real isolated registration
 returned HTTP 201/`DELIVERED`, OpenDKIM recorded a signature, and its temporary
 database rows and queued bounce were removed. Jupiter/Arandi stayed HTTP 200
 and all bounded services are active. Cloudflare now publishes aligned SPF,
 DKIM and strict DMARC records for `jupiter.arandi.io` through both 1.1.1.1 and
 8.8.8.8. The SHA-256 of the published DKIM key exactly matches the public key
-derived from the protected server key. Final mailbox placement is exercised by
-the account owner's normal «ارسال دوباره» action.
+derived from the protected server key. Real mailbox placement is confirmed;
+the same still-valid link can now complete the corrected consumption flow.
 
 **Public registration RLS remediation (2026-10-12):** Public account creation
 was failing on the canonical site because its required unscoped audit record

@@ -19,14 +19,14 @@ strong brand Hover/Focus/Active rule is guarded by a source-level regression
 test and the tested Web bundle is live on Preview and the canonical main host.
 No follow-up deployment remains for this audit.
 
-The public-registration RLS defect is remediated and the canonical main host
-now runs release `f4ad0e1-smtp`: account creation returns HTTP 201, SMTP handoff
-and DKIM signing are active, and an isolated registration returned
-`DELIVERED`. Preview remains non-delivering. SPF, DKIM and DMARC now resolve
-from both Cloudflare and Google public DNS, and the published DKIM key matches
-the server key. Final user-visible acceptance is the authenticated resend and
-consumption of the received verification link. Do not expose the DKIM private
-key or verification token.
+The public-registration and verification-provisioning RLS defects are
+remediated. The canonical main host runs release `fe39351-verify-rls`: account
+creation returns HTTP 201, SMTP handoff/DKIM signing and real mailbox receipt
+are confirmed, and personal membership provisioning now selects the resolved
+tenant context while remaining subject to the runtime RLS role. Preview
+remains non-delivering. The failed pre-fix consumption transaction rolled back,
+so the account owner's same unexpired link remains usable for the final
+user-visible retry. Do not expose the DKIM private key or verification token.
 
 ## Deferred deployment gate — GOAL-059 remains BLOCKED
 

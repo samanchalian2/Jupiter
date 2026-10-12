@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-10-12 — Verification personal-workspace RLS remediation
+
+- Diagnosed the real canonical verification failure from sanitized service
+  logs: the public transaction reached personal provisioning but RLS rejected
+  the membership insert because no tenant context had yet been selected.
+- Scoped only membership, requester-role, tenant audit and projection work to
+  the resolved personal workspace, restoring an existing caller context after
+  successful provisioning. Verification, token consumption and workspace
+  creation remain one atomic transaction; no authorization bypass was added.
+- Added a runtime-role integration test that starts unscoped and proves the
+  complete account creation and verification flow under `jupiter_app` RLS.
+- All 144 API tests, 16 Web tests, API lint, API/Web typechecks and builds, and
+  diff validation passed. Commit `fe39351` is deployed on Preview and canonical
+  release `fe39351-verify-rls`; Jupiter Web/health/readiness and Arandi return
+  HTTP 200 with API, worker, mail, Nginx and Arandi services active.
+- The original failed request rolled back atomically. No raw token, email,
+  credential or partial personal workspace was recorded in repository
+  evidence.
+
 ## 2026-10-12 — Production email-verification delivery
 
 - Added an SMTP adapter to the existing verification-delivery boundary with a

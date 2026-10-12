@@ -725,3 +725,41 @@ this is deliberately not replaced by a token/database bypass. No raw token,
 credential or private DKIM key belongs in this Evidence. This operational
 delivery work does not change GOAL-059's separate **BLOCKED** infrastructure
 verdict.
+
+## 49. Verification-to-personal-workspace RLS remediation (2026-10-12)
+
+The owner confirmed receipt of a real canonical verification email. The first
+link-consumption attempt returned HTTP 500. Sanitized API journal evidence
+identified PostgreSQL `42501` on the `memberships` insert: email verification
+begins as a deliberately unscoped public transaction, but personal workspace
+provisioning attempted its first tenant-owned write before selecting the newly
+resolved personal workspace as the local transaction context. PostgreSQL RLS
+correctly denied that write. The transaction rolled back, so the token was not
+consumed, the identity was not partially verified and no partial workspace or
+membership remained.
+
+`PersonalWorkspaceService` now resolves or creates the personal organization,
+captures the caller's current organization context, switches the local
+transaction context only for membership, requester role, tenant audit and
+projection work, and restores the prior context on success. Any failure still
+rolls back the complete verification transaction and its transaction-local
+context. The implementation neither elevates the database role nor bypasses
+RLS, verification, token expiry or single-use enforcement.
+
+A new integration case runs public account creation and email verification
+under `SET LOCAL ROLE jupiter_app` with an empty organization context. It proves
+that the public portion remains unscoped and that exactly the resolved personal
+tenant accepts the membership. The complete validation passed 144 API tests,
+16 Web tests, API lint, API/Web typechecks, both production builds and
+`git diff --check`.
+
+Commit `fe39351` was fast-forwarded to the isolated IP Preview, where API and
+worker restarted active and health returned HTTP 200. The same tested API
+bundle was promoted as immutable canonical release
+`fe39351-verify-rls`. After the brief restart window, canonical Web, health and
+readiness all returned HTTP 200; API, worker, Postfix, OpenDKIM, Nginx and the
+co-hosted `arandi-platform` service were active, and the isolated Arandi site
+also returned HTTP 200. No database migration, Arandi file/table/role/service,
+mail key or unrelated tenant data was changed. No email address, raw
+verification token or credential is recorded here. This remediation does not
+change GOAL-059's separate **BLOCKED** infrastructure verdict.
