@@ -57,6 +57,16 @@ export class PersonalWorkspaceService {
       created = true;
     }
 
+    // Provisioning starts from an unscoped public-account transaction. Move
+    // only the tenant-owned part of that transaction into the newly resolved
+    // personal workspace so the runtime database role remains subject to RLS.
+    // Restore an existing caller context on success; rollback clears the local
+    // setting automatically when any statement fails.
+    const previousContext = (await client.query<{value:string|null}>(
+      `SELECT current_setting('app.organization_id',true) AS value`,
+    )).rows[0]?.value ?? '';
+    await client.query(`SELECT set_config('app.organization_id',$1,true)`, [organization.id]);
+
     const membership = (await client.query<{id:string}>(
       `INSERT INTO memberships(organization_id,user_id,status)
        VALUES($1,$2,'active')
@@ -75,7 +85,9 @@ export class PersonalWorkspaceService {
         [organization.id,userId,JSON.stringify({ source: 'verified_public_account' })],
       );
     }
-    return this.projection(client, userId, organization.id);
+    const projection = await this.projection(client, userId, organization.id);
+    await client.query(`SELECT set_config('app.organization_id',$1,true)`, [previousContext]);
+    return projection;
   }
 
   private async projection(client: PoolClient, userId: string, organizationId: string) {

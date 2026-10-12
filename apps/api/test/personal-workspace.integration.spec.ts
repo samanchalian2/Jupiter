@@ -129,6 +129,43 @@ describe('GOAL-061 personal workspace foundation', () => {
     await database.query('DELETE FROM organizations WHERE id=$1',[flowWorkspace.organization_id]);
   });
 
+  it('provisions verification membership under the runtime RLS role from an unscoped request', async () => {
+    let notification: VerificationNotification | undefined;
+    const delivery: VerificationNotificationDelivery = { deliver: async (value) => { notification=value;return {status:'DELIVERED'}; } };
+    const runtimeDatabase = {
+      query: database.query.bind(database),
+      transaction: <T>(work: Parameters<DatabaseService['transaction']>[0]) => database.transaction(async (client) => {
+        await client.query('SET LOCAL ROLE jupiter_app');
+        await client.query(`SELECT set_config('app.organization_id','',true)`);
+        return work(client) as Promise<T>;
+      }),
+    } as DatabaseService;
+    const runtimeWorkspaces = new PersonalWorkspaceService(runtimeDatabase);
+    const applications = new OrganizationApplicationService(runtimeDatabase,delivery,runtimeWorkspaces);
+    const email=`personal-runtime-${marker}@jupiter.test`;
+    const created=await applications.createPublicAccount({email,displayName:'Runtime Personal User',password:'personal-runtime-password'});
+    const runtimeUserId=created.id;
+
+    await expect(applications.verifyEmail(notification!.token)).resolves.toEqual({verified:true});
+    const workspace = (await database.query<{organization_id:string}>(
+      `SELECT membership.organization_id
+       FROM memberships membership
+       JOIN organizations organization ON organization.id=membership.organization_id
+       WHERE membership.user_id=$1 AND organization.workspace_type='PERSONAL'`,
+      [runtimeUserId],
+    )).rows[0];
+    expect(workspace).toBeTruthy();
+
+    await database.query('DELETE FROM audit_logs WHERE organization_id=$1 OR actor_user_id=$2',[workspace.organization_id,runtimeUserId]);
+    await database.query('DELETE FROM membership_roles WHERE membership_id IN (SELECT id FROM memberships WHERE organization_id=$1)',[workspace.organization_id]);
+    await database.query('DELETE FROM memberships WHERE organization_id=$1',[workspace.organization_id]);
+    await database.query('DELETE FROM organizations WHERE id=$1',[workspace.organization_id]);
+    await database.query('DELETE FROM public_account_verification_deliveries WHERE token_id IN (SELECT id FROM public_account_verification_tokens WHERE user_id=$1)',[runtimeUserId]);
+    await database.query('DELETE FROM public_account_verification_tokens WHERE user_id=$1',[runtimeUserId]);
+    await database.query('DELETE FROM authentication_identities WHERE user_id=$1',[runtimeUserId]);
+    await database.query('DELETE FROM users WHERE id=$1',[runtimeUserId]);
+  });
+
   it('requires verified email and enforces personal membership invariants in PostgreSQL', async () => {
     await expect(workspaces.ensureForEligibleUser(unverifiedUserId)).resolves.toBeNull();
     await expect(workspaces.requireForVerifiedUser(unverifiedUserId)).rejects.toBeInstanceOf(ForbiddenException);
