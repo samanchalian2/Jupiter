@@ -54,6 +54,8 @@ The local-MTA pattern binds SMTP only to loopback and delegates public delivery,
 DKIM signing, queueing and retry to that MTA. Set
 `PUBLIC_ACCOUNT_VERIFICATION_WEB_URL` to the canonical public web origin used
 in the message. Neither adapter may log or persist the raw verification token.
+`SMTP_IGNORE_TLS=true` is accepted only for a loopback host; the API rejects it
+for any network SMTP endpoint. External relays must use valid TLS.
 
 For direct delivery, publish aligned SPF, DKIM and DMARC records before relying
 on inbox placement. Keep the MTA relay restricted to loopback, confirm the

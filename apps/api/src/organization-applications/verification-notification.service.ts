@@ -70,6 +70,7 @@ export class SmtpVerificationNotificationDelivery implements VerificationNotific
       host: config.host,
       port: config.port,
       secure: config.secure,
+      ignoreTLS: config.ignoreTls,
       requireTLS: config.requireTls,
       connectionTimeout: 10_000,
       greetingTimeout: 10_000,

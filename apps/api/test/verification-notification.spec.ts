@@ -14,6 +14,7 @@ describe('SMTP public-account verification delivery', () => {
       WEB_ORIGIN: 'https://jupiter.arandi.io',
       PUBLIC_ACCOUNT_VERIFICATION_SMTP_HOST: '127.0.0.1',
       PUBLIC_ACCOUNT_VERIFICATION_SMTP_PORT: '25',
+      PUBLIC_ACCOUNT_VERIFICATION_SMTP_IGNORE_TLS: 'true',
       PUBLIC_ACCOUNT_VERIFICATION_FROM_EMAIL: 'no-reply@jupiter.arandi.io',
       PUBLIC_ACCOUNT_VERIFICATION_FROM_NAME: 'Jupiter',
     };
@@ -39,6 +40,7 @@ describe('SMTP public-account verification delivery', () => {
       host: '127.0.0.1',
       port: 25,
       secure: false,
+      ignoreTLS: true,
       disableFileAccess: true,
       disableUrlAccess: true,
     }));
@@ -48,6 +50,17 @@ describe('SMTP public-account verification delivery', () => {
       text: expect.stringContaining('https://jupiter.arandi.io/?verify=safe-token-value'),
       html: expect.stringContaining('تأیید ایمیل'),
     }));
+  });
+
+  it('refuses plaintext SMTP outside the loopback boundary', async () => {
+    process.env.PUBLIC_ACCOUNT_VERIFICATION_SMTP_HOST = 'smtp.example.com';
+    const delivery = new SmtpVerificationNotificationDelivery();
+    await expect(delivery.deliver({
+      email: 'person@example.com',
+      token: 'safe-token-value',
+      expiresAt: '2026-10-13T10:00:00.000Z',
+    })).rejects.toThrow('only for a loopback MTA');
+    expect(nodemailer.createTransport).not.toHaveBeenCalled();
   });
 
   it('does not report delivery when SMTP rejects the recipient', async () => {

@@ -471,4 +471,6 @@ The application supplies the Persian text/HTML message and canonical HTTPS
 verification URL; the MTA owns queueing, retry and DKIM signing. A local MTA
 must listen only on loopback and permit relay only from loopback. Public sender
 identity must align SPF, DKIM and DMARC. `DISABLED` remains the safe fallback,
-and `LOCAL_TEST` remains unavailable in production.
+and `LOCAL_TEST` remains unavailable in production. The SMTP adapter may ignore
+STARTTLS only when its host is exactly loopback; every network relay must use a
+valid TLS path.

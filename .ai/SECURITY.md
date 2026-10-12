@@ -114,6 +114,8 @@ GOAL-032 delivery is explicit: production verification URLs and webhook
 delivery require HTTPS; the approved SMTP adapter uses deployment-owned
 configuration and a relay/MTA that is not exposed as an open relay. SMTP
 credentials and DKIM private keys remain outside the repository and database.
+Plaintext SMTP is permitted only across the same-host loopback boundary; the
+configuration validator rejects TLS bypass for every non-loopback host.
 `LOCAL_TEST` is non-production only. The local inbox is process-local, requires
 the matching authenticated public account and is unavailable in production.
 Normal API responses, audits and logs never return raw verification tokens.

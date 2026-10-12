@@ -40,6 +40,8 @@ export function publicAccountVerificationSmtpConfig() {
   const port = Number(process.env.PUBLIC_ACCOUNT_VERIFICATION_SMTP_PORT?.trim() || '587');
   if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('PUBLIC_ACCOUNT_VERIFICATION_SMTP_PORT is invalid.');
   const secure = process.env.PUBLIC_ACCOUNT_VERIFICATION_SMTP_SECURE?.trim().toLowerCase() === 'true' || port === 465;
+  const ignoreTls = process.env.PUBLIC_ACCOUNT_VERIFICATION_SMTP_IGNORE_TLS?.trim().toLowerCase() === 'true';
+  if (ignoreTls && !['127.0.0.1', '::1', 'localhost'].includes(host.toLowerCase())) throw new Error('SMTP TLS may be ignored only for a loopback MTA.');
   const user = process.env.PUBLIC_ACCOUNT_VERIFICATION_SMTP_USER?.trim();
   const password = process.env.PUBLIC_ACCOUNT_VERIFICATION_SMTP_PASSWORD;
   if (Boolean(user) !== Boolean(password)) throw new Error('SMTP user and password must be configured together.');
@@ -47,6 +49,7 @@ export function publicAccountVerificationSmtpConfig() {
     host,
     port,
     secure,
+    ignoreTls,
     requireTls: process.env.PUBLIC_ACCOUNT_VERIFICATION_SMTP_REQUIRE_TLS?.trim().toLowerCase() === 'true',
     user,
     password,
