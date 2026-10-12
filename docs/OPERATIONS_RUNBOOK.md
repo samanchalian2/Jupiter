@@ -43,12 +43,23 @@ never use a database dump or an unpublished revision as a support export.
 
 ## Public-account verification delivery
 
-Production must explicitly select `PUBLIC_ACCOUNT_VERIFICATION_DELIVERY=webhook`
-and configure an HTTPS `PUBLIC_ACCOUNT_VERIFICATION_WEBHOOK_URL` owned by the
-approved mail-delivery integration. The adapter sends the verification URL and
-expiry; it must never log or persist the raw verification token. Set
-`PUBLIC_ACCOUNT_VERIFICATION_WEB_URL` to the public web origin used in the
-message.
+Production must explicitly select an approved delivery adapter. Use
+`PUBLIC_ACCOUNT_VERIFICATION_DELIVERY=webhook` with an HTTPS
+`PUBLIC_ACCOUNT_VERIFICATION_WEBHOOK_URL`, or use
+`PUBLIC_ACCOUNT_VERIFICATION_DELIVERY=smtp` with a deployment-managed SMTP
+relay/local MTA. SMTP requires host, port and sender address; user/password are
+optional as a pair and remain environment secrets. `SMTP_SECURE=true` selects
+implicit TLS (normally port 465); `SMTP_REQUIRE_TLS=true` requires STARTTLS.
+The local-MTA pattern binds SMTP only to loopback and delegates public delivery,
+DKIM signing, queueing and retry to that MTA. Set
+`PUBLIC_ACCOUNT_VERIFICATION_WEB_URL` to the canonical public web origin used
+in the message. Neither adapter may log or persist the raw verification token.
+
+For direct delivery, publish aligned SPF, DKIM and DMARC records before relying
+on inbox placement. Keep the MTA relay restricted to loopback, confirm the
+sender domain, inspect queue health without printing message bodies, and test
+one real verification/consume flow. Delivery acceptance by SMTP is not the
+same as mailbox placement; monitor bounces and provider reputation separately.
 
 If a delivery integration is not ready, use `DISABLED`. This safely reports
 pending configuration and blocks application submission until verification; do

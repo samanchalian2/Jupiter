@@ -111,10 +111,12 @@ records are RLS-bound to the connector organization. Directory payload
 validation rejects credentials and owner/admin roles.
 
 GOAL-032 delivery is explicit: production verification URLs and webhook
-delivery require HTTPS, while `LOCAL_TEST` is non-production only. The local
-inbox is process-local, requires the matching authenticated public account and
-is unavailable in production. Normal API responses, audits and logs never
-return raw verification tokens.
+delivery require HTTPS; the approved SMTP adapter uses deployment-owned
+configuration and a relay/MTA that is not exposed as an open relay. SMTP
+credentials and DKIM private keys remain outside the repository and database.
+`LOCAL_TEST` is non-production only. The local inbox is process-local, requires
+the matching authenticated public account and is unavailable in production.
+Normal API responses, audits and logs never return raw verification tokens.
 
 GOAL-033 review and provisioning are Platform Admin-only and transactional.
 An approved slug is unique, application approval is idempotent, and a slug

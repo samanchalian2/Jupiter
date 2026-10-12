@@ -19,15 +19,40 @@ export function aiProviderAllowedHosts() {
   return new Set((process.env.AI_PROVIDER_ALLOWED_HOSTS ?? 'api.openai.com').split(',').map((host) => host.trim().toLowerCase()).filter(Boolean));
 }
 
-export type PublicAccountVerificationDeliveryMode = 'LOCAL_TEST' | 'WEBHOOK' | 'DISABLED';
+export type PublicAccountVerificationDeliveryMode = 'LOCAL_TEST' | 'WEBHOOK' | 'SMTP' | 'DISABLED';
 export function publicAccountVerificationDeliveryMode(): PublicAccountVerificationDeliveryMode {
   loadLocalEnvironment();
   const configured = process.env.PUBLIC_ACCOUNT_VERIFICATION_DELIVERY?.trim().toLowerCase();
   if (!configured) return process.env.NODE_ENV === 'production' ? 'DISABLED' : 'LOCAL_TEST';
   if (configured === 'local_test' && process.env.NODE_ENV !== 'production') return 'LOCAL_TEST';
   if (configured === 'webhook') return 'WEBHOOK';
+  if (configured === 'smtp') return 'SMTP';
   if (configured === 'disabled') return 'DISABLED';
   throw new Error('PUBLIC_ACCOUNT_VERIFICATION_DELIVERY is invalid.');
+}
+
+export function publicAccountVerificationSmtpConfig() {
+  loadLocalEnvironment();
+  const host = process.env.PUBLIC_ACCOUNT_VERIFICATION_SMTP_HOST?.trim();
+  const from = process.env.PUBLIC_ACCOUNT_VERIFICATION_FROM_EMAIL?.trim().toLowerCase();
+  if (!host) throw new Error('PUBLIC_ACCOUNT_VERIFICATION_SMTP_HOST is required for SMTP delivery.');
+  if (!from || !/^\S+@\S+\.\S+$/.test(from)) throw new Error('PUBLIC_ACCOUNT_VERIFICATION_FROM_EMAIL must be a valid email address.');
+  const port = Number(process.env.PUBLIC_ACCOUNT_VERIFICATION_SMTP_PORT?.trim() || '587');
+  if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('PUBLIC_ACCOUNT_VERIFICATION_SMTP_PORT is invalid.');
+  const secure = process.env.PUBLIC_ACCOUNT_VERIFICATION_SMTP_SECURE?.trim().toLowerCase() === 'true' || port === 465;
+  const user = process.env.PUBLIC_ACCOUNT_VERIFICATION_SMTP_USER?.trim();
+  const password = process.env.PUBLIC_ACCOUNT_VERIFICATION_SMTP_PASSWORD;
+  if (Boolean(user) !== Boolean(password)) throw new Error('SMTP user and password must be configured together.');
+  return {
+    host,
+    port,
+    secure,
+    requireTls: process.env.PUBLIC_ACCOUNT_VERIFICATION_SMTP_REQUIRE_TLS?.trim().toLowerCase() === 'true',
+    user,
+    password,
+    from,
+    fromName: process.env.PUBLIC_ACCOUNT_VERIFICATION_FROM_NAME?.trim() || 'Jupiter',
+  };
 }
 
 export function publicAccountVerificationWebhookUrl() {

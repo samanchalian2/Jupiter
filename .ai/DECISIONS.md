@@ -456,3 +456,19 @@ delegate, so it shares authorization, readiness, locking, idempotency and the
 single successful activation audit. Readiness rejection is transactional and
 does not claim a durable rejected-audit event. Platform status controls may
 never change `SETUP` directly to `ACTIVE`; they cannot bypass Go-Live.
+
+## DEC-034 — Deployment-owned SMTP for verification delivery
+
+The public-account verification abstraction supports direct SMTP in addition
+to the existing HTTPS webhook. This is an adapter choice, not a new product or
+service boundary: account creation, hashed single-use tokens, 24-hour expiry,
+resend throttling, audit and verified-account provisioning remain unchanged.
+
+SMTP connection and sender settings are deployment-owned environment values.
+Credentials are optional only for a loopback-restricted local MTA and are never
+stored in the repository, database, delivery records, audit metadata or logs.
+The application supplies the Persian text/HTML message and canonical HTTPS
+verification URL; the MTA owns queueing, retry and DKIM signing. A local MTA
+must listen only on loopback and permit relay only from loopback. Public sender
+identity must align SPF, DKIM and DMARC. `DISABLED` remains the safe fallback,
+and `LOCAL_TEST` remains unavailable in production.
