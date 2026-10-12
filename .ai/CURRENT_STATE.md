@@ -1,5 +1,18 @@
 # Current State
 
+**One-step organization application UX (2026-10-12):** The applicant form no
+longer exposes separate «save draft» and «submit» actions. One primary action
+now creates or updates the internal application record and immediately sends
+it for review; returned `NEEDS_INFORMATION` applications use the same pattern
+for resubmission. Email verification remains a visible prerequisite, while the
+approved `DRAFT`/`SUBMITTED` domain lifecycle and existing APIs remain intact.
+Two Web orchestration tests cover new and returned applications. All 144 API
+tests, 18 Web tests, lint/typechecks/builds and diff validation pass. Commit
+`51b64d9` is live on Preview and canonical release
+`51b64d9-one-step-application`; Jupiter Web/health and the isolated Arandi site
+return HTTP 200 with their bounded services active. No API, migration or
+database change was made.
+
 **Verification-to-personal-workspace RLS remediation (2026-10-12):** A real
 mailbox receipt proved SMTP delivery, but consuming the link returned HTTP 500
 because the unscoped public transaction attempted to create the tenant-owned

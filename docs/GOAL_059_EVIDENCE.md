@@ -763,3 +763,36 @@ also returned HTTP 200. No database migration, Arandi file/table/role/service,
 mail key or unrelated tenant data was changed. No email address, raw
 verification token or credential is recorded here. This remediation does not
 change GOAL-059's separate **BLOCKED** infrastructure verdict.
+
+## 50. One-step organization application UX (2026-10-12)
+
+Owner feedback identified an avoidable applicant error: the public organization
+form first presented «save draft» and only after that exposed a separate
+submission action. A user could reasonably assume that saving had already sent
+the request. The applicant surface now presents one primary action,
+«ارسال درخواست ثبت سازمان». It calls the existing idempotent create/update
+operation and immediately calls the existing submit operation. A returned
+`NEEDS_INFORMATION` application follows the same one-step path with the label
+«ارسال اطلاعات تکمیلی».
+
+Email verification remains required and is explained beside the disabled
+submission action. The approved domain states, transition audit, Platform
+review workflow and API contracts are unchanged; `DRAFT` remains an internal
+durable compatibility/recovery state rather than a normal applicant step. If a
+network or submit failure occurs after the first operation, the form reloads
+the durable request and retains an actionable error so the same single action
+can safely retry without hiding the issue.
+
+Two Web tests verify the exact create-then-submit and update-then-resubmit call
+order with distinct idempotency keys. The complete gate passed 144 API tests,
+18 Web tests, API/Web lint and typechecks, both production builds and
+`git diff --check`.
+
+Commit `51b64d9` was fast-forwarded to the IP Preview and its production Web
+bundle returned HTTP 200 while API, worker and Nginx remained active. The same
+tested bundle was promoted through immutable canonical release
+`51b64d9-one-step-application`; canonical Jupiter Web and API health returned
+HTTP 200, as did the isolated Arandi site, with all bounded services active.
+No API, migration, PostgreSQL data, Arandi file/table/role/service or unrelated
+tenant data changed. This UX remediation does not change GOAL-059's separate
+**BLOCKED** infrastructure verdict.

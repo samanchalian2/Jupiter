@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-10-12 — One-step organization application submission
+
+- Removed the applicant-facing split between «save draft» and «submit for
+  review». The form now has one explicit «ارسال درخواست ثبت سازمان» action.
+- The same action updates and resubmits a `NEEDS_INFORMATION` request as
+  «ارسال اطلاعات تکمیلی». Email verification remains a visible prerequisite.
+- Kept the approved internal `DRAFT` → `SUBMITTED` lifecycle and existing API
+  contracts. The Web orchestrates the two existing idempotent operations, so
+  Platform review and backward compatibility do not change.
+- Added Web tests for both new application submission and returned-information
+  resubmission. All 144 API tests, 18 Web tests, lint/typechecks/builds and diff
+  validation passed.
+- Commit `51b64d9` is deployed on Preview and canonical release
+  `51b64d9-one-step-application`. Jupiter Web/health and Arandi returned HTTP
+  200; no API, database, migration or Arandi change occurred.
+
 ## 2026-10-12 — Verification personal-workspace RLS remediation
 
 - Diagnosed the real canonical verification failure from sanitized service

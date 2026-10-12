@@ -10,6 +10,12 @@ No repository implementation Goal is approved to start automatically. Preserve
 the established architecture and wait for an explicitly scoped next Goal. Do
 not treat the Personal Service completion as GOAL-059 staging acceptance.
 
+The organization-application applicant UX is now one-step at commit `51b64d9`:
+the single primary action creates/updates and immediately submits, including
+resubmission after a request for information. Internal lifecycle states and
+existing APIs remain backward-compatible. The tested Web bundle is live on
+Preview and the canonical main host; no further promotion remains.
+
 The icon-button hover-contrast remediation is committed at `93e41dd` and is
 deployed to both the IP Preview and the owner-authorized canonical main-host
 publication. No further promotion action remains for this remediation.
