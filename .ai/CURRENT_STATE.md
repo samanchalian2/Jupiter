@@ -1,5 +1,20 @@
 # Current State
 
+**Platform application review and responsive-list remediation (2026-10-13):**
+The submitted-application CTA now performs the existing idempotent
+`start-review` API transition, immediately opens the review surface and scrolls
+it into view; it no longer only selects an off-screen row. Platform
+organization/application tables become labeled stacked rows at 900px and
+below, while the wide tab strip becomes a compact section selector at 1100px
+and below. Authenticated canonical acceptance at 638, 827 and 1440px confirmed
+complete rows and zero document-level horizontal overflow. The real submitted
+application was deliberately not mutated during read-only acceptance; Web and
+API integration tests cover the transition. All 144 API tests, 20 Web tests,
+typechecks/builds and diff validation pass. Commits `05e5bc8` and `2867dd1`
+are live on Preview and canonical release
+`2867dd1-platform-responsive`; Jupiter Web/health and isolated Arandi return
+HTTP 200. No database, migration, tenant data or Arandi change was made.
+
 **One-step organization application UX (2026-10-12):** The applicant form no
 longer exposes separate «save draft» and «submit» actions. One primary action
 now creates or updates the internal application record and immediately sends

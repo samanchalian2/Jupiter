@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-10-13 — Platform responsive lists and review workflow
+
+- Converted Platform organization and organization-application tables to
+  complete labeled card rows at 900px and below, preventing cropped columns,
+  identifiers and actions.
+- Replaced the wide Platform tab strip with a compact section selector at
+  1100px and below; desktop retains the normal tab navigation.
+- Corrected «شروع بررسی» so it calls the existing idempotent start-review API,
+  updates the row to `UNDER_REVIEW`, opens the decision form and brings it into
+  view. «ادامه بررسی» now clearly identifies an already-started review.
+- Added Web regression coverage for the API orchestration and responsive
+  contract. All 144 API tests, 20 Web tests, typechecks/builds and diff checks
+  passed.
+- Commits `05e5bc8` and `2867dd1` are deployed to Preview and canonical release
+  `2867dd1-platform-responsive`. Authenticated acceptance at 638, 827 and
+  1440px found no document overflow; Jupiter and isolated Arandi stayed HTTP
+  200. No database, migration or tenant-data change occurred.
+
 ## 2026-10-12 — One-step organization application submission
 
 - Removed the applicant-facing split between «save draft» and «submit for

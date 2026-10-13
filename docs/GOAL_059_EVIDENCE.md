@@ -796,3 +796,54 @@ HTTP 200, as did the isolated Arandi site, with all bounded services active.
 No API, migration, PostgreSQL data, Arandi file/table/role/service or unrelated
 tenant data changed. This UX remediation does not change GOAL-059's separate
 **BLOCKED** infrastructure verdict.
+
+## 51. Platform responsive lists and review workflow (2026-10-13)
+
+Authenticated owner feedback exposed two defects in the Platform console. At
+narrow widths, the organization and application tables kept their desktop
+column geometry, so later rows and actions appeared incomplete. In addition,
+the submitted-application CTA labelled «شروع بررسی» only selected a local row
+and rendered the decision form below the long table; it did not call the
+supported start-review transition or bring the form into view.
+
+Both organization and application lists now use the same responsive contract.
+At 900px and below each table row becomes a labeled stacked card, long slugs
+and applicant identifiers wrap safely, and the action remains part of the
+visible row. At 1100px and below the broad Platform tab strip is replaced by a
+compact native section selector. Desktop retains the normal tab/table layout.
+
+The submitted-row action now POSTs the existing
+`/platform/organization-applications/{id}/start-review` endpoint with an
+idempotency key. A successful response changes the selected projection to
+`UNDER_REVIEW`, opens the review form and scrolls it into view. An already
+started row says «ادامه بررسی». No API contract, authorization rule or domain
+transition was changed.
+
+Regression coverage verifies the exact start-review request and immediate
+reviewable projection, plus both responsive list markers and media contracts.
+The complete gate passed 144 API tests, 20 Web tests, API/Web typechecks and
+production builds, and `git diff --check`.
+
+Authenticated canonical browser acceptance recorded:
+
+- 638px: compact selector visible; organization cells render as stacked cards;
+  document `scrollWidth` equals `clientWidth` (623px).
+- 827px: compact selector visible; organization and application rows render as
+  complete stacked cards; the submitted request and «شروع بررسی» action are
+  visible; document `scrollWidth` equals `clientWidth` (812px).
+- 1440px: desktop tabs and table cells render normally; document `scrollWidth`
+  equals `clientWidth` (1425px).
+
+The real submitted owner application was intentionally not transitioned merely
+for visual acceptance; behavior is covered by the new Web orchestration test
+and the existing API integration suite. Thus no tenant data or application
+status was altered during browser acceptance.
+
+Commits `05e5bc8` and `2867dd1` were fast-forwarded to the isolated Preview,
+where Web and API health return HTTP 200 with API, worker and Nginx active. The
+tested Web bundle is the immutable canonical release
+`2867dd1-platform-responsive`; canonical Jupiter Web/health and the isolated
+Arandi site return HTTP 200, and Jupiter API/worker, Arandi, Nginx, Postfix and
+OpenDKIM services are active. No migration, PostgreSQL data, Arandi file,
+database, role or service changed. This remediation does not change
+GOAL-059's separate **BLOCKED** infrastructure verdict.

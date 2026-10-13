@@ -10,6 +10,11 @@ No repository implementation Goal is approved to start automatically. Preserve
 the established architecture and wait for an explicitly scoped next Goal. Do
 not treat the Personal Service completion as GOAL-059 staging acceptance.
 
+The Platform organization/application responsive-list and review-CTA
+remediation is complete at `2867dd1`. Preview and the canonical main-host
+release are current; no further promotion remains. GOAL-059 remains blocked by
+its independent infrastructure gates.
+
 The organization-application applicant UX is now one-step at commit `51b64d9`:
 the single primary action creates/updates and immediately submits, including
 resubmission after a request for information. Internal lifecycle states and
