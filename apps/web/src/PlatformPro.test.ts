@@ -33,6 +33,7 @@ describe('platform organization review and responsive lists', () => {
     const styles = readFileSync(new URL('./styles.css',import.meta.url),'utf8');
     expect(source.match(/responsive-platform-table/g)?.length).toBeGreaterThanOrEqual(2);
     expect(source).toContain('data-label="عملیات"');
+    expect(styles).toContain('@media (max-width: 1100px)');
     expect(styles).toContain('@media (max-width: 900px)');
     expect(styles).toContain('.responsive-platform-table td::before');
     expect(styles).toContain('content: attr(data-label)');
