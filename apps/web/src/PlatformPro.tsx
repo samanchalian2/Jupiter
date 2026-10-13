@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import type { Actor } from "./App";
 import { request } from "./App";
 import { ConfirmDialog } from "./ui";
@@ -73,6 +73,21 @@ const applicationLabel: Record<ApplicationStatus, string> = {
   CANCELLED: "لغوشده",
 };
 const reviewKey = () => crypto.randomUUID();
+
+export async function beginPlatformApplicationReview(
+  actor: Actor,
+  application: PlatformApplication,
+  performRequest: typeof request = request,
+  keyFactory: () => string = reviewKey,
+) {
+  await performRequest(
+    `/platform/organization-applications/${application.id}/start-review`,
+    actor.session,
+    actor.organizationId,
+    { method:"POST", headers:{"idempotency-key":keyFactory()} },
+  );
+  return { ...application, status:"UNDER_REVIEW" as const };
+}
 const platformTabs = [
   ["orgs", "سازمان‌ها"],
   ["applications", "درخواست‌های سازمان"],
@@ -286,10 +301,23 @@ function PlatformApplications({
   const [note, setNote] = useState("");
   const [slug, setSlug] = useState("");
   const [busy, setBusy] = useState(false);
+  const reviewRef = useRef<HTMLElement | null>(null);
   const open = (application: PlatformApplication) => {
     setSelected(application);
     setNote(application.reviewNote ?? "");
     setSlug(application.assignedSlug ?? application.preferredSlug ?? "");
+    requestAnimationFrame(() => reviewRef.current?.scrollIntoView({behavior:"smooth",block:"start"}));
+  };
+  const startReview = async (application: PlatformApplication) => {
+    setBusy(true);
+    try {
+      open(await beginPlatformApplicationReview(actor,application));
+      onSaved("بررسی درخواست آغاز شد.");
+    } catch (cause) {
+      onError(cause instanceof Error ? cause.message : "شروع بررسی ناموفق بود.");
+    } finally {
+      setBusy(false);
+    }
   };
   const perform = async (
     action: "start-review" | "request-information" | "reject" | "approve",
@@ -337,7 +365,7 @@ function PlatformApplications({
           تأیید فقط پس از بررسی انجام می‌شود و سازمان تازه را در وضعیت
           «راه‌اندازی» ایجاد می‌کند.
         </p>
-        <div className="table-wrap">
+        <div className="table-wrap responsive-platform-table">
           <table>
             <thead>
               <tr>
@@ -351,35 +379,36 @@ function PlatformApplications({
             <tbody>
               {applications.map((application) => (
                 <tr key={application.id}>
-                  <td>
+                  <td data-label="سازمان">
                     {application.organizationName}
                     <small className="table-subtitle">
                       {application.contactName}
                     </small>
                   </td>
-                  <td dir="ltr">{application.applicant.email ?? "—"}</td>
-                  <td>
+                  <td data-label="متقاضی" dir="ltr">{application.applicant.email ?? "—"}</td>
+                  <td data-label="وضعیت">
                     <span
                       className={`status-pill ${application.status.toLowerCase()}`}
                     >
                       {applicationLabel[application.status]}
                     </span>
                   </td>
-                  <td dir="ltr">
+                  <td data-label="شناسه" dir="ltr">
                     {application.assignedSlug ??
                       application.preferredSlug ??
                       "—"}
                   </td>
-                  <td>
+                  <td data-label="عملیات">
                     <button
                       className="secondary"
                       type="button"
-                      onClick={() => open(application)}
+                      disabled={busy}
+                      onClick={() => application.status === "SUBMITTED" ? void startReview(application) : open(application)}
                     >
                       {application.status === "SUBMITTED"
                         ? "شروع بررسی"
                         : application.status === "UNDER_REVIEW"
-                          ? "تصمیم بررسی"
+                          ? "ادامه بررسی"
                           : "مشاهده"}
                     </button>
                   </td>
@@ -387,7 +416,7 @@ function PlatformApplications({
               ))}
               {!applications.length && (
                 <tr>
-                  <td colSpan={5}>درخواستی برای بررسی وجود ندارد.</td>
+                  <td className="empty-row" colSpan={5}>درخواستی برای بررسی وجود ندارد.</td>
                 </tr>
               )}
             </tbody>
@@ -395,7 +424,7 @@ function PlatformApplications({
         </div>
       </section>
       {selected && (
-        <section className="card platform-application-review">
+        <section ref={reviewRef} className="card platform-application-review" tabIndex={-1}>
           <div className="ui-section-header">
             <div>
               <h3>{selected.organizationName}</h3>
@@ -577,7 +606,7 @@ function Organizations({
       <div className="admin-grid">
         <section className="card">
           <h3>سازمان‌های پلتفرم</h3>
-          <div className="table-wrap">
+          <div className="table-wrap responsive-platform-table">
             <table>
               <thead>
                 <tr>
@@ -590,14 +619,14 @@ function Organizations({
               <tbody>
                 {organizations.map((org) => (
                   <tr key={org.id}>
-                    <td>{org.name}</td>
-                    <td dir="ltr">{org.slug}</td>
-                    <td>
+                    <td data-label="نام">{org.name}</td>
+                    <td data-label="شناسه" dir="ltr">{org.slug}</td>
+                    <td data-label="وضعیت">
                       <span className={`status-pill ${org.status}`}>
                         {label(org.status)}
                       </span>
                     </td>
-                    <td>
+                    <td data-label="عملیات">
                       {org.status === "setup" ? (
                         <span className="hint">تکمیل راه‌اندازی</span>
                       ) : (

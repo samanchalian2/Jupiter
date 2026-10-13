@@ -363,7 +363,7 @@ button.drawer-backdrop:focus-visible {
 .personal-case-list small { color: var(--text-muted); }
 .personal-receipt { margin-top: 12px; padding: 14px; border-inline-start: 3px solid var(--primary); background: var(--primary-soft); border-radius: var(--radius-sm); }
 .personal-receipt p { overflow-wrap: anywhere; }
-@media (max-width: 700px) {
+@media (max-width: 1100px) {
   .personal-capacity-grid { grid-template-columns: minmax(0,1fr); }
   .personal-summary { grid-template-columns: minmax(0,1fr); }
   .personal-package-list > article,.personal-order-list > article { align-items: stretch; flex-direction: column; }
@@ -3927,6 +3927,79 @@ button.secondary,
 }
 .table-wrap {
   overflow-x: auto;
+}
+@media (max-width: 900px) {
+  .responsive-platform-table {
+    overflow: visible;
+  }
+  .responsive-platform-table table,
+  .responsive-platform-table tbody,
+  .responsive-platform-table tr,
+  .responsive-platform-table td {
+    display: block;
+    width: 100%;
+    min-width: 0;
+  }
+  .responsive-platform-table table {
+    min-width: 0;
+  }
+  .responsive-platform-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+  .responsive-platform-table tbody {
+    display: grid;
+    gap: 10px;
+  }
+  .responsive-platform-table tr {
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+  }
+  .responsive-platform-table td {
+    display: grid;
+    grid-template-columns: minmax(86px, .36fr) minmax(0, 1fr);
+    gap: 10px;
+    align-items: start;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--border);
+    overflow-wrap: anywhere;
+  }
+  .responsive-platform-table td:last-child {
+    border-bottom: 0;
+  }
+  .responsive-platform-table td::before {
+    content: attr(data-label);
+    color: var(--text-muted);
+    font-size: .78rem;
+    font-weight: 600;
+  }
+  .responsive-platform-table td[dir="ltr"] {
+    text-align: left;
+  }
+  .responsive-platform-table td[dir="ltr"]::before {
+    direction: rtl;
+    text-align: right;
+  }
+  .responsive-platform-table td[data-label="عملیات"] button {
+    width: fit-content;
+    min-width: 120px;
+  }
+  .responsive-platform-table td.empty-row {
+    display: block;
+    border: 0;
+  }
+  .responsive-platform-table td.empty-row::before {
+    content: none;
+  }
+  .platform-application-review {
+    scroll-margin-top: 16px;
+  }
 }
 @media (max-width: 520px) {
   .admin-tabs {
