@@ -1,5 +1,15 @@
 # Next Task
 
+## GOAL-068 — Platform Administration UX redesign (implementation complete locally)
+
+The URL-backed Platform workspace, operational overview, grouped navigation,
+filter/pagination primitives, organization detail panel and task-oriented
+Commercial subsections are implemented and locally accepted. Deploy the tested
+commit only to the authorized Preview at `172.20.190.16:8088`, complete
+authenticated 375/768/1024/1440 acceptance and record the result in
+`docs/GOAL_068_EVIDENCE.md`. Stop after Preview; do not publish to the canonical
+main host until the product owner explicitly approves this redesign.
+
 ## Personal Service program — COMPLETE
 
 GOAL-060 through GOAL-066 are complete. Cross-domain acceptance, migration

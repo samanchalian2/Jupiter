@@ -1,5 +1,18 @@
 # Current State
 
+**GOAL-068 Platform Administration UX redesign (2026-10-13):** The Platform
+console now opens on a compact operational overview and uses URL-backed grouped
+navigation instead of one flat tab strip. Organization, application, platform
+user, AI workspace and Audit lists have Persian search/status filters, result
+counts, 10/25/50 pagination and distinct empty/filter states. Organization
+actions are consolidated in a detail panel, while create forms and Commercial
+change forms use explicit progressive disclosure. Commercial controls are
+split into five task-oriented subsections without changing APIs, database,
+authorization or the Lavender/Beige theme. Web tests/typecheck/build and local
+authenticated browser acceptance at 375/768/1024/1440 pass with no document
+overflow. Preview deployment/acceptance is the remaining gate; the canonical
+main host is intentionally unchanged pending owner approval.
+
 **GOAL-067 safe organization deletion (2026-10-13):** Platform Admin can now
 archive a previously suspended organization through layered confirmation:
 exact slug, 10–500 character reason, explicit impact acknowledgement and an

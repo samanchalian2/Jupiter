@@ -1,10 +1,19 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import type { Actor } from "./App";
 import { request } from "./App";
-import { ConfirmDialog } from "./ui";
+import { Alert, ConfirmDialog, LoadingState, SectionHeader } from "./ui";
 import { PlatformCommercial } from "./PlatformCommercial";
 import { PlatformAppearance } from "./PlatformAppearance";
 import { PlatformHelpAdmin } from "./PlatformHelpAdmin";
+import {
+  normalizePlatformSearch,
+  paginatePlatformItems,
+  PlatformFilterToolbar,
+  PlatformNoResults,
+  PlatformPagination,
+  usePlatformListState,
+} from "./PlatformAdminUi";
 
 type Organization = {
   id: string;
@@ -91,19 +100,25 @@ export async function beginPlatformApplicationReview(
   return { ...application, status:"UNDER_REVIEW" as const };
 }
 const platformTabs = [
-  ["orgs", "سازمان‌ها"],
-  ["applications", "درخواست‌های سازمان"],
-  ["commercial", "تجاری"],
-  ["appearance", "ظاهر و هویت بصری"],
-  ["help", "راهنمای محصول"],
-  ["users", "کاربران پلتفرم"],
-  ["ai", "سیاست AI"],
-  ["audit", "ردپای ممیزی"],
+  ["overview", "نمای کلی", "نمای کلی"],
+  ["orgs", "سازمان‌ها", "سازمان‌ها و دسترسی"],
+  ["applications", "درخواست‌های سازمان", "سازمان‌ها و دسترسی"],
+  ["users", "کاربران پلتفرم", "سازمان‌ها و دسترسی"],
+  ["commercial", "تجاری", "سرویس‌ها"],
+  ["ai", "سیاست AI", "سرویس‌ها"],
+  ["appearance", "ظاهر و هویت بصری", "تنظیمات پلتفرم"],
+  ["help", "راهنمای محصول", "تنظیمات پلتفرم"],
+  ["audit", "ردپای ممیزی", "تنظیمات پلتفرم"],
 ] as const;
 type PlatformTab = (typeof platformTabs)[number][0];
+const platformGroups = ["نمای کلی", "سازمان‌ها و دسترسی", "سرویس‌ها", "تنظیمات پلتفرم"] as const;
+const isPlatformTab = (value: string | null): value is PlatformTab =>
+  platformTabs.some(([candidate]) => candidate === value);
 
 export function PlatformPro({ actor }: { actor: Actor }) {
-  const [tab, setTab] = useState<PlatformTab>("orgs");
+  const [params, setParams] = useSearchParams();
+  const requestedTab = params.get("section");
+  const tab: PlatformTab = isPlatformTab(requestedTab) ? requestedTab : "overview";
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [applications, setApplications] = useState<PlatformApplication[]>([]);
   const [users, setUsers] = useState<User[]>([]);
@@ -111,11 +126,15 @@ export function PlatformPro({ actor }: { actor: Actor }) {
   const [audit, setAudit] = useState<Audit[]>([]);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [loading, setLoading] = useState(true);
   const organizationTenants = organizations.filter(
     (item) => item.workspace_type !== "PERSONAL",
   );
   const selectTab = (next: PlatformTab) => {
-    setTab(next);
+    const nextParams = new URLSearchParams(params);
+    if (next === "overview") nextParams.delete("section");
+    else nextParams.set("section", next);
+    setParams(nextParams, { replace: false });
     setError("");
   };
   const moveTab = (
@@ -150,7 +169,7 @@ export function PlatformPro({ actor }: { actor: Actor }) {
     }
   };
   const load = () =>
-    Promise.all([
+    Promise.allSettled([
       request(
         "/admin/platform/organizations",
         actor.session,
@@ -169,14 +188,16 @@ export function PlatformPro({ actor }: { actor: Actor }) {
         actor.organizationId,
       ),
     ])
-      .then(([orgs, nextApplications, nextUsers, nextSettings, nextAudit]) => {
-        setOrganizations(orgs as Organization[]);
-        setApplications(nextApplications as PlatformApplication[]);
-        setUsers(nextUsers as User[]);
-        setSettings(nextSettings as AiSetting[]);
-        setAudit(nextAudit as Audit[]);
+      .then((results) => {
+        const setters = [setOrganizations, setApplications, setUsers, setSettings, setAudit] as const;
+        const failures: string[] = [];
+        results.forEach((result, index) => {
+          if (result.status === "fulfilled") setters[index](result.value as never);
+          else failures.push(result.reason instanceof Error ? result.reason.message : "دریافت بخشی از اطلاعات ناموفق بود.");
+        });
+        setError(failures.join(" "));
       })
-      .catch((cause) => setError(cause.message));
+      .finally(() => setLoading(false));
   useEffect(() => {
     void load();
   }, [actor.session.accessToken]);
@@ -198,43 +219,45 @@ export function PlatformPro({ actor }: { actor: Actor }) {
       </div>
       <label className="platform-tab-selector">
         بخش مدیریت پلتفرم
-        <select
-          value={tab}
-          onChange={(event) => selectTab(event.target.value as PlatformTab)}
-        >
-          {platformTabs.map(([value, label]) => (
-            <option key={value} value={value}>
-              {label}
-            </option>
+        <select value={tab} onChange={(event) => selectTab(event.target.value as PlatformTab)}>
+          {platformGroups.map((group) => (
+            <optgroup key={group} label={group}>
+              {platformTabs.filter(([, , candidate]) => candidate === group).map(([value, label]) => (
+                <option key={value} value={value}>{label}</option>
+              ))}
+            </optgroup>
           ))}
         </select>
       </label>
-      <div className="admin-tabs" role="tablist">
-        {platformTabs.map(([value, label]) => (
-          <button
-            type="button"
-            role="tab"
-            id={`platform-tab-${value}`}
-            key={value}
-            className={tab === value ? "active-tab" : "secondary"}
-            aria-selected={tab === value}
-            tabIndex={tab === value ? 0 : -1}
-            onClick={() => selectTab(value)}
-            onKeyDown={(event) => moveTab(event, value)}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
+      <div className="platform-admin-workspace">
+        <nav className="platform-admin-nav" aria-label="بخش‌های مدیریت پلتفرم">
+          {platformGroups.map((group) => (
+            <div key={group}>
+              <p>{group}</p>
+              {platformTabs.filter(([, , candidate]) => candidate === group).map(([value, label]) => (
+                <button
+                  type="button"
+                  id={`platform-tab-${value}`}
+                  key={value}
+                  className={tab === value ? "active" : ""}
+                  aria-current={tab === value ? "page" : undefined}
+                  onClick={() => selectTab(value)}
+                  onKeyDown={(event) => moveTab(event, value)}
+                >{label}</button>
+              ))}
+            </div>
+          ))}
+        </nav>
+        <div className="platform-admin-content">
       {notice && (
-        <p className="notice" role="status">
-          {notice}
-        </p>
+        <Alert variant="success">{notice}</Alert>
       )}
       {error && (
-        <p className="error" role="alert">
-          {error}
-        </p>
+        <Alert variant="danger">{error}</Alert>
+      )}
+      {loading && <LoadingState label="در حال آماده‌سازی مدیریت پلتفرم…" />}
+      {!loading && tab === "overview" && (
+        <PlatformOverview organizations={organizations} applications={applications} users={users} settings={settings} audit={audit} onNavigate={selectTab} />
       )}
       {tab === "orgs" && (
         <Organizations
@@ -284,7 +307,51 @@ export function PlatformPro({ actor }: { actor: Actor }) {
         />
       )}{" "}
       {tab === "audit" && <AuditList audit={audit} />}
+        </div>
+      </div>
     </section>
+  );
+}
+
+function PlatformOverview({ organizations, applications, users, settings, audit, onNavigate }: {
+  organizations: Organization[];
+  applications: PlatformApplication[];
+  users: User[];
+  settings: AiSetting[];
+  audit: Audit[];
+  onNavigate: (tab: PlatformTab) => void;
+}) {
+  const pendingApplications = applications.filter((item) => ["SUBMITTED", "UNDER_REVIEW", "NEEDS_INFORMATION"].includes(item.status)).length;
+  const suspendedOrganizations = organizations.filter((item) => item.status === "suspended" || item.status === "archived").length;
+  const inactiveUsers = users.filter((item) => !item.is_active).length;
+  const missingAiKeys = settings.filter((item) => item.enabled && !item.hasApiKey).length;
+  const metrics = [
+    ["سازمان‌ها", organizations.length, "orgs"],
+    ["درخواست‌های نیازمند اقدام", pendingApplications, "applications"],
+    ["سازمان‌های متوقف", suspendedOrganizations, "orgs"],
+    ["کاربران غیرفعال", inactiveUsers, "users"],
+    ["AI فعال بدون کلید", missingAiKeys, "ai"],
+  ] as const;
+  return (
+    <div className="admin-stack platform-overview">
+      <section className="card">
+        <SectionHeader title="وضعیت عملیاتی پلتفرم" description="نمای فشرده‌ای از موارد مهم؛ برای رسیدگی وارد بخش مربوط شوید." as="h3" />
+        <div className="platform-metrics">
+          {metrics.map(([label, value, target]) => (
+            <button key={label} type="button" className="platform-metric" onClick={() => onNavigate(target)}>
+              <span>{label}</span><strong>{value.toLocaleString("fa-IR")}</strong><small>مشاهده و رسیدگی</small>
+            </button>
+          ))}
+        </div>
+      </section>
+      <section className="card">
+        <SectionHeader title="آخرین رویدادها" description="پنج رویداد اخیر ثبت‌شده در سطح پلتفرم" action={<button type="button" className="secondary" onClick={() => onNavigate("audit")}>مشاهدهٔ همه</button>} as="h3" />
+        <ul className="platform-recent-events">
+          {audit.slice(0, 5).map((item) => <li key={item.id}><span>{item.action}</span><small>{item.organization_name ?? "پلتفرم"} · {new Date(item.created_at).toLocaleString("fa-IR")}</small></li>)}
+          {!audit.length && <li className="hint">رویدادی ثبت نشده است.</li>}
+        </ul>
+      </section>
+    </div>
   );
 }
 
@@ -299,11 +366,18 @@ function PlatformApplications({
   onSaved: (message: string) => void;
   onError: (message: string) => void;
 }) {
+  const listState = usePlatformListState("application");
   const [selected, setSelected] = useState<PlatformApplication | null>(null);
   const [note, setNote] = useState("");
   const [slug, setSlug] = useState("");
   const [busy, setBusy] = useState(false);
   const reviewRef = useRef<HTMLElement | null>(null);
+  const filtered = applications.filter((application) => {
+    const query = normalizePlatformSearch(listState.query);
+    const haystack = normalizePlatformSearch(`${application.organizationName} ${application.contactName} ${application.applicant.email ?? ""} ${application.preferredSlug ?? ""} ${application.assignedSlug ?? ""}`);
+    return (!query || haystack.includes(query)) && (listState.status === "ALL" || application.status === listState.status);
+  });
+  const paged = paginatePlatformItems(filtered, listState.page, listState.pageSize);
   const open = (application: PlatformApplication) => {
     setSelected(application);
     setNote(application.reviewNote ?? "");
@@ -362,11 +436,14 @@ function PlatformApplications({
   return (
     <div className="admin-stack">
       <section className="card">
-        <h3>صف درخواست‌های سازمان</h3>
-        <p className="hint">
-          تأیید فقط پس از بررسی انجام می‌شود و سازمان تازه را در وضعیت
-          «راه‌اندازی» ایجاد می‌کند.
-        </p>
+        <SectionHeader title="صف درخواست‌های سازمان" description="تأیید فقط پس از بررسی انجام می‌شود و سازمان تازه را در وضعیت «راه‌اندازی» ایجاد می‌کند." as="h3" />
+        <PlatformFilterToolbar
+          state={listState}
+          searchLabel="جست‌وجوی درخواست"
+          searchPlaceholder="نام سازمان، متقاضی، ایمیل یا Slug"
+          statusOptions={Object.entries(applicationLabel).map(([value, label]) => ({ value, label }))}
+          resultCount={filtered.length}
+        />
         <div className="table-wrap responsive-platform-table">
           <table>
             <thead>
@@ -379,7 +456,7 @@ function PlatformApplications({
               </tr>
             </thead>
             <tbody>
-              {applications.map((application) => (
+              {paged.items.map((application) => (
                 <tr key={application.id}>
                   <td data-label="سازمان">
                     {application.organizationName}
@@ -416,14 +493,15 @@ function PlatformApplications({
                   </td>
                 </tr>
               ))}
-              {!applications.length && (
+              {!filtered.length && (
                 <tr>
-                  <td className="empty-row" colSpan={5}>درخواستی برای بررسی وجود ندارد.</td>
+                  <td className="empty-row" colSpan={5}><PlatformNoResults filtered={Boolean(listState.query || listState.status !== "ALL")} empty="درخواستی برای بررسی وجود ندارد" /></td>
                 </tr>
               )}
             </tbody>
           </table>
         </div>
+        <PlatformPagination state={{ ...listState, page: paged.page }} totalItems={filtered.length} />
       </section>
       {selected && (
         <section ref={reviewRef} className="card platform-application-review" tabIndex={-1}>
@@ -556,7 +634,10 @@ function Organizations({
   onSaved: (message: string) => void;
   onError: (message: string) => void;
 }) {
+  const listState = usePlatformListState("organization");
   const [form, setForm] = useState({ name: "", slug: "" });
+  const [createOpen, setCreateOpen] = useState(false);
+  const [selected, setSelected] = useState<Organization | null>(null);
   const [pending, setPending] = useState<Organization | null>(null);
   const [archivePending, setArchivePending] = useState<{
     organization: Organization;
@@ -572,6 +653,7 @@ function Organizations({
         { method: "POST", body: JSON.stringify(form) },
       );
       setForm({ name: "", slug: "" });
+      setCreateOpen(false);
       onSaved("سازمان جدید ساخته شد.");
     } catch (cause) {
       onError(
@@ -609,11 +691,39 @@ function Organizations({
         : status === "archived"
           ? "حذف امن"
           : "راه‌اندازی";
+  const filtered = organizations.filter((organization) => {
+    const query = normalizePlatformSearch(listState.query);
+    return (!query || normalizePlatformSearch(`${organization.name} ${organization.slug}`).includes(query)) &&
+      (listState.status === "ALL" || organization.status === listState.status);
+  });
+  const paged = paginatePlatformItems(filtered, listState.page, listState.pageSize);
   return (
     <>
-      <div className="admin-grid">
-        <section className="card">
-          <h3>سازمان‌های پلتفرم</h3>
+      <div className="admin-stack">
+        <section className="card platform-list-card">
+          <SectionHeader
+            title="سازمان‌های پلتفرم"
+            description="سازمان را پیدا کنید و عملیات مدیریتی را در پنل جزئیات انجام دهید."
+            action={<button type="button" onClick={() => setCreateOpen((value) => !value)}>{createOpen ? "بستن فرم" : "ساخت سازمان"}</button>}
+            as="h3"
+          />
+          {createOpen && (
+            <form onSubmit={create} className="compact-form platform-inline-create">
+              <label>نام سازمان<input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} required /></label>
+              <label>Slug یکتا<input dir="ltr" value={form.slug} onChange={(event) => setForm({ ...form, slug: event.target.value.toLowerCase() })} placeholder="acme-support" required /></label>
+              <button>ساخت سازمان</button>
+            </form>
+          )}
+          <PlatformFilterToolbar
+            state={listState}
+            searchLabel="جست‌وجوی سازمان"
+            searchPlaceholder="نام یا Slug سازمان"
+            statusOptions={[
+              { value: "active", label: "فعال" }, { value: "setup", label: "راه‌اندازی" },
+              { value: "suspended", label: "معلق" }, { value: "archived", label: "حذف امن" },
+            ]}
+            resultCount={filtered.length}
+          />
           <div className="table-wrap responsive-platform-table">
             <table>
               <thead>
@@ -625,7 +735,7 @@ function Organizations({
                 </tr>
               </thead>
               <tbody>
-                {organizations.map((org) => (
+                {paged.items.map((org) => (
                   <tr key={org.id}>
                     <td data-label="نام">{org.name}</td>
                     <td data-label="شناسه" dir="ltr">{org.slug}</td>
@@ -635,85 +745,37 @@ function Organizations({
                       </span>
                     </td>
                     <td data-label="عملیات">
-                      {org.status === "setup" ? (
-                        <span className="hint">تکمیل راه‌اندازی</span>
-                      ) : org.status === "archived" ? (
-                        <button
-                          className="secondary"
-                          type="button"
-                          onClick={() =>
-                            setArchivePending({ organization: org, mode: "restore" })
-                          }
-                        >
-                          بازیابی
-                        </button>
-                      ) : (
-                        <div className="member-actions">
-                          <button
-                            className="secondary"
-                            type="button"
-                            onClick={() => setPending(org)}
-                          >
-                            {org.status === "active" ? "تعلیق" : "فعال‌سازی"}
-                          </button>
-                          {org.status === "suspended" &&
-                            org.workspace_type !== "PERSONAL" && (
-                            <button
-                              className="danger-text"
-                              type="button"
-                              onClick={() =>
-                                setArchivePending({ organization: org, mode: "archive" })
-                              }
-                            >
-                              حذف امن
-                            </button>
-                          )}
-                        </div>
-                      )}
+                      <button className="secondary" type="button" onClick={() => setSelected(org)} aria-expanded={selected?.id === org.id}>مدیریت</button>
                     </td>
                   </tr>
                 ))}
+                {!filtered.length && <tr><td className="empty-row" colSpan={4}><PlatformNoResults filtered={Boolean(listState.query || listState.status !== "ALL")} empty="سازمانی ثبت نشده است" /></td></tr>}
               </tbody>
             </table>
           </div>
-        </section>
-        <section className="card">
-          <h3>ساخت سازمان</h3>
-          <form onSubmit={create}>
-            <label>
-              نام سازمان
-              <input
-                value={form.name}
-                onChange={(event) =>
-                  setForm({ ...form, name: event.target.value })
-                }
-                required
-              />
-            </label>
-            <label>
-              Slug یکتا
-              <input
-                dir="ltr"
-                value={form.slug}
-                onChange={(event) =>
-                  setForm({ ...form, slug: event.target.value.toLowerCase() })
-                }
-                placeholder="acme-support"
-                required
-              />
-            </label>
-            <button>ساخت سازمان</button>
-          </form>
+          <PlatformPagination state={{ ...listState, page: paged.page }} totalItems={filtered.length} />
         </section>
       </div>
-      <OwnerTransition
-        actor={actor}
-        organizations={organizations.filter(
-          (organization) => organization.workspace_type !== "PERSONAL",
-        )}
-        onSaved={onSaved}
-        onError={onError}
-      />
+      {selected && (
+        <aside className="card platform-detail-panel" aria-label={`مدیریت ${selected.name}`}>
+          <SectionHeader title={selected.name} description={`شناسه: ${selected.slug}`} action={<button type="button" className="ghost" onClick={() => setSelected(null)}>بستن</button>} as="h3" />
+          <dl className="summary-list">
+            <div><dt>وضعیت</dt><dd><span className={`status-pill ${selected.status}`}>{label(selected.status)}</span></dd></div>
+            <div><dt>نوع فضا</dt><dd>{selected.workspace_type === "PERSONAL" ? "شخصی" : "سازمانی"}</dd></div>
+            <div><dt>تاریخ ایجاد</dt><dd>{new Date(selected.created_at).toLocaleDateString("fa-IR")}</dd></div>
+          </dl>
+          {selected.workspace_type !== "PERSONAL" && selected.status !== "setup" && (
+            <div className="inline-actions platform-detail-actions">
+              {selected.status === "archived"
+                ? <button type="button" onClick={() => setArchivePending({ organization: selected, mode: "restore" })}>بازیابی در حالت معلق</button>
+                : <button type="button" className="secondary" onClick={() => setPending(selected)}>{selected.status === "active" ? "تعلیق سازمان" : "فعال‌سازی سازمان"}</button>}
+              {selected.status === "suspended" && <button type="button" className="danger-text" onClick={() => setArchivePending({ organization: selected, mode: "archive" })}>حذف امن</button>}
+            </div>
+          )}
+          {selected.workspace_type !== "PERSONAL" && <OwnerTransition actor={actor} organizations={[selected]} defaultOrganizationId={selected.id} onSaved={onSaved} onError={onError} />}
+          {selected.status === "setup" && <Alert>این سازمان باید مسیر راه‌اندازی را تکمیل کند.</Alert>}
+        </aside>
+      )}
       <ConfirmDialog
         open={Boolean(pending)}
         title={
@@ -879,15 +941,17 @@ function OrganizationArchiveDialog({
 function OwnerTransition({
   actor,
   organizations,
+  defaultOrganizationId,
   onSaved,
   onError,
 }: {
   actor: Actor;
   organizations: Organization[];
+  defaultOrganizationId?: string;
   onSaved: (message: string) => void;
   onError: (message: string) => void;
 }) {
-  const [organizationId, setOrganizationId] = useState("");
+  const [organizationId, setOrganizationId] = useState(defaultOrganizationId ?? "");
   const [members, setMembers] = useState<
     { user_id: string; display_name: string; email: string; roles: string[] }[]
   >([]);
@@ -911,6 +975,9 @@ function OwnerTransition({
       );
     }
   };
+  useEffect(() => {
+    if (defaultOrganizationId) void load(defaultOrganizationId);
+  }, [defaultOrganizationId]);
   const assign = async () => {
     if (!organizationId || !ownerId) return;
     try {
@@ -947,7 +1014,7 @@ function OwnerTransition({
     }
   };
   return (
-    <section className="card owner-transition">
+    <section className="owner-transition">
       <h3>انتساب مالک سازمان‌های موجود</h3>
       <p className="hint">
         هیچ مدیر سازمانی به‌طور خودکار مالک نمی‌شود؛ یک عضو فعال را آگاهانه
@@ -1010,6 +1077,7 @@ function PlatformUsers({
   onSaved: (message: string) => void;
   onError: (message: string) => void;
 }) {
+  const listState = usePlatformListState("user");
   const [form, setForm] = useState({
     displayName: "",
     email: "",
@@ -1017,7 +1085,17 @@ function PlatformUsers({
     isPlatformAdmin: false,
   });
   const [managed, setManaged] = useState<User | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
   const [password, setPassword] = useState("");
+  const filtered = users.filter((user) => {
+    const query = normalizePlatformSearch(listState.query);
+    const statusMatches = listState.status === "ALL" ||
+      (listState.status === "ACTIVE" && user.is_active) ||
+      (listState.status === "INACTIVE" && !user.is_active) ||
+      (listState.status === "ADMIN" && user.is_platform_admin);
+    return (!query || normalizePlatformSearch(`${user.display_name} ${user.email}`).includes(query)) && statusMatches;
+  });
+  const paged = paginatePlatformItems(filtered, listState.page, listState.pageSize);
   const create = async (event: FormEvent) => {
     event.preventDefault();
     try {
@@ -1033,6 +1111,7 @@ function PlatformUsers({
         password: "",
         isPlatformAdmin: false,
       });
+      setCreateOpen(false);
       onSaved("کاربر پلتفرم ساخته شد.");
     } catch (cause) {
       onError(
@@ -1081,9 +1160,19 @@ function PlatformUsers({
   };
   return (
     <>
-      <div className="admin-grid">
-        <section className="card">
-          <h3>کاربران پلتفرم</h3>
+      <div className="admin-stack">
+        <section className="card platform-list-card">
+          <SectionHeader title="کاربران پلتفرم" description="حساب‌ها را جست‌وجو و مدیریت کنید؛ ساخت حساب فقط در صورت نیاز باز می‌شود." action={<button type="button" onClick={() => setCreateOpen((value) => !value)}>{createOpen ? "بستن فرم" : "افزودن کاربر"}</button>} as="h3" />
+          {createOpen && (
+            <form onSubmit={create} className="compact-form platform-inline-create">
+              <label>نام<input value={form.displayName} onChange={(event) => setForm({ ...form, displayName: event.target.value })} required /></label>
+              <label>ایمیل<input type="email" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} required /></label>
+              <label>رمز موقت<input type="password" minLength={10} value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} required /></label>
+              <label className="check-label"><input type="checkbox" checked={form.isPlatformAdmin} onChange={(event) => setForm({ ...form, isPlatformAdmin: event.target.checked })} />دسترسی مدیر پلتفرم</label>
+              <button>افزودن کاربر</button>
+            </form>
+          )}
+          <PlatformFilterToolbar state={listState} searchLabel="جست‌وجوی کاربر" searchPlaceholder="نام یا ایمیل" statusLabel="نوع حساب" statusOptions={[{value:"ACTIVE",label:"فعال"},{value:"INACTIVE",label:"غیرفعال"},{value:"ADMIN",label:"مدیر پلتفرم"}]} resultCount={filtered.length} />
           <div className="table-wrap">
             <table>
               <thead>
@@ -1096,7 +1185,7 @@ function PlatformUsers({
                 </tr>
               </thead>
               <tbody>
-                {users.map((user) => (
+                {paged.items.map((user) => (
                   <tr key={user.id}>
                     <td>{user.display_name}</td>
                     <td dir="ltr">{user.email}</td>
@@ -1133,58 +1222,11 @@ function PlatformUsers({
                     </td>
                   </tr>
                 ))}
+                {!filtered.length && <tr><td colSpan={5}><PlatformNoResults filtered={Boolean(listState.query || listState.status !== "ALL")} empty="کاربری ثبت نشده است" /></td></tr>}
               </tbody>
             </table>
           </div>
-        </section>
-        <section className="card">
-          <h3>افزودن کاربر پلتفرم</h3>
-          <form onSubmit={create}>
-            <label>
-              نام
-              <input
-                value={form.displayName}
-                onChange={(event) =>
-                  setForm({ ...form, displayName: event.target.value })
-                }
-                required
-              />
-            </label>
-            <label>
-              ایمیل
-              <input
-                type="email"
-                value={form.email}
-                onChange={(event) =>
-                  setForm({ ...form, email: event.target.value })
-                }
-                required
-              />
-            </label>
-            <label>
-              رمز موقت
-              <input
-                type="password"
-                minLength={10}
-                value={form.password}
-                onChange={(event) =>
-                  setForm({ ...form, password: event.target.value })
-                }
-                required
-              />
-            </label>
-            <label className="check-label">
-              <input
-                type="checkbox"
-                checked={form.isPlatformAdmin}
-                onChange={(event) =>
-                  setForm({ ...form, isPlatformAdmin: event.target.checked })
-                }
-              />
-              دسترسی مدیر پلتفرم
-            </label>
-            <button>افزودن کاربر</button>
-          </form>
+          <PlatformPagination state={{...listState,page:paged.page}} totalItems={filtered.length} />
         </section>
       </div>
       {managed && (
@@ -1249,6 +1291,7 @@ function AiPolicies({
   onSaved: (message: string) => void;
   onError: (message: string) => void;
 }) {
+  const listState = usePlatformListState("ai");
   const [selectedId, setSelectedId] = useState("");
   const [draft, setDraft] = useState<AiDraft>({
     enabled: false,
@@ -1261,8 +1304,16 @@ function AiPolicies({
   const [removePending, setRemovePending] = useState(false);
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<AiConnectionTest | null>(null);
-  const selected =
-    settings.find((item) => item.organizationId === selectedId) ?? settings[0];
+  const filteredSettings = settings.filter((item) => {
+    const query = normalizePlatformSearch(listState.query);
+    const statusMatches = listState.status === "ALL" ||
+      (listState.status === "ENABLED" && item.enabled) ||
+      (listState.status === "DISABLED" && !item.enabled) ||
+      (listState.status === "MISSING_KEY" && item.enabled && !item.hasApiKey) ||
+      listState.status === item.workspaceType;
+    return (!query || normalizePlatformSearch(`${item.name} ${item.slug}`).includes(query)) && statusMatches;
+  });
+  const selected = filteredSettings.find((item) => item.organizationId === selectedId) ?? filteredSettings[0];
   useEffect(() => {
     if (!selected) return;
     setSelectedId(selected.organizationId);
@@ -1346,23 +1397,25 @@ function AiPolicies({
     <>
       <div className="admin-grid">
         <section className="card">
-          <h3>فضای کاری و مصرف AI</h3>
+          <SectionHeader title="فضای کاری و مصرف AI" description="فضای کاری هدف را با جست‌وجو و وضعیت محدود کنید." as="h3" />
           <p className="hint">
             تنظیم credentials فقط برای مدیر پلتفرم قابل دسترسی است.
           </p>
+          <PlatformFilterToolbar state={listState} searchLabel="جست‌وجوی فضای کاری" searchPlaceholder="نام یا Slug" statusLabel="نوع یا وضعیت" statusOptions={[{value:"ORGANIZATION",label:"سازمانی"},{value:"PERSONAL",label:"شخصی"},{value:"ENABLED",label:"AI فعال"},{value:"DISABLED",label:"AI غیرفعال"},{value:"MISSING_KEY",label:"فعال بدون کلید"}]} resultCount={filteredSettings.length} />
           <label>
             فضای کاری
             <select
               value={selected?.organizationId ?? ""}
               onChange={(event) => setSelectedId(event.target.value)}
             >
-              {settings.map((item) => (
+              {filteredSettings.map((item) => (
                 <option key={item.organizationId} value={item.organizationId}>
                   {item.name} — {item.workspaceType === "PERSONAL" ? "شخصی" : "سازمانی"}
                 </option>
               ))}
             </select>
           </label>
+          {!filteredSettings.length && <PlatformNoResults filtered empty="فضای کاری AI ثبت نشده است" />}
           {selected && (
             <dl className="summary-list">
               <div>
@@ -1524,9 +1577,18 @@ function AiPolicies({
   );
 }
 function AuditList({ audit }: { audit: Audit[] }) {
+  const listState = usePlatformListState("audit");
+  const organizations = [...new Set(audit.map((item) => item.organization_name ?? "پلتفرم"))].sort((a, b) => a.localeCompare(b, "fa"));
+  const filtered = audit.filter((item) => {
+    const query = normalizePlatformSearch(listState.query);
+    const haystack = normalizePlatformSearch(`${item.action} ${item.organization_name ?? "پلتفرم"} ${item.actor_display_name ?? "سامانه"}`);
+    return (!query || haystack.includes(query)) && (listState.status === "ALL" || (item.organization_name ?? "پلتفرم") === listState.status);
+  });
+  const paged = paginatePlatformItems(filtered, listState.page, listState.pageSize);
   return (
     <section className="card">
-      <h3>ردپای ممیزی AI و تبدیل صوت</h3>
+      <SectionHeader title="ردپای ممیزی" description="رویدادها را بر اساس عامل، سازمان یا عنوان رویداد پیدا کنید." as="h3" />
+      <PlatformFilterToolbar state={listState} searchLabel="جست‌وجوی رویداد" searchPlaceholder="رویداد، سازمان یا عامل" statusLabel="سازمان" statusOptions={organizations.map((value) => ({value,label:value}))} resultCount={filtered.length} />
       <div className="table-wrap">
         <table>
           <thead>
@@ -1538,7 +1600,7 @@ function AuditList({ audit }: { audit: Audit[] }) {
             </tr>
           </thead>
           <tbody>
-            {audit.map((item) => (
+            {paged.items.map((item) => (
               <tr key={item.id}>
                 <td>{item.action}</td>
                 <td>{item.organization_name ?? "پلتفرم"}</td>
@@ -1546,14 +1608,15 @@ function AuditList({ audit }: { audit: Audit[] }) {
                 <td>{new Date(item.created_at).toLocaleString("fa-IR")}</td>
               </tr>
             ))}
-            {!audit.length && (
+            {!filtered.length && (
               <tr>
-                <td colSpan={4}>رویدادی ثبت نشده است.</td>
+                <td colSpan={4}><PlatformNoResults filtered={Boolean(listState.query || listState.status !== "ALL")} empty="رویدادی ثبت نشده است" /></td>
               </tr>
             )}
           </tbody>
         </table>
       </div>
+      <PlatformPagination state={{...listState,page:paged.page}} totalItems={filtered.length} />
     </section>
   );
 }

@@ -391,3 +391,13 @@ It adds a constrained contextual metadata registry, lightweight Persian search
 ranking and category navigation, with no migration, RAG, tenant knowledge or
 new search engine. Evidence: `docs/GOAL_056_EVIDENCE.md`. GOAL-057 is not
 started by this execution.
+
+## GOAL-068 — Platform Administration UX redesign
+
+GOAL-068 applies the current Design System to the complete Platform console:
+an operational overview, grouped URL-backed navigation, discoverable filtered
+and paginated lists, bounded detail actions and task-oriented Commercial
+subsections. It deliberately changes no API, database model, tenant boundary,
+business lifecycle or Jupiter color token. Delivery is Preview-first and the
+canonical host requires a separate explicit owner approval. Evidence:
+`docs/GOAL_068_EVIDENCE.md`.

@@ -148,6 +148,27 @@ dialog behavior, contrast, touch targets and non-color status cues. Test 375,
 768, 1024 and 1440px after each affected screen migration. Chevrons, drawers,
 tables, pagination and inline LTR values must read natively in RTL.
 
+### Platform administration workspace
+
+Platform Administration uses compact grouped in-page navigation rather than
+an expanding horizontal tab strip. Desktop presents a quiet sticky rail for
+overview, organization/access, service and platform-setting groups; widths at
+1100px and below use one labelled grouped selector. The selected section is
+stored in the URL so refresh, browser history and direct links remain stable.
+
+Operational lists use a shared filter toolbar, visible result count and
+10/25/50 item pagination. Search, status and page state are URL-backed. A
+filtered no-result message must be distinct from a genuinely empty dataset.
+Row actions open a bounded detail surface; create/edit forms remain hidden
+until an explicit action requests them. The Commercial console additionally
+uses task-oriented subsections so product, subscription, capacity, personal
+service and Assist controls are never presented as one continuous page.
+
+These patterns reuse the active Jupiter semantic tokens. Platform context does
+not introduce a new palette, dense card decoration, chart library or alternate
+shell. Navigation active state uses the existing soft surface, border and
+narrow inline accent, with medium—not heavy—label weight.
+
 ## Persian terminology
 
 | Concept | Standard term |

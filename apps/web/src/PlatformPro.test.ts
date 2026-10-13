@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it, vi } from 'vitest';
 import { beginPlatformApplicationReview } from './PlatformPro';
+import { normalizePlatformSearch, paginatePlatformItems } from './PlatformAdminUi';
 import type { Actor } from './App';
 
 describe('platform organization review and responsive lists', () => {
@@ -45,9 +46,23 @@ describe('platform organization review and responsive lists', () => {
     expect(source).toContain('slug === pending.organization.slug');
     expect(source).toContain('reason.trim().length >= 10');
     expect(source).toContain('acknowledged');
-    expect(source).toContain('org.workspace_type !== "PERSONAL"');
+    expect(source).toContain('selected.workspace_type !== "PERSONAL"');
     expect(source).toContain('"idempotency-key": crypto.randomUUID()');
     expect(source).toContain('${pending.organization.id}/${pending.mode}');
     expect(source).toContain('بازیابی در حالت معلق');
+  });
+
+  it('keeps platform discovery URL-driven, filtered and paginated without API contract changes', () => {
+    expect(normalizePlatformSearch('  Jupiter-DEMO  ')).toBe('jupiter-demo');
+    expect(paginatePlatformItems([1,2,3,4,5], 2, 2)).toEqual({items:[3,4],page:2,totalPages:3});
+    expect(paginatePlatformItems([1,2], 9, 10)).toEqual({items:[1,2],page:1,totalPages:1});
+    const source = readFileSync(new URL('./PlatformPro.tsx',import.meta.url),'utf8');
+    const commercial = readFileSync(new URL('./PlatformCommercial.tsx',import.meta.url),'utf8');
+    expect(source).toContain('useSearchParams');
+    expect(source).toContain('PlatformFilterToolbar');
+    expect(source).toContain('PlatformPagination');
+    expect(source).toContain('platform-admin-nav');
+    expect(commercial).toContain('commercialSections');
+    expect(commercial).toContain('commercial-section-nav');
   });
 });

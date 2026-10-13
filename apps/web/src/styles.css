@@ -335,6 +335,30 @@ button.drawer-backdrop:focus-visible {
   background: rgba(15, 23, 42, 0.10);
 }
 
+/* Final cascade guard for the quiet Platform workspace navigation. Generic
+   button interaction rules intentionally must not turn these rows into solid
+   brand buttons. */
+body .platform-admin-nav button:hover:not(:disabled),
+body .platform-admin-nav button:focus-visible,
+body .platform-admin-nav button.active,
+body .commercial-section-nav button:hover:not(:disabled),
+body .commercial-section-nav button:focus-visible,
+body .commercial-section-nav button.active {
+  border-color: var(--primary-border);
+  background: var(--primary-soft);
+  color: var(--primary-text);
+}
+body .platform-admin-nav button.active,
+body .commercial-section-nav button.active {
+  border-inline-start: 3px solid var(--primary);
+}
+body .platform-metric:hover:not(:disabled),
+body .platform-metric:focus-visible {
+  border-color: var(--primary-border);
+  background: var(--primary-soft);
+  color: var(--primary-text);
+}
+
 /* GOAL-065: the personal workspace stays light, compact and free of
    organization-administration decoration. */
 .personal-workspace { display: grid; gap: 16px; min-width: 0; }
@@ -385,10 +409,117 @@ button.drawer-backdrop:focus-visible {
   display: none;
 }
 
+/* Platform administration is an operational workspace. Its hierarchy comes
+   from restrained navigation, filters and progressive detail—not new colors. */
+.platform-admin-workspace {
+  display: grid;
+  grid-template-columns: 190px minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+.platform-admin-content { min-width: 0; display: grid; gap: 14px; }
+.platform-admin-nav {
+  position: sticky;
+  top: 12px;
+  display: grid;
+  gap: 12px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+.platform-admin-nav > div { display: grid; gap: 3px; }
+.platform-admin-nav p { margin: 2px 8px 4px; color: var(--text-muted); font-size: .76rem; }
+.platform-admin-nav button,
+.commercial-section-nav button {
+  min-height: 40px;
+  padding: 8px 10px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text);
+  font-weight: 500;
+  text-align: right;
+}
+.platform-admin-nav button:hover,
+.platform-admin-nav button:focus-visible,
+.commercial-section-nav button:hover,
+.commercial-section-nav button:focus-visible {
+  border-color: var(--primary-border);
+  background: var(--primary-soft);
+  color: var(--primary-text);
+}
+.platform-admin-nav button.active,
+.commercial-section-nav button.active {
+  border-color: var(--primary-border);
+  border-inline-start: 3px solid var(--primary);
+  background: var(--primary-soft);
+  color: var(--primary-text);
+}
+.platform-metrics { display: grid; grid-template-columns: repeat(auto-fit,minmax(150px,1fr)); gap: 8px; }
+.platform-metric {
+  display: grid;
+  gap: 4px;
+  min-height: 104px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  text-align: right;
+}
+.platform-metric:hover,.platform-metric:focus-visible { border-color: var(--primary-border); background: var(--primary-soft); color: var(--primary-text); }
+.platform-metric strong { font-size: 1.45rem; font-weight: 600; }
+.platform-metric small { color: var(--text-muted); }
+.platform-recent-events { display: grid; gap: 0; margin: 10px 0 0; padding: 0; list-style: none; }
+.platform-recent-events li { display: grid; gap: 3px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.platform-recent-events li:last-child { border-bottom: 0; }
+.platform-recent-events small { color: var(--text-muted); }
+.platform-filter-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 8px;
+  margin: 14px 0 12px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-muted);
+}
+.platform-filter-toolbar label { display: grid; gap: 4px; min-width: 150px; margin: 0; color: var(--text-muted); font-size: .82rem; }
+.platform-filter-toolbar .platform-search-field { flex: 1 1 240px; }
+.platform-filter-toolbar :is(input,select) { min-height: 40px; margin: 0; background: var(--surface); }
+.platform-result-count { margin: 0 0 10px; color: var(--text-muted); white-space: nowrap; }
+.platform-filter-toolbar button { min-height: 40px; }
+.platform-pagination { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; margin-top: 12px; }
+.platform-pagination label { display: flex; align-items: center; gap: 8px; margin: 0; color: var(--text-muted); font-size: .82rem; }
+.platform-pagination select { width: auto; min-height: 38px; margin: 0; }
+.platform-pagination > div { display: flex; align-items: center; gap: 8px; }
+.platform-no-results { display: grid; gap: 4px; padding: 18px 10px; text-align: center; }
+.platform-no-results p { margin: 0; color: var(--text-muted); }
+.platform-inline-create { margin: 12px 0; padding: 12px; border: 1px solid var(--primary-border); border-radius: var(--radius-sm); background: var(--primary-soft); }
+.platform-detail-panel { display: grid; gap: 14px; border-inline-start: 3px solid var(--primary-border); }
+.platform-detail-panel .owner-transition { padding-top: 14px; border-top: 1px solid var(--border); }
+.platform-detail-actions { padding-block: 4px 14px; border-bottom: 1px solid var(--border); }
+.commercial-section-nav { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); }
+.commercial-section-select { display: none; }
+.commercial-edit-toggle { margin-inline-start: auto; }
+.commercial-edit-toggle-mobile { display: none; }
+.platform-commercial-catalog:not(.show-commercial-forms) > .card form,
+.platform-commercial-capacity:not(.show-commercial-forms) > .card form,
+.platform-commercial-personal:not(.show-commercial-forms) > .card form,
+.platform-commercial-assist:not(.show-commercial-forms) > .card form { display: none; }
+.platform-commercial > .card,
+.platform-commercial > .contextual-help-row { display: none; }
+.platform-commercial-catalog > :is(.card:nth-child(3),.card:nth-child(4),.card:nth-child(5),.card:nth-child(6)),
+.platform-commercial-subscriptions > :is(.card:nth-child(9),.card:nth-child(10)),
+.platform-commercial-capacity > :is(.card:nth-child(7),.card:nth-child(8),.card:nth-child(11)),
+.platform-commercial-personal > :is(.card:nth-child(13),.card:nth-child(14),.card:nth-child(15)),
+.platform-commercial-assist > :is(.contextual-help-row:nth-child(12),.card:nth-child(16)) { display: block; }
+
 @media (max-width: 1100px) {
-  .platform-pro > .admin-tabs {
-    display: none;
-  }
+  .platform-admin-workspace { grid-template-columns: minmax(0,1fr); }
+  .platform-admin-nav { display: none; }
   .platform-tab-selector {
     display: grid;
     gap: 6px;
@@ -400,6 +531,18 @@ button.drawer-backdrop:focus-visible {
     min-height: 42px;
     width: 100%;
   }
+  .commercial-section-nav { display: none; }
+  .commercial-section-select { display: grid; gap: 6px; color: var(--text-muted); font-size: .88rem; }
+  .commercial-section-select select { min-height: 42px; }
+  .commercial-edit-toggle-mobile { display: block; justify-self: start; }
+}
+@media (max-width: 640px) {
+  .platform-filter-toolbar { display: grid; grid-template-columns: minmax(0,1fr); }
+  .platform-filter-toolbar label { min-width: 0; width: 100%; }
+  .platform-pagination { align-items: stretch; }
+  .platform-pagination > div { justify-content: space-between; width: 100%; }
+  .platform-pagination button { min-width: 76px; }
+  .platform-metrics { grid-template-columns: repeat(2,minmax(0,1fr)); }
 }
 
 /* Product Help stays a calm reading/admin surface; markdown is rendered as text
