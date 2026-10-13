@@ -38,4 +38,15 @@ describe('platform organization review and responsive lists', () => {
     expect(styles).toContain('.responsive-platform-table td::before');
     expect(styles).toContain('content: attr(data-label)');
   });
+
+  it('requires layered confirmation before safe organization deletion', () => {
+    const source = readFileSync(new URL('./PlatformPro.tsx',import.meta.url),'utf8');
+    expect(source).toContain('حذف امن');
+    expect(source).toContain('slug === pending.organization.slug');
+    expect(source).toContain('reason.trim().length >= 10');
+    expect(source).toContain('acknowledged');
+    expect(source).toContain('"idempotency-key": crypto.randomUUID()');
+    expect(source).toContain('${pending.organization.id}/${pending.mode}');
+    expect(source).toContain('بازیابی در حالت معلق');
+  });
 });

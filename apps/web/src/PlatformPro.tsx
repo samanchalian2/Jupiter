@@ -10,9 +10,11 @@ type Organization = {
   id: string;
   name: string;
   slug: string;
-  status: "setup" | "active" | "suspended";
+  status: "setup" | "active" | "suspended" | "archived";
   workspace_type?: "ORGANIZATION" | "PERSONAL";
   created_at: string;
+  archived_at?: string | null;
+  archive_reason?: string | null;
 };
 type User = {
   id: string;
@@ -556,6 +558,10 @@ function Organizations({
 }) {
   const [form, setForm] = useState({ name: "", slug: "" });
   const [pending, setPending] = useState<Organization | null>(null);
+  const [archivePending, setArchivePending] = useState<{
+    organization: Organization;
+    mode: "archive" | "restore";
+  } | null>(null);
   const create = async (event: FormEvent) => {
     event.preventDefault();
     try {
@@ -600,7 +606,9 @@ function Organizations({
       ? "فعال"
       : status === "suspended"
         ? "معلق"
-        : "راه‌اندازی";
+        : status === "archived"
+          ? "حذف امن"
+          : "راه‌اندازی";
   return (
     <>
       <div className="admin-grid">
@@ -629,14 +637,37 @@ function Organizations({
                     <td data-label="عملیات">
                       {org.status === "setup" ? (
                         <span className="hint">تکمیل راه‌اندازی</span>
-                      ) : (
+                      ) : org.status === "archived" ? (
                         <button
                           className="secondary"
                           type="button"
-                          onClick={() => setPending(org)}
+                          onClick={() =>
+                            setArchivePending({ organization: org, mode: "restore" })
+                          }
                         >
-                          {org.status === "active" ? "تعلیق" : "فعال‌سازی"}
+                          بازیابی
                         </button>
+                      ) : (
+                        <div className="member-actions">
+                          <button
+                            className="secondary"
+                            type="button"
+                            onClick={() => setPending(org)}
+                          >
+                            {org.status === "active" ? "تعلیق" : "فعال‌سازی"}
+                          </button>
+                          {org.status === "suspended" && (
+                            <button
+                              className="danger-text"
+                              type="button"
+                              onClick={() =>
+                                setArchivePending({ organization: org, mode: "archive" })
+                              }
+                            >
+                              حذف امن
+                            </button>
+                          )}
+                        </div>
                       )}
                     </td>
                   </tr>
@@ -697,7 +728,148 @@ function Organizations({
         onConfirm={() => void toggle()}
         onClose={() => setPending(null)}
       />
+      <OrganizationArchiveDialog
+        actor={actor}
+        pending={archivePending}
+        onClose={() => setArchivePending(null)}
+        onSaved={(message) => {
+          setArchivePending(null);
+          onSaved(message);
+        }}
+        onError={onError}
+      />
     </>
+  );
+}
+
+function OrganizationArchiveDialog({
+  actor,
+  pending,
+  onClose,
+  onSaved,
+  onError,
+}: {
+  actor: Actor;
+  pending: { organization: Organization; mode: "archive" | "restore" } | null;
+  onClose: () => void;
+  onSaved: (message: string) => void;
+  onError: (message: string) => void;
+}) {
+  const [slug, setSlug] = useState("");
+  const [reason, setReason] = useState("");
+  const [acknowledged, setAcknowledged] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const cancelRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    setSlug("");
+    setReason("");
+    setAcknowledged(false);
+    if (pending) window.setTimeout(() => cancelRef.current?.focus(), 0);
+  }, [pending?.organization.id, pending?.mode]);
+  if (!pending) return null;
+  const archive = pending.mode === "archive";
+  const valid =
+    slug === pending.organization.slug &&
+    reason.trim().length >= 10 &&
+    reason.trim().length <= 500 &&
+    (!archive || acknowledged);
+  const submit = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!valid || busy) return;
+    setBusy(true);
+    try {
+      await request(
+        `/admin/platform/organizations/${pending.organization.id}/${pending.mode}`,
+        actor.session,
+        actor.organizationId,
+        {
+          method: "POST",
+          headers: { "idempotency-key": crypto.randomUUID() },
+          body: JSON.stringify({ slug, reason: reason.trim() }),
+        },
+      );
+      onSaved(
+        archive
+          ? "سازمان به‌صورت امن حذف و دسترسی آن متوقف شد."
+          : "سازمان در وضعیت معلق بازیابی شد؛ فعال‌سازی آن همچنان صریح است.",
+      );
+    } catch (cause) {
+      onError(
+        cause instanceof Error
+          ? cause.message
+          : archive
+            ? "حذف امن سازمان ناموفق بود."
+            : "بازیابی سازمان ناموفق بود.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <div className="dialog-layer" role="presentation">
+      <button className="dialog-backdrop" aria-label="بستن گفتگو" onClick={onClose} />
+      <section
+        className="dialog organization-archive-dialog"
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby="organization-archive-title"
+      >
+        <h2 id="organization-archive-title">
+          {archive ? "حذف امن سازمان" : "بازیابی سازمان"}
+        </h2>
+        <p>
+          {archive
+            ? `داده‌های «${pending.organization.name}» پاک نمی‌شوند، اما دسترسی همهٔ اعضا فوراً متوقف خواهد شد. بازیابی فقط توسط مدیر پلتفرم ممکن است.`
+            : `«${pending.organization.name}» با وضعیت معلق بازیابی می‌شود و تا فعال‌سازی صریح در دسترس اعضا نخواهد بود.`}
+        </p>
+        <form className="organization-archive-form" onSubmit={submit}>
+          <label>
+            برای تأیید، شناسهٔ زیر را دقیق وارد کنید:
+            <strong dir="ltr">{pending.organization.slug}</strong>
+            <input
+              dir="ltr"
+              value={slug}
+              onChange={(event) => setSlug(event.target.value)}
+              autoComplete="off"
+              required
+            />
+          </label>
+          <label>
+            دلیل {archive ? "حذف امن" : "بازیابی"}
+            <textarea
+              value={reason}
+              onChange={(event) => setReason(event.target.value)}
+              minLength={10}
+              maxLength={500}
+              required
+            />
+            <small>{reason.trim().length} از ۵۰۰ نویسه؛ حداقل ۱۰ نویسه</small>
+          </label>
+          {archive && (
+            <label className="check-label">
+              <input
+                type="checkbox"
+                checked={acknowledged}
+                onChange={(event) => setAcknowledged(event.target.checked)}
+              />
+              می‌دانم دسترسی تمام اعضای این سازمان متوقف می‌شود.
+            </label>
+          )}
+          <div className="organization-archive-actions">
+            <button ref={cancelRef} type="button" className="secondary" onClick={onClose}>
+              انصراف
+            </button>
+            <button
+              type="submit"
+              className={archive ? "ui-button danger" : undefined}
+              disabled={!valid || busy}
+            >
+              {busy ? "در حال انجام…" : archive ? "حذف امن سازمان" : "بازیابی در حالت معلق"}
+            </button>
+          </div>
+        </form>
+      </section>
+    </div>
   );
 }
 

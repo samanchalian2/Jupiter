@@ -1,5 +1,14 @@
 # Domain Model
 
+## GOAL-067 safe organization archival
+
+`Organization` adds the terminal-access lifecycle state `ARCHIVED` plus
+archive timestamp, Platform actor and reason. `OrganizationArchiveTransition`
+is immutable, organization-bound and idempotent for `ARCHIVED` and `RESTORED`
+events. Archival preserves every tenant-owned aggregate. Restore clears the
+current archive projection and returns the organization only to `SUSPENDED`;
+the immutable transition and general Audit history remain.
+
 ## GOAL-060 Personal Service model
 
 `Organization.workspace_type` distinguishes `ORGANIZATION` from `PERSONAL`.

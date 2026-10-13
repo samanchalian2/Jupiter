@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-10-13 — GOAL-067 safe organization deletion
+
+- Added Platform Admin-only reversible organization archival with prior
+  suspension, exact-slug confirmation, mandatory bounded reason, explicit UI
+  acknowledgement and idempotency.
+- Added immutable archive/restore transition history and actor-bearing Audit.
+  Archived membership context and tenant APIs are denied immediately while all
+  tenant data remains preserved.
+- Added separate restore-to-suspended behavior. Personal workspaces and direct
+  status bypass are rejected.
+- Added Persian responsive controls and Product Help. All 146 API tests, 21 Web
+  tests, typechecks/builds, a clean 73-migration rehearsal and diff validation
+  passed.
+
 ## 2026-10-13 — Platform responsive lists and review workflow
 
 - Converted Platform organization and organization-application tables to

@@ -474,3 +474,19 @@ identity must align SPF, DKIM and DMARC. `DISABLED` remains the safe fallback,
 and `LOCAL_TEST` remains unavailable in production. The SMTP adapter may ignore
 STARTTLS only when its host is exactly loopback; every network relay must use a
 valid TLS path.
+
+## DEC-035 — Organization deletion is reversible archival
+
+Platform Admin «حذف سازمان» is a lifecycle transition, not a physical cascade.
+An organization must already be `SUSPENDED`; the actor must type the exact slug,
+provide a 10–500 character reason, acknowledge the access impact and submit an
+idempotency key. Personal workspaces are excluded. The transition changes the
+organization to `ARCHIVED`, denies tenant access immediately and preserves all
+tickets, memberships, commercial history and audit evidence.
+
+Recovery is a separate Platform Admin-only transition requiring the exact slug,
+a reason and a fresh idempotency key. It returns the tenant to `SUSPENDED`, never
+directly to `ACTIVE`, so service restoration remains an explicit second action.
+Both transitions have immutable history plus actor-bearing audit records. A
+future physical purge requires a separate retention/export/legal design and is
+not implied by archival.

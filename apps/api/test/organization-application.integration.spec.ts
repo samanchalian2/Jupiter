@@ -390,6 +390,47 @@ describe('public accounts and organization applications', () => {
     expect(audits.rows.some(row=>row.action==='organization.setup_completed')).toBe(false);
   });
 
+  it('archives an organization only after explicit suspension and supports audited recovery', async () => {
+    const archiveKey=randomUUID();
+    await expect(organizations.archiveOrganization(legacyOrganizationAdminId,legacyOrganizationId,{slug:'legacy-ownerless-application',reason:'درخواست معتبر برای حذف امن سازمان'},archiveKey)).rejects.toBeInstanceOf(ForbiddenException);
+    await expect(organizations.archiveOrganization(platformAdminId,legacyOrganizationId,{slug:'legacy-ownerless-application',reason:'درخواست معتبر برای حذف امن سازمان'},archiveKey)).rejects.toBeInstanceOf(BadRequestException);
+    await organizations.setOrganizationStatus(platformAdminId,legacyOrganizationId,'suspended');
+    await expect(organizations.archiveOrganization(platformAdminId,legacyOrganizationId,{slug:'wrong-slug',reason:'درخواست معتبر برای حذف امن سازمان'},archiveKey)).rejects.toBeInstanceOf(BadRequestException);
+    await expect(organizations.archiveOrganization(platformAdminId,legacyOrganizationId,{slug:'legacy-ownerless-application',reason:'کوتاه'},archiveKey)).rejects.toBeInstanceOf(BadRequestException);
+    await expect(organizations.archiveOrganization(platformAdminId,legacyOrganizationId,{slug:'legacy-ownerless-application',reason:'درخواست معتبر برای حذف امن سازمان'},archiveKey)).resolves.toMatchObject({status:'archived',idempotent:false});
+    await expect(organizations.archiveOrganization(platformAdminId,legacyOrganizationId,{slug:'legacy-ownerless-application',reason:'درخواست معتبر برای حذف امن سازمان'},archiveKey)).resolves.toMatchObject({status:'archived',idempotent:true});
+    await expect(organizations.setOrganizationStatus(platformAdminId,legacyOrganizationId,'active')).rejects.toBeInstanceOf(BadRequestException);
+    await expect(organizations.tenantContext(legacyOrganizationAdminId,'legacy-ownerless-application')).rejects.toBeInstanceOf(NotFoundException);
+    const actors=new TicketActorService({verify:async()=>({sub:legacyOrganizationAdminId})} as never,database);
+    await expect(actors.fromHeaders('Bearer archived-tenant',legacyOrganizationId)).rejects.toBeInstanceOf(UnauthorizedException);
+    const archived=(await organizations.platformOrganizations(platformAdminId) as {id:string;status:string;archived_at:string|null}[]).find(item=>item.id===legacyOrganizationId);
+    expect(archived).toMatchObject({status:'archived'});
+    expect(archived?.archived_at).toBeTruthy();
+
+    const restoreKey=randomUUID();
+    await expect(organizations.restoreOrganization(platformAdminId,legacyOrganizationId,{slug:'wrong-slug',reason:'بازیابی کنترل‌شده پس از بازبینی مدیر'},restoreKey)).rejects.toBeInstanceOf(BadRequestException);
+    await expect(organizations.restoreOrganization(platformAdminId,legacyOrganizationId,{slug:'legacy-ownerless-application',reason:'بازیابی کنترل‌شده پس از بازبینی مدیر'},restoreKey)).resolves.toMatchObject({status:'suspended',idempotent:false});
+    await expect(organizations.restoreOrganization(platformAdminId,legacyOrganizationId,{slug:'legacy-ownerless-application',reason:'بازیابی کنترل‌شده پس از بازبینی مدیر'},restoreKey)).resolves.toMatchObject({status:'suspended',idempotent:true});
+    await expect(actors.fromHeaders('Bearer restored-but-suspended',legacyOrganizationId)).rejects.toBeInstanceOf(UnauthorizedException);
+    await organizations.setOrganizationStatus(platformAdminId,legacyOrganizationId,'active');
+    await expect(actors.fromHeaders('Bearer restored-active',legacyOrganizationId)).resolves.toMatchObject({organizationId:legacyOrganizationId});
+    const transitionCount=(await database.query<{count:number}>('SELECT count(*)::int count FROM organization_archive_transitions WHERE organization_id=$1',[legacyOrganizationId])).rows[0].count;
+    expect(transitionCount).toBe(2);
+    const auditActions=(await database.query<{action:string}>('SELECT action FROM audit_logs WHERE organization_id=$1 AND action IN (\'platform.organization_archived\',\'platform.organization_restored\') ORDER BY created_at',[legacyOrganizationId])).rows.map(row=>row.action);
+    expect(auditActions).toEqual(['platform.organization_archived','platform.organization_restored']);
+  });
+
+  it('never permits the organization deletion flow for a personal workspace', async () => {
+    const owner=(await database.query<{id:string}>('INSERT INTO users(email,display_name,password_hash) VALUES($1,$2,$3) RETURNING id',[`archive-personal-${fixtureId}@jupiter.test`,'Archive Personal Owner','scrypt$AA$AA'])).rows[0];
+    const workspace=(await database.query<{id:string}>('INSERT INTO organizations(slug,name,status,workspace_type,personal_owner_user_id) VALUES($1,$2,\'suspended\',\'PERSONAL\',$3) RETURNING id',[`archive-personal-${fixtureId}`,'Archive Personal Workspace',owner.id])).rows[0];
+    try {
+      await expect(organizations.archiveOrganization(platformAdminId,workspace.id,{slug:`archive-personal-${fixtureId}`,reason:'این فضای شخصی نباید قابل حذف باشد'},randomUUID())).rejects.toBeInstanceOf(BadRequestException);
+    } finally {
+      await database.query('DELETE FROM organizations WHERE id=$1',[workspace.id]);
+      await database.query('DELETE FROM users WHERE id=$1',[owner.id]);
+    }
+  });
+
   it('keeps setup progress server-derived, tenant-bound and owner-only for Go Live', async () => {
     const slug=`wizard-${fixtureId}`; const org=(await database.query<{id:string}>('INSERT INTO organizations(slug,name,status) VALUES($1,$2,\'setup\') RETURNING id',[slug,'Wizard Organization'])).rows[0];
     const owner=(await database.query<{id:string}>('INSERT INTO users(email,display_name,password_hash) VALUES($1,$2,$3) RETURNING id',[`wizard-owner-${fixtureId}@jupiter.test`,'Wizard Owner','scrypt$AA$AA'])).rows[0];

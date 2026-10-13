@@ -3306,6 +3306,33 @@ summary:focus-visible {
   color: var(--primary-text);
   background: var(--primary-soft);
 }
+.organization-archive-dialog {
+  width: min(100%, 560px);
+  max-height: min(90vh, 760px);
+  overflow: auto;
+}
+.organization-archive-form {
+  display: grid;
+  gap: 14px;
+  margin-top: 18px;
+}
+.organization-archive-form label:not(.check-label) {
+  display: grid;
+  gap: 7px;
+}
+.organization-archive-form textarea {
+  min-height: 96px;
+  resize: vertical;
+}
+.organization-archive-form small {
+  color: var(--text-muted);
+}
+.organization-archive-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 8px;
+}
 .status-badge.in_progress {
   color: var(--primary-text);
   background: color-mix(in srgb, var(--primary) 14%, var(--surface));

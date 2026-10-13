@@ -10,6 +10,11 @@ No repository implementation Goal is approved to start automatically. Preserve
 the established architecture and wait for an explicitly scoped next Goal. Do
 not treat the Personal Service completion as GOAL-059 staging acceptance.
 
+GOAL-067 safe organization deletion is complete locally. It adds reversible,
+audited archival and restore-to-suspended controls without physical tenant data
+deletion. Evidence: `docs/GOAL_067_EVIDENCE.md`. Do not add physical purge or
+start another Goal without an explicit owner request.
+
 The Platform organization/application responsive-list and review-CTA
 remediation is complete at `2867dd1`. Preview and the canonical main-host
 release are current; no further promotion remains. GOAL-059 remains blocked by

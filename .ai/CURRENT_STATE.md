@@ -1,5 +1,16 @@
 # Current State
 
+**GOAL-067 safe organization deletion (2026-10-13):** Platform Admin can now
+archive a previously suspended organization through layered confirmation:
+exact slug, 10–500 character reason, explicit impact acknowledgement and an
+idempotency key. Archival immediately denies tenant access while preserving all
+data and immutable transition/Audit history. Personal workspaces cannot use the
+flow. Recovery is separately confirmed and returns only to `SUSPENDED`, never
+directly to active. DEC-035 records why physical cascade deletion is excluded.
+All 146 API tests, 21 Web tests, typechecks/builds, a clean 73-migration
+rehearsal and diff validation pass. Product Help is updated. GOAL-059 remains
+blocked by its independent infrastructure gates.
+
 **Platform application review and responsive-list remediation (2026-10-13):**
 The submitted-application CTA now performs the existing idempotent
 `start-review` API transition, immediately opens the review surface and scrolls

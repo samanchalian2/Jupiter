@@ -190,3 +190,13 @@ to personal projections. Payment callback redirects contain only a normalized
 status and optional order ID, never provider authority, merchant credential or
 raw provider error. Contextual Help is global published content filtered by the
 caller's active audience.
+
+## GOAL-067 safe organization archival
+
+Organization archival is Platform Admin-only and requires prior suspension,
+exact-slug confirmation, a bounded reason and idempotency. Tenant actor
+resolution joins organization lifecycle and accepts only `SETUP` or `ACTIVE`,
+so an existing access token cannot use a suspended or archived tenant.
+Login/refresh projections omit archived memberships. Personal workspaces cannot
+enter this flow. Restore returns to suspended and therefore does not silently
+restore access.

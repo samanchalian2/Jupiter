@@ -35,7 +35,7 @@ export class AuthService {
   }
   private async memberships(userId: string) {
     return (await this.database.query<{organization_id:string;organization_name:string;organization_slug:string;organization_status:string;workspace_type:'ORGANIZATION'|'PERSONAL';role_codes:string[]}>(
-      'SELECT m.organization_id,o.name AS organization_name,o.slug AS organization_slug,o.status AS organization_status,o.workspace_type,array_remove(array_agg(r.code ORDER BY r.code),NULL) AS role_codes FROM memberships m JOIN organizations o ON o.id=m.organization_id LEFT JOIN membership_roles mr ON mr.membership_id=m.id LEFT JOIN roles r ON r.id=mr.role_id WHERE m.user_id=$1 AND m.status=\'active\' GROUP BY m.organization_id,o.name,o.slug,o.status,o.workspace_type ORDER BY o.workspace_type DESC,o.name', [userId],
+      'SELECT m.organization_id,o.name AS organization_name,o.slug AS organization_slug,o.status AS organization_status,o.workspace_type,array_remove(array_agg(r.code ORDER BY r.code),NULL) AS role_codes FROM memberships m JOIN organizations o ON o.id=m.organization_id LEFT JOIN membership_roles mr ON mr.membership_id=m.id LEFT JOIN roles r ON r.id=mr.role_id WHERE m.user_id=$1 AND m.status=\'active\' AND o.status<>\'archived\' GROUP BY m.organization_id,o.name,o.slug,o.status,o.workspace_type ORDER BY o.workspace_type DESC,o.name', [userId],
     )).rows;
   }
   private async passwordUser(identifier: string) {

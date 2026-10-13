@@ -140,6 +140,16 @@ does not change a tenant's saved appearance.
 
 ## Master Upgrade rules
 
+- Only Platform Admin may archive an organization. The organization must be an
+  organization workspace already in `SUSPENDED`; personal workspaces, `SETUP`
+  and `ACTIVE` tenants cannot be archived.
+- Archive and restore require the exact organization slug, a 10–500 character
+  reason and an idempotency key. The archive UI additionally requires explicit
+  acknowledgement of member-access loss.
+- `ARCHIVED` denies tenant membership context and ticket APIs without deleting
+  tickets, memberships, commercial history or audit evidence. Restore returns
+  only to `SUSPENDED`; activation is a separate explicit action.
+
 - Organization applications use only the statuses in DEC-020. Applicant
   submission requires verified email. Platform review follows `SUBMITTED` →
   `UNDER_REVIEW` → `NEEDS_INFORMATION`/`REJECTED`/`APPROVED`; information and

@@ -1,5 +1,14 @@
 # Jupiter Master Upgrade Plan
 
+## GOAL-067 — Safe Organization Deletion (complete)
+
+Platform Admin organization deletion is implemented as reversible, audited
+archival: prior suspension, exact-slug confirmation, mandatory reason,
+acknowledgement and idempotency are required. Archived tenants deny member
+access while preserving tickets and history; recovery returns only to
+`SUSPENDED`. Personal workspaces and physical purge are excluded. Evidence:
+`docs/GOAL_067_EVIDENCE.md`.
+
 ## Post-upgrade Personal Service program
 
 Owner reprioritization starts an architecture-first personal service program
