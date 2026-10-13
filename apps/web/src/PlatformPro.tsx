@@ -656,7 +656,8 @@ function Organizations({
                           >
                             {org.status === "active" ? "تعلیق" : "فعال‌سازی"}
                           </button>
-                          {org.status === "suspended" && (
+                          {org.status === "suspended" &&
+                            org.workspace_type !== "PERSONAL" && (
                             <button
                               className="danger-text"
                               type="button"
@@ -707,7 +708,9 @@ function Organizations({
       </div>
       <OwnerTransition
         actor={actor}
-        organizations={organizations}
+        organizations={organizations.filter(
+          (organization) => organization.workspace_type !== "PERSONAL",
+        )}
         onSaved={onSaved}
         onError={onError}
       />

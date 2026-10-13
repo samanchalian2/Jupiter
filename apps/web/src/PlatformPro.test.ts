@@ -45,6 +45,7 @@ describe('platform organization review and responsive lists', () => {
     expect(source).toContain('slug === pending.organization.slug');
     expect(source).toContain('reason.trim().length >= 10');
     expect(source).toContain('acknowledged');
+    expect(source).toContain('org.workspace_type !== "PERSONAL"');
     expect(source).toContain('"idempotency-key": crypto.randomUUID()');
     expect(source).toContain('${pending.organization.id}/${pending.mode}');
     expect(source).toContain('بازیابی در حالت معلق');
