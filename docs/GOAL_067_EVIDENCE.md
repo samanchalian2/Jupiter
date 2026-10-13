@@ -53,6 +53,35 @@ this lifecycle decision.
 - API/Web typechecks and production builds passed; only the pre-existing Vite
   chunk-size advisory remained.
 
+## Deployment and authenticated browser acceptance
+
+- Commits `c24e73d` and `1b1b667` were pushed to `main`. Preview and the
+  canonical publication now run the corrected build; the main release is
+  `/srv/jupiter/releases/1b1b667-safe-org-archive`.
+- Protected Jupiter-only database backups were created before promotion.
+  Migration `062_safe_organization_archival.sql` is present exactly once in
+  each target migration ledger. Runtime Product Help revised the existing
+  organization-administration article without exposing credentials.
+- Final service checks returned HTTP 200 for Preview Web, health and readiness,
+  and for canonical Jupiter Web/health. The separately hosted Arandi service
+  remained active and returned HTTP 200; its files, service and database were
+  not changed.
+- Authenticated canonical acceptance used a temporary `SUSPENDED`,
+  membership-free organization with slug `goal067-acceptance`. The row exposed
+  «فعال‌سازی» and «حذف امن» while the personal-workspace row exposed no delete
+  control.
+- At the exercised 648px viewport the confirmation dialog rendered Persian
+  RTL, displayed the exact slug, required a 10–500 character reason and an
+  explicit impact checkbox, and kept «حذف امن سازمان» disabled before those
+  conditions were satisfied. Document `clientWidth` and `scrollWidth` were
+  both 633px while the dialog was open, proving no document-level horizontal
+  overflow.
+- Acceptance deliberately closed the dialog without submitting, so no tenant
+  data was archived. The temporary organization was then removed through a
+  narrowly scoped cleanup that required zero memberships; a browser reload
+  confirmed the slug absent and `clientWidth == scrollWidth` (648px). Normal
+  Help runtime content remains published.
+
 ## Boundaries
 
 Physical purge, retention automation, legal hold and backup destruction are not

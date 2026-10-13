@@ -8,8 +8,13 @@ data and immutable transition/Audit history. Personal workspaces cannot use the
 flow. Recovery is separately confirmed and returns only to `SUSPENDED`, never
 directly to active. DEC-035 records why physical cascade deletion is excluded.
 All 146 API tests, 21 Web tests, typechecks/builds, a clean 73-migration
-rehearsal and diff validation pass. Product Help is updated. GOAL-059 remains
-blocked by its independent infrastructure gates.
+rehearsal and diff validation pass. Product Help is updated. Commits `c24e73d`
+and `1b1b667` are deployed to Preview and canonical release
+`1b1b667-safe-org-archive`; final Jupiter and isolated Arandi health checks
+returned HTTP 200. Authenticated RTL acceptance verified the disabled layered
+confirmation and no horizontal overflow, then removed its membership-free
+temporary fixture without submitting an archive. GOAL-059 remains blocked by
+its independent infrastructure gates.
 
 **Platform application review and responsive-list remediation (2026-10-13):**
 The submitted-application CTA now performs the existing idempotent

@@ -13,6 +13,11 @@
 - Added Persian responsive controls and Product Help. All 146 API tests, 21 Web
   tests, typechecks/builds, a clean 73-migration rehearsal and diff validation
   passed.
+- Commits `c24e73d` and `1b1b667` are live on Preview and canonical release
+  `1b1b667-safe-org-archive`. Authenticated RTL acceptance verified the layered
+  disabled-by-default confirmation at 648px without horizontal overflow; its
+  membership-free temporary organization was removed afterward. Jupiter and
+  the isolated Arandi service both remained HTTP 200.
 
 ## 2026-10-13 — Platform responsive lists and review workflow
 
