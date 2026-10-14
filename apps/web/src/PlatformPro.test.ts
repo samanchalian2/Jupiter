@@ -58,11 +58,18 @@ describe('platform organization review and responsive lists', () => {
     expect(paginatePlatformItems([1,2], 9, 10)).toEqual({items:[1,2],page:1,totalPages:1});
     const source = readFileSync(new URL('./PlatformPro.tsx',import.meta.url),'utf8');
     const commercial = readFileSync(new URL('./PlatformCommercial.tsx',import.meta.url),'utf8');
+    const styles = readFileSync(new URL('./styles.css',import.meta.url),'utf8');
     expect(source).toContain('useSearchParams');
     expect(source).toContain('PlatformFilterToolbar');
     expect(source).toContain('PlatformPagination');
     expect(source).toContain('platform-admin-nav');
     expect(commercial).toContain('commercialSections');
     expect(commercial).toContain('commercial-section-nav');
+    expect(commercial).toContain("area==='catalog'");
+    expect(commercial).toContain("area==='subscriptions'");
+    expect(commercial).toContain("area==='capacity'");
+    expect(commercial).toContain("area==='personal'");
+    expect(commercial).toContain("area==='assist'");
+    expect(styles).not.toContain('.platform-commercial-catalog > :is(.card:nth-child');
   });
 });

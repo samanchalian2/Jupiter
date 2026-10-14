@@ -509,13 +509,6 @@ body .platform-metric:focus-visible {
 .platform-commercial-capacity:not(.show-commercial-forms) > .card form,
 .platform-commercial-personal:not(.show-commercial-forms) > .card form,
 .platform-commercial-assist:not(.show-commercial-forms) > .card form { display: none; }
-.platform-commercial > .card,
-.platform-commercial > .contextual-help-row { display: none; }
-.platform-commercial-catalog > :is(.card:nth-child(3),.card:nth-child(4),.card:nth-child(5),.card:nth-child(6)),
-.platform-commercial-subscriptions > :is(.card:nth-child(9),.card:nth-child(10)),
-.platform-commercial-capacity > :is(.card:nth-child(7),.card:nth-child(8),.card:nth-child(11)),
-.platform-commercial-personal > :is(.card:nth-child(13),.card:nth-child(14),.card:nth-child(15)),
-.platform-commercial-assist > :is(.contextual-help-row:nth-child(12),.card:nth-child(16)) { display: block; }
 
 @media (max-width: 1100px) {
   .platform-admin-workspace { grid-template-columns: minmax(0,1fr); }
