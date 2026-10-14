@@ -75,10 +75,13 @@ describe('platform organization review and responsive lists', () => {
 
   it('keeps the standard desktop sidebar and mobile hamburger on the standalone Platform route', () => {
     const app = readFileSync(new URL('./App.tsx',import.meta.url),'utf8');
+    const styles = readFileSync(new URL('./styles.css',import.meta.url),'utf8');
     expect(app).toContain('standalonePlatform');
     expect(app).toContain('<ProductShell actor={actor}');
     expect(app).toContain('className="mobile-menu-trigger"');
     expect(app).toContain('className="app-sidebar"');
     expect(app).not.toContain("window.location.pathname.startsWith('/platform') && session.user.platformAdmin) return <BrowserRouter><PlatformAppearanceBootstrap/><main className=\"portal\"");
+    expect(styles.match(/inset:\s*0 0 0 auto/g)).toHaveLength(2);
+    expect(styles).not.toContain('inset: 0 auto 0 0');
   });
 });

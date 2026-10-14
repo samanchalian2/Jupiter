@@ -1221,11 +1221,11 @@ body .platform-metric:focus-visible {
 .mobile-drawer {
   position: fixed;
   z-index: calc(var(--z-drawer) + 1);
-  inset: 0 auto 0 0;
+  inset: 0 0 0 auto;
   width: min(86vw, 310px);
   padding: 18px;
   background: var(--surface);
-  box-shadow: 10px 0 30px rgba(20, 13, 39, 0.18);
+  box-shadow: -10px 0 30px rgba(20, 13, 39, 0.18);
 }
 .mobile-drawer > div {
   display: flex;
@@ -2894,11 +2894,11 @@ summary:focus-visible {
 .mobile-drawer {
   position: fixed;
   z-index: calc(var(--z-drawer) + 1);
-  inset: 0 auto 0 0;
+  inset: 0 0 0 auto;
   width: min(86vw, 310px);
   padding: 18px;
   background: var(--surface);
-  box-shadow: 10px 0 30px rgba(20, 13, 39, 0.18);
+  box-shadow: -10px 0 30px rgba(20, 13, 39, 0.18);
 }
 .mobile-drawer > div {
   display: flex;
