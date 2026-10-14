@@ -1,0 +1,38 @@
+{
+  "name": "@observability/nestjs-adapter",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "lint": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@observability/node-sdk": "workspace:*",
+    "@observability/core": "workspace:*"
+  },
+  "peerDependencies": {
+    "@nestjs/common": "^11.1.6",
+    "rxjs": "^7.8.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.4",
+    "@types/node": "^22.15.3",
+    "@nestjs/common": "^11.1.6",
+    "rxjs": "^7.8.1",
+    "reflect-metadata": "^0.2.2"
+  }
+}

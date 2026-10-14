@@ -392,6 +392,17 @@ ranking and category navigation, with no migration, RAG, tenant knowledge or
 new search engine. Evidence: `docs/GOAL_056_EVIDENCE.md`. GOAL-057 is not
 started by this execution.
 
+## GOAL-069 — Reusable Observability Hub
+
+**Status: IN PROGRESS (2026-10-14).**
+
+Owner-approved reusable observability, feedback, issues/incidents, operations
+AI and independent second-client acceptance. Use the existing PostgreSQL
+infrastructure, independent Hub authorization and opt-in budgeted AI. Internal
+phases A–I stay inside this Goal. No host publication or next Goal is authorized
+by this execution. GOAL-059 remains BLOCKED. Full specification:
+`docs/GOAL_069_SPECIFICATION.md`; evidence: `docs/GOAL_069_EVIDENCE.md`.
+
 ## GOAL-068 — Platform Administration UX redesign
 
 **Status: COMPLETE ON PREVIEW AND CANONICAL (2026-10-14).**

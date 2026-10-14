@@ -1,5 +1,16 @@
 # Current State
 
+**GOAL-069 Observability Hub (IN PROGRESS, 2026-10-14):** Approved implementation
+has started. DEC-038 records the reusable boundary, scoped operational access,
+PostgreSQL durable queue and separate AI accounting. Local acceptance is the
+only deployment scope. Six reusable SDK/adapter packages and the server
+Registry/auth/atomic ingestion/leased queue foundation are implemented. The
+first complete release gate passed 146 API, 23 Web and 59 Hub tests, including
+19 real PostgreSQL tests in a temporary database that was removed. HTTP hosting,
+product integration, Console, AI and full browser/reference acceptance remain
+outstanding. No Observability completion or staging acceptance is claimed.
+Follow `docs/GOAL_069_EVIDENCE.md` for implemented and outstanding work.
+
 **GOAL-068 Platform Administration UX redesign (complete on Preview and canonical,
 2026-10-14):** The Platform
 console now opens on a compact operational overview and uses URL-backed grouped

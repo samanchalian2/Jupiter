@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-10-14 — GOAL-069 Observability Hub (IN PROGRESS)
+
+- Recorded full owner requirements and DEC-038, preserving GOAL-060 history.
+- Added six reusable contract/core/SDK/adapter packages and an independent
+  PostgreSQL server foundation for Registry, operational permissions,
+  scoped credentials, atomic ingestion and recoverable leased jobs.
+- Added local-only forward migration 063 and 19 real PostgreSQL acceptance
+  tests using a disposable database; full Hub foundation suite has 59 tests.
+- First full release gate passed 146 API/23 Web/59 Hub tests and all builds,
+  lint/typechecks. Product hosting/UI/AI/full acceptance are still pending.
+
 ## 2026-10-14 — GOAL-068 Platform Administration UX redesign
 
 - Replaced the flat Platform tabs with URL-backed grouped navigation and a

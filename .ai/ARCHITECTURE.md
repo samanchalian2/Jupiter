@@ -1,5 +1,16 @@
 # System Architecture
 
+## GOAL-069 Observability Hub (implementation in progress)
+
+Observability is a reusable package boundary inside the initial modular host.
+Contracts/core/SDKs depend on generic identity and telemetry only. Server
+adapters own an independent `observability` PostgreSQL schema, Registry,
+credential lifecycle, atomic event/receipt/outbox ingestion and leased jobs.
+No foreign key or package import couples Hub to Jupiter business entities.
+Jupiter integration belongs to its own host adapter. DEC-038 records the
+approved extraction boundary and actual PostgreSQL queue choice; Redis/BullMQ
+descriptions below are historical, not executable Worker dependencies today.
+
 ## GOAL-060 Personal Service architecture
 
 Personal service remains inside the modular monolith. A personal workspace is

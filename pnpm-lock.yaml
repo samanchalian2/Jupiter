@@ -103,6 +103,153 @@ importers:
         specifier: ^3.2.4
         version: 3.2.7(@types/node@22.20.1)(tsx@4.23.5)
 
+  observability/packages/browser-sdk:
+    dependencies:
+      '@observability/contracts':
+        specifier: workspace:*
+        version: link:../contracts
+      '@observability/core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
+      '@types/node':
+        specifier: ^22.15.3
+        version: 22.20.1
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.3
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.7(@types/node@22.20.1)(tsx@4.23.5)
+
+  observability/packages/contracts:
+    devDependencies:
+      '@types/node':
+        specifier: ^22.15.3
+        version: 22.20.1
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.3
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.7(@types/node@22.20.1)(tsx@4.23.5)
+
+  observability/packages/core:
+    dependencies:
+      '@observability/contracts':
+        specifier: workspace:*
+        version: link:../contracts
+    devDependencies:
+      '@types/node':
+        specifier: ^22.15.3
+        version: 22.20.1
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.3
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.7(@types/node@22.20.1)(tsx@4.23.5)
+
+  observability/packages/nestjs-adapter:
+    dependencies:
+      '@observability/core':
+        specifier: workspace:*
+        version: link:../core
+      '@observability/node-sdk':
+        specifier: workspace:*
+        version: link:../node-sdk
+    devDependencies:
+      '@nestjs/common':
+        specifier: ^11.1.6
+        version: 11.1.28(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      '@types/node':
+        specifier: ^22.15.3
+        version: 22.20.1
+      reflect-metadata:
+        specifier: ^0.2.2
+        version: 0.2.2
+      rxjs:
+        specifier: ^7.8.1
+        version: 7.8.2
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.3
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.7(@types/node@22.20.1)(tsx@4.23.5)
+
+  observability/packages/node-sdk:
+    dependencies:
+      '@observability/contracts':
+        specifier: workspace:*
+        version: link:../contracts
+      '@observability/core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
+      '@types/node':
+        specifier: ^22.15.3
+        version: 22.20.1
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.3
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.7(@types/node@22.20.1)(tsx@4.23.5)
+
+  observability/packages/react-adapter:
+    dependencies:
+      '@observability/browser-sdk':
+        specifier: workspace:*
+        version: link:../browser-sdk
+    devDependencies:
+      '@types/node':
+        specifier: ^22.15.3
+        version: 22.20.1
+      '@types/react':
+        specifier: ^19.1.2
+        version: 19.2.18
+      '@types/react-dom':
+        specifier: ^19.1.2
+        version: 19.2.4(@types/react@19.2.18)
+      react:
+        specifier: ^19.1.0
+        version: 19.2.8
+      react-dom:
+        specifier: ^19.1.0
+        version: 19.2.8(react@19.2.8)
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.3
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.7(@types/node@22.20.1)(tsx@4.23.5)
+
+  observability/server:
+    dependencies:
+      '@observability/contracts':
+        specifier: workspace:*
+        version: link:../packages/contracts
+      '@observability/core':
+        specifier: workspace:*
+        version: link:../packages/core
+      pg:
+        specifier: ^8.13.3
+        version: 8.22.0
+    devDependencies:
+      '@types/node':
+        specifier: ^22.15.3
+        version: 22.20.1
+      '@types/pg':
+        specifier: ^8.11.11
+        version: 8.20.4
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.3
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.7(@types/node@22.20.1)(tsx@4.23.5)
+
 packages:
 
   '@aws-crypto/crc32@5.2.0':

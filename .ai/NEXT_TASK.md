@@ -1,5 +1,20 @@
 # Next Task
 
+## GOAL-069 — Reusable Observability Hub (IN PROGRESS)
+
+Implement the approved Observability plan in internal phases A–I. The full
+scope and acceptance checklist are in `docs/GOAL_069_EVIDENCE.md`; DEC-038
+records boundaries, PostgreSQL queue, independent permissions, offline identity
+and operations-AI policy. Local development/acceptance only. Complete all gates,
+commit/push and verify remote SHA, then stop for owner audit. GOAL-059 remains
+BLOCKED. Historical GOAL-060 Personal Service is not renamed or overwritten.
+
+Implemented checkpoint: contracts/core, Browser/Node SDKs, React/Nest adapters,
+Registry/credentials, RLS migration, atomic ingestion and leased queue. Continue
+with public HTTP hosting/OpenAPI and Jupiter identity/capture adapters, then
+feedback, engines, Console, AI and independent-client/browser acceptance. Do not
+equate the 59 passing Hub foundation tests with complete platform acceptance.
+
 ## GOAL-068 — Platform Administration UX redesign (complete)
 
 The complete Platform UX redesign and its shell-navigation remediation are

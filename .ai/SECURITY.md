@@ -1,5 +1,15 @@
 # Security and Privacy
 
+## GOAL-069 Observability Hub
+
+Operational identity/grants are independent of Jupiter roles. Ingestion
+credentials are scoped, hashed, revocable and browser short-lived. Runtime Hub
+data uses dedicated RLS scopes and has no direct credential-hash privileges.
+Raw events/receipts are immutable to the ingestion role. Browser queues contain
+only sanitized envelopes and preserve original actor/tenant scope; credential
+material stays in memory. Feedback AI processing follows DEC-038, not a separate
+consent lifecycle. Full acceptance remains in progress.
+
 ## GOAL-060 Personal Service security
 
 Personal workspaces retain the normal tenant boundary: every ticket, message,

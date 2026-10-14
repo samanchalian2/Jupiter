@@ -1,5 +1,43 @@
 # Architecture Decisions
 
+## DEC-038 — Reusable Observability Hub (GOAL-069)
+
+**Decision:** Hub contracts, core, SDKs, storage/queue, identity, AI and alert
+ports are product-independent packages. Jupiter connects only through adapters.
+Initially Hub is hosted by the existing API/worker and PostgreSQL, with its own
+schema and durable queue. Redis/BullMQ is not a prerequisite: current executable
+workers poll PostgreSQL. A standalone host must use the same packages/contracts.
+
+**Authorization:** Application/environment/tenant scopes and generic principals
+are enforced independently of Jupiter membership. Jupiter Platform Admin maps
+only to the Jupiter Application. Explicit operational grants control other
+Applications. HUB_SUPER_ADMIN is granted by audited, idempotent bootstrap or
+secure role management, never inferred from Platform Admin. Local acceptance
+bootstraps the existing administrator through a parameterized command; no
+account identifier is hard-coded. The last active super-admin cannot be revoked
+without an atomic replacement. Application creation requires registry-create.
+
+**Durability/privacy:** Ingestion ACK follows an atomic event/receipt/outbox
+commit; delivery is at least once with idempotent persistence. Browser storage
+is bounded IndexedDB partitioned by application/environment/actor/tenant and
+contains no credentials. Logout clears the previous identity; switching scope
+never relabels queued payloads. API failure remains independent of business work.
+
+**AI:** Investigator has an independent provider contract, operational budget
+and encrypted credentials. Per-Application AI is initially disabled. Explicit
+activation enables scheduled/event-driven read-only analysis. Every provider
+attempt reserves an atomic token bound; unknown timeout usage stays reserved
+until reconciliation. Customer Commercial and Personal allowances are untouched.
+Technical feedback may be externally analyzed after targeted redaction and a
+short notice, without a separate consent checkbox. Administrators can disable
+external processing per Application. Attachments and private ticket content
+are not evidence sources. Outputs must cite authorized persisted evidence.
+
+**Delivery:** GOAL-069 supersedes the stale GOAL-060 identifier in the supplied
+specification. Historical Personal Service Goals remain intact. This execution
+is local development/acceptance; GOAL-059 remains BLOCKED and no next Goal or
+host publication is implied.
+
 ## DEC-037 — Verified adapter-based payment and idempotent fulfillment
 
 **Decision:** Online payment uses an internal provider adapter. Zarinpal is the
