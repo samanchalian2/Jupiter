@@ -13,11 +13,18 @@
   using explicit component rendering and progressive form disclosure, while
   preserving all APIs, authorization, business workflows and current Jupiter
   theme tokens.
-- The complete release gate passed 146 API tests, 22 Web tests, lint/typecheck,
+- The complete release gate passed 146 API tests, 23 Web tests, lint/typecheck,
   both production builds and diff validation. Commits `3e37efb` and `78354da`
-  are deployed to Preview; authenticated 375/768/1024/1440 acceptance passed
-  without document overflow or console warnings. The canonical main host
-  remains unchanged pending owner approval.
+  were deployed to Preview; authenticated 375/768/1024/1440 acceptance passed
+  without document overflow or console warnings.
+- Restored the standard application shell around `/platform`: desktop now keeps
+  the global Sidebar and mobile keeps its Hamburger/Drawer. Platform-only
+  administrators without tenant membership receive the same shell without
+  tenant-scoped controls or requests. Web coverage is now 23 passing tests.
+- Commits `1730cd3` and `226f3b7` are live on Preview and canonical release
+  `226f3b7-platform-shell`. Authenticated mobile/desktop acceptance found no
+  horizontal overflow. Jupiter Web/health and the isolated Arandi Web/service
+  remained healthy; no API, migration, database or Arandi data changed.
 
 ## 2026-10-13 — GOAL-067 safe organization deletion
 

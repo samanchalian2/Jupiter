@@ -394,12 +394,13 @@ started by this execution.
 
 ## GOAL-068 — Platform Administration UX redesign
 
-**Status: COMPLETE ON PREVIEW (2026-10-14).**
+**Status: COMPLETE ON PREVIEW AND CANONICAL (2026-10-14).**
 
 GOAL-068 applies the current Design System to the complete Platform console:
 an operational overview, grouped URL-backed navigation, discoverable filtered
 and paginated lists, bounded detail actions and task-oriented Commercial
 subsections. It deliberately changes no API, database model, tenant boundary,
-business lifecycle or Jupiter color token. Delivery is Preview-first and the
-canonical host requires a separate explicit owner approval. Evidence:
+business lifecycle or Jupiter color token. The standard global shell is
+preserved for tenant-member and Platform-only administrators. Preview and the
+owner-authorized canonical release are deployed and accepted. Evidence:
 `docs/GOAL_068_EVIDENCE.md`.

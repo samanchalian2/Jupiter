@@ -1,13 +1,13 @@
 # Next Task
 
-## GOAL-068 — Platform Administration UX redesign (complete on Preview)
+## GOAL-068 — Platform Administration UX redesign (complete)
 
-The complete Platform UX redesign is deployed and accepted on the authorized
-Preview at `172.20.190.16:8088` through commit `78354da`. Wait for the product
-owner to review that Preview. If and only if the owner explicitly approves
-promotion, publish the same tested release to the canonical main host and run
-post-promotion health and authenticated smoke checks. Do not start another
-repository Goal automatically.
+The complete Platform UX redesign and its shell-navigation remediation are
+deployed and accepted on Preview and the canonical main host through commit
+`226f3b7`. The canonical immutable release is
+`226f3b7-platform-shell`. Desktop Sidebar and mobile Hamburger/Drawer acceptance
+passed for both tenant-member and Platform-only administrator contexts; no
+promotion remains. Do not start another repository Goal automatically.
 
 ## Personal Service program — COMPLETE
 

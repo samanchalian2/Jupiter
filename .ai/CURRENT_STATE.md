@@ -1,6 +1,6 @@
 # Current State
 
-**GOAL-068 Platform Administration UX redesign (complete on Preview,
+**GOAL-068 Platform Administration UX redesign (complete on Preview and canonical,
 2026-10-14):** The Platform
 console now opens on a compact operational overview and uses URL-backed grouped
 navigation instead of one flat tab strip. Organization, application, platform
@@ -11,11 +11,16 @@ change forms use explicit progressive disclosure. Commercial controls are
 split into five task-oriented subsections without changing APIs, database,
 authorization or the Lavender/Beige theme. Commercial subsection rendering is
 explicitly component-driven rather than dependent on DOM position. The full
-release gate (146 API tests, 22 Web tests, lint/typecheck and both builds) and
+release gate (146 API tests, 23 Web tests, lint/typecheck and both builds) and
 authenticated Preview acceptance at 375/768/1024/1440 pass without document
-overflow or console warnings. Commits `3e37efb` and `78354da` are deployed to
-the isolated Preview. The canonical main host is intentionally unchanged
-pending owner review and explicit promotion approval.
+overflow or console warnings. Follow-up commits `1730cd3` and `226f3b7`
+restore the standard desktop Sidebar and mobile Hamburger/Drawer for Platform
+administration, including Platform-only administrators without tenant
+membership. The isolated Preview runs `226f3b7`; the canonical host runs
+immutable release `226f3b7-platform-shell`. Canonical authenticated acceptance
+passed at mobile and desktop widths without horizontal overflow. Jupiter and
+the separately hosted Arandi service both remained healthy with no database,
+migration or Arandi change.
 
 **GOAL-067 safe organization deletion (2026-10-13):** Platform Admin can now
 archive a previously suspended organization through layered confirmation:

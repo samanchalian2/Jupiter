@@ -86,6 +86,33 @@ form disclosure changed from zero to five visible forms. At 1440 the
 organization detail panel and Commercial navigation rendered without overflow.
 The browser console contained no warning or error.
 
-The canonical `https://jupiter.arandi.io` publication is intentionally
-unchanged until the product owner reviews and explicitly approves the Preview
-result.
+## Shell navigation remediation and canonical promotion
+
+Owner review found that `/platform` bypassed the standard application shell.
+The direct route was replaced with `ProductShell`, restoring the global desktop
+Sidebar and mobile Hamburger/Drawer while retaining the grouped in-page
+Platform navigation. A second authenticated check on the canonical dataset
+showed that its Platform administrator has no tenant membership. That supported
+case now uses the same shell but exposes only Platform navigation and suppresses
+tenant-scoped search, notifications, branding and workspace controls.
+
+The final release gate passed 146 API tests and 23 Web tests together with
+lint, API/Web typecheck, both production builds and `git diff --check`.
+Commits `1730cd3` and `226f3b7` were pushed. Preview was rebuilt at `226f3b7`;
+Web, health and readiness returned HTTP 200 and its API, worker, Nginx and
+co-hosted application remained active.
+
+After explicit owner approval, the tested Web bundle was published as immutable
+canonical release `/srv/jupiter/releases/226f3b7-platform-shell` by an atomic
+`current` symlink switch. API/worker processes and PostgreSQL were not restarted
+or changed. At the exercised mobile viewport the Hamburger had a 40×40 target,
+opened an RTL dialog containing the authorized Platform navigation and document
+`scrollWidth` equalled `clientWidth`. At 1440px the 232px Sidebar and grouped
+Platform navigation rail were visible, the mobile trigger had zero layout size,
+and document `scrollWidth` again equalled `clientWidth`. No visible error was
+present.
+
+Canonical Jupiter Web and health, plus the separately hosted Arandi Web,
+returned HTTP 200. `jupiter-main-api`, `jupiter-main-worker`, Nginx and
+`arandi-platform` all remained active. No migration, database row, tenant data,
+Arandi file, Arandi service configuration or Arandi database was changed.
