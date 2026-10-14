@@ -4,7 +4,7 @@ import { randomUUID } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import { readFile, readdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import { HubDatabase, RegistryService, IngestionService, DurableQueue } from '../src/index.js';
+import { HubDatabase, RegistryService, IngestionService, DurableQueue, HubHttpApi, createHubServer, BoundedRateLimiter } from '../src/index.js';
 import type { TelemetryEvent } from '@observability/contracts';
 
 // Real PostgreSQL, in an isolated temporary database. This test never migrates
@@ -17,6 +17,7 @@ const databaseName=`obs069_${randomUUID().replaceAll('-','')}`;
 const admin=new Client(connection);
 let database:HubDatabase,registry:RegistryService,ingestion:IngestionService;
 let root:string,ordinary:string,appA:string,appB:string,envA:string,envB:string,serverA:string;
+let httpServer:ReturnType<typeof createHubServer>,endpoint:string;
 let created=false;
 beforeAll(async()=>{
   await admin.connect();await admin.query(`CREATE DATABASE "${databaseName}"`);created=true;
@@ -26,13 +27,15 @@ beforeAll(async()=>{
   await database.control(async c=>{await c.query(migration);});
   root=(await registry.bootstrap({issuer:'acceptance',subject:'local-admin',displayName:'Local admin'},'Acceptance bootstrap')).principalId;
   ordinary=await registry.principal({issuer:'reference-identity',subject:'operator',displayName:'Scoped operator'});
-  appA=(await registry.createApplication(root,{slug:'application-a',name:'A'})).id;
+  appA=(await registry.createApplication(root,{slug:'application-a',name:'A',allowedOrigins:['https://consumer.example.test']})).id;
   appB=(await registry.createApplication(root,{slug:'application-b',name:'B'})).id;
   envA=(await registry.createEnvironment(root,appA,{key:'local',kind:'DEVELOPMENT'})).id;
   envB=(await registry.createEnvironment(root,appB,{key:'local',kind:'DEVELOPMENT'})).id;
   serverA=(await registry.issueServerCredential(root,appA,envA,'Acceptance credential')).token;
+  const api=new HubHttpApi(database,registry,ingestion,{verify:async token=>{if(token==='root-identity-placeholder')return{issuer:'acceptance',subject:'local-admin',displayName:'Local admin'};if(token==='scoped-identity-placeholder')return{issuer:'reference-identity',subject:'operator',displayName:'Scoped operator'};throw new Error('invalid');}});
+  httpServer=createHubServer(api);await new Promise<void>(resolve=>httpServer.listen(0,'127.0.0.1',resolve));const address=httpServer.address();if(!address||typeof address==='string')throw new Error('HTTP fixture failed');endpoint=`http://127.0.0.1:${address.port}/api/v1/observability`;
 },30_000);
-afterAll(async()=>{await database?.close();if(created){await admin.query('SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname=$1 AND pid<>pg_backend_pid()',[databaseName]);await admin.query(`DROP DATABASE "${databaseName}"`);}await admin.end();},30_000);
+afterAll(async()=>{if(httpServer){httpServer.closeAllConnections();await new Promise<void>((resolve,reject)=>httpServer.close(error=>error?reject(error):resolve()));}await database?.close();if(created){await admin.query('SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname=$1 AND pid<>pg_backend_pid()',[databaseName]);await admin.query(`DROP DATABASE "${databaseName}"`);}await admin.end();},30_000);
 const event=(extra:Partial<TelemetryEvent>={}):TelemetryEvent=>({eventId:randomUUID(),schemaVersion:'1.1',applicationId:appA,environmentId:envA,occurredAt:new Date().toISOString(),source:'BROWSER',category:'FRONTEND',severity:'ERROR',eventCode:'ui.render_failed',normalizedMessage:'Controlled error',actorReference:'userA',tenantReference:'shared-tenant-id',...extra});
 const scope=()=>({applicationId:appA,environmentId:envA,actorReference:'userA',tenantReference:'shared-tenant-id',source:'BROWSER' as const});
 
@@ -73,4 +76,9 @@ describe('Hub registry/auth/atomic storage and real PostgreSQL isolation',()=>{
       expect((await client.query("SELECT count(*)::int total FROM information_schema.tables WHERE table_schema='observability'")).rows[0].total).toBe(10);
     }finally{await client.end();await admin.query('SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname=$1 AND pid<>pg_backend_pid()',[name]);await admin.query(`DROP DATABASE "${name}"`);if((await admin.query('SELECT 1 FROM pg_roles WHERE rolname=$1',[role])).rowCount)await admin.query(`DROP ROLE "${role}"`);}
   },30_000);
+  it('real HTTP ingestion is cookie-free, credential-bound and replay-safe',async()=>{const credential=await registry.mintBrowserCredential(serverA,scope()),f=event();const send=()=>fetch(`${endpoint}/events/batch`,{method:'POST',headers:{authorization:`Bearer ${credential.token}`,'content-type':'application/json',origin:'https://consumer.example.test'},body:JSON.stringify({events:[f]})});const first=await send();expect(first.status).toBe(200);expect((await first.json()).acknowledgements[0].status).toBe('ACCEPTED');expect((await (await send()).json()).acknowledgements[0].status).toBe('DUPLICATE');});
+  it('HTTP origin is auxiliary and never replaces credential authentication',async()=>{const missing=await fetch(`${endpoint}/events/batch`,{method:'POST',headers:{'content-type':'application/json',origin:'https://consumer.example.test'},body:JSON.stringify({events:[event()]})});expect(missing.status).toBe(401);const credential=await registry.mintBrowserCredential(serverA,scope());const badOrigin=await fetch(`${endpoint}/events/batch`,{method:'POST',headers:{authorization:`Bearer ${credential.token}`,'content-type':'application/json',origin:'https://other.example.test'},body:JSON.stringify({events:[event()]})});expect(badOrigin.status).toBe(403);});
+  it('public health/readiness work and operational registry rejects anonymous access',async()=>{expect((await fetch(`${endpoint}/health`)).status).toBe(200);expect((await fetch(`${endpoint}/ready`)).status).toBe(200);expect((await fetch(`${endpoint}/operations/applications`)).status).toBe(401);const response=await fetch(`${endpoint}/operations/applications`,{headers:{authorization:'Bearer scoped-identity-placeholder'}});expect(response.status).toBe(200);const applications=await response.json();expect(applications.map((a:{id:string})=>a.id)).toEqual([appA]);});
+  it('request parser rejects malformed JSON and oversized bodies without raw content leakage',async()=>{const bad=await fetch(`${endpoint}/events/batch`,{method:'POST',headers:{'content-type':'application/json'},body:'{invalid'});expect(bad.status).toBe(400);expect(await bad.json()).toEqual({reasonCode:'INVALID_JSON'});const tooLarge=await fetch(`${endpoint}/events/batch`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({events:[],raw:'x'.repeat(524_289)})});expect(tooLarge.status).toBe(413);expect(await tooLarge.json()).toEqual({reasonCode:'PAYLOAD_TOO_LARGE'});});
+  it('rate limiter bounds memory and does not authorize unlimited distinct identities',()=>{const limiter=new BoundedRateLimiter(1,2);expect(limiter.allow('a',0)).toBe(true);expect(limiter.allow('a',1)).toBe(false);expect(limiter.allow('b',1)).toBe(true);expect(limiter.allow('c',1)).toBe(false);expect(limiter.allow('c',60_001)).toBe(true);});
 });

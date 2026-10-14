@@ -119,3 +119,19 @@ IN PROGRESS. Full implementation and acceptance are not yet established.
 - This checkpoint does not provide public HTTP endpoints, final AI/Console,
   published Help or an independent reference-client acceptance. All are still
   required before COMPLETE.
+
+## Public HTTP foundation — LOCAL
+
+- Generic `HubHttpApi` and Node HTTP host implement real batch ingestion,
+  short-lived credential exchange, public health/readiness and authenticated
+  Application/Environment/credential management. Operational authentication is
+  a generic verified identity port, not a Jupiter cookie assumption.
+- Real HTTP tests use a loopback server and the isolated PostgreSQL fixture.
+  They verify cookie-free ingestion, accepted/duplicate replay, origin plus
+  credential checks, anonymous denial, scoped registry discovery, bounded body
+  parsing and malformed JSON. Server suite now has 25 tests, Hub total 65.
+- Origin is auxiliary: even a registered origin cannot ingest without a valid
+  credential. Unauthorized origin with a browser credential is also denied.
+- HTTP errors expose safe reason codes, never SQL or credential/provider data.
+- Still required: full public OpenAPI, deployment host/Jupiter adapters, feedback
+  routes, operational data/engines/AI/UI and full independent-browser acceptance.

@@ -11,9 +11,12 @@ BLOCKED. Historical GOAL-060 Personal Service is not renamed or overwritten.
 
 Implemented checkpoint: contracts/core, Browser/Node SDKs, React/Nest adapters,
 Registry/credentials, RLS migration, atomic ingestion and leased queue. Continue
-with public HTTP hosting/OpenAPI and Jupiter identity/capture adapters, then
+with full OpenAPI and Jupiter identity/capture adapters, then
 feedback, engines, Console, AI and independent-client/browser acceptance. Do not
-equate the 59 passing Hub foundation tests with complete platform acceptance.
+equate foundation tests with complete platform acceptance. Generic Node HTTP
+ingestion/Registry/health routes now pass real HTTP plus PostgreSQL tests
+(25 server tests; Hub total 65). CORS/host integration and full public API
+coverage remain required.
 
 ## GOAL-068 — Platform Administration UX redesign (complete)
 
