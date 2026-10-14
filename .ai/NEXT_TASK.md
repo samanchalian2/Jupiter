@@ -4,8 +4,8 @@
 
 The complete Platform UX redesign and its shell-navigation remediation are
 deployed and accepted on Preview and the canonical main host through commit
-`226f3b7`. The canonical immutable release is
-`226f3b7-platform-shell`. Desktop Sidebar and mobile Hamburger/Drawer acceptance
+`c2aeedb`. The canonical immutable release is
+`c2aeedb-rtl-drawer`. Desktop Sidebar and right-edge mobile Hamburger/Drawer acceptance
 passed for both tenant-member and Platform-only administrator contexts; no
 promotion remains. Do not start another repository Goal automatically.
 

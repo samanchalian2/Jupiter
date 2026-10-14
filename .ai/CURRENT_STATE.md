@@ -17,7 +17,8 @@ overflow or console warnings. Follow-up commits `1730cd3` and `226f3b7`
 restore the standard desktop Sidebar and mobile Hamburger/Drawer for Platform
 administration, including Platform-only administrators without tenant
 membership. The isolated Preview runs `226f3b7`; the canonical host runs
-immutable release `226f3b7-platform-shell`. Canonical authenticated acceptance
+immutable release `c2aeedb-rtl-drawer`. The mobile Drawer is anchored to the
+RTL/right edge rather than the left edge. Canonical authenticated acceptance
 passed at mobile and desktop widths without horizontal overflow. Jupiter and
 the separately hosted Arandi service both remained healthy with no database,
 migration or Arandi change.

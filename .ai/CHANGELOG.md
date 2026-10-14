@@ -25,6 +25,10 @@
   `226f3b7-platform-shell`. Authenticated mobile/desktop acceptance found no
   horizontal overflow. Jupiter Web/health and the isolated Arandi Web/service
   remained healthy; no API, migration, database or Arandi data changed.
+- Corrected both legacy Drawer declarations so RTL mobile navigation is fixed
+  to the right edge instead of the left. Commit `c2aeedb` is live on Preview
+  and canonical release `c2aeedb-rtl-drawer`; authenticated browser geometry
+  confirmed `right: 0`, RTL direction and no horizontal overflow.
 
 ## 2026-10-13 — GOAL-067 safe organization deletion
 

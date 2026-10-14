@@ -116,3 +116,13 @@ Canonical Jupiter Web and health, plus the separately hosted Arandi Web,
 returned HTTP 200. `jupiter-main-api`, `jupiter-main-worker`, Nginx and
 `arandi-platform` all remained active. No migration, database row, tenant data,
 Arandi file, Arandi service configuration or Arandi database was changed.
+
+Owner review then identified that the restored mobile Drawer was still anchored
+to the physical left edge. Both effective legacy CSS declarations now use the
+RTL/right edge and the shadow direction was corrected. The source regression
+test prevents reintroducing the left-edge inset. Web tests, typecheck, production
+build and diff validation passed. Authenticated Preview and canonical checks at
+the exercised mobile viewport measured `right: 0`, a 288px Drawer, RTL direction,
+equal document client/scroll widths and no visible error. Commit `c2aeedb` is
+deployed to Preview and canonical release `c2aeedb-rtl-drawer`; all Jupiter and
+co-hosted Arandi health checks remained successful.
