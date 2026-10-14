@@ -53,15 +53,39 @@ no state-changing product operation.
 | 1024 | grouped selector | pass | none |
 | 1440 | grouped navigation rail | pass | none |
 
-The organization list rendered 10 of 35 rows by default. Searching for the
+The Preview organization list rendered 10 of 30 rows by default. Searching for the
 known `jupiter-demo` slug reduced it to one result and persisted
 `organizationQ=jupiter-demo` in the URL. Commercial catalog initially exposed
-four relevant sections with all mutation forms closed; the explicit edit action
-revealed them. Changing to subscriptions reduced the surface to lifecycle and
-request-queue sections and persisted `area=subscriptions`.
+four relevant sections with all five mutation forms closed; the explicit edit
+action revealed exactly those five forms. Changing to subscriptions rendered
+only lifecycle and request-queue sections and persisted `area=subscriptions`.
+Capacity rendered exactly policy, allowance/add-on and Smart Action reporting;
+Personal rendered its three personal-service controls; Assist rendered its
+Help row and one Assist control surface. This component-driven routing replaced
+an initially observed DOM-position selector weakness before final acceptance.
 
-## Deployment status
+## Preview deployment and final acceptance
 
-Preview deployment and authenticated Preview acceptance are pending. The
-canonical `https://jupiter.arandi.io` publication is intentionally unchanged
-until the product owner reviews and explicitly approves the Preview result.
+Commits `3e37efb` and corrective `78354da` were pushed to `main` and the clean,
+isolated checkout at `/opt/jupiter/ip-preview` was detached at `78354da`.
+Dependencies remained lockfile-pinned and the production Web bundle rebuilt on
+the host. No migration, database query/change, API/worker restart, Nginx change
+or co-hosted application change was needed. Preview Web, API health and
+readiness returned HTTP 200; the dedicated API, worker and Nginx services were
+active.
+
+Authenticated acceptance used the existing Platform Admin and performed no
+state-changing product operation. At 375, 768 and 1024 the grouped selector was
+visible and the navigation rail hidden; at 1440 the navigation rail was visible
+and selector hidden. In every case document `scrollWidth` equalled
+`clientWidth`, RTL remained active, all five overview metrics rendered and no
+visible error appeared. At 375 the organization page rendered 10 rows with a
+three-page control, the `jupiter-demo` query returned one result, all five
+Commercial URLs resolved to their exact task-specific content and the catalog
+form disclosure changed from zero to five visible forms. At 1440 the
+organization detail panel and Commercial navigation rendered without overflow.
+The browser console contained no warning or error.
+
+The canonical `https://jupiter.arandi.io` publication is intentionally
+unchanged until the product owner reviews and explicitly approves the Preview
+result.

@@ -394,6 +394,8 @@ started by this execution.
 
 ## GOAL-068 — Platform Administration UX redesign
 
+**Status: COMPLETE ON PREVIEW (2026-10-14).**
+
 GOAL-068 applies the current Design System to the complete Platform console:
 an operational overview, grouped URL-backed navigation, discoverable filtered
 and paginated lists, bounded detail actions and task-oriented Commercial

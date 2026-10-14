@@ -1,6 +1,6 @@
 # Changelog
 
-## 2026-10-13 — GOAL-068 Platform Administration UX redesign
+## 2026-10-14 — GOAL-068 Platform Administration UX redesign
 
 - Replaced the flat Platform tabs with URL-backed grouped navigation and a
   mobile grouped selector, plus an operational overview for action-oriented
@@ -9,12 +9,15 @@
   patterns to organization, application, platform-user, AI and Audit views.
 - Moved organization actions into a bounded detail panel and changed create
   and Commercial edit forms to explicit progressive disclosure.
-- Split the 13-card Commercial page into five task-oriented subsections while
+- Split the former 13-card Commercial page into five task-oriented subsections
+  using explicit component rendering and progressive form disclosure, while
   preserving all APIs, authorization, business workflows and current Jupiter
   theme tokens.
-- Web tests, typecheck/build and authenticated local acceptance at
-  375/768/1024/1440 passed without document-level overflow. Preview deployment
-  is pending; the canonical main host remains unchanged.
+- The complete release gate passed 146 API tests, 22 Web tests, lint/typecheck,
+  both production builds and diff validation. Commits `3e37efb` and `78354da`
+  are deployed to Preview; authenticated 375/768/1024/1440 acceptance passed
+  without document overflow or console warnings. The canonical main host
+  remains unchanged pending owner approval.
 
 ## 2026-10-13 — GOAL-067 safe organization deletion
 
