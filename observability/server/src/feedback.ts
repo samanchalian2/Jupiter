@@ -1,0 +1,29 @@
+import { randomUUID } from 'node:crypto';
+import { ContractError, validateFeedback, type FeedbackSubmission, type FeedbackStatus } from '@observability/contracts';
+import { canonicalJson, redactText, sha256 } from '@observability/core';
+import { HubDatabase, type DataScope } from './database.js';
+import { RegistryService } from './registry.js';
+export class FeedbackService {
+  constructor(private readonly database:HubDatabase,private readonly registry:RegistryService){}
+  async submit(scope:DataScope,raw:unknown){
+    if(!scope.actorReference)throw new ContractError('AUTHENTICATED_FEEDBACK_REQUIRED');
+    const input=validateFeedback(raw),feedback:FeedbackSubmission={...input,subject:redactText(input.subject),description:redactText(input.description)},hash=await sha256(canonicalJson(feedback));
+    return this.database.scoped({...scope,actorAll:false},async c=>{
+      if(!(await c.query('SELECT 1 FROM observability.applications a JOIN observability.environments e ON e.application_id=a.id WHERE a.id=$1 AND e.id=$2 AND a.enabled AND e.enabled',[scope.applicationId,scope.environmentId])).rowCount)throw new ContractError('APPLICATION_UNAVAILABLE');
+      if(input.relatedEventId&&!(await c.query('SELECT 1 FROM observability.events WHERE event_id=$1 AND application_id=$2 AND environment_id=$3 AND actor_reference=$4',[input.relatedEventId,scope.applicationId,scope.environmentId,scope.actorReference])).rowCount)throw new ContractError('EVENT_REFERENCE_NOT_FOUND');
+      const trackingId=`FB-${randomUUID().replaceAll('-','').toUpperCase()}`;
+      const result=await c.query<{id:string;tracking_id:string;status:string}>(`INSERT INTO observability.feedback(id,application_id,environment_id,tenant_reference,actor_reference,tracking_id,category,subject,description,related_event_id,payload_hash,diagnostic_consent) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) ON CONFLICT(application_id,environment_id,id) DO NOTHING RETURNING id,tracking_id,status`,[input.feedbackId,scope.applicationId,scope.environmentId,scope.tenantReference,scope.actorReference,trackingId,feedback.category,feedback.subject,feedback.description,input.relatedEventId??null,hash,input.diagnosticConsent??false]);
+      if(result.rowCount)return {feedbackId:input.feedbackId,trackingId:result.rows[0].tracking_id,status:result.rows[0].status,idempotent:false};
+      const old=(await c.query<{payload_hash:string;actor_reference:string;tracking_id:string;status:string}>('SELECT payload_hash,actor_reference,tracking_id,status FROM observability.feedback WHERE id=$1 AND application_id=$2 AND environment_id=$3',[input.feedbackId,scope.applicationId,scope.environmentId])).rows[0];
+      if(!old||old.actor_reference!==scope.actorReference||old.payload_hash!==hash)throw new ContractError('FEEDBACK_ID_CONFLICT');
+      return {feedbackId:input.feedbackId,trackingId:old.tracking_id,status:old.status,idempotent:true};
+    });
+  }
+  async mine(scope:DataScope){if(!scope.actorReference)throw new ContractError('AUTHENTICATED_FEEDBACK_REQUIRED');return this.database.scoped({...scope,actorAll:false},async c=>(await c.query('SELECT id AS "feedbackId",tracking_id AS "trackingId",category,subject,status,created_at AS "createdAt",updated_at AS "updatedAt" FROM observability.feedback WHERE application_id=$1 AND actor_reference=$2 AND environment_id=$3 ORDER BY created_at DESC LIMIT 100',[scope.applicationId,scope.actorReference,scope.environmentId])).rows);}
+  async ownDetail(scope:DataScope,id:string){if(!scope.actorReference)throw new ContractError('AUTHENTICATED_FEEDBACK_REQUIRED');return this.database.scoped({...scope,actorAll:false},async c=>{const row=(await c.query('SELECT id AS "feedbackId",tracking_id AS "trackingId",subject,description,category,status,created_at AS "createdAt" FROM observability.feedback WHERE application_id=$1 AND actor_reference=$2 AND id=$3',[scope.applicationId,scope.actorReference,id])).rows[0];if(!row)throw new ContractError('FEEDBACK_NOT_FOUND');const replies=(await c.query('SELECT id,body,created_at AS "createdAt" FROM observability.feedback_replies WHERE application_id=$1 AND feedback_id=$2 AND internal=false ORDER BY created_at',[scope.applicationId,id])).rows;return {...row,replies};});}
+  async respond(principalId:string,scope:DataScope,id:string,input:{body:string;internal?:boolean;status?:FeedbackStatus}){
+    if(typeof input.body!=='string'||!input.body.trim()||input.body.length>4000||input.internal!==undefined&&typeof input.internal!=='boolean'||input.status!==undefined&&!['NEW','TRIAGED','IN_PROGRESS','RESOLVED','CLOSED'].includes(input.status))throw new ContractError('INVALID_FEEDBACK_RESPONSE');
+    await this.database.control(c=>this.registry.authorize(c,principalId,scope.applicationId,['ADMIN','OPERATOR'],scope.environmentId,scope.tenantReference));
+    return this.database.scoped({...scope,actorAll:true},async c=>{const f=(await c.query<{tenant_reference:string|null}>('SELECT tenant_reference FROM observability.feedback WHERE id=$1 AND application_id=$2 AND environment_id=$3 FOR UPDATE',[id,scope.applicationId,scope.environmentId])).rows[0];if(!f)throw new ContractError('FEEDBACK_NOT_FOUND');const reply=(await c.query('INSERT INTO observability.feedback_replies(application_id,environment_id,tenant_reference,feedback_id,actor_principal_id,body,internal) VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING id',[scope.applicationId,scope.environmentId,f.tenant_reference,id,principalId,redactText(input.body),input.internal??false])).rows[0];if(input.status)await c.query('UPDATE observability.feedback SET status=$1,updated_at=now() WHERE id=$2 AND application_id=$3 AND environment_id=$4',[input.status,id,scope.applicationId,scope.environmentId]);return reply;});
+  }
+}

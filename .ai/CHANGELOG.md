@@ -10,6 +10,10 @@
   tests using a disposable database; full Hub foundation suite has 59 tests.
 - First full release gate passed 146 API/23 Web/59 Hub tests and all builds,
   lint/typechecks. Product hosting/UI/AI/full acceptance are still pending.
+- Added isolated operational persistence (migration 064), user-owned Feedback
+  HTTP tracking, scope-safe Issue aggregation and initial Rule/Incident/Alert
+  workflow. Updated complete gate passes 146 API/23 Web/73 Hub tests and clean
+  75-migration rehearsal. Full same-Goal implementation/acceptance continues.
 
 ## 2026-10-14 — GOAL-068 Platform Administration UX redesign
 

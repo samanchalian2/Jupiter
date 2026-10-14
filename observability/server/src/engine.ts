@@ -1,0 +1,32 @@
+import { ContractError, type IncidentStatus } from '@observability/contracts';
+import { canTransitionIncident, redactText } from '@observability/core';
+import { HubDatabase, type DataScope } from './database.js';
+import { DurableQueue, type LeasedJob } from './queue.js';
+import { RegistryService } from './registry.js';
+interface EventRow {application_id:string;environment_id:string;event_id:string;event_code:string;tenant_reference:string|null;actor_reference:string|null;fingerprint:string;fingerprint_version:number;normalized_message:string;severity:string;source:string;category:string;http_status:number|null;duration_ms:number|null;occurred_at:Date;operation_name:string|null;release_version:string|null;safe_metadata:Record<string,unknown>;}
+export function failureSeverity(event:Pick<EventRow,'severity'|'source'|'http_status'>):string|null {
+  if(event.http_status!==null&&event.http_status>=400&&event.http_status<500)return null;
+  if(event.http_status!==null&&event.http_status>=500)return 'ERROR';
+  if(!['ERROR','CRITICAL'].includes(event.severity))return null;
+  return event.source==='BROWSER'?'ERROR':event.severity;
+}
+export class IssueEngine {
+  readonly queue:DurableQueue;
+  constructor(private readonly database:HubDatabase,private readonly registry:RegistryService){this.queue=new DurableQueue(database);}
+  async aggregate(job:LeasedJob){return this.queue.complete(job,async c=>{
+    if(job.kind!=='AGGREGATE'||!job.event_id)throw new ContractError('INVALID_AGGREGATION_JOB');
+    const event=(await c.query<EventRow>('SELECT * FROM observability.events WHERE application_id=$1 AND environment_id=$2 AND event_id=$3',[job.application_id,job.environment_id,job.event_id])).rows[0];if(!event)return;
+    const failed=failureSeverity(event);
+    const measured=['http.operation','api.operation'].includes(event.event_code);
+    await c.query(`INSERT INTO observability.aggregates(application_id,environment_id,tenant_reference,bucket_start,category,operation_name,release_version,event_count,error_count,duration_sum,duration_count,operation_count,operation_failure_count) VALUES($1,$2,$3,date_trunc('minute',$4::timestamptz),$5,$6,$7,1,$8,$9,$10,$11,$12) ON CONFLICT(application_id,environment_id,tenant_scope_key,bucket_start,category,operation_name,release_version) DO UPDATE SET event_count=aggregates.event_count+1,error_count=aggregates.error_count+EXCLUDED.error_count,duration_sum=aggregates.duration_sum+EXCLUDED.duration_sum,duration_count=aggregates.duration_count+EXCLUDED.duration_count,operation_count=aggregates.operation_count+EXCLUDED.operation_count,operation_failure_count=aggregates.operation_failure_count+EXCLUDED.operation_failure_count`,[event.application_id,event.environment_id,event.tenant_reference,event.occurred_at,event.category,event.operation_name??'',event.release_version??'',failed?1:0,event.duration_ms??0,event.duration_ms!==null?1:0,measured?1:0,measured&&failed?1:0]);
+    const issueSeverity=failed??(event.category==='PERFORMANCE'&&(event.duration_ms??0)>=1000||event.category==='CONNECTIVITY'&&event.severity==='WARNING'?'WARNING':null);
+    if(!issueSeverity)return;
+    const issue=(await c.query<{id:string;status:string}>(`INSERT INTO observability.issues(application_id,environment_id,tenant_reference,fingerprint,fingerprint_version,title,severity,first_seen,last_seen,occurrence_count) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$8,1) ON CONFLICT(application_id,environment_id,tenant_scope_key,fingerprint) DO UPDATE SET occurrence_count=issues.occurrence_count+1,last_seen=GREATEST(issues.last_seen,EXCLUDED.last_seen),first_seen=LEAST(issues.first_seen,EXCLUDED.first_seen),severity=CASE WHEN issues.severity='CRITICAL' THEN 'CRITICAL' ELSE EXCLUDED.severity END,status=CASE WHEN issues.status='RESOLVED' AND EXCLUDED.last_seen>issues.resolved_at THEN 'REOPENED' ELSE issues.status END,regression_count=issues.regression_count+CASE WHEN issues.status='RESOLVED' AND EXCLUDED.last_seen>issues.resolved_at THEN 1 ELSE 0 END RETURNING id,status`,[event.application_id,event.environment_id,event.tenant_reference,event.fingerprint,event.fingerprint_version,event.normalized_message,issueSeverity,event.occurred_at])).rows[0];
+    await c.query('INSERT INTO observability.issue_events(application_id,environment_id,tenant_reference,issue_id,event_id) VALUES($1,$2,$3,$4,$5)',[event.application_id,event.environment_id,event.tenant_reference,issue.id,event.event_id]);
+  });}
+  async transitionIncident(principalId:string,scope:DataScope,id:string,status:IncidentStatus,reason:string){
+    if(typeof reason!=='string'||reason.trim().length<3||reason.length>500||redactText(reason)!==reason)throw new ContractError('INVALID_INCIDENT_REASON');
+    await this.database.control(c=>this.registry.authorize(c,principalId,scope.applicationId,['ADMIN','OPERATOR'],scope.environmentId,scope.tenantReference));
+    return this.database.scoped(scope,async c=>{const row=(await c.query<{status:IncidentStatus;tenant_reference:string|null}>('SELECT status,tenant_reference FROM observability.incidents WHERE id=$1 AND application_id=$2 AND environment_id=$3 FOR UPDATE',[id,scope.applicationId,scope.environmentId])).rows[0];if(!row)throw new ContractError('INCIDENT_NOT_FOUND');if(!canTransitionIncident(row.status,status))throw new ContractError('INVALID_INCIDENT_TRANSITION');await c.query("UPDATE observability.incidents SET status=$1,updated_at=now(),resolved_at=CASE WHEN $1='RESOLVED' THEN now() ELSE NULL END WHERE id=$2 AND application_id=$3 AND environment_id=$4",[status,id,scope.applicationId,scope.environmentId]);await c.query('INSERT INTO observability.incident_activity(application_id,environment_id,tenant_reference,incident_id,actor_principal_id,kind,reason,from_status,to_status) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)',[scope.applicationId,scope.environmentId,row.tenant_reference,id,principalId,'STATUS_CHANGED',reason,row.status,status]);return{status};});
+  }
+}

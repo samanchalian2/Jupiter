@@ -8,7 +8,11 @@ Registry/auth/atomic ingestion/leased queue foundation are implemented. The
 first complete release gate passed 146 API, 23 Web and 59 Hub tests, including
 19 real PostgreSQL tests in a temporary database that was removed. HTTP hosting,
 product integration, Console, AI and full browser/reference acceptance remain
-outstanding. No Observability completion or staging acceptance is claimed.
+outstanding. The next checkpoint adds authenticated user-owned Feedback HTTP
+tracking, typed Issue/Incident/Rule/Alert/Aggregate persistence, idempotent issue
+aggregation and initial rule detection. The latest complete release gate passes
+146 API, 23 Web and 73 Hub tests; forward rehearsal includes 75 migrations.
+No Observability completion or staging acceptance is claimed.
 Follow `docs/GOAL_069_EVIDENCE.md` for implemented and outstanding work.
 
 **GOAL-068 Platform Administration UX redesign (complete on Preview and canonical,

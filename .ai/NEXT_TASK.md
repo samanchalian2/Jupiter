@@ -18,6 +18,16 @@ ingestion/Registry/health routes now pass real HTTP plus PostgreSQL tests
 (25 server tests; Hub total 65). CORS/host integration and full public API
 coverage remain required.
 
+Operational checkpoint: migration 064 and Feedback/Issue/Monitoring services
+are implemented. Feedback HTTP submission/own tracking, targeted masking,
+internal-reply exclusion, Application/environment isolation, idempotent
+aggregation, browser-severity normalization and one burst Incident/Alert are
+verified. Latest complete gate: 146 API/23 Web/73 Hub tests, 75-migration
+rehearsal. Continue the full same Goal: complete all rule scenarios (including
+actual release-change/baseline checks), issue management and mutation Audit;
+then public operational queries/OpenAPI, host/Jupiter adapters, Console, AI,
+offline/reference acceptance, Help and final QC. No target host deployment.
+
 ## GOAL-068 — Platform Administration UX redesign (complete)
 
 The complete Platform UX redesign and its shell-navigation remediation are

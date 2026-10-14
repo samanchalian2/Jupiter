@@ -2,6 +2,7 @@ import { ContractError, isRecord, isUuid } from '@observability/contracts';
 import { RegistryService, type VerifiedPrincipal } from './registry.js';
 import { IngestionService } from './ingestion.js';
 import { HubDatabase } from './database.js';
+import { FeedbackService } from './feedback.js';
 
 /** Host-supplied verified identity. Implementations can use JWT/OIDC/session
  * exchange; the core never imports a product's user or membership model. */
@@ -22,6 +23,7 @@ export class HubHttpApi {
   private readonly ingestionLimiter=new BoundedRateLimiter(120);
   private readonly mintLimiter=new BoundedRateLimiter(60);
   private readonly operationsLimiter=new BoundedRateLimiter(120);
+  private readonly feedbackLimiter=new BoundedRateLimiter(10);
   constructor(private readonly database:HubDatabase,private readonly registry:RegistryService,private readonly ingestion:IngestionService,private readonly identities:OperationalIdentityProvider){}
   private bearer(request:HubHttpRequest){const match=/^Bearer ([A-Za-z0-9._~-]{16,4096})$/.exec(request.authorization??'');if(!match)throw new ContractError('AUTHENTICATION_REQUIRED');return match[1];}
   private body(request:HubHttpRequest){if(!isRecord(request.body))throw new ContractError('INVALID_REQUEST');return request.body;}
@@ -44,6 +46,16 @@ export class HubHttpApi {
         const body=this.body(request);if(Object.keys(body).some(k=>!['applicationId','environmentId','actorReference','tenantReference'].includes(k))||!isUuid(body.applicationId)||!isUuid(body.environmentId))throw new ContractError('INVALID_IDENTITY_SCOPE');
         return{status:201,body:await this.registry.mintBrowserCredential(token,{applicationId:body.applicationId,environmentId:body.environmentId,actorReference:body.actorReference===undefined?null:body.actorReference as string|null,tenantReference:body.tenantReference===undefined?null:body.tenantReference as string|null})};
       }
+      if(path==='/feedback'&&request.method==='POST'){
+        const credential=await this.registry.credential(token,'feedback:write');await this.origin(credential.applicationId,credential.source,request.origin);
+        if(!this.feedbackLimiter.allow(`${credential.applicationId}:${credential.actorReference}`))return{status:429,body:{reasonCode:'FEEDBACK_RATE_LIMIT'},headers:{'Retry-After':'60'}};
+        return{status:201,body:await new FeedbackService(this.database,this.registry).submit(credential,request.body)};
+      }
+      if(request.method==='GET'&&(path==='/feedback/mine'||/^\/feedback\/[0-9a-f-]{36}$/.test(path))){
+        const credential=await this.registry.credential(token,'feedback:own:read'),service=new FeedbackService(this.database,this.registry);
+        if(request.origin)await this.origin(credential.applicationId,credential.source,request.origin);
+        return{status:200,body:path==='/feedback/mine'?await service.mine(credential):await service.ownDetail(credential,path.slice('/feedback/'.length))};
+      }
       if(!path.startsWith('/operations/'))return{status:404,body:{reasonCode:'NOT_FOUND'}};
       let verified:VerifiedPrincipal;try{verified=await this.identities.verify(token);}catch{throw new ContractError('AUTHENTICATION_REQUIRED');}
       const principalId=await this.registry.principal(verified);
@@ -62,7 +74,7 @@ export class HubHttpApi {
       }
       return{status:404,body:{reasonCode:'NOT_FOUND'}};
     }catch(error){
-      if(error instanceof ContractError){const forbidden=/DENIED|REQUIRED|SCOPE_MISMATCH|UNTRUSTED|LAST_SUPER/.test(error.reasonCode),unauthorized=/AUTHENTICATION_REQUIRED|INVALID_INGESTION_CREDENTIAL/.test(error.reasonCode);return{status:unauthorized?401:forbidden?403:400,body:{reasonCode:error.reasonCode}};}
+      if(error instanceof ContractError){const forbidden=/DENIED|REQUIRED|SCOPE_MISMATCH|UNTRUSTED|LAST_SUPER/.test(error.reasonCode),unauthorized=/AUTHENTICATION_REQUIRED|INVALID_INGESTION_CREDENTIAL/.test(error.reasonCode),missing=/NOT_FOUND$/.test(error.reasonCode);return{status:unauthorized?401:forbidden?403:missing?404:400,body:{reasonCode:error.reasonCode}};}
       // SQL/provider messages and credentials never cross this boundary.
       return{status:503,body:{reasonCode:'HUB_UNAVAILABLE'}};
     }

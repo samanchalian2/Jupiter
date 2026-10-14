@@ -35,8 +35,8 @@ Every requirement remains pending unless actual execution evidence is recorded.
 | B | independent packages, registry/auth/contracts/OpenAPI | package/registry/auth foundation implemented; HTTP/OpenAPI pending |
 | C | schema/RLS, atomic ingestion, browser/API/worker capture | PostgreSQL foundation verified; product capture integration pending |
 | D | IndexedDB/replay/backoff/logout/scope isolation | SDK protocol verified; real-browser IndexedDB/replay pending |
-| E | fingerprint, issues/incidents/rules/alerts | pending |
-| F | feedback/user tracking, Console/live/analytics/export | pending |
+| E | fingerprint, issues/incidents/rules/alerts | issue/aggregate persistence and initial rule/incident flow verified; full scenarios/management pending |
+| F | feedback/user tracking, Console/live/analytics/export | authenticated Feedback HTTP/own tracking implemented; Console/live/reporting pending |
 | G | evidence-grounded AI, opt-in/budget/schedule/security | pending |
 | H | independent second application, C#/Python clients | pending |
 | I | retention, self-health/runbook, Help, full QC/cleanup | pending |
@@ -135,3 +135,34 @@ IN PROGRESS. Full implementation and acceptance are not yet established.
 - HTTP errors expose safe reason codes, never SQL or credential/provider data.
 - Still required: full public OpenAPI, deployment host/Jupiter adapters, feedback
   routes, operational data/engines/AI/UI and full independent-browser acceptance.
+
+## Operational persistence and feedback checkpoint — LOCAL
+
+- Migration 064 adds Issues, scope-safe event associations, Incidents/activity,
+  Feedback/public and internal replies, rules, alerts and minute aggregates.
+  Tenant scope keys in composite FKs prevent attaching another tenant's event
+  to an Issue. Feedback IDs are Application/environment scoped; Tracking IDs
+  remain globally unique.
+- `FeedbackService` and HTTP routes require authenticated actor but no tenant.
+  Replay returns the same tracking reference, content conflicts are rejected,
+  targeted secret masking preserves technical description and users only read
+  their own reports. Internal replies are excluded by RLS and projection.
+- Owner feedback visibility allows its own tenant history only within the
+  credential's Application/environment. A test found the need for an explicit
+  environment predicate and verifies both environment and Application denial.
+- `IssueEngine.aggregate` shares the leased job completion transaction. Tests
+  verify one increment, distinct affected-actor counts and no Issue for normal
+  HTTP 403 even with a client CRITICAL claim. Browser severity is capped at
+  ERROR before operational classification. Measured-operation counters are
+  separate from raw event counters to supply a legitimate error-rate denominator.
+- `MonitoringEngine` persists configurable rule defaults and initial detection.
+  The burst test produces one Incident and one durable Alert after repeated
+  evaluation. Human Incident transitions reject NEW → RESOLVED and record the
+  authenticated principal for triage/investigation/resolution.
+- Full rule validation, release-change baseline behavior, issue management,
+  separate mutation Audit, reporting/exports and delivery are still pending.
+  The existence of all rule codes is not acceptance of every rule scenario.
+- Latest complete `pnpm verify:release`: 146 API, 23 Web, 73 Hub tests
+  (40 SDK/core/adapter and 33 server integration). Builds/lint/typechecks pass;
+  75-migration rehearsal passes and temporary database/role cleanup completes.
+  Business DB migrations and target-server publications were not performed.
