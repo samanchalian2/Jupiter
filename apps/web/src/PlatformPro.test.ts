@@ -72,4 +72,13 @@ describe('platform organization review and responsive lists', () => {
     expect(commercial).toContain("area==='assist'");
     expect(styles).not.toContain('.platform-commercial-catalog > :is(.card:nth-child');
   });
+
+  it('keeps the standard desktop sidebar and mobile hamburger on the standalone Platform route', () => {
+    const app = readFileSync(new URL('./App.tsx',import.meta.url),'utf8');
+    expect(app).toContain('standalonePlatform');
+    expect(app).toContain('<ProductShell actor={actor}');
+    expect(app).toContain('className="mobile-menu-trigger"');
+    expect(app).toContain('className="app-sidebar"');
+    expect(app).not.toContain("window.location.pathname.startsWith('/platform') && session.user.platformAdmin) return <BrowserRouter><PlatformAppearanceBootstrap/><main className=\"portal\"");
+  });
 });
