@@ -2,6 +2,16 @@
 
 ## GOAL-069 Observability Hub
 
+Investigator credentials are encrypted with Application-bound AES-256-GCM and
+never returned by configuration APIs. External provider hosts are deployment-
+allowlisted, redirects/query credentials are rejected, and response bodies are
+bounded. The local owner-selected provider is GapGPT. Each provider attempt
+reserves a conservative input-byte/output-token bound under an Application
+advisory lock, across environments; uncertain usage remains held rather than
+being released. Findings cite only curated authorized evidence; no tools or
+business mutation are available to the model. AI failure never blocks ingestion.
+Operational AI accounting is separate from Commercial/Personal customer pools.
+
 Operational identity/grants are independent of Jupiter roles. Ingestion
 credentials are scoped, hashed, revocable and browser short-lived. Runtime Hub
 data uses dedicated RLS scopes and has no direct credential-hash privileges.

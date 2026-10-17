@@ -1,5 +1,16 @@
 # Domain Model
 
+## Operational Investigator (GOAL-069)
+
+Hub Application configuration owns encrypted provider credential, enablement,
+external-processing policy and combined monthly token budget. An Investigation
+is Application/environment/concrete-tenant scoped with kind, safe target,
+idempotency key, validated output and authorized evidence references. Each
+provider attempt records reserved bound, UTC month, safe model/token outcome;
+settled/released ledger rows cannot be rewritten and runtime cannot delete them.
+Unknown attempts retain their reserved bound. No prompt or credential is stored
+in the attempt ledger. Scheduled runs have no invented human requester.
+
 ## GOAL-067 safe organization archival
 
 `Organization` adds the terminal-access lifecycle state `ARCHIVED` plus

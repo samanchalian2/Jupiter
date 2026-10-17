@@ -1,5 +1,17 @@
 # Business Rules
 
+## Owner-requested local Operations amendment (2026-10-17)
+
+- Jupiter Hub operational AI uses the explicitly approved 100,000 combined
+  input/output token monthly budget, not organization/personal commercial quota.
+- All provider attempts, including retries, reserve capacity before dispatch;
+  uncertain usage remains held. Exhaustion stops AI only.
+- Automatic daily/weekly/periodic/critical investigations are deduplicated and
+  concrete-tenant scoped; no implicit cross-Application or cross-tenant evidence.
+- Workspace removal is reversible archival after suspension, exact slug, reason,
+  explicit confirmation and idempotency. Personal owner identities/shared users
+  are not deleted. Legacy organization archive routes remain organization-only.
+
 ## GOAL-060 Personal Service rules
 
 - A verified public account owns at most one personal workspace. Provisioning

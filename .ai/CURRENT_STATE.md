@@ -1,5 +1,30 @@
 # Current State
 
+**2026-10-17 owner-requested local AI/workspace amendment:** GapGPT is configured
+for the Jupiter Hub Application with encrypted credentials, `gpt-6-luna` and the
+owner-approved 100,000 monthly combined input/output token budget. Actual provider
+model discovery returned 200 and listed the requested analysis/transcription
+models. Autonomous investigations produced validated persisted results with
+settled token telemetry; this is not customer AI allowance usage. Requested
+`gapgpt/whisper-1` is recorded as a local preference only: Hub has no audio input
+operation and does not call transcription. No tenant AI setting was overwritten.
+Migration 067 is applied locally. Investigator now has independent configuration,
+atomic token reservations, conservative unknown holds, evidence validation,
+UTC daily/weekly plus periodic/critical scheduling, HTTP routes and Console UI.
+Full GOAL-069 acceptance still remains in progress.
+
+Latest complete checkpoint gate: 147 API, 28 Web and 105 Hub tests; all
+builds/lint/typechecks, 78-migration rehearsal and diff validation pass. Unknown
+AI usage reconciliation now has explicit ADMIN-only API/service with Audit and
+idempotency tests; the corresponding Console control remains unfinished.
+
+The explicit local cleanup retained `jupiter-demo` and safely archived 34 other
+workspaces via supported, audited suspend/archive services. No physical data or
+user deletion occurred; archive filter and suspended-only recovery remain.
+DEC-039 adds explicit Personal workspace management without widening the old
+organization-only archive endpoints. The local authenticated admin list showed
+one normal result and 34 archive-filter results. Both target hosts are unchanged.
+
 **GOAL-069 local host/operations checkpoint (IN PROGRESS, 2026-10-17):**
 Migrations 063–066 are now applied to the local Jupiter database only. The
 Nest host uses the generic Hub with verified Jupiter identity, user/tenant-bound

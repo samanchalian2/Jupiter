@@ -2,6 +2,14 @@
 
 ## GOAL-069 — Observability Hub continuation (IN PROGRESS)
 
+The 2026-10-17 owner amendment resolves provider selection with local GapGPT,
+encrypted credential and 100,000-token monthly budget; real AI execution is now
+verified. Independent configuration/scheduling/usage/findings UI and migration
+067 are implemented. DEC-039 documents explicit reversible Personal workspace
+administration; 34 local extras were archived while `jupiter-demo` was retained.
+This does not complete the remaining original Goal acceptance or authorize host
+promotion. See the latest Evidence and local workspace-administration Evidence.
+
 Local 2026-10-17 checkpoint adds executable host adapters, restricted control
 role, all rule scenarios, operational APIs and an independent React Console.
 The 146 API/27 Web/93 Hub gate and 77-migration rehearsal pass. Full approved

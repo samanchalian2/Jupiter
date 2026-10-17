@@ -5,6 +5,15 @@ import { normalizePlatformSearch, paginatePlatformItems } from './PlatformAdminU
 import type { Actor } from './App';
 
 describe('platform organization review and responsive lists', () => {
+  it('manages personal and organization workspaces through explicit reversible paths',()=>{
+    const source=readFileSync(new URL('./PlatformPro.tsx',import.meta.url),'utf8');
+    expect(source).toContain('سازمان‌ها و فضاهای کاری');
+    expect(source).toContain('value: "PERSONAL", label: "فضای شخصی"');
+    expect(source).toContain('value: "ORGANIZATION", label: "سازمانی"');
+    expect(source).toContain("pending.organization.workspace_type === 'PERSONAL' ? 'workspaces' : 'organizations'");
+    expect(source).toContain('organization.status !== "archived"');
+    expect(source).toContain('بازیابی در حالت معلق');
+  });
   it('starts review through the API and returns the immediately reviewable state', async () => {
     const request = vi.fn().mockResolvedValue({status:'UNDER_REVIEW'});
     const actor = {

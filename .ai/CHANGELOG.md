@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-10-17 — Local GapGPT and explicit workspace administration
+
+- Added independent Investigator persistence (067), AES-GCM Application-bound
+  credentials, bounded evidence/provider adapter, atomic monthly combined-token
+  reservations, unknown usage holds and validated cited findings. Added UTC
+  scheduling, authenticated HTTP configuration/reports/usage and Console panel.
+- Owner explicitly selected GapGPT and approved 100,000 tokens/month; configured
+  locally, verified model availability and real successful persisted analysis.
+  No secret is in tracked files and no customer AI quota/settings were changed.
+- Added explicit reversible Personal workspace archive/restore endpoints while
+  preserving organization-only compatibility; default list hides archived rows
+  and has Personal/Organization filters. Added local-only dry-run/apply utility.
+- Archived 34 local extra workspaces, retaining `jupiter-demo`; zero physical
+  deletions/user deletions. Archive filter/recovery verified in authenticated UI.
+- Fixed product remount during asynchronous Hub SDK initialization by keeping
+  the provider wrapper stable; avoids discarded input and duplicate startup work.
+- GOAL-069 remains IN PROGRESS; neither target host is deployed or modified.
+
 ## 2026-10-17 — GOAL-069 host and Operations UI checkpoint (IN PROGRESS)
 
 - Added restricted control-plane DB role, immutable mutation Audit/Issue notes

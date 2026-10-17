@@ -2,6 +2,17 @@
 
 ## GOAL-069 — Reusable Observability Hub (IN PROGRESS)
 
+2026-10-17 continuation: the provider-choice blocker is resolved by the owner's
+explicit GapGPT settings and 100,000 monthly token budget. Local configuration
+and real successful bounded AI calls are now established. Do not ask for an
+OpenAI key or silently switch providers. Continue the full Goal's remaining
+requirements: richer evidence/analytics, unknown-usage reconciliation UI, complete
+incident management, alerts/delivery, maintenance/retention/self-monitoring,
+OpenAPI, second reference consumer, actual offline/browser identity acceptance,
+Product Help and final requirement-by-requirement QC. AI/Console implementation
+alone does not complete the Goal. Local workspace cleanup/management amendment
+is recorded in DEC-039 and `docs/LOCAL_WORKSPACE_ADMIN_EVIDENCE.md`.
+
 Current continuation (2026-10-17): host adapters and the independent Console
 now exist. Read the latest Evidence checkpoint before acting. Continue this
 same Goal with independent Investigator configuration/encrypted credentials,

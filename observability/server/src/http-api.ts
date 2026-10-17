@@ -6,6 +6,7 @@ import { FeedbackService } from './feedback.js';
 import { OperationsService, type OperationScope, type QueryFilter, type Resource } from './operations.js';
 import { IssueEngine } from './engine.js';
 import { MonitoringEngine } from './rules.js';
+import type { InvestigatorService, InvestigatorConfiguration } from './investigator.js';
 
 /** Host-supplied verified identity. Implementations can use JWT/OIDC/session
  * exchange; the core never imports a product's user or membership model. */
@@ -28,7 +29,7 @@ export class HubHttpApi {
   private readonly mintLimiter=new BoundedRateLimiter(60);
   private readonly operationsLimiter=new BoundedRateLimiter(120);
   private readonly feedbackLimiter=new BoundedRateLimiter(10);
-  constructor(private readonly database:HubDatabase,private readonly registry:RegistryService,private readonly ingestion:IngestionService,private readonly identities:OperationalIdentityProvider,private readonly ingestionPolicy?:IngestionPolicy){}
+  constructor(private readonly database:HubDatabase,private readonly registry:RegistryService,private readonly ingestion:IngestionService,private readonly identities:OperationalIdentityProvider,private readonly ingestionPolicy?:IngestionPolicy,private readonly investigator?:InvestigatorService){}
   private bearer(request:HubHttpRequest){const match=/^Bearer ([A-Za-z0-9._~-]{16,4096})$/.exec(request.authorization??'');if(!match)throw new ContractError('AUTHENTICATION_REQUIRED');return match[1];}
   private body(request:HubHttpRequest){if(!isRecord(request.body))throw new ContractError('INVALID_REQUEST');return request.body;}
   async dispatch(request:HubHttpRequest):Promise<HubHttpResponse>{
@@ -76,6 +77,22 @@ export class HubHttpApi {
       let verified:VerifiedPrincipal;try{verified=await this.identities.verify(token);}catch{throw new ContractError('AUTHENTICATION_REQUIRED');}
       const principalId=await this.registry.principal(verified);
       if(!this.operationsLimiter.allow(principalId))return{status:429,body:{reasonCode:'OPERATIONS_RATE_LIMIT'}};
+      const reconciliationRoute=/^\/operations\/applications\/([0-9a-f-]{36})\/ai\/attempts\/([0-9a-f-]{36})\/reconcile$/.exec(path);
+      if(reconciliationRoute&&request.method==='POST'){
+       if(!this.investigator)return{status:503,body:{reasonCode:'INVESTIGATOR_NOT_CONFIGURED'}};
+       const body=this.body(request);if(Object.keys(body).some(key=>!['environmentId','tenantReference','inputTokens','outputTokens','reason'].includes(key))||!isUuid(body.environmentId))throw new ContractError('INVALID_AI_RECONCILIATION');
+       return{status:200,body:await this.investigator.reconcile(principalId,{applicationId:reconciliationRoute[1],environmentId:body.environmentId,tenantReference:body.tenantReference as string|null|undefined},reconciliationRoute[2],{inputTokens:body.inputTokens as number,outputTokens:body.outputTokens as number,reason:body.reason as string})};
+      }
+      const aiRoute=/^\/operations\/applications\/([0-9a-f-]{36})\/ai\/(configuration|investigations|usage)$/.exec(path);
+      if(aiRoute){
+       if(!this.investigator)return{status:503,body:{reasonCode:'INVESTIGATOR_NOT_CONFIGURED'}};
+       if(aiRoute[2]==='configuration'){
+        if(request.method==='GET')return{status:200,body:await this.investigator.configuration(principalId,aiRoute[1])};
+        if(request.method==='PUT'){const body=this.body(request);if(Object.keys(body).some(k=>!['enabled','externalProcessingAllowed','endpoint','model','credential','monthlyTokenBudget','maxOutputTokens','maxContextBytes','maxConcurrent','reviewIntervalSeconds','reason'].includes(k)))throw new ContractError('INVALID_AI_CONFIGURATION');return{status:200,body:await this.investigator.configure(principalId,aiRoute[1],body as unknown as InvestigatorConfiguration)};}
+       }
+       if(request.method==='GET'){if([...url.searchParams.keys()].some(k=>!['environmentId','tenantReference'].includes(k)||url.searchParams.getAll(k).length!==1))throw new ContractError('INVALID_QUERY');const environmentId=url.searchParams.get('environmentId');if(!isUuid(environmentId))throw new ContractError('INVALID_DATA_SCOPE');const scope={applicationId:aiRoute[1],environmentId,...(url.searchParams.has('tenantReference')?{tenantReference:url.searchParams.get('tenantReference')||null}:{})};return{status:200,body:aiRoute[2]==='usage'?await this.investigator.usage(principalId,scope):await this.investigator.list(principalId,scope)};}
+       if(request.method==='POST'&&aiRoute[2]==='investigations'){const body=this.body(request);if(Object.keys(body).some(k=>!['environmentId','tenantReference','kind','targetReference','idempotencyKey'].includes(k))||!isUuid(body.environmentId)||typeof body.idempotencyKey!=='string'||typeof body.kind!=='string')throw new ContractError('INVALID_INVESTIGATION_REQUEST');return{status:201,body:await this.investigator.request(principalId,{applicationId:aiRoute[1],environmentId:body.environmentId,tenantReference:body.tenantReference as string|null|undefined},body.kind as 'ISSUE',body.targetReference as string|null??null,body.idempotencyKey)};}
+      }
       const configurationRoute=/^\/operations\/applications\/([0-9a-f-]{36})\/origins$/.exec(path);
       if(configurationRoute&&request.method==='PUT'){const body=this.body(request);if(Object.keys(body).some(k=>!['allowedOrigins','reason'].includes(k))||!Array.isArray(body.allowedOrigins)||typeof body.reason!=='string')throw new ContractError('INVALID_ORIGINS');return{status:200,body:await this.registry.configureApplication(principalId,configurationRoute[1],{allowedOrigins:body.allowedOrigins as string[],reason:body.reason})};}
       const dataRoute=/^\/operations\/applications\/([0-9a-f-]{36})\/(overview|events|issues|incidents|feedback|alerts|export)(?:\/([0-9a-f-]{36}))?(?:\/(transition|replies))?$/.exec(path);

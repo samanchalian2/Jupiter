@@ -1,5 +1,27 @@
 # AI Architecture
 
+## GOAL-069 independent operational Investigator
+
+Investigator consumes curated sanitized Hub events/technical feedback, never
+Jupiter ticket bodies or files. The generic server accepts a provider port and
+Application-bound credential vault; Jupiter's host supplies the allowlist and
+deployment encryption key. Local owner-selected GapGPT uses `gpt-6-luna` with
+an explicit 100,000 combined input/output token monthly budget. This is not a
+customer Smart Action, Personal AI reservation or organization provider setting.
+
+Each attempt reserves a conservative context byte/framing plus hard output
+bound under an Application lock before provider dispatch. Safe actual counts
+settle the operational attempt even when output validation fails; absent or
+uncertain counts retain the bound as UNKNOWN. Findings require schema-valid
+authorized evidence citations and remain read-only hypotheses for human review.
+There is no tool execution or automatic business/permission/incident mutation.
+Scheduling is deduplicated and concrete-tenant scoped (periodic/critical and
+UTC daily/weekly). Human ADMIN reconciliation of UNKNOWN attempts requires a
+reason and exact provider-verified counts, with immutable terminal values and
+real-actor Audit. Remaining reconciliation UI and full-Goal acceptance are
+explicitly unfinished. The requested transcription model is only a disabled
+local preference because Hub has no audio-input operation.
+
 ## GOAL-063 personal AI capacity foundation
 
 Personal AI owns a separate `AI` allowance/package pool with a generic

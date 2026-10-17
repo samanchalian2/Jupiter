@@ -1,5 +1,19 @@
 # Architecture Decisions
 
+## DEC-039 — Explicit reversible workspace administration
+
+The owner's 2026-10-17 request extends Platform administration to both personal
+and organizational workspaces. The existing Organization archive endpoints
+remain organization-only. New explicit workspace endpoints reuse the same
+suspend-before-archive, exact slug, reason, idempotency, Audit and retained-data
+boundary for Personal workspaces; they do not delete the owner identity or
+shared user records. Restoration returns to suspended, never active. No
+physical cascade purge, tenant cross-access or automatic recreation/reactivation
+of an archived Personal workspace is introduced. Archived entries are hidden
+from the default administration list but remain discoverable by archive filter.
+The local cleanup keeps `jupiter-demo`, uses supported service transitions and
+leaves both target hosts and co-hosted applications untouched.
+
 ## DEC-038 — Reusable Observability Hub (GOAL-069)
 
 **Decision:** Hub contracts, core, SDKs, storage/queue, identity, AI and alert

@@ -102,7 +102,7 @@ export async function beginPlatformApplicationReview(
 }
 const platformTabs = [
   ["overview", "نمای کلی", "نمای کلی"],
-  ["orgs", "سازمان‌ها", "سازمان‌ها و دسترسی"],
+  ["orgs", "سازمان‌ها و فضاهای کاری", "سازمان‌ها و دسترسی"],
   ["applications", "درخواست‌های سازمان", "سازمان‌ها و دسترسی"],
   ["users", "کاربران پلتفرم", "سازمان‌ها و دسترسی"],
   ["commercial", "تجاری", "سرویس‌ها"],
@@ -674,7 +674,7 @@ function Organizations({
         {
           method: "POST",
           body: JSON.stringify({
-            status: pending.status === "active" ? "suspended" : "active",
+            status: pending.status === "active" || pending.status === "setup" ? "suspended" : "active",
           }),
         },
       );
@@ -697,7 +697,7 @@ function Organizations({
   const filtered = organizations.filter((organization) => {
     const query = normalizePlatformSearch(listState.query);
     return (!query || normalizePlatformSearch(`${organization.name} ${organization.slug}`).includes(query)) &&
-      (listState.status === "ALL" || organization.status === listState.status);
+      (listState.status === "ALL" ? organization.status !== "archived" : listState.status === "PERSONAL" || listState.status === "ORGANIZATION" ? organization.workspace_type === listState.status && organization.status !== "archived" : organization.status === listState.status);
   });
   const paged = paginatePlatformItems(filtered, listState.page, listState.pageSize);
   return (
@@ -705,8 +705,8 @@ function Organizations({
       <div className="admin-stack">
         <section className="card platform-list-card">
           <SectionHeader
-            title="سازمان‌های پلتفرم"
-            description="سازمان را پیدا کنید و عملیات مدیریتی را در پنل جزئیات انجام دهید."
+            title="سازمان‌ها و فضاهای کاری"
+            description="فضای شخصی یا سازمانی را مدیریت کنید. موارد حذف امن فقط با فیلتر حذف امن نمایش داده می‌شوند و قابل بازیابی‌اند."
             action={<button type="button" onClick={() => setCreateOpen((value) => !value)}>{createOpen ? "بستن فرم" : "ساخت سازمان"}</button>}
             as="h3"
           />
@@ -723,6 +723,7 @@ function Organizations({
             searchPlaceholder="نام یا Slug سازمان"
             statusOptions={[
               { value: "active", label: "فعال" }, { value: "setup", label: "راه‌اندازی" },
+              { value: "PERSONAL", label: "فضای شخصی" }, { value: "ORGANIZATION", label: "سازمانی" },
               { value: "suspended", label: "معلق" }, { value: "archived", label: "حذف امن" },
             ]}
             resultCount={filtered.length}
@@ -767,11 +768,11 @@ function Organizations({
             <div><dt>نوع فضا</dt><dd>{selected.workspace_type === "PERSONAL" ? "شخصی" : "سازمانی"}</dd></div>
             <div><dt>تاریخ ایجاد</dt><dd>{new Date(selected.created_at).toLocaleDateString("fa-IR")}</dd></div>
           </dl>
-          {selected.workspace_type !== "PERSONAL" && selected.status !== "setup" && (
+          {selected.status !== "setup" && (
             <div className="inline-actions platform-detail-actions">
               {selected.status === "archived"
                 ? <button type="button" onClick={() => setArchivePending({ organization: selected, mode: "restore" })}>بازیابی در حالت معلق</button>
-                : <button type="button" className="secondary" onClick={() => setPending(selected)}>{selected.status === "active" ? "تعلیق سازمان" : "فعال‌سازی سازمان"}</button>}
+                : <button type="button" className="secondary" onClick={() => setPending(selected)}>{selected.status === "active" ? "تعلیق فضای کاری" : "فعال‌سازی فضای کاری"}</button>}
               {selected.status === "suspended" && <button type="button" className="danger-text" onClick={() => setArchivePending({ organization: selected, mode: "archive" })}>حذف امن</button>}
             </div>
           )}
@@ -847,7 +848,7 @@ function OrganizationArchiveDialog({
     setBusy(true);
     try {
       await request(
-        `/admin/platform/organizations/${pending.organization.id}/${pending.mode}`,
+        `/admin/platform/${pending.organization.workspace_type === 'PERSONAL' ? 'workspaces' : 'organizations'}/${pending.organization.id}/${pending.mode}`,
         actor.session,
         actor.organizationId,
         {

@@ -8,3 +8,5 @@ export { FeedbackService } from './feedback.js';
 export { IssueEngine, failureSeverity } from './engine.js';
 export { MonitoringEngine } from './rules.js';
 export { OperationsService, csvCell, type OperationScope, type QueryFilter, type Resource } from './operations.js';
+export { InvestigatorService, INVESTIGATOR_SYSTEM, type InvestigatorConfiguration } from './investigator.js';
+export { AesCredentialVault, JsonInvestigationProvider, validateProviderEndpoint, type CredentialVault, type InvestigationProvider, type InvestigationProviderRequest, type InvestigationProviderResponse, type ProviderEndpointPolicy } from './ai-provider.js';

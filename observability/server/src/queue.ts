@@ -2,7 +2,7 @@ import type { PoolClient } from 'pg';
 import { HubDatabase } from './database.js';
 import { ContractError } from '@observability/contracts';
 import { retryDelay } from '@observability/core';
-export interface LeasedJob {id:string;application_id:string;environment_id:string;tenant_reference:string|null;event_id:string|null;kind:string;attempts:number;lease_owner:string;}
+export interface LeasedJob {id:string;application_id:string;environment_id:string;tenant_reference:string|null;event_id:string|null;kind:string;dedupe_key:string;attempts:number;lease_owner:string;}
 export class DurableQueue {
   constructor(private readonly database:HubDatabase){}
   async claim(workerId:string,limit=10,kinds?:readonly string[]):Promise<LeasedJob[]>{

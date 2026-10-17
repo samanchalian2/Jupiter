@@ -189,6 +189,30 @@ describe('GOAL-061 personal workspace foundation', () => {
     await expect(organizations.assignPlatformOwner(platformUserId,personalOrganizationId,verifiedUserId)).rejects.toBeInstanceOf(BadRequestException);
   });
 
+  it('supports explicit reversible personal workspace removal without changing the organization-only endpoint',async()=>{
+    const command={slug:personalSlug,reason:'Owner authorized temporary acceptance archive'},key=randomUUID();
+    await expect(organizations.archiveWorkspace(verifiedUserId,personalOrganizationId,command,key)).rejects.toBeInstanceOf(ForbiddenException);
+    await expect(organizations.setOrganizationStatus(platformUserId,personalOrganizationId,'setup' as 'active')).rejects.toBeInstanceOf(BadRequestException);
+    await expect(organizations.archiveWorkspace(platformUserId,personalOrganizationId,command,key)).rejects.toBeInstanceOf(BadRequestException);
+    await organizations.setOrganizationStatus(platformUserId,personalOrganizationId,'suspended');
+    try{
+      await expect(organizations.archiveOrganization(platformUserId,personalOrganizationId,command,key)).rejects.toBeInstanceOf(BadRequestException);
+      await expect(organizations.archiveWorkspace(platformUserId,personalOrganizationId,{...command,slug:'wrong'},key)).rejects.toBeInstanceOf(BadRequestException);
+      await expect(organizations.archiveWorkspace(platformUserId,personalOrganizationId,command,key)).resolves.toMatchObject({status:'archived',idempotent:false});
+      await expect(organizations.archiveWorkspace(platformUserId,personalOrganizationId,command,key)).resolves.toMatchObject({status:'archived',idempotent:true});
+      await workspaces.ensureForEligibleUser(verifiedUserId);
+      expect((await database.query<{status:string}>('SELECT status FROM organizations WHERE id=$1',[personalOrganizationId])).rows[0].status).toBe('archived');
+      const actorService=new TicketActorService({verify:async()=>({sub:verifiedUserId})} as never,database);
+      await expect(actorService.fromHeaders('Bearer test',personalOrganizationId)).rejects.toThrow();
+      await expect(organizations.restoreWorkspace(platformUserId,personalOrganizationId,command,randomUUID())).resolves.toMatchObject({status:'suspended'});
+      expect((await database.query('SELECT 1 FROM users WHERE id=$1',[verifiedUserId])).rowCount).toBe(1);
+      const history=await database.query('SELECT action FROM organization_archive_transitions WHERE organization_id=$1 ORDER BY created_at',[personalOrganizationId]);expect(history.rows.map(row=>row.action)).toEqual(['ARCHIVED','RESTORED']);
+    }finally{
+      const row=(await database.query<{status:string}>('SELECT status FROM organizations WHERE id=$1',[personalOrganizationId])).rows[0];
+      if(row.status==='archived')await organizations.restoreWorkspace(platformUserId,personalOrganizationId,command,randomUUID());
+      await organizations.setOrganizationStatus(platformUserId,personalOrganizationId,'active');
+    }
+  });
   it('keeps the internal personal slug out of organization routing while tenant ticket authorization remains valid', async () => {
     await expect(organizations.tenantContext(verifiedUserId,personalSlug)).rejects.toBeInstanceOf(NotFoundException);
     await expect(organizations.tenantContext(verifiedUserId,regularOrganizationSlug)).resolves.toMatchObject({organization_id:regularOrganizationId});

@@ -1,8 +1,8 @@
 import { Component, createContext, useContext, useEffect, type ErrorInfo, type ReactNode } from 'react';
 import { redactText, sanitizeStack, routeTemplate, type BrowserSdk } from '@observability/browser-sdk';
 const SdkContext=createContext<BrowserSdk|null>(null);
-export function ObservabilityProvider({sdk,children}:{sdk:BrowserSdk;children:ReactNode}){
-  useEffect(()=>sdk.start(),[sdk]);
+export function ObservabilityProvider({sdk,children}:{sdk:BrowserSdk|null;children:ReactNode}){
+  useEffect(()=>sdk?.start(),[sdk]);
   return <SdkContext.Provider value={sdk}>{children}</SdkContext.Provider>;
 }
 export function useObservability(){return useContext(SdkContext);}

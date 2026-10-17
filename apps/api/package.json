@@ -14,7 +14,7 @@
     "publish:help-catalog": "tsx scripts/publish-help-catalog.ts",
     "bootstrap:observability": "tsx scripts/bootstrap-observability.ts",
     "lint": "tsc --noEmit -p tsconfig.json",
-    "test": "vitest run",
+    "test": "vitest run --no-file-parallelism",
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {

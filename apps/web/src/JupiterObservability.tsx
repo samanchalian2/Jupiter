@@ -56,7 +56,9 @@ const captureBridge:Pick<BrowserSdk,'capture'>={capture:async input=>sdk? sdk.ca
 export function JupiterObservability({children}:{children:ReactNode}){
  const[observer,setObserver]=useState<BrowserSdk|null>(null);
  useEffect(()=>{let current=true;void ensureJupiterObservability().then(value=>{if(current)setObserver(value);});return()=>{current=false;};},[]);
- const content=observer?<ObservabilityProvider sdk={observer}>{children}</ObservabilityProvider>:children;
+ // Keep the application tree stable while asynchronous Hub configuration loads.
+ // Inserting a new wrapper later remounts the product and can discard user input.
+ const content=<ObservabilityProvider sdk={observer}>{children}</ObservabilityProvider>;
  return <ObservabilityErrorBoundary sdk={captureBridge} fallback={<main className="page" dir="rtl"><h1>نمایش این بخش با مشکل روبه‌رو شد</h1><p>می‌توانید صفحه را دوباره بارگذاری کنید.</p><button onClick={()=>location.reload()}>بارگذاری دوباره</button></main>}>{content}</ObservabilityErrorBoundary>;
 }
 export async function feedbackRequest(path:string,init?:RequestInit){const observer=await ensureJupiterObservability();if(!observer||!configuration)throw new Error('گزارش مشکل در این محیط هنوز فعال نشده است.');const auth=await credential(currentScope());if(!auth)throw new Error('برای ارسال گزارش دوباره وارد حساب شوید.');const response=await originalFetch(`${api}/observability${path}`,{...init,headers:{'content-type':'application/json',authorization:`Bearer ${auth.token}`,...init?.headers}});if(!response.ok){cachedCredential=undefined;throw new Error(response.status===401?'نشست گزارش پایان یافته است؛ دوباره تلاش کنید.':'دریافت گزارش‌ها انجام نشد؛ دوباره تلاش کنید.');}return response.json();}

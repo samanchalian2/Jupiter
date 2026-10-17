@@ -3,6 +3,13 @@
 Product-independent packages and PostgreSQL server adapters for GOAL-069.
 Implementation is IN PROGRESS; no complete platform claim is made.
 
+Operational AI now has a host-injected provider/vault, Application-bound AES-GCM
+credential storage, combined monthly token reservation/settlement, curated
+evidence validation, deduplicated scheduler and independent Console panel.
+Unknown provider usage remains held. Full reconciliation/maintenance/reference
+and offline acceptance remain unfinished; inspect Evidence, not this inventory,
+before claiming complete platform delivery.
+
 - `packages/contracts`: versioned JSON event/feedback/AI contracts and limits.
 - `packages/core`: privacy, canonical digest, fingerprint, trace and lifecycle.
 - `packages/browser-sdk`: bounded IndexedDB queue, memory degradation, identity
@@ -55,3 +62,12 @@ Production uses explicit configuration and independent secret/role provisioning,
 not this local convenience file. CJS Nest-to-ESM package interoperability was
 tested on the local Node 24 runtime; target runtime validation remains required
 before any later deployment. This Goal does not authorize deployment.
+
+The local owner-selected provider allowlist is stored without credentials in
+ignored `.local/observability-ai.json`. Production uses explicit
+`OBSERVABILITY_AI_ALLOWED_HOSTS`; loopback fakes are nonproduction-only and
+require `OBSERVABILITY_AI_ALLOW_LOCAL_FAKE=true`. Provider plaintext is accepted
+only for encryption, never returned. A local configuration utility accepts a
+bounded JSON object through stdin; never put a key in argv, tracked files or
+documentation. `--monthly-budget=<units> --activate` is explicit and requires
+a positive budget. Customer Commercial and Personal accounting is not involved.

@@ -293,6 +293,7 @@ export class OrganizationService {
   async updatePlatformUser(actorUserId: string, targetUserId: string, input: { displayName?: string; username?: string; isPlatformAdmin?: boolean; isActive?: boolean; password?: string }) { await this.platform(actorUserId); if(targetUserId===actorUserId && (input.isActive===false || input.isPlatformAdmin===false)) throw new BadRequestException('You cannot remove your own platform access.'); if(input.password !== undefined && (input.password.length < 10 || input.password.length > 200)) throw new BadRequestException('Password must be between 10 and 200 characters.'); const { password, ...auditInput } = input; try { const passwordHash=password ? await hashPassword(password) : null; const result=(await this.database.query<{id:string;email:string;display_name:string;is_platform_admin:boolean;is_active:boolean}>('UPDATE users SET display_name=COALESCE($1,display_name),username=COALESCE($2,username),is_platform_admin=COALESCE($3,is_platform_admin),is_active=COALESCE($4,is_active),password_hash=COALESCE($5,password_hash),updated_at=now() WHERE id=$6 RETURNING id,email,display_name,is_platform_admin,is_active',[input.displayName?.trim()||null,this.username(input.username)??null,input.isPlatformAdmin??null,input.isActive??null,passwordHash,targetUserId])).rows[0]; if(!result) throw new NotFoundException('Platform user not found.'); if(passwordHash) await this.database.query('UPDATE refresh_sessions SET revoked_at=now() WHERE user_id=$1 AND revoked_at IS NULL',[targetUserId]); await this.database.query('INSERT INTO audit_logs(actor_user_id,action,target_type,target_id,metadata) VALUES($1,\'platform.user_updated\',\'user\',$2,$3)',[actorUserId,targetUserId,{...auditInput,passwordChanged:Boolean(passwordHash)}]); return result; } catch (cause) { this.usernameConflict(cause); } }
   async setOrganizationStatus(userId:string, organizationId:string, status:'active'|'suspended') {
     await this.platform(userId);
+    if(!['active','suspended'].includes(status))throw new BadRequestException('وضعیت فضای کاری معتبر نیست.');
     return this.database.transaction(async client=>{
       const organization=(await client.query<{status:string}>('SELECT status FROM organizations WHERE id=$1 FOR UPDATE',[organizationId])).rows[0];
       if(!organization) throw new NotFoundException('Organization not found.');
@@ -303,7 +304,19 @@ export class OrganizationService {
       return result.rows[0];
     });
   }
-  async archiveOrganization(userId:string,organizationId:string,input:{slug?:string;reason?:string},idempotencyKey?:string) {
+  async archiveWorkspace(userId:string,organizationId:string,input:{slug?:string;reason?:string},idempotencyKey?:string) {
+    await this.platform(userId);
+    const workspace=(await this.database.query<{workspace_type:'ORGANIZATION'|'PERSONAL'}>('SELECT workspace_type FROM organizations WHERE id=$1',[organizationId])).rows[0];
+    if(!workspace)throw new NotFoundException('فضای کاری یافت نشد.');
+    return this.archiveOrganization(userId,organizationId,input,idempotencyKey,workspace.workspace_type);
+  }
+  async restoreWorkspace(userId:string,organizationId:string,input:{slug?:string;reason?:string},idempotencyKey?:string) {
+    await this.platform(userId);
+    const workspace=(await this.database.query<{workspace_type:'ORGANIZATION'|'PERSONAL'}>('SELECT workspace_type FROM organizations WHERE id=$1',[organizationId])).rows[0];
+    if(!workspace)throw new NotFoundException('فضای کاری یافت نشد.');
+    return this.restoreOrganization(userId,organizationId,input,idempotencyKey,workspace.workspace_type);
+  }
+  async archiveOrganization(userId:string,organizationId:string,input:{slug?:string;reason?:string},idempotencyKey?:string,expectedType:'ORGANIZATION'|'PERSONAL'='ORGANIZATION') {
     await this.platform(userId);
     if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(idempotencyKey??'')) throw new BadRequestException('Idempotency-Key معتبر لازم است.');
     const reason=input.reason?.trim()??'';
@@ -313,7 +326,7 @@ export class OrganizationService {
       if(!organization) throw new NotFoundException('سازمان یافت نشد.');
       const previous=(await client.query<{action:string}>('SELECT action FROM organization_archive_transitions WHERE organization_id=$1 AND idempotency_key=$2',[organizationId,idempotencyKey])).rows[0];
       if(previous){if(previous.action!=='ARCHIVED')throw new BadRequestException('این کلید قبلاً برای عملیات دیگری استفاده شده است.');return{...organization,status:'archived',idempotent:true};}
-      if(organization.workspace_type!=='ORGANIZATION') throw new BadRequestException('فضای شخصی از مسیر حذف سازمان قابل آرشیو نیست.');
+      if(organization.workspace_type!==expectedType) throw new BadRequestException('نوع فضای کاری با مسیر حذف تطابق ندارد.');
       if(organization.status==='archived') throw new BadRequestException('سازمان قبلاً حذف امن شده است.');
       if(organization.status!=='suspended') throw new BadRequestException('برای حذف امن، ابتدا سازمان را معلق کنید.');
       if(input.slug!==organization.slug) throw new BadRequestException('شناسهٔ واردشده با سازمان مطابقت ندارد.');
@@ -323,7 +336,7 @@ export class OrganizationService {
       return{...result,idempotent:false};
     });
   }
-  async restoreOrganization(userId:string,organizationId:string,input:{slug?:string;reason?:string},idempotencyKey?:string) {
+  async restoreOrganization(userId:string,organizationId:string,input:{slug?:string;reason?:string},idempotencyKey?:string,expectedType:'ORGANIZATION'|'PERSONAL'='ORGANIZATION') {
     await this.platform(userId);
     if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(idempotencyKey??'')) throw new BadRequestException('Idempotency-Key معتبر لازم است.');
     const reason=input.reason?.trim()??'';
@@ -333,7 +346,7 @@ export class OrganizationService {
       if(!organization) throw new NotFoundException('سازمان یافت نشد.');
       const previous=(await client.query<{action:string}>('SELECT action FROM organization_archive_transitions WHERE organization_id=$1 AND idempotency_key=$2',[organizationId,idempotencyKey])).rows[0];
       if(previous){if(previous.action!=='RESTORED')throw new BadRequestException('این کلید قبلاً برای عملیات دیگری استفاده شده است.');return{...organization,status:'suspended',idempotent:true};}
-      if(organization.workspace_type!=='ORGANIZATION'||organization.status!=='archived') throw new BadRequestException('این سازمان در وضعیت حذف امن نیست.');
+      if(organization.workspace_type!==expectedType||organization.status!=='archived') throw new BadRequestException('این فضای کاری در وضعیت حذف امن نیست.');
       if(input.slug!==organization.slug) throw new BadRequestException('شناسهٔ واردشده با سازمان مطابقت ندارد.');
       const result=(await client.query<{id:string;slug:string;name:string;status:string}>('UPDATE organizations SET status=\'suspended\',archived_at=NULL,archived_by_user_id=NULL,archive_reason=NULL,updated_at=now() WHERE id=$1 RETURNING id,slug,name,status',[organizationId])).rows[0];
       await client.query('INSERT INTO organization_archive_transitions(organization_id,actor_user_id,action,from_status,to_status,reason,idempotency_key) VALUES($1,$2,\'RESTORED\',\'archived\',\'suspended\',$3,$4)',[organizationId,userId,reason,idempotencyKey]);

@@ -32,12 +32,12 @@ Every requirement remains pending unless actual execution evidence is recorded.
 | Phase | Required delivery | State |
 | --- | --- | --- |
 | A | inventory, ADR, approved specification | initial inventory/DEC-038/source recorded |
-| B | independent packages, registry/auth/contracts/OpenAPI | package/registry/auth foundation implemented; HTTP/OpenAPI pending |
-| C | schema/RLS, atomic ingestion, browser/API/worker capture | PostgreSQL foundation verified; product capture integration pending |
+| B | independent packages, registry/auth/contracts/OpenAPI | packages/registry/auth and HTTP operational APIs implemented; full OpenAPI pending |
+| C | schema/RLS, atomic ingestion, browser/API/worker capture | PostgreSQL and Jupiter Browser/API adapters implemented; product Worker execution coverage pending |
 | D | IndexedDB/replay/backoff/logout/scope isolation | SDK protocol verified; real-browser IndexedDB/replay pending |
-| E | fingerprint, issues/incidents/rules/alerts | issue/aggregate persistence and initial rule/incident flow verified; full scenarios/management pending |
-| F | feedback/user tracking, Console/live/analytics/export | authenticated Feedback HTTP/own tracking implemented; Console/live/reporting pending |
-| G | evidence-grounded AI, opt-in/budget/schedule/security | pending |
+| E | fingerprint, issues/incidents/rules/alerts | all rule scenarios verified; issue management and incident transitions implemented; full incident workspace/delivery pending |
+| F | feedback/user tracking, Console/live/analytics/export | own Feedback and operational Console/live/filter/CSV implemented; richer analytics and final workflow acceptance pending |
+| G | evidence-grounded AI, opt-in/budget/schedule/security | implemented; real GapGPT findings/usage and SQL isolation/budget/scheduler tests verified; reconciliation UI/final breadth QC pending |
 | H | independent second application, C#/Python clients | pending |
 | I | retention, self-health/runbook, Help, full QC/cleanup | pending |
 
@@ -76,6 +76,59 @@ boundaries; 4. Registry; 5. Event contract; 6. OpenAPI; 7. SDK authentication;
 ## Final verdict
 
 IN PROGRESS. Full implementation and acceptance are not yet established.
+
+## Investigator / owner-requested local administration checkpoint — 2026-10-17
+
+- Provider blocker resolved by owner-supplied GapGPT endpoint/model/credential
+  and explicit 100,000-token monthly input+output budget. Secret was sent only
+  through local process input to Application-bound encrypted DB storage; neither
+  repository, Evidence, Audit nor application stdout contains plaintext.
+- `/models` returned 200 and listed `gpt-6-luna` and `gapgpt/whisper-1`. Hub does
+  not have a transcription operation; the latter is recorded only as a disabled
+  local preference, not a falsely advertised active feature. Tenant customer
+  settings/provider credentials were not overwritten.
+- Local migration 067 adds isolated AI configuration, Investigation and attempt
+  ledger tables. Forward rehearsal now has 78 migrations/23 Hub tables. Runtime
+  cannot read encrypted configuration; terminal attempts are immutable.
+- Input/context/output and response-body bounds, exact endpoint allowlist,
+  encrypted credential/Application binding, no redirects/tools, safe failures,
+  citation allowlist/schema validation, per-tenant findings and usage isolation
+  are tested. Budget reservations share an Application advisory lock; attempts
+  across environments compete for the same monthly budget. Unknown usage stays
+  held. Explicit ADMIN-only human reconciliation now settles only UNKNOWN
+  attempts with provider-verified counts, mandatory reason and real-actor Audit;
+  replay is idempotent and conflicting terminal counts cannot be rewritten.
+  Cross-tenant denial and ledger/Audit behavior have real DB tests. Console
+  reconciliation controls remain to be completed.
+- Five initial real provider investigations completed with validated persisted
+  output and settled counts (11,935 input + 2,845 output tokens at the first
+  snapshot); subsequent runs were also visible in the local Console. The real
+  output explicitly reported insufficient evidence where appropriate and cited
+  only supplied IDs. No model-driven mutation or customer allowance consumption.
+- Actual schedule supports deduplicated UTC daily/weekly summaries, configured
+  periodic unresolved Issue review and critical Incident review. Scheduler,
+  HTTP authentication/configuration/projections and parallel budget denial have
+  real PostgreSQL acceptance, not only mocked SQL assertions.
+- Local authenticated AI UI displayed checked activation/external-processing,
+  correct GapGPT URL/model, 100000 budget, empty credential input with a
+  has-credential notice, real usage and persisted results. At widths
+  375/768/1024/1440 document widths were <= viewport and direction was RTL.
+- Human workspace-management/cleanup amendment is separately documented in
+  `docs/LOCAL_WORKSPACE_ADMIN_EVIDENCE.md` and DEC-039. No target host touched.
+- Full GOAL-069 remains IN PROGRESS: maintenance/retention, alert delivery,
+  richer analytics/incident workspaces, reconciliation, complete OpenAPI,
+  second-consumer/real offline/identity/Help/final QC are not waived.
+- Final regression exposed an existing inter-file API integration race: the
+  personal-support test temporarily suspends the shared singleton catalog while
+  personal-capacity concurrently requests support. API test files now execute
+  serially against their shared database. Within-test parallel reservation and
+  acceptance tests remain concurrent; no product authorization/capacity rule
+  was weakened. Other independent packages still test in parallel.
+- Final checkpoint `pnpm verify:release` completed successfully after removing
+  overlapping invocations: API 147, Web 28, Hub 105 (40 SDK/core/adapters,
+  62 server/provider tests and 3 Console tests). All builds/lint/typechecks and
+  staged diff validation passed. The 78-migration rehearsal passed; temporary
+  test database/role cleanup completed. The existing Vite size warning remains.
 
 ## Host/operational Console checkpoint — LOCAL, 2026-10-17
 
