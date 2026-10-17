@@ -37,7 +37,7 @@ Every requirement remains pending unless actual execution evidence is recorded.
 | D | IndexedDB/replay/backoff/logout/scope isolation | SDK protocol verified; real-browser IndexedDB/replay pending |
 | E | fingerprint, issues/incidents/rules/alerts | all rule scenarios verified; issue management and incident transitions implemented; full incident workspace/delivery pending |
 | F | feedback/user tracking, Console/live/analytics/export | own Feedback and operational Console/live/filter/CSV implemented; richer analytics and final workflow acceptance pending |
-| G | evidence-grounded AI, opt-in/budget/schedule/security | implemented; real GapGPT findings/usage and SQL isolation/budget/scheduler tests verified; reconciliation UI/final breadth QC pending |
+| G | evidence-grounded AI, opt-in/budget/schedule/security | implemented; real GapGPT findings/usage, SQL isolation/budget/scheduler and reconciliation UI verified; final breadth QC pending |
 | H | independent second application, C#/Python clients | pending |
 | I | retention, self-health/runbook, Help, full QC/cleanup | pending |
 
@@ -77,6 +77,35 @@ boundaries; 4. Registry; 5. Event contract; 6. OpenAPI; 7. SDK authentication;
 
 IN PROGRESS. Full implementation and acceptance are not yet established.
 
+## Human operational controls checkpoint — LOCAL, 2026-10-17
+
+- `GET .../ai/unknown-attempts` is bounded to 100 safe rows, ADMIN-only and
+  Application/environment/tenant RLS scoped. It returns safe attempt references,
+  model/outcome and held bound, never credential/prompt/evidence content.
+- Console has a human reconciliation form with empty input/output counts,
+  mandatory provider-verification acknowledgement and 10–500-character reason.
+  Invalid, fractional, negative or over-reserved counts are rejected. Zero is
+  permitted only when explicitly verified, not prefilled as a release shortcut.
+  Scope changes invalidate pending UI results; no automatic reconciliation.
+- Browser acceptance used the real local authenticated admin and two existing
+  UNKNOWN attempts: list resolved, counts were empty, submit was disabled until
+  acknowledgement. No settlement was submitted because provider records had
+  not been independently inspected. The form was cancelled without DB changes.
+  At 375/768/1024/1440 document width stayed <= viewport and direction was RTL.
+- Incident API now accepts explicit assignment/null-unassignment and human
+  notes independently of the canonical status-transition operation. Actor and
+  assignee require operator authority; writes plus sanitized activity/Audit
+  share one authorized RLS transaction. Detail returns related Issue/Feedback
+  and separately labeled persisted AI findings. No automatic AI mutation.
+- Real PostgreSQL tests cover unauthorized actor, unauthorized assignee,
+  wrong-tenant target, secret redaction, real-actor Audit, related projections
+  and unassignment. Console count-validation tests are executable. Full real
+  Incident end-to-end acceptance and remaining overall Goal gates still apply.
+
+Final checkpoint gate passes: 147 API, 28 Web, 109 Hub (40 SDK/core/adapters,
+63 server/provider and 6 Console tests), builds/lint/typechecks, 78-migration
+rehearsal and diff validation. Existing Vite chunk-size advisory remains.
+
 ## Investigator / owner-requested local administration checkpoint — 2026-10-17
 
 - Provider blocker resolved by owner-supplied GapGPT endpoint/model/credential
@@ -99,7 +128,7 @@ IN PROGRESS. Full implementation and acceptance are not yet established.
   attempts with provider-verified counts, mandatory reason and real-actor Audit;
   replay is idempotent and conflicting terminal counts cannot be rewritten.
   Cross-tenant denial and ledger/Audit behavior have real DB tests. Console
-  reconciliation controls remain to be completed.
+  reconciliation controls are covered by the later human-controls checkpoint.
 - Five initial real provider investigations completed with validated persisted
   output and settled counts (11,935 input + 2,845 output tokens at the first
   snapshot); subsequent runs were also visible in the local Console. The real

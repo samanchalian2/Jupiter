@@ -108,12 +108,16 @@ describe('independent operational AI with real PostgreSQL',()=>{
   const inv=await service.request(root,scope,'DAILY',null,'reconcile');await service.execute(await claimed(service,inv.id));
   const attempt=await database.worker(async c=>(await c.query<{id:string}>('SELECT id FROM observability.ai_attempts WHERE investigation_id=$1',[inv.id])).rows[0]);
   const command={inputTokens:30,outputTokens:20,reason:'Verified against provider usage record'};
+  expect((await service.unknownAttempts(root,scope)).map(row=>row.id)).toContain(attempt.id);
+  expect(await service.unknownAttempts(root,{...scope,tenantReference:'other-tenant'})).toEqual([]);
+  await expect(service.unknownAttempts(ordinary,scope)).rejects.toThrow('OPERATIONAL_ACCESS_DENIED');
   await expect(service.reconcile(ordinary,scope,attempt.id,command)).rejects.toThrow('OPERATIONAL_ACCESS_DENIED');
   await expect(service.reconcile(root,{...scope,tenantReference:'wrong'},attempt.id,command)).rejects.toThrow('AI_ATTEMPT_NOT_FOUND');
   await expect(service.reconcile(root,scope,attempt.id,command)).resolves.toEqual({reconciled:true,idempotent:false});
   await expect(service.reconcile(root,scope,attempt.id,command)).resolves.toEqual({reconciled:true,idempotent:true});
   await expect(service.reconcile(root,scope,attempt.id,{...command,inputTokens:31})).rejects.toThrow('AI_RECONCILIATION_CONFLICT');
   expect(Number((await service.usage(root,scope))[0].held_tokens)).toBe(0);
+  expect(await service.unknownAttempts(root,scope)).toEqual([]);
   const audit=await database.control(async c=>(await c.query('SELECT actor_principal_id FROM observability.audit WHERE application_id=$1 AND action=$2',[scope.applicationId,'AI_USAGE_RECONCILED'])).rows);expect(audit).toEqual([{actor_principal_id:root}]);
  });
  it('AI HTTP configuration and scoped reports remain authenticated and never return credentials',async()=>{
@@ -124,6 +128,7 @@ describe('independent operational AI with real PostgreSQL',()=>{
   expect((await api.dispatch({clientKey:'anon',method:'GET',path:base+'/configuration'})).status).toBe(401);
   const created=await api.dispatch({...request,method:'POST',path:base+'/investigations',body:{environmentId:scope.environmentId,tenantReference:scope.tenantReference,kind:'DAILY',targetReference:null,idempotencyKey:'http-daily'}});expect(created.status).toBe(201);
   const listed=await api.dispatch({...request,method:'GET',path:base+`/investigations?environmentId=${scope.environmentId}&tenantReference=${scope.tenantReference}`});expect(listed.status).toBe(200);expect((listed.body as unknown[]).length).toBe(1);
+  const unknown=await api.dispatch({...request,method:'GET',path:base+`/unknown-attempts?environmentId=${scope.environmentId}&tenantReference=${scope.tenantReference}`});expect(unknown.status).toBe(200);expect(unknown.body).toEqual([]);
  });
 });
 describe('Hub registry/auth/atomic storage and real PostgreSQL isolation',()=>{
@@ -189,6 +194,23 @@ describe('Hub registry/auth/atomic storage and real PostgreSQL isolation',()=>{
   it('feedback event association requires an event owned by the same user and scope',async()=>{const service=new FeedbackService(database,registry),f=event({actorReference:'otherUser'});await ingestion.ingest({events:[f]},{...scope(),actorReference:'otherUser'});await expect(service.submit(scope(),{feedbackId:randomUUID(),category:'BUG',subject:'Problem',description:'Steps',relatedEventId:f.eventId})).rejects.toThrow('EVENT_REFERENCE_NOT_FOUND');});
   it('aggregation is idempotent and counts occurrences separately from affected actors',async()=>{const engine=new IssueEngine(database,registry),code=`test.${randomUUID()}`;for(const actor of ['actorA','actorA','actorB'])await ingestion.ingest({events:[event({eventCode:code,actorReference:actor})]},{...scope(),actorReference:actor});const jobs=await engine.queue.claim(randomUUID(),50,['AGGREGATE']);for(const job of jobs){expect(await engine.aggregate(job)).toBe(true);expect(await engine.aggregate(job)).toBe(false);}const row=await database.scoped(scope(),async c=>(await c.query(`SELECT i.occurrence_count,count(DISTINCT e.actor_reference)::int actors FROM observability.issues i JOIN observability.issue_events l ON l.issue_id=i.id JOIN observability.events e ON e.event_id=l.event_id AND e.application_id=l.application_id AND e.environment_id=l.environment_id WHERE e.event_code=$1 GROUP BY i.id`,[code])).rows[0]);expect(Number(row.occurrence_count)).toBe(3);expect(row.actors).toBe(2);});
   it('normal 403 rejection creates no Issue even with a forged CRITICAL claim',async()=>{const f=event({httpStatus:403,severity:'CRITICAL'});await ingestion.ingest({events:[f]},scope());const engine=new IssueEngine(database,registry);for(const job of await engine.queue.claim(randomUUID(),50,['AGGREGATE']))await engine.aggregate(job);const count=await database.scoped(scope(),async c=>(await c.query('SELECT count(*)::int total FROM observability.issue_events WHERE event_id=$1',[f.eventId])).rows[0].total);expect(count).toBe(0);});
+  it('incident notes/assignment are authorized, scoped, sanitized and auditable',async()=>{
+    const code=`incident-notes-${randomUUID()}`,engine=new IssueEngine(database,registry),ops=new OperationsService(database,registry);
+    for(let i=0;i<6;i++)await ingestion.ingest({events:[event({eventCode:code})]},scope());
+    for(const job of await engine.queue.claim(randomUUID(),50,['AGGREGATE']))await engine.aggregate(job);
+    await new MonitoringEngine(database,registry).ensureDefaults(appA);await new MonitoringEngine(database,registry).evaluate();
+    const incident=await database.scoped(scope(),async c=>(await c.query<{id:string}>(`SELECT i.id FROM observability.incidents i JOIN observability.issue_events l ON l.issue_id=i.issue_id JOIN observability.events e ON e.application_id=l.application_id AND e.environment_id=l.environment_id AND e.event_id=l.event_id WHERE e.event_code=$1 LIMIT 1`,[code])).rows[0]);expect(incident).toBeDefined();
+    const dataScope={applicationId:appA,environmentId:envA,tenantReference:'shared-tenant-id'};
+    const stranger=await registry.principal({issuer:'incident',subject:randomUUID(),displayName:'No grant'});
+    await expect(ops.annotateIncident(stranger,dataScope,incident.id,{note:'Denied note',reason:'No access'})).rejects.toThrow('OPERATIONAL_ACCESS_DENIED');
+    await expect(ops.annotateIncident(root,dataScope,incident.id,{assignedPrincipalId:stranger,reason:'Invalid target'})).rejects.toThrow('OPERATIONAL_ACCESS_DENIED');
+    await expect(ops.annotateIncident(root,{...dataScope,tenantReference:'other'},incident.id,{note:'Wrong scope',reason:'Cross tenant'})).rejects.toThrow('INCIDENT_NOT_FOUND');
+    await ops.annotateIncident(root,dataScope,incident.id,{assignedPrincipalId:ordinary,note:'password=acceptance-placeholder investigate safely',reason:'Assign investigator'});
+    const detail=await ops.detail(root,dataScope,'incidents',incident.id);expect(detail.assigned_principal_id).toBe(ordinary);expect(detail.issues).toHaveLength(1);expect(detail.ai_findings).toEqual([]);
+    expect(JSON.stringify(detail.activity)).not.toContain('acceptance-placeholder');expect(detail.activity.some((row:{kind:string})=>row.kind==='NOTE_ADDED')).toBe(true);
+    const audit=await database.control(async c=>(await c.query('SELECT action FROM observability.audit WHERE application_id=$1 AND metadata->>\'incidentId\'=$2',[appA,incident.id])).rows);expect(audit.map(row=>row.action).sort()).toEqual(['INCIDENT_ASSIGNED','INCIDENT_NOTE_ADDED']);
+    await ops.annotateIncident(root,dataScope,incident.id,{assignedPrincipalId:null,reason:'Unassign after review'});expect((await ops.detail(root,dataScope,'incidents',incident.id)).assigned_principal_id).toBeNull();
+  });
   it('rule detection creates one incident and one alert, without trusting browser CRITICAL',async()=>{
     const engine=new IssueEngine(database,registry),monitor=new MonitoringEngine(database,registry),code=`burst.${randomUUID()}`;
     await monitor.ensureDefaults(appA);for(let n=0;n<6;n++)await ingestion.ingest({events:[event({eventCode:code,severity:'CRITICAL'})]},scope());for(const job of await engine.queue.claim(randomUUID(),50,['AGGREGATE']))await engine.aggregate(job);

@@ -6,12 +6,19 @@
 explicit GapGPT settings and 100,000 monthly token budget. Local configuration
 and real successful bounded AI calls are now established. Do not ask for an
 OpenAI key or silently switch providers. Continue the full Goal's remaining
-requirements: richer evidence/analytics, unknown-usage reconciliation UI, complete
+requirements: richer evidence/analytics, complete
 incident management, alerts/delivery, maintenance/retention/self-monitoring,
 OpenAPI, second reference consumer, actual offline/browser identity acceptance,
 Product Help and final requirement-by-requirement QC. AI/Console implementation
 alone does not complete the Goal. Local workspace cleanup/management amendment
 is recorded in DEC-039 and `docs/LOCAL_WORKSPACE_ADMIN_EVIDENCE.md`.
+
+Unknown-usage Console control is now implemented and locally browser-checked
+without submitting invented counts. Incident notes/assignment and related
+Issue/Feedback/AI projection are implemented with real DB security/Audit tests.
+Next continue alerts/delivery, maintenance/retention/self-monitoring, remaining
+incident/analytics completeness, OpenAPI and independent-reference/offline/Help
+acceptance. Do not shrink the original A–I Definition of Done.
 
 Current continuation (2026-10-17): host adapters and the independent Console
 now exist. Read the latest Evidence checkpoint before acting. Continue this

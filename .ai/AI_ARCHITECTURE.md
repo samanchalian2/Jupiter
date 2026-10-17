@@ -18,8 +18,9 @@ There is no tool execution or automatic business/permission/incident mutation.
 Scheduling is deduplicated and concrete-tenant scoped (periodic/critical and
 UTC daily/weekly). Human ADMIN reconciliation of UNKNOWN attempts requires a
 reason and exact provider-verified counts, with immutable terminal values and
-real-actor Audit. Remaining reconciliation UI and full-Goal acceptance are
-explicitly unfinished. The requested transcription model is only a disabled
+real-actor Audit. Console reconciliation requires explicit counts, verification
+acknowledgement and reason; values start blank, not zero. Full-Goal acceptance
+remains unfinished. The requested transcription model is only a disabled
 local preference because Hub has no audio-input operation.
 
 ## GOAL-063 personal AI capacity foundation

@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-10-17 — GOAL-069 human operations controls (IN PROGRESS)
+
+- Added scoped ADMIN unknown-attempt listing and Console reconciliation form:
+  explicit counts, verification acknowledgement, reason and no default zeros.
+- Added authorized Incident assignment/unassignment and sanitized human notes,
+  immutable activity/Audit attribution, related Issue/Feedback and AI findings.
+- Real DB tests verify tenant/actor/assignee denial, redaction and Audit;
+  Console tests cover invalid/negative/fractional/over-bound token counts.
+- Authenticated local browser verified actual unknown attempts and blank/disabled
+  reconciliation at 375/768/1024/1440 RTL without document overflow. No fake
+  provider count or live Incident mutation was submitted. No host promotion.
+
 ## 2026-10-17 — Local GapGPT and explicit workspace administration
 
 - Added independent Investigator persistence (067), AES-GCM Application-bound

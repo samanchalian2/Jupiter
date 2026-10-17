@@ -1,5 +1,17 @@
 # Current State
 
+**2026-10-17 operational human controls checkpoint (GOAL-069 IN PROGRESS):**
+The Console now exposes ADMIN-only unknown-usage review with blank counts,
+provider-verification acknowledgement, mandatory reason and immutable settlement
+semantics. A bounded scoped API lists unknown attempts without credentials or
+raw evidence. Local authenticated acceptance verified two actual held attempts,
+disabled unconfirmed submit and RTL/no document overflow at all four widths;
+no unverified production-like count was submitted. Incident management now
+supports authorized operator assignment/removal and sanitized internal notes
+with activity/Audit; detail includes related Issue/Feedback and separately
+labeled AI findings. Real DB tests cover denied actors/assignees, wrong tenants,
+sanitization, Audit and unassignment. Full remaining Goal scope is not complete.
+
 **2026-10-17 owner-requested local AI/workspace amendment:** GapGPT is configured
 for the Jupiter Hub Application with encrypted credentials, `gpt-6-luna` and the
 owner-approved 100,000 monthly combined input/output token budget. Actual provider
