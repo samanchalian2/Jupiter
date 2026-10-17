@@ -2,6 +2,16 @@
 
 ## GOAL-069 — Reusable Observability Hub (IN PROGRESS)
 
+Current continuation (2026-10-17): host adapters and the independent Console
+now exist. Read the latest Evidence checkpoint before acting. Continue this
+same Goal with independent Investigator configuration/encrypted credentials,
+atomic token budget/scheduling/evidence validation, alert delivery and
+retention/self-monitoring; complete Console gaps and API/OpenAPI, then real
+second-consumer/offline/identity/browser/Help acceptance and final QC. Do not
+treat the earlier foundation checklist below as the current implementation
+boundary. Local API 3000 and Jupiter Web 5174 are the acceptance services;
+5173 belongs to another application and must not be stopped or repurposed.
+
 Implement the approved Observability plan in internal phases A–I. The full
 scope and acceptance checklist are in `docs/GOAL_069_EVIDENCE.md`; DEC-038
 records boundaries, PostgreSQL queue, independent permissions, offline identity

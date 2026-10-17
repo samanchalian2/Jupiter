@@ -1,5 +1,23 @@
 # Current State
 
+**GOAL-069 local host/operations checkpoint (IN PROGRESS, 2026-10-17):**
+Migrations 063–066 are now applied to the local Jupiter database only. The
+Nest host uses the generic Hub with verified Jupiter identity, user/tenant-bound
+five-minute Browser credentials, logout/password revocation and a Jupiter-only
+managed Platform Admin grant. A parameterized, audited local bootstrap selected
+the existing administrator; AI remains disabled. The independent Operations UI
+package supplies scoped queries, live pause/resume, detail/actions, CSV,
+Application creation and rule editing. All authenticated users can reach
+`/feedback`, including users without membership; `/operations` is independent
+of the Jupiter tenant router. Real local browser checks verified authenticated
+RTL overview at 375/768/1024/1440 without document overflow, and Feedback at
+375. Jupiter Web uses 5174 because 5173 belongs to another local application,
+which was not modified. Latest gate: 146 API, 27 Web, 93 Hub tests (including
+50 real PostgreSQL tests and 77-migration rehearsal); build/lint/typecheck pass.
+These are checkpoint results, not complete UI/AI/offline acceptance. Full AI,
+retention/self-monitoring, alert delivery, second reference consumer, OpenAPI,
+published Help and final acceptance remain required. No target host deployed.
+
 **GOAL-069 Observability Hub (IN PROGRESS, 2026-10-14):** Approved implementation
 has started. DEC-038 records the reusable boundary, scoped operational access,
 PostgreSQL durable queue and separate AI accounting. Local acceptance is the

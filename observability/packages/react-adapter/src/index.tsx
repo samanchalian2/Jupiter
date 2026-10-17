@@ -7,7 +7,7 @@ export function ObservabilityProvider({sdk,children}:{sdk:BrowserSdk;children:Re
 }
 export function useObservability(){return useContext(SdkContext);}
 export function useRouteContext(path:string){const sdk=useObservability();useEffect(()=>{if(sdk)void sdk.capture({category:'PERFORMANCE',severity:'INFO',eventCode:'ui.route_changed',normalizedMessage:'Navigation completed',routeTemplate:routeTemplate(path),safeMetadata:{outcome:'SUCCESS'}});},[sdk,path]);}
-export interface BoundaryProps {sdk:BrowserSdk;children:ReactNode;fallback:ReactNode|((reset:()=>void)=>ReactNode);componentName?:string;}
+export interface BoundaryProps {sdk:Pick<BrowserSdk,'capture'>;children:ReactNode;fallback:ReactNode|((reset:()=>void)=>ReactNode);componentName?:string;}
 export class ObservabilityErrorBoundary extends Component<BoundaryProps,{failed:boolean}> {
   state={failed:false};
   static getDerivedStateFromError(){return {failed:true};}

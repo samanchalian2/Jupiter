@@ -3,12 +3,16 @@ import { RegistryService, type VerifiedPrincipal } from './registry.js';
 import { IngestionService } from './ingestion.js';
 import { HubDatabase } from './database.js';
 import { FeedbackService } from './feedback.js';
+import { OperationsService, type OperationScope, type QueryFilter, type Resource } from './operations.js';
+import { IssueEngine } from './engine.js';
+import { MonitoringEngine } from './rules.js';
 
 /** Host-supplied verified identity. Implementations can use JWT/OIDC/session
  * exchange; the core never imports a product's user or membership model. */
 export interface OperationalIdentityProvider {verify(bearer:string):Promise<VerifiedPrincipal>;}
 export interface HubHttpRequest {method:string;path:string;authorization?:string;origin?:string;body?:unknown;clientKey:string;}
 export interface HubHttpResponse {status:number;body:unknown;headers?:Record<string,string>;}
+export interface IngestionPolicy {allow(credential:{applicationId:string;environmentId:string;actorReference:string|null;tenantReference:string|null;source:string}):Promise<boolean>;}
 export class BoundedRateLimiter {
   private readonly buckets=new Map<string,{count:number;expires:number}>();
   constructor(private readonly limit:number,private readonly maxKeys=10_000){}
@@ -24,18 +28,29 @@ export class HubHttpApi {
   private readonly mintLimiter=new BoundedRateLimiter(60);
   private readonly operationsLimiter=new BoundedRateLimiter(120);
   private readonly feedbackLimiter=new BoundedRateLimiter(10);
-  constructor(private readonly database:HubDatabase,private readonly registry:RegistryService,private readonly ingestion:IngestionService,private readonly identities:OperationalIdentityProvider){}
+  constructor(private readonly database:HubDatabase,private readonly registry:RegistryService,private readonly ingestion:IngestionService,private readonly identities:OperationalIdentityProvider,private readonly ingestionPolicy?:IngestionPolicy){}
   private bearer(request:HubHttpRequest){const match=/^Bearer ([A-Za-z0-9._~-]{16,4096})$/.exec(request.authorization??'');if(!match)throw new ContractError('AUTHENTICATION_REQUIRED');return match[1];}
   private body(request:HubHttpRequest){if(!isRecord(request.body))throw new ContractError('INVALID_REQUEST');return request.body;}
   async dispatch(request:HubHttpRequest):Promise<HubHttpResponse>{
+    const origin=request.origin;
+    let headers:Record<string,string>={};
+    if(origin){
+      let allowed=false;try{allowed=Boolean(await this.database.control(async c=>(await c.query('SELECT 1 FROM observability.applications WHERE enabled=true AND $1=ANY(allowed_origins) LIMIT 1',[origin])).rowCount));}catch{/* Data routes will return their own safe failure. */}
+      if(allowed)headers={'Access-Control-Allow-Origin':origin,Vary:'Origin','Access-Control-Allow-Headers':'authorization,content-type,x-request-id,traceparent,idempotency-key','Access-Control-Allow-Methods':'GET,POST,PUT,OPTIONS','Access-Control-Max-Age':'300'};
+      if(request.method==='OPTIONS')return{status:allowed?204:403,body:allowed?null:{reasonCode:'ORIGIN_DENIED'},headers};
+    }
+    const result=await this.execute(request);return{...result,headers:{...headers,...result.headers}};
+  }
+  private async execute(request:HubHttpRequest):Promise<HubHttpResponse>{
     try{
-      const path=request.path.split('?')[0].replace(/\/$/,'')||'/';
+      const url=new URL(request.path,'http://hub.invalid'),path=url.pathname.replace(/\/$/,'')||'/';
       if(request.method==='GET'&&path==='/health')return{status:200,body:{service:'observability-hub',status:'ok',timestamp:new Date().toISOString()}};
       if(request.method==='GET'&&path==='/ready'){try{await this.database.control(async c=>{await c.query('SELECT 1 FROM observability.applications LIMIT 1');});return{status:200,body:{service:'observability-hub',status:'ready'}};}catch{return{status:503,body:{reasonCode:'STORAGE_UNAVAILABLE'}};}}
       if(!this.requestLimiter.allow(request.clientKey.slice(0,160)))return{status:429,body:{reasonCode:'REQUEST_RATE_LIMIT'},headers:{'Retry-After':'60'}};
       const token=this.bearer(request);
       if(request.method==='POST'&&path==='/events/batch'){
         const credential=await this.registry.credential(token,'events:write');
+        await this.actorAllowed(credential);
         if(!this.ingestionLimiter.allow(credential.credentialId))return{status:429,body:{reasonCode:'INGESTION_RATE_LIMIT'},headers:{'Retry-After':'60'}};
         await this.origin(credential.applicationId,credential.source,request.origin);
         return{status:200,body:await this.ingestion.ingest(request.body,{...credential,source:credential.source})};
@@ -47,12 +62,13 @@ export class HubHttpApi {
         return{status:201,body:await this.registry.mintBrowserCredential(token,{applicationId:body.applicationId,environmentId:body.environmentId,actorReference:body.actorReference===undefined?null:body.actorReference as string|null,tenantReference:body.tenantReference===undefined?null:body.tenantReference as string|null})};
       }
       if(path==='/feedback'&&request.method==='POST'){
-        const credential=await this.registry.credential(token,'feedback:write');await this.origin(credential.applicationId,credential.source,request.origin);
+        const credential=await this.registry.credential(token,'feedback:write');await this.actorAllowed(credential);await this.origin(credential.applicationId,credential.source,request.origin);
         if(!this.feedbackLimiter.allow(`${credential.applicationId}:${credential.actorReference}`))return{status:429,body:{reasonCode:'FEEDBACK_RATE_LIMIT'},headers:{'Retry-After':'60'}};
         return{status:201,body:await new FeedbackService(this.database,this.registry).submit(credential,request.body)};
       }
       if(request.method==='GET'&&(path==='/feedback/mine'||/^\/feedback\/[0-9a-f-]{36}$/.test(path))){
         const credential=await this.registry.credential(token,'feedback:own:read'),service=new FeedbackService(this.database,this.registry);
+        await this.actorAllowed(credential);
         if(request.origin)await this.origin(credential.applicationId,credential.source,request.origin);
         return{status:200,body:path==='/feedback/mine'?await service.mine(credential):await service.ownDetail(credential,path.slice('/feedback/'.length))};
       }
@@ -60,6 +76,30 @@ export class HubHttpApi {
       let verified:VerifiedPrincipal;try{verified=await this.identities.verify(token);}catch{throw new ContractError('AUTHENTICATION_REQUIRED');}
       const principalId=await this.registry.principal(verified);
       if(!this.operationsLimiter.allow(principalId))return{status:429,body:{reasonCode:'OPERATIONS_RATE_LIMIT'}};
+      const configurationRoute=/^\/operations\/applications\/([0-9a-f-]{36})\/origins$/.exec(path);
+      if(configurationRoute&&request.method==='PUT'){const body=this.body(request);if(Object.keys(body).some(k=>!['allowedOrigins','reason'].includes(k))||!Array.isArray(body.allowedOrigins)||typeof body.reason!=='string')throw new ContractError('INVALID_ORIGINS');return{status:200,body:await this.registry.configureApplication(principalId,configurationRoute[1],{allowedOrigins:body.allowedOrigins as string[],reason:body.reason})};}
+      const dataRoute=/^\/operations\/applications\/([0-9a-f-]{36})\/(overview|events|issues|incidents|feedback|alerts|export)(?:\/([0-9a-f-]{36}))?(?:\/(transition|replies))?$/.exec(path);
+      if(dataRoute&&isUuid(dataRoute[1])){
+        const allowedQuery=['environmentId','tenantReference','from','to','q','severity','category','release','status','page','pageSize','resource'];if([...url.searchParams.keys()].some(k=>!allowedQuery.includes(k)||url.searchParams.getAll(k).length!==1))throw new ContractError('INVALID_QUERY');
+        const body=request.method==='GET'?{}:this.body(request);
+        const environmentId=request.method==='GET'?url.searchParams.get('environmentId'):body.environmentId;if(!isUuid(environmentId))throw new ContractError('INVALID_DATA_SCOPE');
+        const tenantReference=request.method==='GET'?(url.searchParams.has('tenantReference')?url.searchParams.get('tenantReference')||null:undefined):body.tenantReference as string|null|undefined;
+        const scope:OperationScope={applicationId:dataRoute[1],environmentId,tenantReference},ops=new OperationsService(this.database,this.registry);
+        const filter:QueryFilter={};for(const key of ['from','to','q','severity','category','release','status'] as const){const value=url.searchParams.get(key);if(value!==null)filter[key]=value;}for(const key of ['page','pageSize'] as const){const value=url.searchParams.get(key);if(value!==null){if(!/^\d{1,4}$/.test(value))throw new ContractError('INVALID_PAGINATION');filter[key]=Number(value);}}
+        if(request.method==='GET'){
+          if(dataRoute[2]==='overview')return{status:200,body:await ops.overview(principalId,scope,filter)};
+          if(dataRoute[2]==='export'){const resource=url.searchParams.get('resource');if(!['events','issues','incidents','feedback','alerts'].includes(resource??''))throw new ContractError('INVALID_RESOURCE');return{status:200,body:await ops.exportCsv(principalId,scope,resource as Resource,filter),headers:{'Content-Type':'text/csv; charset=utf-8','Content-Disposition':'attachment; filename="observability.csv"'}};}
+          return{status:200,body:dataRoute[3]?await ops.detail(principalId,scope,dataRoute[2] as Resource,dataRoute[3]):await ops.list(principalId,scope,dataRoute[2] as Resource,filter)};
+        }
+        if(request.method==='POST'&&dataRoute[2]==='issues'&&dataRoute[3]&&!dataRoute[4]){if(Object.keys(body).some(k=>!['environmentId','tenantReference','status','assignedPrincipalId','note','reason'].includes(k)))throw new ContractError('INVALID_ISSUE_COMMAND');return{status:200,body:await ops.changeIssue(principalId,scope,dataRoute[3],{status:body.status as 'OPEN',assignedPrincipalId:body.assignedPrincipalId as string|null|undefined,note:body.note as string|undefined,reason:body.reason as string})};}
+        if(request.method==='POST'&&dataRoute[2]==='incidents'&&dataRoute[3]&&dataRoute[4]==='transition'){if(Object.keys(body).some(k=>!['environmentId','tenantReference','status','reason'].includes(k))||typeof body.status!=='string'||typeof body.reason!=='string')throw new ContractError('INVALID_INCIDENT_COMMAND');const dataScope=await this.registry.dataScope(principalId,scope,['ADMIN','OPERATOR']);return{status:200,body:await new IssueEngine(this.database,this.registry).transitionIncident(principalId,dataScope,dataRoute[3],body.status as 'TRIAGED',body.reason)};}
+        if(request.method==='POST'&&dataRoute[2]==='feedback'&&dataRoute[3]&&dataRoute[4]==='replies'){if(Object.keys(body).some(k=>!['environmentId','tenantReference','body','internal','status'].includes(k)))throw new ContractError('INVALID_FEEDBACK_RESPONSE');const dataScope=await this.registry.dataScope(principalId,scope,['ADMIN','OPERATOR']);return{status:201,body:await new FeedbackService(this.database,this.registry).respond(principalId,dataScope,dataRoute[3],{body:body.body as string,internal:body.internal as boolean|undefined,status:body.status as 'NEW'})};}
+      }
+      const ruleRoute=/^\/operations\/applications\/([0-9a-f-]{36})\/rules$/.exec(path);
+      if(ruleRoute&&isUuid(ruleRoute[1])){
+        if(request.method==='GET')return{status:200,body:await this.database.control(async c=>{await this.registry.authorize(c,principalId,ruleRoute[1],['ADMIN','OPERATOR','ANALYST','VIEWER']);return(await c.query('SELECT code,enabled,threshold,minimum_samples,window_seconds,cooldown_seconds FROM observability.monitoring_rules WHERE application_id=$1 ORDER BY code',[ruleRoute[1]])).rows;})};
+        if(request.method==='PUT'){const body=this.body(request);if(Object.keys(body).some(k=>!['code','enabled','threshold','minimum_samples','window_seconds','cooldown_seconds','reason'].includes(k)))throw new ContractError('INVALID_RULE');await new MonitoringEngine(this.database,this.registry).configure(principalId,ruleRoute[1],body as never);return{status:200,body:{updated:true}};}
+      }
       if(path==='/operations/applications'&&request.method==='GET')return{status:200,body:await this.database.control(async c=>{
         const all=await this.registry.isSuperAdmin(c,principalId);
         return(await c.query(`SELECT a.id,a.slug,a.name,a.description,a.enabled,a.created_at FROM observability.applications a WHERE $1::boolean OR EXISTS(SELECT 1 FROM observability.access_grants g JOIN observability.principals p ON p.id=g.principal_id WHERE g.application_id=a.id AND g.principal_id=$2 AND p.active=true AND g.revoked_at IS NULL) ORDER BY a.name LIMIT 100`,[all,principalId])).rows;
@@ -80,4 +120,5 @@ export class HubHttpApi {
     }
   }
   private async origin(applicationId:string,source:string,origin?:string){if(source!=='BROWSER')return;const allowed=await this.database.control(async c=>(await c.query<{allowed_origins:string[]}>('SELECT allowed_origins FROM observability.applications WHERE id=$1',[applicationId])).rows[0]?.allowed_origins??[]);if(!origin||!allowed.includes(origin))throw new ContractError('BROWSER_ORIGIN_DENIED');}
+  private async actorAllowed(credential:Parameters<IngestionPolicy['allow']>[0]){if(this.ingestionPolicy&&!(await this.ingestionPolicy.allow(credential)))throw new ContractError('INVALID_INGESTION_CREDENTIAL');}
 }

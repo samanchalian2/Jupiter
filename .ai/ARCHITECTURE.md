@@ -11,6 +11,15 @@ Jupiter integration belongs to its own host adapter. DEC-038 records the
 approved extraction boundary and actual PostgreSQL queue choice; Redis/BullMQ
 descriptions below are historical, not executable Worker dependencies today.
 
+The current Jupiter adapter resolves identities/memberships server-side and
+maps Platform Admin only to the configured Jupiter Application through a
+managed grant, leaving manual grants distinct. `observability/console` accepts
+a transport port, not Jupiter sessions; the host supplies authenticated fetch
+and semantic theme tokens. Browser capture excludes Hub traffic and external
+resource URLs to prevent recursion and signed-URL leakage. Control-plane
+queries switch to the limited `observability_control` role; event/feedback
+queries still switch to runtime RLS in the same authorization transaction.
+
 ## GOAL-060 Personal Service architecture
 
 Personal service remains inside the modular monolith. A personal workspace is

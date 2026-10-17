@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-10-17 — GOAL-069 host and Operations UI checkpoint (IN PROGRESS)
+
+- Added restricted control-plane DB role, immutable mutation Audit/Issue notes
+  and separately managed host-role mappings through forward migrations 065–066.
+- All nine rule scenarios now have real persisted tests, including a negative
+  no-release-change regression case. Operational filters, scoped drill-down,
+  safe CSV, origin policy and issue actions are executable.
+- Added Jupiter Nest/capture/auth adapters, explicit local bootstrap, Browser
+  capture and universal authenticated Feedback. Credentials stay in memory;
+  queued data is sanitized and logout clears the old identity.
+- Added independently reusable Operations UI with host-injected transport and
+  a Jupiter Platform entry. Corrected overview filters so metrics/trend/impact
+  use one cohort rather than silently mixing filtered and unfiltered data.
+- Latest complete gate: 146 API/27 Web/93 Hub tests, builds/lint/typecheck,
+  77-migration disposable rehearsal. Local authenticated responsive smoke
+  passed; mandatory complete E2E/AI/Help/reference acceptance remains pending.
+- Only local Jupiter services/database changed. Existing legal-case Web on
+  5173 and both target hosts were left untouched. AI remains disabled.
+
 ## 2026-10-14 — GOAL-069 Observability Hub (IN PROGRESS)
 
 - Recorded full owner requirements and DEC-038, preserving GOAL-060 history.

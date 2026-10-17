@@ -14,7 +14,7 @@
     "lint": "pnpm -r lint",
     "test": "pnpm -r test",
     "typecheck": "pnpm -r typecheck",
-    "prepare:observability": "pnpm --filter '@observability/*' build",
+    "prepare:observability": "pnpm --filter \"@observability/*\" build",
     "verify:release": "pnpm build && pnpm -r lint && pnpm -r typecheck && pnpm -r test",
     "load:smoke": "node scripts/load-smoke.mjs"
   }

@@ -10,6 +10,16 @@ only sanitized envelopes and preserve original actor/tenant scope; credential
 material stays in memory. Feedback AI processing follows DEC-038, not a separate
 consent lifecycle. Full acceptance remains in progress.
 
+Jupiter Browser minting re-verifies the active account and any requested
+membership. Each subsequent Browser Hub call rechecks host-account/membership
+validity; logout/password revocation invalidates Browser credentials. An old
+account's late fetch completion is not recorded under a replacement identity.
+The host's managed Platform Admin mapping neither creates HUB_SUPER_ADMIN nor
+revokes independent manual Application grants. Operator mutation authorization
+and RLS data writes share a transaction; Audit stores action references, not
+feedback bodies or credentials. CSV neutralizes formula injection. Registered
+origins are auxiliary to credential verification and changes are audited.
+
 ## GOAL-060 Personal Service security
 
 Personal workspaces retain the normal tenant boundary: every ticket, message,

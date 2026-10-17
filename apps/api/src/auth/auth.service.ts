@@ -4,6 +4,7 @@ import { JwtService } from '@nestjs/jwt';
 import { DatabaseService } from '../database/database.service.js';
 import { hashPassword, verifyPassword } from './password.js';
 import { PersonalWorkspaceService } from '../personal-workspaces/personal-workspace.service.js';
+import { notifySessionRevocation } from '../observability/security-events.js';
 
 @Injectable()
 export class AuthService {
@@ -31,7 +32,7 @@ export class AuthService {
     return next;
   }
   async logout(token?: string) {
-    if (token) await this.database.query('UPDATE refresh_sessions SET revoked_at=now() WHERE token_hash=$1 AND revoked_at IS NULL', [this.hashToken(token)]);
+    if(token){const rows=(await this.database.query<{user_id:string}>('UPDATE refresh_sessions SET revoked_at=now() WHERE token_hash=$1 AND revoked_at IS NULL RETURNING user_id',[this.hashToken(token)])).rows;for(const row of rows)notifySessionRevocation(row.user_id);}
   }
   private async memberships(userId: string) {
     return (await this.database.query<{organization_id:string;organization_name:string;organization_slug:string;organization_status:string;workspace_type:'ORGANIZATION'|'PERSONAL';role_codes:string[]}>(
@@ -80,6 +81,7 @@ export class AuthService {
       await this.database.query('UPDATE users SET password_hash=CASE WHEN password_hash IS NULL THEN NULL ELSE $2 END,display_name=COALESCE($3,display_name),updated_at=now() WHERE id=$1', [userId, nextHash, displayName ?? null]);
       if (identity) await this.database.query('UPDATE authentication_identities SET password_hash=$2,updated_at=now() WHERE id=$1', [identity.id,nextHash]);
       await this.database.query('UPDATE refresh_sessions SET revoked_at=now() WHERE user_id=$1 AND revoked_at IS NULL', [userId]);
+      notifySessionRevocation(userId);
     } else if (displayName !== undefined) {
       await this.database.query('UPDATE users SET display_name=$2,updated_at=now() WHERE id=$1', [userId, displayName]);
     }

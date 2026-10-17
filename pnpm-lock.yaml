@@ -28,6 +28,21 @@ importers:
       '@nestjs/platform-express':
         specifier: ^11.1.6
         version: 11.1.28(@nestjs/common@11.1.28(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.28)
+      '@observability/contracts':
+        specifier: workspace:*
+        version: link:../../observability/packages/contracts
+      '@observability/core':
+        specifier: workspace:*
+        version: link:../../observability/packages/core
+      '@observability/nestjs-adapter':
+        specifier: workspace:*
+        version: link:../../observability/packages/nestjs-adapter
+      '@observability/node-sdk':
+        specifier: workspace:*
+        version: link:../../observability/packages/node-sdk
+      '@observability/server':
+        specifier: workspace:*
+        version: link:../../observability/server
       class-transformer:
         specifier: ^0.5.1
         version: 0.5.1
@@ -68,6 +83,18 @@ importers:
 
   apps/web:
     dependencies:
+      '@observability/browser-sdk':
+        specifier: workspace:*
+        version: link:../../observability/packages/browser-sdk
+      '@observability/contracts':
+        specifier: workspace:*
+        version: link:../../observability/packages/contracts
+      '@observability/operations-ui':
+        specifier: workspace:*
+        version: link:../../observability/console
+      '@observability/react-adapter':
+        specifier: workspace:*
+        version: link:../../observability/packages/react-adapter
       lucide-react:
         specifier: 0.468.0
         version: 0.468.0(react@19.2.8)
@@ -99,6 +126,27 @@ importers:
       vite:
         specifier: ^6.3.5
         version: 6.4.3(@types/node@22.20.1)(tsx@4.23.5)
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.7(@types/node@22.20.1)(tsx@4.23.5)
+
+  observability/console:
+    devDependencies:
+      '@types/react':
+        specifier: ^19.1.2
+        version: 19.2.18
+      '@types/react-dom':
+        specifier: ^19.1.2
+        version: 19.2.4(@types/react@19.2.18)
+      react:
+        specifier: ^19.1.0
+        version: 19.2.8
+      react-dom:
+        specifier: ^19.1.0
+        version: 19.2.8(react@19.2.8)
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.3
       vitest:
         specifier: ^3.2.4
         version: 3.2.7(@types/node@22.20.1)(tsx@4.23.5)

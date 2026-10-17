@@ -10,6 +10,10 @@
     "typecheck": "tsc --noEmit -p tsconfig.app.json"
   },
   "dependencies": {
+    "@observability/browser-sdk": "workspace:*",
+    "@observability/contracts": "workspace:*",
+    "@observability/operations-ui": "workspace:*",
+    "@observability/react-adapter": "workspace:*",
     "lucide-react": "0.468.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",

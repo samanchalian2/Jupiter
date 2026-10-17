@@ -1,5 +1,14 @@
 # Jupiter Master Upgrade Plan
 
+## GOAL-069 — Observability Hub continuation (IN PROGRESS)
+
+Local 2026-10-17 checkpoint adds executable host adapters, restricted control
+role, all rule scenarios, operational APIs and an independent React Console.
+The 146 API/27 Web/93 Hub gate and 77-migration rehearsal pass. Full approved
+A–I scope remains active: AI, retention/self-monitoring, alert delivery,
+reference/offline/Help acceptance and remaining Console/API completeness are
+not waived. Neither Preview/main promotion nor a next Goal is authorized.
+
 ## GOAL-067 — Safe Organization Deletion (complete)
 
 Platform Admin organization deletion is implemented as reversible, audited

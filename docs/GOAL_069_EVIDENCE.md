@@ -77,6 +77,60 @@ boundaries; 4. Registry; 5. Event contract; 6. OpenAPI; 7. SDK authentication;
 
 IN PROGRESS. Full implementation and acceptance are not yet established.
 
+## Host/operational Console checkpoint — LOCAL, 2026-10-17
+
+- Migrations 065–066 add Issue activity, scoped mutation grants/Audit and a
+  restricted control-plane role, plus managed host grants distinct from manual
+  grants. The real rehearsal applies all 77 migrations to a disposable DB.
+- Migrations 063–066 were also explicitly applied to the local Jupiter DB for
+  host acceptance. Earlier statements saying the business DB was not migrated
+  describe those historical checkpoints, not the current local state. Neither
+  target host has received these changes.
+- Real server tests now exercise every rule, meaningful release baseline and
+  no-release-change negative scenario; issue assignment/notes/status/Audit,
+  filtered lists/detail, permission-checked CSV, HTTP preflight and origin
+  updates. Control role cannot directly read raw event tables. Host-managed
+  admin revocation preserves independent manual grants.
+- Jupiter resolves the authenticated account and requested membership itself;
+  the Browser cannot nominate an actor. Five-minute ingestion credentials are
+  memory-only. Browser ingestion rechecks active account/membership. Logout and
+  password updates revoke actor credentials. No-super-admin automatic mapping.
+- Explicit idempotent local bootstrap selected the existing local admin account
+  by CLI argument, recorded its real principal and saved only public IDs to an
+  ignored local configuration file. No credential is recorded in this Evidence
+  or bootstrap output. External AI remains disabled.
+- Browser capture wraps only known Jupiter API traffic, propagates W3C trace
+  and request correlation, preserves original response/body and error, excludes
+  Hub recursion and unrelated/signed file URLs, and drops late old-user capture.
+  Four focused Web tests verify these guarantees.
+- `/feedback` is available after authentication, before tenant routing, so
+  absence of membership does not block the route. It supports explicit queued
+  submission, stable ACK tracking, own list/detail and public replies, with the
+  approved AI notice and logout warning. Memory fallback wording does not claim
+  durable storage. Full real offline replay/identity acceptance is still pending.
+- The reusable Operations Console consumes only an injected HTTP port. Current
+  sections: Overview, Live Monitor (10-second visible-page polling/pause),
+  Issues, Incidents, Feedback, Analytics/CSV, Application creation and Rules.
+  Human issue/incident/feedback actions call authorized APIs; tenant scope is
+  explicit. AI and maintenance sections and richer analytics remain required.
+- Fixed a misleading overview defect: impact/trend/operation denominator now
+  share the exact date/search/severity/category/release event cohort. Active
+  state counters are explicitly labeled current-state, not period metrics.
+- Full release gate: 146 API, 27 Web and 93 Hub tests (40 SDK/core/adapters,
+  50 real PostgreSQL server and 3 independent Console client tests), builds,
+  lint and typecheck passed. Existing Vite >500kB advisory remains; it is not
+  hidden or treated as an acceptance pass for performance budgets.
+- Live local API started successfully and health/Registry/authenticated
+  credential exchange worked. In-app browser authenticated `/operations`
+  rendered real persisted measurements in Persian RTL at 375/768/1024/1440;
+  document widths were <= viewport. `/feedback` rendered own empty state and
+  notice without browser warning/error; 375px also had no document overflow.
+  No human mutation/feedback fixture was submitted in this smoke check.
+- Local Web port 5173 was identified as the separate legal-case application.
+  It was not stopped or changed. Jupiter acceptance uses 5174, API uses 3000.
+  This is a smoke checkpoint, not complete final Browser acceptance or proof
+  of the required offline/reference/AI workflows.
+
 ## Foundation checkpoint — LOCAL, 2026-10-14
 
 - Six independently built/tested packages: contracts, core, browser-sdk,

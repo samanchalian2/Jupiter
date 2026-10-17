@@ -12,11 +12,17 @@
     "seed:admin": "tsx scripts/seed-admin.ts",
     "seed:help": "tsx scripts/seed-help.ts",
     "publish:help-catalog": "tsx scripts/publish-help-catalog.ts",
+    "bootstrap:observability": "tsx scripts/bootstrap-observability.ts",
     "lint": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run",
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
+    "@observability/contracts": "workspace:*",
+    "@observability/core": "workspace:*",
+    "@observability/server": "workspace:*",
+    "@observability/node-sdk": "workspace:*",
+    "@observability/nestjs-adapter": "workspace:*",
     "@aws-sdk/client-s3": "3.917.0",
     "@aws-sdk/s3-request-presigner": "3.917.0",
     "@nestjs/common": "^11.1.6",

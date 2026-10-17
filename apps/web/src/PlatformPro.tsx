@@ -6,6 +6,7 @@ import { Alert, ConfirmDialog, LoadingState, SectionHeader } from "./ui";
 import { PlatformCommercial } from "./PlatformCommercial";
 import { PlatformAppearance } from "./PlatformAppearance";
 import { PlatformHelpAdmin } from "./PlatformHelpAdmin";
+import { OperationsPanel } from "./OperationsWorkspace";
 import {
   normalizePlatformSearch,
   paginatePlatformItems,
@@ -106,6 +107,7 @@ const platformTabs = [
   ["users", "کاربران پلتفرم", "سازمان‌ها و دسترسی"],
   ["commercial", "تجاری", "سرویس‌ها"],
   ["ai", "سیاست AI", "سرویس‌ها"],
+  ["observability", "مرکز پایش هوشمند", "سرویس‌ها"],
   ["appearance", "ظاهر و هویت بصری", "تنظیمات پلتفرم"],
   ["help", "راهنمای محصول", "تنظیمات پلتفرم"],
   ["audit", "ردپای ممیزی", "تنظیمات پلتفرم"],
@@ -287,6 +289,7 @@ export function PlatformPro({ actor }: { actor: Actor }) {
       {tab === "appearance" && (
         <PlatformAppearance actor={actor} onSaved={saved} onError={setError} />
       )}{" "}
+      {tab === "observability" && <OperationsPanel/>}
       {tab === "help" && (
         <PlatformHelpAdmin actor={actor} onSaved={saved} onError={setError} />
       )}{" "}
