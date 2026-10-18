@@ -6,6 +6,15 @@ import { readFile, readdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { HubDatabase, RegistryService, IngestionService, DurableQueue, HubHttpApi, createHubServer, BoundedRateLimiter, FeedbackService, IssueEngine, MonitoringEngine, OperationsService, csvCell, InvestigatorService, AesCredentialVault, AlertService, type InvestigationProvider } from '../src/index.js';
 import type { TelemetryEvent } from '@observability/contracts';
+import SwaggerParser from '@apidevtools/swagger-parser';
+import Ajv from 'ajv';
+import addFormats from 'ajv-formats';
+import {openApiDocument} from '../src/openapi.js';
+import {jsonSchema} from './openapi-schema.js';
+import {execFile} from 'node:child_process';
+import {promisify} from 'node:util';
+import {fileURLToPath} from 'node:url';
+import {createServer} from 'node:http';
 
 // Real PostgreSQL, in an isolated temporary database. This test never migrates
 // the configured business database and never imports a Jupiter module.
@@ -43,6 +52,80 @@ beforeAll(async()=>{
 afterAll(async()=>{if(httpServer){httpServer.closeAllConnections();await new Promise<void>((resolve,reject)=>httpServer.close(error=>error?reject(error):resolve()));}await database?.close();if(created){await admin.query('SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname=$1 AND pid<>pg_backend_pid()',[databaseName]);await admin.query(`DROP DATABASE "${databaseName}"`);}await admin.end();},30_000);
 const event=(extra:Partial<TelemetryEvent>={}):TelemetryEvent=>({eventId:randomUUID(),schemaVersion:'1.1',applicationId:appA,environmentId:envA,occurredAt:new Date().toISOString(),source:'BROWSER',category:'FRONTEND',severity:'ERROR',eventCode:'ui.render_failed',normalizedMessage:'Controlled error',actorReference:'userA',tenantReference:'shared-tenant-id',...extra});
 const scope=()=>({applicationId:appA,environmentId:envA,actorReference:'userA',tenantReference:'shared-tenant-id',source:'BROWSER' as const});
+
+describe('complete public OpenAPI over actual HTTP and PostgreSQL',()=>{
+ it('exercises every documented operation and validates real request/response projections',async()=>{
+  type Operation={operationId:string;parameters?:{name:string;in:string;required:boolean;schema:object}[];requestBody?:{content:Record<string,{schema:object}>};responses:Record<string,{content:Record<string,{schema:object}>}>};
+  const contract=await SwaggerParser.dereference(structuredClone(openApiDocument) as never,{resolve:{external:false}}) as unknown as {paths:Record<string,Record<string,Operation>>};
+  const validator=new Ajv({strict:false});addFormats(validator);const covered=new Set<string>();
+  const actor={issuer:'acceptance',subject:'local-admin',displayName:'Local admin'},policy={allowedHosts:[],allowLoopback:true};
+  const ai=new InvestigatorService(database,registry,new AesCredentialVault(new Uint8Array(32).fill(8)),{analyze:async()=>{throw new Error('Controlled no-response provider fixture');}},policy);
+  const server=createHubServer(new HubHttpApi(database,registry,ingestion,{verify:async token=>{if(token==='contract-root-placeholder')return actor;throw new Error('Invalid identity');}},undefined,ai));
+  await new Promise<void>(resolve=>server.listen(0,'127.0.0.1',resolve));const address=server.address();if(!address||typeof address==='string')throw new Error('Contract listener unavailable');const url=`http://127.0.0.1:${address.port}/api/v1/observability`;
+  const call=async(path:string,method='GET',body?:unknown,bearer='contract-root-placeholder',origin?:string)=>{
+   const parsed=new URL(path,'http://contract.test'),segments=parsed.pathname.split('/');
+   const entry=Object.entries(contract.paths).find(([template,operations])=>{const parts=template.split('/');return operations[method.toLowerCase()]&&parts.length===segments.length&&parts.every((part,index)=>part.startsWith('{')||part===segments[index]);});
+   expect(entry,`${method} ${parsed.pathname} is documented`).toBeDefined();const[template,operations]=entry!,operation=operations[method.toLowerCase()];
+   if(body!==undefined){const check=validator.compile(jsonSchema(operation.requestBody!.content['application/json'].schema) as object);expect(check(body),`${operation.operationId} request: ${JSON.stringify(check.errors)}`).toBe(true);}
+   const response=await fetch(url+path,{method,headers:{...(bearer?{authorization:`Bearer ${bearer}`}:{position:'public'}),...(body===undefined?{}:{'content-type':'application/json'}),...(origin?{origin}:{})},...(body===undefined?{}:{body:JSON.stringify(body)})});
+   expect(response.ok,`${operation.operationId} HTTP ${response.status}`).toBe(true);const content=response.headers.get('content-type')!.split(';')[0],value=content==='application/json'?await response.json():await response.text();
+   const shape=operation.responses[String(response.status)].content[content].schema,check=validator.compile(jsonSchema(shape) as object);expect(check(value),`${operation.operationId} response: ${JSON.stringify(check.errors)}`).toBe(true);covered.add(`${method.toLowerCase()} ${template}`);return value;
+  };
+  try{
+   for(const path of ['/health','/ready','/openapi.json'])await call(path,'GET',undefined,'');
+   const application=await call('/operations/applications','POST',{slug:`contract-${randomUUID()}`,name:'Independent contract fixture',allowedOrigins:['https://contract.example.test']});const base=`/operations/applications/${application.id}`;
+   const environment=await call(base+'/environments','POST',{key:'contract',kind:'TEST'}),tenant='contract-tenant',operationScope={applicationId:application.id,environmentId:environment.id,tenantReference:tenant};
+   const query=`?environmentId=${environment.id}&tenantReference=${tenant}`,commandScope={environmentId:environment.id,tenantReference:tenant};
+   await call('/operations/applications');await call(base+'/environments');await call(base+'/origins','PUT',{allowedOrigins:['https://contract.example.test'],reason:'Explicit fixture origin'});
+   const credential=await call(base+'/credentials','POST',{environmentId:environment.id,reason:'Trusted independent fixture'});
+   if(process.env.OBSERVABILITY_REFERENCE_CLIENTS==='true'){
+    const python=process.env.OBSERVABILITY_PYTHON;if(!python)throw new Error('OBSERVABILITY_PYTHON executable must be set for external-client acceptance');
+    const csharp=fileURLToPath(new URL('../../examples/csharp/bin/Release/net10.0/ObservabilityClient.dll',import.meta.url));if(!existsSync(csharp))throw new Error('Build the independent CSharp reference client before acceptance');
+    const lost=new Set<string>();let redirectHits=0;
+    const sink=createServer((_req,res)=>{redirectHits++;res.writeHead(401);res.end();});await new Promise<void>(resolve=>sink.listen(0,'127.0.0.1',resolve));const sinkPort=(sink.address() as {port:number}).port;
+    const proxy=createServer(async(req,res)=>{try{
+     if(req.url?.startsWith('/redirect/')){res.writeHead(302,{Location:`http://127.0.0.1:${sinkPort}/forbidden`});res.end();return;}
+     const chunks:Buffer[]=[];for await(const chunk of req)chunks.push(Buffer.from(chunk));const body=Buffer.concat(chunks).toString('utf8'),code=JSON.parse(body).events[0].eventCode;
+     const upstream=await fetch(url+'/events/batch',{method:'POST',headers:{authorization:req.headers.authorization??'','content-type':'application/json'},body});const result=await upstream.text();
+     if(upstream.ok&&!lost.has(code)){lost.add(code);res.writeHead(503,{'content-type':'application/json','Retry-After':'0'});res.end(JSON.stringify({reasonCode:'CONTROLLED_LOST_ACK'}));return;}
+     res.writeHead(upstream.status,{'content-type':'application/json'});res.end(result);
+    }catch{res.writeHead(503);res.end('{}');}});await new Promise<void>(resolve=>proxy.listen(0,'127.0.0.1',resolve));const proxyUrl=`http://127.0.0.1:${(proxy.address() as {port:number}).port}`;
+    try{
+     const externalEnv={PATH:process.env.PATH,SystemRoot:process.env.SystemRoot,TEMP:process.env.TEMP,TMP:process.env.TMP,USERPROFILE:process.env.USERPROFILE,DOTNET_CLI_TELEMETRY_OPTOUT:'1',OBSERVABILITY_ENDPOINT:proxyUrl,OBSERVABILITY_SERVER_CREDENTIAL:credential.token,OBSERVABILITY_APPLICATION_ID:application.id,OBSERVABILITY_ENVIRONMENT_ID:environment.id,OBSERVABILITY_ALLOW_LOCAL_HTTP:'1',OBSERVABILITY_VERIFY_REPLAY:'1'};
+     for(const[executable,args]of [[python,[fileURLToPath(new URL('../../examples/python/ingest.py',import.meta.url))]],['dotnet',[csharp]]] as const){
+      const execution=await promisify(execFile)(executable,[...args],{env:externalEnv,timeout:30_000,maxBuffer:65536});
+      expect(JSON.parse(execution.stdout)).toEqual({first:{ACCEPTED:0,DUPLICATE:1,REJECTED:0},replay:{ACCEPTED:0,DUPLICATE:1,REJECTED:0}});expect(execution.stderr).toBe('');
+      await expect(promisify(execFile)(executable,[...args],{env:{...externalEnv,OBSERVABILITY_ENDPOINT:proxyUrl+'/redirect'},timeout:30_000,maxBuffer:65536})).rejects.toMatchObject({code:1,stdout:'',stderr:expect.stringContaining('REFERENCE_CLIENT_FAILED')});
+      await expect(promisify(execFile)(executable,[...args],{env:{...externalEnv,OBSERVABILITY_SERVER_CREDENTIAL:'invalid-controlled-fixture-credential'},timeout:30_000,maxBuffer:65536})).rejects.toMatchObject({code:1,stdout:'',stderr:expect.stringContaining('REFERENCE_CLIENT_FAILED')});
+     }
+     expect(redirectHits).toBe(0);expect(lost.size).toBe(2);
+    }finally{for(const listener of [proxy,sink]){listener.closeAllConnections();await new Promise<void>((resolve,reject)=>listener.close(error=>error?reject(error):resolve()));}}
+    const persisted=await database.worker(async c=>(await c.query("SELECT event_code,count(*)::int total FROM observability.events WHERE application_id=$1 AND event_code IN ('reference.python','reference.csharp') GROUP BY event_code ORDER BY event_code",[application.id])).rows);
+    expect(persisted).toEqual([{event_code:'reference.csharp',total:1},{event_code:'reference.python',total:1}]);
+   }
+   const browser=await call('/credentials/browser','POST',{...operationScope,actorReference:'contract-user'},credential.token);
+   const message=event({...operationScope,source:'REFERENCE_CLIENT',actorReference:'contract-user',eventCode:'contract.operation'});await call('/events/batch','POST',{events:[message]},credential.token);
+   const feedback=await call('/feedback','POST',{feedbackId:randomUUID(),subject:'Contract report',description:'Controlled independent report',category:'BUG',relatedEventId:message.eventId},browser.token,'https://contract.example.test');
+   await call('/feedback/mine','GET',undefined,browser.token,'https://contract.example.test');await call(`/feedback/${feedback.feedbackId}`,'GET',undefined,browser.token,'https://contract.example.test');
+   await call(base+'/rules','PUT',{code:'ERROR_BURST',enabled:true,threshold:1,minimum_samples:1,window_seconds:300,cooldown_seconds:900,reason:'Controlled contract rule'});await call(base+'/rules');
+   const engine=new IssueEngine(database,registry);for(const job of await engine.queue.claim(randomUUID(),50,['AGGREGATE']))await engine.aggregate(job);await new MonitoringEngine(database,registry).evaluate(500);
+   const ops=new OperationsService(database,registry),issue=(await ops.list(root,operationScope,'issues')).items[0],incident=(await ops.list(root,operationScope,'incidents')).items[0];expect(incident).toBeDefined();
+   await call(base+`/issues/${issue.id}`,'POST',{...commandScope,note:'Technical internal note',reason:'Explicit human review'});
+   await call(base+`/incidents/${incident.id}`,'POST',{...commandScope,assignedPrincipalId:root,note:'Human incident review',reason:'Authorized assignment'});
+   await call(base+`/incidents/${incident.id}/transition`,'POST',{...commandScope,status:'TRIAGED',reason:'Explicit human triage'});
+   await call(base+`/feedback/${feedback.feedbackId}/replies`,'POST',{...commandScope,body:'Public reply',internal:false,status:'TRIAGED'});
+   await call(base+'/overview'+query);for(const resource of ['events','issues','incidents','feedback','alerts']){const page=await call(`${base}/${resource}${query}`);expect(page.items.length).toBeGreaterThan(0);await call(`${base}/${resource}/${page.items[0].id}${query}`);}await call(base+'/export'+query+'&resource=events');
+   const alerts=new AlertService(database,registry);await alerts.enqueue();for(const job of await alerts.queue.claim(randomUUID(),50,['ALERT_DELIVERY']))await alerts.deliver(job);
+   const inbox=await call(base+'/alert-inbox'+query);expect(inbox).toHaveLength(1);await call(`${base}/alert-inbox/${inbox[0].id}/read`,'POST',commandScope);
+   await call(base+'/ai/configuration');await call(base+'/ai/configuration','PUT',{enabled:true,externalProcessingAllowed:false,endpoint:'http://127.0.0.1:9999/v1',model:'contract-fixture',credential:'contract-fixture-only-key',monthlyTokenBudget:100000,maxContextBytes:2048,maxOutputTokens:128,reason:'Explicit local fake provider'});await call(base+'/ai/configuration');
+   const investigation=await call(base+'/ai/investigations','POST',{...commandScope,kind:'DAILY',idempotencyKey:'contract-daily'});await call(base+'/ai/investigations'+query);
+   const job=(await ai.queue.claim(randomUUID(),50,['INVESTIGATE'])).find(row=>row.dedupe_key===`ai:${investigation.id}`)!;expect(job).toBeDefined();await ai.execute(job);
+   await call(base+'/ai/usage'+query);const unknown=await call(base+'/ai/unknown-attempts'+query);expect(unknown).toHaveLength(1);
+   await call(`${base}/ai/attempts/${unknown[0].id}/reconcile`,'POST',{...commandScope,inputTokens:0,outputTokens:0,reason:'Verified controlled fixture made no billable provider call'});
+   const expected=Object.entries(contract.paths).flatMap(([path,operations])=>Object.keys(operations).map(method=>`${method} ${path}`));expect([...covered].sort()).toEqual(expected.sort());
+  }finally{server.closeAllConnections();await new Promise<void>((resolve,reject)=>server.close(error=>error?reject(error):resolve()));}
+ },30_000);
+});
 
 describe('independent operational AI with real PostgreSQL',()=>{
  const vault=new AesCredentialVault(new Uint8Array(32).fill(7)),policy={allowedHosts:[],allowLoopback:true};

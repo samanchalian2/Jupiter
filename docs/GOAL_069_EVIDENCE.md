@@ -4,6 +4,75 @@ Status: IN PROGRESS. Owner-approved plan supersedes the stale GOAL-060 identifie
 in the supplied specification. GOAL-060 Personal Service history is preserved.
 GOAL-059 remains BLOCKED; LOCAL evidence is not staging acceptance.
 
+## 2026-10-18 — Public OpenAPI and external-language clients (LOCAL)
+
+- `observability/server/src/openapi.ts` is the canonical OpenAPI 3.0.3 document,
+  exported by the independent server package and served without authentication at
+  `GET /api/v1/observability/openapi.json`, under the normal request limiter.
+  Relative mount paths are host-independent. No actual identity/configuration/
+  credential is embedded. CORS remains auxiliary, not authentication.
+- All 41 implemented operations are documented: health/readiness/document,
+  ingestion/browser exchange, own Feedback, Application/environment/credential/
+  origin management, overview/list/detail/export, human Issue/Incident/Feedback
+  commands, rules, recipient inbox/read and Investigator configuration/request/
+  report/usage/reconciliation. Trusted service-only bootstrap/grant/rotation
+  ports are explicitly not invented as HTTP endpoints.
+- Schemas specify shared event enums/allowlisted primitive metadata, byte/time
+  and paging limits, snake/camel-case actual projections, nullable fields and
+  decimal-string PostgreSQL bigint counters. Distinct ingestion/server/browser/
+  operational bearer schemes, per-event partial ACKs, idempotency, manual-only
+  mutation, safe errors and bounded retry behavior are explained.
+- Swagger Parser validates the structure/references without external resolution.
+  Ajv checks actual JSON payloads after dereference; a documented test-only
+  adapter translates OAS 3.0 boolean exclusive bounds to draft-7 numeric bounds
+  without changing their validation meaning. Tests verify strict-positive bounds.
+- The contract integration test executes EVERY documented method/path over a
+  real Node HTTP listener and disposable PostgreSQL, validates request and
+  response schemas, and compares covered operations with the full document.
+  This includes populated details/relations, nullable AI output, decimal counts,
+  credential issue/exchange, CSV and read/management/AI mutations in fixtures.
+- `observability/examples/python/ingest.py` uses Python's standard library;
+  `observability/examples/csharp` compiles with .NET SDK 10.0.400, zero warnings/
+  errors and no NuGet or Jupiter dependency. Both are backend-only, memory-queue
+  examples, not production SDKs. Adoption/auth/retry instructions are in
+  `observability/examples/README.md`.
+- Actual external-client acceptance was enabled with
+  `OBSERVABILITY_REFERENCE_CLIENTS=true` and an explicitly configured bundled
+  Python executable. The integration harness provisions an independent App in
+  its disposable DB and launches BOTH real processes. A loopback fault proxy
+  commits the first event upstream but drops its ACK and returns 503. Each
+  program retries with the same event ID/payload, receives DUPLICATE and replays
+  it once more; exactly one Python and one C# event persist. Both reject invalid
+  credentials, log only a generic safe failure, refuse a 302 and make zero
+  requests to the redirect sink. No external provider or live tenant is used.
+- Listener/process/database cleanup runs in finally blocks. Child environments
+  exclude parent DB/provider secrets. .NET build and Python cache artifacts are
+  explicitly ignored. Without the external-client flag, the ordinary test suite
+  does not claim these executable-language results.
+- Defects found during QC: bigint projection types, nullable AI output, PUT
+  configuration's actual `updated` response, credential-response versus request
+  writeOnly semantics, equivalent templated detail paths and dialect-specific
+  numeric bounds were corrected in the contract/tests. Existing runtime APIs
+  were not weakened to make the document pass.
+- This completes the public-contract and example-client artifacts for currently
+  implemented HTTP routes. Future remaining Goal routes must extend the same
+  document/parity tests. Mandatory independent Browser reference, real IndexedDB
+  offline/identity acceptance, missing alert sources, retention/self-monitoring,
+  runtime Help and final full Goal audit remain unfinished. No host promotion.
+- QC: complete `pnpm verify:release` with external-client flag enabled passes
+  150 API, 28 Web and 117 Hub tests (40 SDK/core/adapters, 70 server/contract/provider,
+  seven Console), all builds/lint/typechecks and 79-migration rehearsal. C# build
+  passes with zero warnings/errors; bundled Python 3.12.14 executes the example.
+  Client retry inputs are deep snapshots; mid-stream failures preserve those
+  snapshots. Python socket timeout is not advertised as a hard whole-operation
+  deadline; production supervision is explicitly documented.
+- Running-host check: anonymous/no-cookie GET on local API 3000 returns 200,
+  OpenAPI 3.0.3, 41 operations and 44 schemas. PostgreSQL checks find zero remaining
+  `obs069_*` temporary databases and one non-archived workspace (`jupiter-demo`);
+  cleanup dry-run reports no targets. Only the owned local API was restarted.
+  No additional migration or deployment was performed; pre-existing Vite chunk
+  advisory remains. Diff/secret checks precede the checkpoint commit/push.
+
 ## 2026-10-18 — Durable operational alert checkpoint (LOCAL)
 
 - Migration 068 adds `observability.alert_inbox` with composite
@@ -88,13 +157,13 @@ Every requirement remains pending unless actual execution evidence is recorded.
 | Phase | Required delivery | State |
 | --- | --- | --- |
 | A | inventory, ADR, approved specification | initial inventory/DEC-038/source recorded |
-| B | independent packages, registry/auth/contracts/OpenAPI | packages/registry/auth and HTTP operational APIs implemented; full OpenAPI pending |
+| B | independent packages, registry/auth/contracts/OpenAPI | packages/registry/auth, HTTP operations and real OpenAPI parity implemented; future Goal routes must extend the contract |
 | C | schema/RLS, atomic ingestion, browser/API/worker capture | PostgreSQL and Jupiter Browser/API adapters implemented; product Worker execution coverage pending |
 | D | IndexedDB/replay/backoff/logout/scope isolation | SDK protocol verified; real-browser IndexedDB/replay pending |
 | E | fingerprint, issues/incidents/rules/alerts | all rule scenarios verified; issue management and incident transitions implemented; full incident workspace/delivery pending |
 | F | feedback/user tracking, Console/live/analytics/export | own Feedback and operational Console/live/filter/CSV implemented; richer analytics and final workflow acceptance pending |
 | G | evidence-grounded AI, opt-in/budget/schedule/security | implemented; real GapGPT findings/usage, SQL isolation/budget/scheduler and reconciliation UI verified; final breadth QC pending |
-| H | independent second application, C#/Python clients | pending |
+| H | independent second application, C#/Python clients | actual Python/C# backend execution/retry/replay/denial verified against independent fixture App; mandatory separate Browser reference still pending |
 | I | retention, self-health/runbook, Help, full QC/cleanup | pending |
 
 ## Required evidence sections

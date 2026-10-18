@@ -8,6 +8,7 @@ import { IssueEngine } from './engine.js';
 import { MonitoringEngine } from './rules.js';
 import { AlertService } from './alerts.js';
 import type { InvestigatorService, InvestigatorConfiguration } from './investigator.js';
+import { openApiDocument } from './openapi.js';
 
 /** Host-supplied verified identity. Implementations can use JWT/OIDC/session
  * exchange; the core never imports a product's user or membership model. */
@@ -49,6 +50,7 @@ export class HubHttpApi {
       if(request.method==='GET'&&path==='/health')return{status:200,body:{service:'observability-hub',status:'ok',timestamp:new Date().toISOString()}};
       if(request.method==='GET'&&path==='/ready'){try{await this.database.control(async c=>{await c.query('SELECT 1 FROM observability.applications LIMIT 1');});return{status:200,body:{service:'observability-hub',status:'ready'}};}catch{return{status:503,body:{reasonCode:'STORAGE_UNAVAILABLE'}};}}
       if(!this.requestLimiter.allow(request.clientKey.slice(0,160)))return{status:429,body:{reasonCode:'REQUEST_RATE_LIMIT'},headers:{'Retry-After':'60'}};
+      if(request.method==='GET'&&path==='/openapi.json')return{status:200,body:openApiDocument};
       const token=this.bearer(request);
       if(request.method==='POST'&&path==='/events/batch'){
         const credential=await this.registry.credential(token,'events:write');

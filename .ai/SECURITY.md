@@ -2,6 +2,16 @@
 
 ## GOAL-069 Observability Hub
 
+The public OpenAPI document is static code-derived metadata, not tenant/runtime
+data. Its unauthenticated download is under the request limiter; it never reveals
+credentials, encrypted configuration or actual Application IDs. Operational,
+server-mint and browser ingestion bearer schemes remain distinct. External-client
+examples require HTTPS except explicit loopback test mode, refuse redirects,
+bound body/response/time/retries and never print credentials/raw server bodies.
+Their acceptance child processes receive only scoped ephemeral fixture secrets,
+not the parent's DB/provider secret environment. These memory-only examples do
+not claim durable outbox or offline-browser guarantees.
+
 Operational inbox access requires both a current operational grant and the
 recipient principal in RLS. Even a Hub super-admin cannot acknowledge another
 recipient's inbox row. Composite Application/environment/tenant FK prevents

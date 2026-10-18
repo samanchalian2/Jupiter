@@ -2,6 +2,12 @@
 
 ## GOAL-069 — Observability Hub continuation (IN PROGRESS)
 
+OpenAPI now documents all 41 implemented public HTTP operations and has real
+request/response parity tests. Executable independent Python/C# clients pass
+actual HTTP/PostgreSQL lost-ACK/replay/denial/redirect checks. The separate Browser
+reference, offline acceptance, retention/self-monitoring, remaining alerts,
+Help and full A–I final QC remain required. No target-host promotion is authorized.
+
 The 2026-10-18 checkpoint adds migration 068, durable recipient-addressed alert
 delivery and read acknowledgement, independent Console inbox and a Jupiter
 NotificationService account adapter. Local authenticated RTL acceptance includes

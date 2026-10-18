@@ -1,5 +1,26 @@
 # Current State
 
+**2026-10-18 public HTTP contract/reference-client checkpoint (GOAL-069 IN PROGRESS):**
+The independent server exports/serves OpenAPI 3.0.3 at
+`/api/v1/observability/openapi.json`. All 41 documented operations have a real
+HTTP/PostgreSQL request/response parity test in a disposable database, alongside
+structural/reference/auth/schema validation. The document contains no deployment
+identity or credential and does not invent HTTP endpoints for service-only ports.
+Independent standard-library Python and C#/.NET 10 clients compile/run without
+Jupiter code/cookies. Actual process acceptance verifies commit-then-lost-ACK
+recovery, explicit replay, one persisted event per client, invalid-credential
+denial and zero redirect-target requests. Full Browser reference/offline,
+maintenance/self-monitoring, additional alerts, Help and final breadth QC remain
+required; neither this checkpoint nor language-neutral client execution completes
+the entire Goal. No target host is deployed.
+Checkpoint QC: 150 API, 28 Web and 117 Hub tests; all builds/lint/typechecks and
+79-migration rehearsal pass with actual external-client acceptance enabled.
+Final client snapshot/stream-error hardening was rebuilt and rechecked against
+the complete server suite. The running local host serves 41 operations/44 schemas
+without bearer or cookies (HTTP 200). No temporary acceptance DB remains and the
+local workspace cleanup dry-run has zero targets. Existing Vite chunk advisory
+remains explicit.
+
 **2026-10-18 durable alert inbox checkpoint (GOAL-069 IN PROGRESS):**
 Migration 068 adds a recipient-addressed operational inbox with composite
 Application/environment/tenant FK and principal-plus-scope RLS. Bounded repair

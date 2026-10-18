@@ -3,10 +3,19 @@
 Product-independent packages and PostgreSQL server adapters for GOAL-069.
 Implementation is IN PROGRESS; no complete platform claim is made.
 
+The public OpenAPI 3.0.3 document is served at
+`GET /api/v1/observability/openapi.json` and exported as `openApiDocument` by
+`@observability/server`. Real HTTP/PostgreSQL tests exercise every documented
+operation and validate requests/responses against the dereferenced schema.
+Executable standard-library [Python/C# examples](examples/README.md) cover
+backend authentication, batch ACKs, bounded retry and safe errors without a
+Jupiter cookie or domain dependency. Actual external-client acceptance is
+explicitly opt-in and must be executed before claiming that evidence.
+
 Operational AI now has a host-injected provider/vault, Application-bound AES-GCM
 credential storage, combined monthly token reservation/settlement, curated
 evidence validation, deduplicated scheduler and independent Console panel.
-Unknown provider usage remains held. Full reconciliation/maintenance/reference
+Unknown provider usage remains held. Human reconciliation is implemented; full maintenance/reference
 and offline acceptance remain unfinished; inspect Evidence, not this inventory,
 before claiming complete platform delivery.
 

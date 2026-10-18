@@ -2,6 +2,15 @@
 
 ## GOAL-069 — Reusable Observability Hub (IN PROGRESS)
 
+The public OpenAPI and executable C#/Python examples now exist and are tested
+against real HTTP/PostgreSQL, including actual separate-process replay/retry and
+credential/redirect failure behavior. Keep the document synchronized whenever
+remaining requirements add routes. Continue this same Goal with missing alert
+types/flood controls, retention/self-monitoring, richer operational workflows,
+the independent Browser reference app and real IndexedDB offline/logout/scope
+acceptance, runtime Help publication and final requirement-by-requirement QC.
+Do not equate these backend reference clients with the full Browser reference.
+
 2026-10-18: durable recipient inbox, delivery worker, scoped/read APIs,
 Console inbox and Jupiter NotificationService source adapter are implemented.
 Continue the same Goal: complete alert trigger breadth (important feedback,

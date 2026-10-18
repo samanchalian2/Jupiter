@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-10-18 — GOAL-069 OpenAPI and independent HTTP clients (IN PROGRESS)
+
+- Added public, rate-limited OpenAPI download with 41 implemented operations,
+  distinct bearer schemes, strict request/projection schemas, batch ACK semantics,
+  byte/time/scope bounds, safe errors and explicit retry/security guidance.
+- Added schema/reference validation and a real HTTP/PostgreSQL test executing
+  every documented operation and checking actual requests/responses.
+- Added standard-library Python and C#/.NET 10 backend integration examples,
+  bounded same-ID retry, redirect denial and safe aggregate-only output.
+- Actual external processes recover a lost ACK after commit and replay without
+  duplicate persistence; invalid credentials fail and redirect sink sees no call.
+- No migration, customer allowance/provider setting or target host changed.
+  Full remaining Goal scope is preserved; no next Goal starts.
+
 ## 2026-10-18 — GOAL-069 durable operational alert delivery (IN PROGRESS)
 
 - Added migration 068: recipient inbox, composite tenant-safe alert FK, scoped

@@ -7,3 +7,6 @@ coverage/
 .pnpm-store/
 .local/
 securedata/
+observability/examples/csharp/bin/
+observability/examples/csharp/obj/
+observability/examples/python/__pycache__/
