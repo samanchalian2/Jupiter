@@ -41,6 +41,7 @@ beforeAll(async()=>{
   await database.pool.query(await readFile(new URL('../../../apps/api/migrations/067_observability_investigator.sql',import.meta.url),'utf8'));
   await database.pool.query(await readFile(new URL('../../../apps/api/migrations/068_observability_alert_inbox.sql',import.meta.url),'utf8'));
   await database.pool.query(await readFile(new URL('../../../apps/api/migrations/069_observability_retention.sql',import.meta.url),'utf8'));
+  await database.pool.query(await readFile(new URL('../../../apps/api/migrations/070_observability_alert_delivery.sql',import.meta.url),'utf8'));
   root=(await registry.bootstrap({issuer:'acceptance',subject:'local-admin',displayName:'Local admin'},'Acceptance bootstrap')).principalId;
   ordinary=await registry.principal({issuer:'reference-identity',subject:'operator',displayName:'Scoped operator'});
   appA=(await registry.createApplication(root,{slug:'application-a',name:'A',allowedOrigins:['https://consumer.example.test']})).id;
@@ -273,6 +274,25 @@ describe('independent operational AI with real PostgreSQL',()=>{
  });
 });
 describe('durable principal-addressed operational alerts',()=>{
+ it('pages more than 1000 eligible recipients without truncation or duplicate copies',async()=>{
+  const app=(await registry.createApplication(root,{slug:`paged-${randomUUID()}`,name:'Paged alert acceptance'})).id,env=(await registry.createEnvironment(root,app,{key:'test',kind:'TEST'})).id,issuer=`paged-${randomUUID()}`;
+  await database.control(async c=>{await c.query("INSERT INTO observability.principals(issuer,subject,display_name) SELECT $1,n::text,'Controlled recipient' FROM generate_series(1,1005) n",[issuer]);await c.query("INSERT INTO observability.access_grants(application_id,environment_id,tenant_reference,principal_id,role,granted_by,reason) SELECT $1,$2,'scope',id,'OPERATOR',$3,'Paged fixture grant' FROM observability.principals WHERE issuer=$4",[app,env,root,issuer]);});
+  const alert=await database.worker(async c=>(await c.query<{id:string}>("INSERT INTO observability.alerts(application_id,environment_id,tenant_reference,title,dedupe_key) VALUES($1,$2,'scope','Paginated alert','page-test') RETURNING id",[app,env])).rows[0]),service=new AlertService(database,registry);
+  await service.enqueue();let completed=false;for(let page=0;page<12;page++){
+   const job=(await service.queue.claim(randomUUID(),50,['ALERT_DELIVERY'])).find(row=>row.application_id===app);expect(job).toBeDefined();const before=await database.worker(async c=>(await c.query('SELECT count(*)::int total FROM observability.alert_inbox WHERE application_id=$1',[app])).rows[0].total);expect(await service.deliver(job!)).toBe(true);expect(await service.deliver(job!)).toBe(false);const state=await database.worker(async c=>(await c.query('SELECT delivery_completed_at,(SELECT count(*)::int FROM observability.alert_inbox WHERE application_id=$1) total FROM observability.alerts WHERE id=$2',[app,alert.id])).rows[0]);expect(state.total-before).toBeLessThanOrEqual(100);if(state.delivery_completed_at){completed=true;break;}
+  }expect(completed).toBe(true);const count=await database.worker(async c=>(await c.query('SELECT count(*)::int total,count(DISTINCT recipient_principal_id)::int distinct_recipients FROM observability.alert_inbox WHERE application_id=$1',[app])).rows[0]);expect(count).toEqual({total:1006,distinct_recipients:1006});
+ },30000);
+ it('paces new alert starts durably instead of discarding or flooding recipients',async()=>{
+  const app=(await registry.createApplication(root,{slug:`paced-${randomUUID()}`,name:'Paced alerts'})).id,env=(await registry.createEnvironment(root,app,{key:'test',kind:'TEST'})).id;
+  await database.worker(async c=>{await c.query("INSERT INTO observability.alerts(application_id,environment_id,title,dedupe_key) SELECT $1,$2,'Controlled paced alert','paced-'||n FROM generate_series(1,4) n",[app,env]);});const service=new AlertService(database,registry);await Promise.all([service.enqueue(),service.enqueue()]);const rows=await database.worker(async c=>(await c.query("SELECT id,available_at FROM observability.jobs WHERE application_id=$1 AND kind='ALERT_DELIVERY' ORDER BY available_at",[app])).rows);expect(rows).toHaveLength(4);for(let i=1;i<rows.length;i++)expect(new Date(rows[i].available_at).getTime()-new Date(rows[i-1].available_at).getTime()).toBeGreaterThanOrEqual(15000);
+  const ready=(await service.queue.claim(randomUUID(),50,['ALERT_DELIVERY'])).filter(row=>row.application_id===app);expect(ready).toHaveLength(1);await service.deliver(ready[0]);expect((await service.inbox(root,{applicationId:app,environmentId:env}))).toHaveLength(1);
+ });
+ it('only human-triaged important feedback creates one scoped deduplicated alert',async()=>{
+  const app=(await registry.createApplication(root,{slug:`important-${randomUUID()}`,name:'Important feedback'})).id,env=(await registry.createEnvironment(root,app,{key:'test',kind:'TEST'})).id,scope={applicationId:app,environmentId:env,tenantReference:'feedback-tenant',actorReference:'feedback-user'},id=randomUUID(),service=new FeedbackService(database,registry);
+  await service.submit(scope,{feedbackId:id,subject:'Controlled important report',description:'Technical description',category:'BUG'});const count=()=>database.worker(async c=>(await c.query('SELECT count(*)::int total FROM observability.alerts WHERE application_id=$1',[app])).rows[0].total);expect(await count()).toBe(0);
+  await expect(service.respond(ordinary,scope,id,{body:'Unauthorized triage',status:'TRIAGED'})).rejects.toThrow('OPERATIONAL_ACCESS_DENIED');expect(await count()).toBe(0);await service.respond(root,scope,id,{body:'Human review',status:'TRIAGED'});await service.respond(root,scope,id,{body:'Investigation started',status:'IN_PROGRESS'});expect(await count()).toBe(1);await expect(service.respond(root,{...scope,tenantReference:'wrong'},id,{body:'Wrong scope',status:'TRIAGED'})).rejects.toThrow('FEEDBACK_NOT_FOUND');
+  const alerts=new AlertService(database,registry);await alerts.enqueue();const job=(await alerts.queue.claim(randomUUID(),50,['ALERT_DELIVERY'])).find(row=>row.application_id===app)!;await alerts.deliver(job);const inbox=await alerts.inbox(root,scope);expect(inbox).toHaveLength(1);expect(inbox[0].title).toContain('بازخورد مهم');
+ });
  it('delivers once to eligible operators and denies other recipients, scopes and revoked access',async()=>{
   const app=(await registry.createApplication(root,{slug:`alerts-${randomUUID()}`,name:'Alert acceptance'})).id,env=(await registry.createEnvironment(root,app,{key:'local',kind:'TEST'})).id;
   const operator=await registry.principal({issuer:'alerts',subject:randomUUID(),displayName:'Operator'}),viewer=await registry.principal({issuer:'alerts',subject:randomUUID(),displayName:'Viewer'}),other=await registry.principal({issuer:'alerts',subject:randomUUID(),displayName:'Other tenant'});
@@ -350,7 +370,7 @@ describe('Hub registry/auth/atomic storage and real PostgreSQL isolation',()=>{
       // Substitute only that identifier for this isolated rehearsal so the
       // existing business runtime role is neither dropped nor modified.
       for(const file of files){const sql=(await readFile(new URL(file,directory),'utf8')).replace(/\bjupiter_app\b/g,role);await client.query('BEGIN');try{await client.query(sql);await client.query('COMMIT');}catch(error){await client.query('ROLLBACK');throw error;}}
-      expect(files.at(-1)).toBe('069_observability_retention.sql');expect(files.length).toBe(80);
+      expect(files.at(-1)).toBe('070_observability_alert_delivery.sql');expect(files.length).toBe(81);
       expect((await client.query("SELECT count(*)::int total FROM information_schema.tables WHERE table_schema='observability'")).rows[0].total).toBe(25);
     }finally{await client.end();await admin.query('SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname=$1 AND pid<>pg_backend_pid()',[name]);await admin.query(`DROP DATABASE "${name}"`);if((await admin.query('SELECT 1 FROM pg_roles WHERE rolname=$1',[role])).rowCount)await admin.query(`DROP ROLE "${role}"`);}
   },30_000);

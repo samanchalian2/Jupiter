@@ -1,5 +1,27 @@
 # Architecture Decisions
 
+## DEC-041 — Durable bounded alert fan-out and backpressure
+
+GOAL-069 keeps the existing PostgreSQL inbox/queue boundary. Each delivery
+transaction addresses at most 100 currently authorized active principals in UUID
+order. Persisted cursor, inbox rows, continuation and lease completion commit
+atomically; duplicate execution cannot create a second recipient copy. Successful
+legacy jobs are marked complete by migration 070, not replayed to new recipients.
+Grants are evaluated afresh per page; new principals behind the cursor do not
+receive historical alerts. Revocation still denies inbox access immediately.
+
+New alert starts are scheduled at least 15 seconds apart per Application and
+environment under the retention/delivery advisory lock. No alert is discarded;
+continuation pages are immediate. This is durable backpressure, not a promise
+of instant critical delivery or a complete flood/health solution. Backlog remains
+visible through existing queue status. Retention protects pending page jobs.
+
+BUG/USAGE_PROBLEM feedback becomes important only after an authorized human
+TRIAGED/IN_PROGRESS decision. One alert per feedback uses the locked persisted
+scope and sanitized subject, never a client severity claim. Explicit tenant
+matching precedes replies/Audit and the narrow worker-role alert insertion.
+No business notifications, API shape, AI accounting or customer allowance changes.
+
 ## DEC-040 — Bounded operational retention and evidence preservation
 
 GOAL-069 implements the already-approved per-Application retention policy in

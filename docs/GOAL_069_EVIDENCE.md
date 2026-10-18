@@ -4,6 +4,38 @@ Status: IN PROGRESS. Owner-approved plan supersedes the stale GOAL-060 identifie
 in the supplied specification. GOAL-060 Personal Service history is preserved.
 GOAL-059 remains BLOCKED; LOCAL evidence is not staging acceptance.
 
+## 2026-10-18 — Bounded alert delivery and important feedback (LOCAL code)
+
+- Migration 070 adds delivery cursor/completion, backfills already-successful
+  legacy jobs and adds a scoped queue index. No new business table/API contract.
+- Each transaction delivers at most 100 currently eligible principals; inbox,
+  cursor, continuation and job completion are atomic. Real PostgreSQL acceptance
+  delivers to 1,006 distinct recipients with no duplicate on replay. No fixed
+  1,000-recipient failure remains. Grants are reevaluated each page; new UUIDs
+  behind a cursor are not retrospectively replayed. Revoked reads remain denied.
+- Concurrent repair sweeps schedule new alert starts at least 15 seconds apart
+  per Application/environment. Continuations are immediate. This preserves all
+  backlog, not instant delivery, user-channel suppression or complete flood health.
+  Existing queue status exposes pending work; retention protects all page jobs.
+- Only authorized human triage of BUG/USAGE_PROBLEM creates an important-feedback
+  alert, once per feedback. NEW submissions do not alert. Persisted sanitized
+  subject/scope are used. The negative test found a wrong-tenant request reaching
+  reply RLS rejection; an explicit persisted-tenant comparison now returns the
+  safe domain denial before any writes. Ordinary actor denial and dedupe pass.
+- DEC-041 records these semantics. Full release gate passes 150 API, 28 Web and
+  129 Hub tests (41 SDK/core/adapters, 79 server, nine Console): 307 total, with
+  actual installed-Edge and separate-process Python/C# flags enabled. All builds,
+  lint/typechecks, 81-migration forward rehearsal and diff check pass. Existing
+  Vite >500-KiB chunk advisory remains; not a new build failure.
+- Migration 070 was then applied only to the verified loopback local database
+  (81 migrations). Zero active AI reservations were checked before restarting
+  only the owned local Jupiter API. The configured enabled monthly combined token
+  cap is verified as 100,000 without exposing the key. No temporary Hub acceptance
+  database remains; workspace cleanup dry-run has zero targets. Normal Help and
+  tenant data remain intact. No Preview/main or co-hosted application changed.
+- Full self-monitoring, pipeline/critical source coverage, Help/publication,
+  performance and final requirement-by-requirement A–I audit remain outstanding.
+
 ## 2026-10-18 — Independent real-Browser acceptance (LOCAL)
 
 - Added `@observability/reference-browser` in `observability/examples/browser`:

@@ -2,6 +2,13 @@
 
 ## GOAL-069 — Reusable Observability Hub (IN PROGRESS)
 
+Delivery now has 100-recipient pages, durable 15-second start spacing and human
+important-feedback alerts (DEC-041/migration 070). Continue full pipeline/critical
+alert coverage and self-monitoring, then Help/performance/final A–I audit. No
+further migration is pending at this checkpoint (070 is local and the worker
+is restarted). No target-host promotion is authorized. Keep this Goal active,
+not complete.
+
 The independent reference Browser/backend and actual IndexedDB/network-loss/
 reload/lost-ACK/identity acceptance now execute in a disposable DB and headless
 installed Edge. Shared Console maintenance RTL and explicit fixture-only save

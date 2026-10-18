@@ -1,5 +1,13 @@
 # Domain Model
 
+## Bounded alert delivery (GOAL-069, DEC-041)
+
+Alert delivery has a persisted UUID recipient cursor and completion timestamp.
+Each at-most-100-recipient page shares a transaction with its continuation and
+lease completion. Initial jobs are paced 15 seconds apart per Application/env;
+no alert is dropped. Human triage of BUG/USAGE_PROBLEM feedback creates one
+deduplicated operational alert, independent of customer ticket notifications.
+
 ## Operational retention (GOAL-069, DEC-040)
 
 Existing Hub Application owns separate raw/aggregate/Incident/Feedback day

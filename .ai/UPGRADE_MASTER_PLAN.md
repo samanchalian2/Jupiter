@@ -2,6 +2,11 @@
 
 ## GOAL-069 — Observability Hub continuation (IN PROGRESS)
 
+DEC-041/migration 070 harden existing alert delivery with atomic recipient pages,
+durable pacing and human-triaged important feedback. Full pipeline/critical alert
+coverage, self-monitoring, Help and final acceptance remain in this same Goal.
+No target-host deployment or Goal completion is implied.
+
 Independent Browser B now has executable real Edge/PostgreSQL offline/reload/
 replay/identity/Console acceptance plus backend correlation and validated AI via
 a controlled provider port. Maintenance shared-Console RTL is verified at four

@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-10-18 — GOAL-069 bounded alert delivery (IN PROGRESS)
+
+- Added migration 070, atomic 100-recipient pages and durable 15-second initial
+  alert spacing without dropping backlog; protect pending pages from retention.
+- Added human-triaged important-feedback alerts and explicit tenant comparison
+  before feedback writes. Real DB tests cover 1,006 recipients, replay, pacing,
+  denied triage and scope mismatch. DEC-041 records semantics and limitations.
+- No Preview/main deployment or whole-Goal completion.
+
 ## 2026-10-18 — GOAL-069 real independent Browser acceptance (IN PROGRESS)
 
 - Added independent Browser/React/Node reference consumer with verified-session

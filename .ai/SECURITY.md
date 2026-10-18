@@ -2,6 +2,14 @@
 
 ## GOAL-069 Observability Hub
 
+DEC-041 delivery checks current active scoped operator/admin grants on each
+recipient page; inbox reads still reauthorize after revocation. Feedback replies
+explicitly compare persisted tenant scope before any write, including privileged
+actors. Only an authenticated human triage can create important-feedback alerts;
+runtime ingestion gains no alert INSERT grant. Migration 070 adds delivery state
+only and has been rehearsed in a disposable database and applied locally, not
+deployed to target hosts.
+
 Independent Browser acceptance uses a fresh headless context, random HttpOnly
 fixture session, explicit operational grants and a disposable database, never a
 signed-in user's profile. The sample backend resolves scope from its trusted

@@ -1,5 +1,21 @@
 # Current State
 
+**2026-10-18 alert delivery hardening (GOAL-069 IN PROGRESS):**
+Migration 070 and DEC-041 add bounded 100-recipient continuation pages and
+durable 15-second initial-job pacing per Application/environment. Real PostgreSQL
+tests deliver once to 1,006 eligible principals without truncation. Human-triaged
+BUG/USAGE_PROBLEM feedback creates one scoped alert. QC found and fixed an
+explicit feedback tenant-mismatch rejection before reply writes. Retention now
+protects continuation jobs too. Full release gate passes 150 API, 28 Web and
+129 Hub tests (307 total), with real Browser/Python/C# acceptance and all builds,
+lint/typechecks plus 81-migration rehearsal. Migration 070 is applied locally;
+the local API was restarted after checking zero active AI reservations. The
+configured monthly combined token cap is verified as 100,000 and enabled.
+No temporary Hub acceptance database remains; workspace cleanup dry-run has no
+targets. Preview/main hosts are unchanged. Existing Vite chunk advisory remains.
+Full self-monitoring, pipeline/critical alert breadth, Help, performance and
+final A–I audit remain; this checkpoint does not complete the Goal.
+
 **2026-10-18 independent real-Browser checkpoint (GOAL-069 IN PROGRESS):**
 `@observability/reference-browser` now builds/runs an independent React Browser
 consumer and trusted backend/session port with no Jupiter domain imports. A real
