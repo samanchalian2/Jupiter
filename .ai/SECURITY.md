@@ -2,6 +2,14 @@
 
 ## GOAL-069 Observability Hub
 
+DEC-042 accepts critical-event classification only from trusted SERVER/WORKER
+sources. Browser severity and ordinary HTTP 4xx cannot elevate Incidents. Pipeline
+warnings include no raw failure content. The independent probe uses no bearer,
+follows no redirect, bounds response bytes and deadlines, and rejects network
+HTTP/credential-bearing targets. Structured fallback logs have fixed fields,
+no exception/secret/payload, and per-code rate bounds; sink errors are contained.
+External monitoring deployment remains separate from this local acceptance.
+
 DEC-041 delivery checks current active scoped operator/admin grants on each
 recipient page; inbox reads still reauthorize after revocation. Feedback replies
 explicitly compare persisted tenant scope before any write, including privileged

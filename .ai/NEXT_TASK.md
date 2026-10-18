@@ -2,6 +2,25 @@
 
 ## GOAL-069 — Reusable Observability Hub (IN PROGRESS)
 
+DEC-042 adds trusted CRITICAL_EVENT, terminal pipeline failure detection and
+bounded out-of-band logs plus external-probe/runbook acceptance. Continue the
+complete self-metric set (ingestion/failure/reject/drop/offline recovery/storage
+growth as well as existing queue/retention), Help/runtime publication, performance
+and full host/security/A–I audit. These alerts/probes are not full self-monitoring
+or a GOAL-059 gate. Migration 071 is applied locally and the worker restarted;
+319 tests and all release gates pass. No Preview/main promotion.
+
+Section 51 is still a concrete twelve-metric obligation: ingestion rate/failures,
+rejected/dropped events, offline recovery rate, queue depth, aggregation lag,
+unresolved Issues, alert delivery failures, AI failures, storage growth and
+retention lag. Do not substitute the existing maintenance projection. Evaluate
+collection/reporting with explicit trusted-server vs client-reported provenance;
+network-online events alone are not successful recovery evidence. Browser TTL
+expiry currently removes envelopes without incrementing dropped status, so
+include that path when instrumenting real drop/recovery counts. Preserve logout/
+tenant isolation, no payload/secret collection, bounded metrics and no recursive
+ingestion when the Hub itself fails. Document any contract/schema choice as ADR.
+
 Delivery now has 100-recipient pages, durable 15-second start spacing and human
 important-feedback alerts (DEC-041/migration 070). Continue full pipeline/critical
 alert coverage and self-monitoring, then Help/performance/final A–I audit. No

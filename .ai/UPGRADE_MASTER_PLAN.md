@@ -2,6 +2,10 @@
 
 ## GOAL-069 — Observability Hub continuation (IN PROGRESS)
 
+DEC-042/migration 071 extend trusted critical detection, terminal pipeline
+warnings and out-of-band structured diagnostics/external probes. Full self-metrics,
+Help/publication, performance and final host/A–I acceptance remain outstanding.
+
 DEC-041/migration 070 harden existing alert delivery with atomic recipient pages,
 durable pacing and human-triaged important feedback. Full pipeline/critical alert
 coverage, self-monitoring, Help and final acceptance remain in this same Goal.

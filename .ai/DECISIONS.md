@@ -1,5 +1,31 @@
 # Architecture Decisions
 
+## DEC-042 — Trusted critical events and out-of-band pipeline diagnostics
+
+GOAL-069's required critical/pipeline alerts extend the existing engine and
+PostgreSQL queue, not a parallel monitoring service. Migration 071 adds the
+`CRITICAL_EVENT` rule code/one-event default without overwriting nine existing
+rule configurations. OpenAPI gains that additive enum value and a ten-rule
+maximum. A trusted SERVER/WORKER CRITICAL event qualifies; Browser severity is
+still capped at ERROR and ordinary 4xx does not create an Issue/Incident. A 5xx
+must not downgrade trusted CRITICAL to ERROR. Existing Incident cooldown,
+dedupe and human lifecycle apply; no AI action mutates Incidents.
+
+A bounded repair sweep observes only terminal FAILED aggregation, rule,
+delivery and retention jobs from the last 24 hours. One warning per App/env/
+tenant/kind/15-minute failure window is persisted, using fixed titles, no raw
+failure text. Concurrent runs dedupe; ordinary pending retries do not alert.
+Failed delivery of a pipeline warning is excluded to prevent recursive storms.
+The host runs detection/enqueue before rule evaluation so a rule failure does
+not hide already-terminal pipeline failures.
+
+Storage/host failure cannot be solved by an inbox on that same storage/host.
+A fixed-field structured-log reporter is independent of ingestion, bounds each
+code to once per minute/process and swallows sink failure. Public health and
+readiness retain their existing narrow contract; an independent HTTPS probe
+and runbook complement them. This does not install Staging monitoring, expose
+tenant metrics publicly, or complete the full required self-metrics deliverable.
+
 ## DEC-041 — Durable bounded alert fan-out and backpressure
 
 GOAL-069 keeps the existing PostgreSQL inbox/queue boundary. Each delivery

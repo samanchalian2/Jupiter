@@ -4,6 +4,50 @@ Status: IN PROGRESS. Owner-approved plan supersedes the stale GOAL-060 identifie
 in the supplied specification. GOAL-060 Personal Service history is preserved.
 GOAL-059 remains BLOCKED; LOCAL evidence is not staging acceptance.
 
+## 2026-10-18 — Critical/pipeline warnings and independent probes (LOCAL)
+
+- DEC-042/migration 071 add `CRITICAL_EVENT` with default threshold/minimum 1.
+  Existing nine rules/configurations remain. Forward rehearsal seeds an existing
+  disabled ERROR_BURST override and proves it survives while the new rule is
+  added. OpenAPI enum/rule-count bound becomes ten; all 44 routes remain unchanged.
+- Real PostgreSQL tests exercise all ten rules, plus Browser CRITICAL/HTTP 403
+  negatives followed by one trusted server Critical 500 producing one Incident.
+  This test exposed/fixed `failureSeverity` downgrading every 5xx to ERROR.
+  A legacy downgraded Issue fixture also verifies the critical Incident uses
+  trusted raw evidence rather than stale Issue severity.
+  Existing Incident dedupe/cooldown/lifecycle and worker-specific rule remain.
+- Terminal FAILED pipeline jobs create one scoped alert per App/env/tenant/kind/
+  15-minute failure window (last 24 hours, no future timestamps). Concurrent
+  sweeps dedupe. Actual queue attempt 11 failure retries without alert; attempt
+  12 terminal failure alerts. Different tenants/kinds stay distinct; old failures
+  and recursive delivery failures of pipeline warnings do not create storms.
+  One resulting warning is delivered to the normal recipient inbox in acceptance.
+- Host detection/enqueue precedes rule evaluation. Generic fixed-field diagnostic
+  logs remain outside ingestion, rate-bound per code/minute and sink-failure safe.
+  Six actual independent probe-process tests cover health+ready success, controlled
+  storage-unavailable 503 despite liveness, redirect refusal, oversized/wrong-service JSON and
+  rejection of network HTTP/credential-bearing URLs. No secret/raw error is output.
+- `observability/EXTERNAL_MONITORING_RUNBOOK.md` defines unauthenticated narrow
+  probe semantics, independent scheduling/recovery/log collection and failure-domain
+  limitations. It does not install Staging monitoring or expose tenant metrics.
+- Full self-metric collection, remaining workflow/analytics/host breadth, Product
+  Help/runtime publication, performance and final A–I completion audit remain.
+  Do not equate these probes or the queue panel with full self-monitoring.
+- Complete release gate: 150 API, 28 Web and 141 Hub tests (41 SDK/core/adapters,
+  91 server/contract/diagnostic/probe, nine Console): 319 total. Real Browser and
+  Python/C# flags were enabled. Builds, lint/typechecks, 82-migration rehearsal
+  and diff check pass; existing Vite >500-KiB advisory remains.
+- Full external-client parity uncovered a fixture-order assumption: tenant-free
+  reference alerts could precede tenant-specific alerts under durable pacing.
+  The test now advances only its disposable fixture job due times, verifies both
+  tenant Incident/important-feedback copies, and never changes product pacing.
+- Migration 071 was applied only after local loopback verification and gates;
+  zero active AI reservations preceded restart of only the owned Jupiter API.
+  Actual external probe of the running local host returns health/readiness OK.
+  No temporary Hub acceptance DB or local cleanup target remains. The enabled
+  100,000-token monthly budget is unchanged. No Preview/main/co-hosted service
+  or tenant/business data was changed.
+
 ## 2026-10-18 — Bounded alert delivery and important feedback (LOCAL code)
 
 - Migration 070 adds delivery cursor/completion, backfills already-successful
@@ -312,11 +356,11 @@ Every requirement remains pending unless actual execution evidence is recorded.
 | B | independent packages, registry/auth/contracts/OpenAPI | packages/registry/auth, HTTP operations and real OpenAPI parity implemented; future Goal routes must extend the contract |
 | C | schema/RLS, atomic ingestion, browser/API/worker capture | PostgreSQL and Jupiter Browser/API adapters implemented; product Worker execution coverage pending |
 | D | IndexedDB/replay/backoff/logout/scope isolation | protocol plus actual independent Edge/IndexedDB/network-loss/reload/lost-ACK/tenant/logout/next-actor/storage-denial verified; final host breadth audit remains |
-| E | fingerprint, issues/incidents/rules/alerts | all rule scenarios verified; issue management and incident transitions implemented; full incident workspace/delivery pending |
+| E | fingerprint, issues/incidents/rules/alerts | ten rule scenarios, human assignment/notes/transitions, recipient delivery, pacing, important feedback and terminal pipeline warning tests implemented; final host/workflow breadth audit pending |
 | F | feedback/user tracking, Console/live/analytics/export | own Feedback and operational Console/live/filter/CSV implemented; richer analytics and final workflow acceptance pending |
 | G | evidence-grounded AI, opt-in/budget/schedule/security | implemented; real GapGPT findings/usage, SQL isolation/budget/scheduler and reconciliation UI verified; final breadth QC pending |
 | H | independent second application, C#/Python clients | actual Python/C# and separate Browser/backend reference execution verified with real PostgreSQL; reference AI uses controlled provider, actual GapGPT evidence remains separate |
-| I | retention, self-health/runbook, Help, full QC/cleanup | pending |
+| I | retention, self-health/runbook, Help, full QC/cleanup | bounded retention and external probe/runbook verified; complete self-metrics, Help/publication, performance and final A–I QC/cleanup pending |
 
 ## Required evidence sections
 

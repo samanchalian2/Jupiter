@@ -2,7 +2,7 @@ import { ContractError } from '@observability/contracts';
 import { redactText } from '@observability/core';
 import { HubDatabase } from './database.js';
 import { RegistryService } from './registry.js';
-const defaults=[['WORKER_FAILURE',1,1],['ISSUE_REOPENED',1,1],['ERROR_BURST',5,5],['ERROR_RATE',0.2,20],['RELEASE_REGRESSION',2,10],['BUSINESS_FAILURE',3,5],['SLOW_OPERATION',1000,5],['CONNECTIVITY_FAILURE',5,5],['USER_IMPACT',5,5]] as const;
+const defaults=[['WORKER_FAILURE',1,1],['CRITICAL_EVENT',1,1],['ISSUE_REOPENED',1,1],['ERROR_BURST',5,5],['ERROR_RATE',0.2,20],['RELEASE_REGRESSION',2,10],['BUSINESS_FAILURE',3,5],['SLOW_OPERATION',1000,5],['CONNECTIVITY_FAILURE',5,5],['USER_IMPACT',5,5]] as const;
 type Rule={code:typeof defaults[number][0];threshold:number;minimum_samples:number;window_seconds:number;cooldown_seconds:number;};
 export class MonitoringEngine {
  constructor(private readonly database:HubDatabase,private readonly registry:RegistryService){}
@@ -21,6 +21,7 @@ export class MonitoringEngine {
     if(stat.samples<rule.minimum_samples&&rule.code!=='ERROR_RATE')continue;
     let triggered=false;
     switch(rule.code){
+     case 'CRITICAL_EVENT':{const critical=(await c.query<{total:number}>(`SELECT count(*)::int total FROM observability.issue_events l JOIN observability.events e ON e.application_id=l.application_id AND e.environment_id=l.environment_id AND e.event_id=l.event_id WHERE l.issue_id=$1 AND l.application_id=$2 AND l.environment_id=$3 AND e.occurred_at>now()-($4::int*interval '1 second') AND e.source IN ('SERVER','WORKER') AND e.severity='CRITICAL' AND (e.http_status IS NULL OR e.http_status>=500)`,[issue.id,issue.application_id,issue.environment_id,rule.window_seconds])).rows[0];triggered=critical.total>=rule.threshold;break;}
      case 'ERROR_BURST':triggered=stat.errors>=rule.threshold;break;
      case 'BUSINESS_FAILURE':triggered=stat.business>=rule.threshold&&stat.errors>=rule.threshold;break;
      case 'SLOW_OPERATION':triggered=stat.average>=rule.threshold;break;
@@ -38,7 +39,7 @@ export class MonitoringEngine {
     await c.query('SELECT pg_advisory_xact_lock(hashtext($1))',[`incident:${issue.id}`]);
     const prior=await c.query(`SELECT 1 FROM observability.incidents WHERE application_id=$1 AND environment_id=$2 AND issue_id=$3 AND (status NOT IN ('RESOLVED','IGNORED','FALSE_POSITIVE') OR updated_at>now()-($4::int*interval '1 second') OR updated_at>=$5)`,[issue.application_id,issue.environment_id,issue.id,rule.cooldown_seconds,issue.last_seen]);
     if(prior.rowCount)break;
-    const incident=(await c.query<{id:string}>(`INSERT INTO observability.incidents(application_id,environment_id,tenant_reference,issue_id,title,severity,rule_code,impact) VALUES($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id`,[issue.application_id,issue.environment_id,issue.tenant_reference,issue.id,issue.title,issue.severity,rule.code,{occurrences:stat.samples,affectedUsers:stat.users,windowSeconds:rule.window_seconds}])).rows[0];
+    const incident=(await c.query<{id:string}>(`INSERT INTO observability.incidents(application_id,environment_id,tenant_reference,issue_id,title,severity,rule_code,impact) VALUES($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id`,[issue.application_id,issue.environment_id,issue.tenant_reference,issue.id,issue.title,rule.code==='CRITICAL_EVENT'?'CRITICAL':issue.severity,rule.code,{occurrences:stat.samples,affectedUsers:stat.users,windowSeconds:rule.window_seconds}])).rows[0];
     await c.query('INSERT INTO observability.incident_activity(application_id,environment_id,tenant_reference,incident_id,kind,reason,to_status) VALUES($1,$2,$3,$4,$5,$6,$7)',[issue.application_id,issue.environment_id,issue.tenant_reference,incident.id,'RULE_DETECTED',`Monitoring rule: ${rule.code}`,'NEW']);
     await c.query('INSERT INTO observability.alerts(application_id,environment_id,tenant_reference,incident_id,title,dedupe_key) VALUES($1,$2,$3,$4,$5,$6) ON CONFLICT DO NOTHING',[issue.application_id,issue.environment_id,issue.tenant_reference,incident.id,issue.title,`incident:${incident.id}`]);created++;break;
    }

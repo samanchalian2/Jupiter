@@ -1,5 +1,13 @@
 # Domain Model
 
+## Critical/pipeline alert extension (GOAL-069, DEC-042)
+
+MonitoringRule adds `CRITICAL_EVENT` to the existing nine codes. Existing settings
+are preserved. Terminal durable job failures can create scoped window-deduped
+Alerts without an Incident; those alerts use the same recipient inbox/delivery
+pipeline and have a recursion guard. Fixed diagnostic log entries are not raw
+telemetry, customer usage, or tenant business records.
+
 ## Bounded alert delivery (GOAL-069, DEC-041)
 
 Alert delivery has a persisted UUID recipient cursor and completion timestamp.

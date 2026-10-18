@@ -1,5 +1,15 @@
 # Business Rules
 
+## Operational critical and pipeline warnings (DEC-042)
+
+- Trusted SERVER/WORKER CRITICAL events can trigger the default one-event rule;
+  Browser claims and ordinary 4xx cannot. Trusted 5xx CRITICAL stays CRITICAL.
+- Terminal pipeline failures dedupe by App/env/tenant/kind/15-minute failure
+  window over 24 hours; pending retries do not create warnings. Delivery failure
+  of that warning is not recursively alerted. AI failure remains independent.
+- Public liveness/readiness is not queue, AI or complete self-monitoring health.
+  Out-of-band structured logging and external probes remain complementary.
+
 ## Owner-requested local Operations amendment (2026-10-17)
 
 - Jupiter Hub operational AI uses the explicitly approved 100,000 combined

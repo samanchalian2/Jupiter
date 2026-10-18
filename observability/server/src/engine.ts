@@ -6,7 +6,7 @@ import { RegistryService } from './registry.js';
 interface EventRow {application_id:string;environment_id:string;event_id:string;event_code:string;tenant_reference:string|null;actor_reference:string|null;fingerprint:string;fingerprint_version:number;normalized_message:string;severity:string;source:string;category:string;http_status:number|null;duration_ms:number|null;occurred_at:Date;operation_name:string|null;release_version:string|null;safe_metadata:Record<string,unknown>;}
 export function failureSeverity(event:Pick<EventRow,'severity'|'source'|'http_status'>):string|null {
   if(event.http_status!==null&&event.http_status>=400&&event.http_status<500)return null;
-  if(event.http_status!==null&&event.http_status>=500)return 'ERROR';
+  if(event.http_status!==null&&event.http_status>=500)return event.source!=='BROWSER'&&event.severity==='CRITICAL'?'CRITICAL':'ERROR';
   if(!['ERROR','CRITICAL'].includes(event.severity))return null;
   return event.source==='BROWSER'?'ERROR':event.severity;
 }

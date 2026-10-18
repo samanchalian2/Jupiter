@@ -3,6 +3,12 @@
 Product-independent packages and PostgreSQL server adapters for GOAL-069.
 Implementation is IN PROGRESS; no complete platform claim is made.
 
+Trusted critical-event detection and scoped terminal pipeline warnings use the
+existing rule/inbox engines. Public health/readiness have an executable external
+probe and [integration runbook](EXTERNAL_MONITORING_RUNBOOK.md), complemented by
+bounded fixed-field host logs. These are not full self-metrics or installed
+Staging monitoring. See DEC-042 for compatibility and recursion boundaries.
+
 Per-Application operational retention now uses the existing durable queue,
 bounded child/history batches and immutable automation Audit. See the
 [retention runbook](RETENTION_RUNBOOK.md). The Console maintenance panel and

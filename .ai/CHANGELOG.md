@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-10-18 — GOAL-069 critical/pipeline detection and external probe (IN PROGRESS)
+
+- Added compatible CRITICAL_EVENT rule/migration 071 and OpenAPI enum extension;
+  retain old rule settings. Fixed trusted HTTP 5xx downgrading CRITICAL severity.
+- Added terminal pipeline warning repair/dedupe/recursion guard; ordinary retries
+  do not alert. Host detection runs before rule evaluation.
+- Added generic fixed-field one-minute diagnostic logger, independent bounded
+  HTTPS probe and external monitoring runbook, with actual process tests.
+- DEC-042 records semantics and remaining self-metrics boundary. No target host
+  deployment, full Goal acceptance or Staging monitoring claim.
+
 ## 2026-10-18 — GOAL-069 bounded alert delivery (IN PROGRESS)
 
 - Added migration 070, atomic 100-recipient pages and durable 15-second initial

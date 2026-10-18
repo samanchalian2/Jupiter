@@ -42,6 +42,7 @@ beforeAll(async()=>{
   await database.pool.query(await readFile(new URL('../../../apps/api/migrations/068_observability_alert_inbox.sql',import.meta.url),'utf8'));
   await database.pool.query(await readFile(new URL('../../../apps/api/migrations/069_observability_retention.sql',import.meta.url),'utf8'));
   await database.pool.query(await readFile(new URL('../../../apps/api/migrations/070_observability_alert_delivery.sql',import.meta.url),'utf8'));
+  await database.pool.query(await readFile(new URL('../../../apps/api/migrations/071_observability_critical_rule.sql',import.meta.url),'utf8'));
   root=(await registry.bootstrap({issuer:'acceptance',subject:'local-admin',displayName:'Local admin'},'Acceptance bootstrap')).principalId;
   ordinary=await registry.principal({issuer:'reference-identity',subject:'operator',displayName:'Scoped operator'});
   appA=(await registry.createApplication(root,{slug:'application-a',name:'A',allowedOrigins:['https://consumer.example.test']})).id;
@@ -173,8 +174,13 @@ describe('complete public OpenAPI over actual HTTP and PostgreSQL',()=>{
    await call(base+`/incidents/${incident.id}/transition`,'POST',{...commandScope,status:'TRIAGED',reason:'Explicit human triage'});
    await call(base+`/feedback/${feedback.feedbackId}/replies`,'POST',{...commandScope,body:'Public reply',internal:false,status:'TRIAGED'});
    await call(base+'/overview'+query);for(const resource of ['events','issues','incidents','feedback','alerts']){const page=await call(`${base}/${resource}${query}`);expect(page.items.length).toBeGreaterThan(0);await call(`${base}/${resource}/${page.items[0].id}${query}`);}await call(base+'/export'+query+'&resource=events');
-   const alerts=new AlertService(database,registry);await alerts.enqueue();for(const job of await alerts.queue.claim(randomUUID(),50,['ALERT_DELIVERY']))await alerts.deliver(job);
-   const inbox=await call(base+'/alert-inbox'+query);expect(inbox).toHaveLength(1);await call(`${base}/alert-inbox/${inbox[0].id}/read`,'POST',commandScope);
+   const alerts=new AlertService(database,registry);await alerts.enqueue();
+   // Advance only the disposable fixture's due times. Python/C# scenarios can
+   // create earlier tenant-free alerts; parity must not assume delivery order
+   // or weaken production pacing to reach its two tenant-specific messages.
+   await database.worker(async c=>{await c.query("UPDATE observability.jobs SET available_at=now() WHERE application_id=$1 AND environment_id=$2 AND kind='ALERT_DELIVERY' AND status='PENDING'",[application.id,environment.id]);});
+   for(const job of await alerts.queue.claim(randomUUID(),50,['ALERT_DELIVERY']))await alerts.deliver(job);
+   const inbox=await call(base+'/alert-inbox'+query);expect(inbox).toHaveLength(2);expect(inbox.some((row:{title:string})=>row.title.includes('بازخورد مهم'))).toBe(true);await call(`${base}/alert-inbox/${inbox[0].id}/read`,'POST',commandScope);
    await call(base+'/ai/configuration');await call(base+'/ai/configuration','PUT',{enabled:true,externalProcessingAllowed:false,endpoint:'http://127.0.0.1:9999/v1',model:'contract-fixture',credential:'contract-fixture-only-key',monthlyTokenBudget:100000,maxContextBytes:2048,maxOutputTokens:128,reason:'Explicit local fake provider'});await call(base+'/ai/configuration');
    const investigation=await call(base+'/ai/investigations','POST',{...commandScope,kind:'DAILY',idempotencyKey:'contract-daily'});await call(base+'/ai/investigations'+query);
    const job=(await ai.queue.claim(randomUUID(),50,['INVESTIGATE'])).find(row=>row.dedupe_key===`ai:${investigation.id}`)!;expect(job).toBeDefined();await ai.execute(job);
@@ -274,6 +280,24 @@ describe('independent operational AI with real PostgreSQL',()=>{
  });
 });
 describe('durable principal-addressed operational alerts',()=>{
+ it('alerts once per scoped terminal pipeline failure window, never for an ordinary retry',async()=>{
+  const app=(await registry.createApplication(root,{slug:`pipeline-${randomUUID()}`,name:'Pipeline failures'})).id,env=(await registry.createEnvironment(root,app,{key:'test',kind:'TEST'})).id,service=new AlertService(database,registry);
+  const count=()=>database.worker(async c=>(await c.query("SELECT count(*)::int total FROM observability.alerts WHERE application_id=$1 AND dedupe_key LIKE 'pipeline-failure:%'",[app])).rows[0].total);
+  await database.worker(async c=>{await c.query("INSERT INTO observability.jobs(application_id,environment_id,tenant_reference,kind,dedupe_key,attempts) VALUES($1,$2,'tenant-a','AGGREGATE','retry-fixture',10)",[app,env]);});
+  let job=(await service.queue.claim(randomUUID(),50,['AGGREGATE'])).find(row=>row.application_id===app)!;expect(job.attempts).toBe(11);await service.queue.fail(job,'CONTROLLED_FAILURE');await service.detectPipelineFailures();expect(await count()).toBe(0);
+  await database.worker(async c=>{await c.query("UPDATE observability.jobs SET available_at=now() WHERE application_id=$1",[app]);});job=(await service.queue.claim(randomUUID(),50,['AGGREGATE'])).find(row=>row.application_id===app)!;expect(job.attempts).toBe(12);await service.queue.fail(job,'CONTROLLED_FAILURE');
+  await database.worker(async c=>{await c.query("UPDATE observability.jobs SET completed_at=date_trunc('hour',now()) WHERE application_id=$1 AND status='FAILED'",[app]);});await Promise.all([service.detectPipelineFailures(),service.detectPipelineFailures()]);expect(await count()).toBe(1);
+  await database.worker(async c=>{await c.query("INSERT INTO observability.jobs(application_id,environment_id,tenant_reference,kind,dedupe_key,status,completed_at,attempts,failure_code) VALUES($1,$2,'tenant-a','AGGREGATE','second-same-window','FAILED',date_trunc('hour',now()),12,'CONTROLLED_FAILURE'),($1,$2,'tenant-b','AGGREGATE','other-tenant','FAILED',date_trunc('hour',now()),12,'CONTROLLED_FAILURE'),($1,$2,'tenant-a','RETENTION','other-kind','FAILED',date_trunc('hour',now()),12,'CONTROLLED_FAILURE'),($1,$2,'tenant-a','RULE_EVALUATION','old-failure','FAILED',now()-interval '2 days',12,'CONTROLLED_FAILURE')",[app,env]);});
+  await service.detectPipelineFailures();expect(await count()).toBe(3);await service.enqueue();const delivery=(await service.queue.claim(randomUUID(),50,['ALERT_DELIVERY'])).find(row=>row.application_id===app)!;expect(delivery).toBeDefined();await service.deliver(delivery);expect((await service.inbox(root,{applicationId:app,environmentId:env}))[0].title).toContain('مرکز پایش');
+ });
+ it('reports ordinary delivery failures but prevents recursive alerts about its own failed warning',async()=>{
+  const app=(await registry.createApplication(root,{slug:`pipeline-loop-${randomUUID()}`,name:'No recursive pipeline warning'})).id,env=(await registry.createEnvironment(root,app,{key:'test',kind:'TEST'})).id,service=new AlertService(database,registry);
+  const id=await database.worker(async c=>(await c.query<{id:string}>("INSERT INTO observability.alerts(application_id,environment_id,title,dedupe_key) VALUES($1,$2,'Controlled original','incident-fixture') RETURNING id",[app,env])).rows[0].id);
+  await database.worker(async c=>{await c.query("INSERT INTO observability.jobs(application_id,environment_id,kind,dedupe_key,status,completed_at,attempts) VALUES($1,$2,'ALERT_DELIVERY',$3,'FAILED',now(),12)",[app,env,`alert:${id}`]);});await service.detectPipelineFailures();
+  const warning=await database.worker(async c=>(await c.query<{id:string}>("SELECT id FROM observability.alerts WHERE application_id=$1 AND dedupe_key LIKE 'pipeline-failure:%'",[app])).rows[0]);expect(warning).toBeDefined();
+  await database.worker(async c=>{await c.query("INSERT INTO observability.jobs(application_id,environment_id,kind,dedupe_key,status,completed_at,attempts) VALUES($1,$2,'ALERT_DELIVERY',$3,'FAILED',now()-interval '16 minutes',12)",[app,env,`alert:${warning.id}:${randomUUID()}`]);});await service.detectPipelineFailures();
+  expect(await database.worker(async c=>(await c.query("SELECT count(*)::int total FROM observability.alerts WHERE application_id=$1 AND dedupe_key LIKE 'pipeline-failure:%'",[app])).rows[0].total)).toBe(1);
+ });
  it('pages more than 1000 eligible recipients without truncation or duplicate copies',async()=>{
   const app=(await registry.createApplication(root,{slug:`paged-${randomUUID()}`,name:'Paged alert acceptance'})).id,env=(await registry.createEnvironment(root,app,{key:'test',kind:'TEST'})).id,issuer=`paged-${randomUUID()}`;
   await database.control(async c=>{await c.query("INSERT INTO observability.principals(issuer,subject,display_name) SELECT $1,n::text,'Controlled recipient' FROM generate_series(1,1005) n",[issuer]);await c.query("INSERT INTO observability.access_grants(application_id,environment_id,tenant_reference,principal_id,role,granted_by,reason) SELECT $1,$2,'scope',id,'OPERATOR',$3,'Paged fixture grant' FROM observability.principals WHERE issuer=$4",[app,env,root,issuer]);});
@@ -369,8 +393,17 @@ describe('Hub registry/auth/atomic storage and real PostgreSQL isolation',()=>{
       // Legacy migration 001 creates a cluster-wide role unconditionally.
       // Substitute only that identifier for this isolated rehearsal so the
       // existing business runtime role is neither dropped nor modified.
-      for(const file of files){const sql=(await readFile(new URL(file,directory),'utf8')).replace(/\bjupiter_app\b/g,role);await client.query('BEGIN');try{await client.query(sql);await client.query('COMMIT');}catch(error){await client.query('ROLLBACK');throw error;}}
-      expect(files.at(-1)).toBe('070_observability_alert_delivery.sql');expect(files.length).toBe(81);
+      let legacyApplication:string|undefined;
+      for(const file of files){
+       if(file==='071_observability_critical_rule.sql'){
+        legacyApplication=(await client.query<{id:string}>("INSERT INTO observability.applications(slug,name) VALUES('migration-critical-fixture','Migration acceptance') RETURNING id")).rows[0].id;
+        await client.query("INSERT INTO observability.monitoring_rules(application_id,code,threshold,minimum_samples,enabled) VALUES($1,'ERROR_BURST',17,9,false)",[legacyApplication]);
+       }
+       const sql=(await readFile(new URL(file,directory),'utf8')).replace(/\bjupiter_app\b/g,role);await client.query('BEGIN');try{await client.query(sql);await client.query('COMMIT');}catch(error){await client.query('ROLLBACK');throw error;}
+      }
+      const migrated=(await client.query('SELECT code,threshold,minimum_samples,enabled FROM observability.monitoring_rules WHERE application_id=$1 ORDER BY code',[legacyApplication])).rows;
+      expect(migrated).toEqual([{code:'CRITICAL_EVENT',threshold:1,minimum_samples:1,enabled:true},{code:'ERROR_BURST',threshold:17,minimum_samples:9,enabled:false}]);
+      expect(files.at(-1)).toBe('071_observability_critical_rule.sql');expect(files.length).toBe(82);
       expect((await client.query("SELECT count(*)::int total FROM information_schema.tables WHERE table_schema='observability'")).rows[0].total).toBe(25);
     }finally{await client.end();await admin.query('SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname=$1 AND pid<>pg_backend_pid()',[name]);await admin.query(`DROP DATABASE "${name}"`);if((await admin.query('SELECT 1 FROM pg_roles WHERE rolname=$1',[role])).rowCount)await admin.query(`DROP ROLE "${role}"`);}
   },30_000);
@@ -416,18 +449,33 @@ describe('Hub registry/auth/atomic storage and real PostgreSQL isolation',()=>{
   it('operational queries enforce narrower tenant scope and revoked grants',async()=>{const viewer=await registry.principal({issuer:'acceptance',subject:'viewer',displayName:'Viewer'});const grant=await registry.grant(root,{applicationId:appA,environmentId:envA,tenantReference:'shared-tenant-id',targetPrincipalId:viewer,role:'VIEWER',reason:'Scoped viewer test'});const service=new OperationsService(database,registry);const narrow={applicationId:appA,environmentId:envA,tenantReference:'shared-tenant-id'};expect((await service.list(viewer,narrow,'events')).items.length).toBeGreaterThan(0);await expect(service.list(viewer,{...narrow,tenantReference:undefined},'events')).rejects.toThrow('OPERATIONAL_ACCESS_DENIED');await expect(service.list(viewer,{...narrow,tenantReference:'tenant-B'},'events')).rejects.toThrow();await expect(service.exportCsv(viewer,narrow,'events')).rejects.toThrow();await registry.revokeGrant(root,appA,grant.id,'Revoke viewer');await expect(service.list(viewer,narrow,'events')).rejects.toThrow();});
   it('issue management verifies assignee and records safe append-only activity/Audit',async()=>{const ops=new OperationsService(database,registry),s={applicationId:appA,environmentId:envA,tenantReference:'shared-tenant-id'};const issue=(await ops.list(root,s,'issues')).items[0];expect(issue).toBeDefined();await ops.changeIssue(root,s,issue.id,{status:'INVESTIGATING',assignedPrincipalId:ordinary,note:'Technical note: password=test-placeholder',reason:'Operator investigation'});const detail=await ops.detail(root,s,'issues',issue.id);expect(detail.assigned_principal_id).toBe(ordinary);expect(detail.activity).toHaveLength(3);expect(JSON.stringify(detail.activity)).not.toContain('test-placeholder');const audit=await database.control(async c=>(await c.query('SELECT metadata FROM observability.audit WHERE application_id=$1 AND metadata->>\'issueId\'=$2',[appA,issue.id])).rows);expect(audit).toHaveLength(3);const outsider=await registry.principal({issuer:'acceptance',subject:'outside',displayName:'Outside'});await expect(ops.changeIssue(root,s,issue.id,{assignedPrincipalId:outsider,reason:'Invalid assignment'})).rejects.toThrow('OPERATIONAL_ACCESS_DENIED');});
   it('CSV export is bounded, authorized and protects spreadsheet formula cells',async()=>{expect(csvCell('=cmd()')).toBe('"\'=cmd()"');expect(csvCell(' @SUM(A1)')).toBe('"\' @SUM(A1)"');const text=await new OperationsService(database,registry).exportCsv(root,{applicationId:appA,environmentId:envA},'events');expect(text.startsWith('\uFEFF')).toBe(true);await expect(new OperationsService(database,registry).list(ordinary,{applicationId:appB,environmentId:envB},'events')).rejects.toThrow();});
-  it.each(['ERROR_BURST','ERROR_RATE','RELEASE_REGRESSION','BUSINESS_FAILURE','SLOW_OPERATION','WORKER_FAILURE','CONNECTIVITY_FAILURE','USER_IMPACT','ISSUE_REOPENED'] as const)('evaluates real persisted %s rule evidence',async code=>{
+  it('never trusts browser CRITICAL or ordinary HTTP denial for the critical-event rule',async()=>{
+   const app=(await registry.createApplication(root,{slug:`critical-trust-${randomUUID()}`,name:'Critical trust'})).id,env=(await registry.createEnvironment(root,app,{key:'test',kind:'TEST'})).id,monitor=new MonitoringEngine(database,registry),engine=new IssueEngine(database,registry),s={...scope(),applicationId:app,environmentId:env};await monitor.ensureDefaults(app);
+   await ingestion.ingest({events:[event({applicationId:app,environmentId:env,severity:'CRITICAL',eventCode:'browser.claim'})]},s);
+   await ingestion.ingest({events:[event({applicationId:app,environmentId:env,source:'SERVER',severity:'CRITICAL',httpStatus:403,eventCode:'server.denied'})]},{...s,source:'SERVER'});
+   for(const job of await engine.queue.claim(randomUUID(),50,['AGGREGATE']))await engine.aggregate(job);await monitor.evaluate();
+   const count=()=>database.worker(async c=>(await c.query('SELECT count(*)::int total FROM observability.incidents WHERE application_id=$1',[app])).rows[0].total);expect(await count()).toBe(0);
+   await ingestion.ingest({events:[event({applicationId:app,environmentId:env,source:'SERVER',severity:'CRITICAL',httpStatus:500,eventCode:'server.critical'})]},{...s,source:'SERVER'});
+   for(const job of await engine.queue.claim(randomUUID(),50,['AGGREGATE']))await engine.aggregate(job);
+   const criticalIssue=await database.worker(async c=>(await c.query("SELECT severity FROM observability.issues WHERE application_id=$1 AND severity='CRITICAL'",[app])).rows);expect(criticalIssue).toHaveLength(1);
+   // Rehearse an already-aggregated legacy 5xx Issue: the rule must classify
+   // the Incident from trusted raw evidence, not stale downgraded severity.
+   await database.worker(async c=>{await c.query("UPDATE observability.issues SET severity='ERROR' WHERE application_id=$1",[app]);});
+   await monitor.evaluate();await monitor.evaluate();expect(await count()).toBe(1);
+   const incident=await database.worker(async c=>(await c.query('SELECT rule_code,severity FROM observability.incidents WHERE application_id=$1',[app])).rows[0]);expect(incident).toEqual({rule_code:'CRITICAL_EVENT',severity:'CRITICAL'});
+  });
+  it.each(['ERROR_BURST','ERROR_RATE','RELEASE_REGRESSION','BUSINESS_FAILURE','SLOW_OPERATION','WORKER_FAILURE','CONNECTIVITY_FAILURE','USER_IMPACT','ISSUE_REOPENED','CRITICAL_EVENT'] as const)('evaluates real persisted %s rule evidence',async code=>{
     const app=(await registry.createApplication(root,{slug:`rule-${randomUUID().slice(0,8)}`,name:code})).id,env=(await registry.createEnvironment(root,app,{key:'test',kind:'TEST'})).id;
     const monitor=new MonitoringEngine(database,registry),engine=new IssueEngine(database,registry);
-    const threshold=code==='ERROR_RATE'?0.2:code==='RELEASE_REGRESSION'?2:code==='SLOW_OPERATION'?500:code==='WORKER_FAILURE'||code==='ISSUE_REOPENED'?1:5;
-    const minimum=code==='ERROR_RATE'?20:code==='RELEASE_REGRESSION'?10:code==='WORKER_FAILURE'||code==='ISSUE_REOPENED'?1:5;
+    const threshold=code==='ERROR_RATE'?0.2:code==='RELEASE_REGRESSION'?2:code==='SLOW_OPERATION'?500:code==='WORKER_FAILURE'||code==='ISSUE_REOPENED'||code==='CRITICAL_EVENT'?1:5;
+    const minimum=code==='ERROR_RATE'?20:code==='RELEASE_REGRESSION'?10:code==='WORKER_FAILURE'||code==='ISSUE_REOPENED'||code==='CRITICAL_EVENT'?1:5;
     await monitor.configure(root,app,{code,threshold,minimum_samples:minimum,window_seconds:300,cooldown_seconds:900,enabled:true,reason:'Rule acceptance'});
     const base={...scope(),applicationId:app,environmentId:env,source:'SERVER' as const,tenantAll:true};
     const publish=async(extra:Partial<TelemetryEvent>={})=>ingestion.ingest({events:[event({applicationId:app,environmentId:env,source:'SERVER',eventCode:'rule.operation',operationName:'measure',releaseVersion:'v1',...extra})]},base);
     if(code==='ERROR_RATE'){for(let n=0;n<40;n++)await publish({eventCode:'http.operation',httpStatus:200,severity:'INFO'});for(let n=0;n<10;n++)await publish({eventCode:'http.operation',httpStatus:500});}
     else if(code==='RELEASE_REGRESSION'){for(let n=0;n<10;n++)await publish({occurredAt:new Date(Date.now()-450_000).toISOString()});for(let n=0;n<20;n++)await publish({releaseVersion:'v2'});}
     else if(code==='ISSUE_REOPENED'){await publish();for(const job of await engine.queue.claim(randomUUID(),50,['AGGREGATE']))await engine.aggregate(job);const ops=new OperationsService(database,registry),issue=(await ops.list(root,{applicationId:app,environmentId:env},'issues')).items[0];await ops.changeIssue(root,{applicationId:app,environmentId:env},issue.id,{status:'RESOLVED',reason:'Resolve before recurrence'});await publish({occurredAt:new Date(Date.now()+1000).toISOString()});}
-    else for(let n=0;n<minimum;n++)await publish({...(code==='SLOW_OPERATION'?{category:'PERFORMANCE' as const,severity:'INFO' as const,durationMs:750}:{}),...(code==='CONNECTIVITY_FAILURE'?{category:'CONNECTIVITY' as const,severity:'WARNING' as const}:{}),...(code==='BUSINESS_FAILURE'?{category:'BUSINESS_OPERATION' as const}:{}),...(code==='WORKER_FAILURE'?{category:'WORKER' as const,source:'WORKER' as const,severity:'CRITICAL' as const,safeMetadata:{retryExhausted:true}}:{}),...(code==='USER_IMPACT'?{actorReference:`affected-${n}`}:{})});
+    else for(let n=0;n<minimum;n++)await publish({...(code==='SLOW_OPERATION'?{category:'PERFORMANCE' as const,severity:'INFO' as const,durationMs:750}:{}),...(code==='CONNECTIVITY_FAILURE'?{category:'CONNECTIVITY' as const,severity:'WARNING' as const}:{}),...(code==='BUSINESS_FAILURE'?{category:'BUSINESS_OPERATION' as const}:{}),...(code==='WORKER_FAILURE'?{category:'WORKER' as const,source:'WORKER' as const,severity:'CRITICAL' as const,safeMetadata:{retryExhausted:true}}:{}),...(code==='CRITICAL_EVENT'?{source:'SERVER' as const,severity:'CRITICAL' as const}:{}),...(code==='USER_IMPACT'?{actorReference:`affected-${n}`}:{})});
     for(let batch=await engine.queue.claim(randomUUID(),50,['AGGREGATE']);batch.length;batch=await engine.queue.claim(randomUUID(),50,['AGGREGATE']))for(const job of batch)await engine.aggregate(job);
     await monitor.evaluate();await monitor.evaluate();
     const incidents=await database.scoped({...base,actorAll:true},async c=>(await c.query('SELECT rule_code FROM observability.incidents WHERE application_id=$1 AND environment_id=$2',[app,env])).rows);

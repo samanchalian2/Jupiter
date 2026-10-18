@@ -1,7 +1,7 @@
 import { Injectable, Logger, type OnModuleInit, type OnModuleDestroy } from '@nestjs/common';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { HubDatabase, RegistryService, IngestionService, HubHttpApi, IssueEngine, MonitoringEngine, AlertService, RetentionService, InvestigatorService, AesCredentialVault, JsonInvestigationProvider, type HubHttpRequest } from '@observability/server';
+import { HubDatabase, RegistryService, IngestionService, HubHttpApi, IssueEngine, MonitoringEngine, AlertService, RetentionService, InvestigatorService, AesCredentialVault, JsonInvestigationProvider, HubDiagnosticReporter, type HubHttpRequest } from '@observability/server';
 import { NodeSdk, type NodeContext } from '@observability/node-sdk';
 import { ContractError, isUuid, type IdentityScope } from '@observability/contracts';
 import { AuthService } from '../auth/auth.service.js';
@@ -21,6 +21,7 @@ export function hubBindingConfiguration():HubBindingConfiguration|undefined{
 @Injectable()
 export class HubBindingService implements OnModuleInit,OnModuleDestroy {
  private readonly logger=new Logger(HubBindingService.name);
+ private readonly diagnostics=new HubDiagnosticReporter(entry=>this.logger.warn(JSON.stringify(entry)));
  private hub?:HubDatabase;private registry?:RegistryService;private api?:HubHttpApi;private configuration?:HubBindingConfiguration;private servicePrincipal?:string;
  private sdk?:NodeSdk;private timer?:NodeJS.Timeout;private working=false;private lastRules=0;private unsubscribe?:()=>void;
  private investigator?:InvestigatorService;
@@ -60,10 +61,10 @@ export class HubBindingService implements OnModuleInit,OnModuleDestroy {
    });
    if(process.env.JUPITER_WORKER_ENABLED==='true'||process.env.OBSERVABILITY_WORKER_ENABLED==='true'){
     const engine=new IssueEngine(this.hub,this.registry),rules=new MonitoringEngine(this.hub,this.registry),workerId=crypto.randomUUID();
-    const drain=async()=>{if(this.working)return;this.working=true;try{const jobs=await engine.queue.claim(workerId,25,['AGGREGATE']);for(const job of jobs){try{await engine.aggregate(job);}catch{await engine.queue.fail(job,'AGGREGATION_FAILED');}}if(Date.now()-this.lastRules>=60_000){await rules.evaluate();await alerts.enqueue();await retention.enqueue();await this.investigator?.schedule();this.lastRules=Date.now();}for(const job of await engine.queue.claim(workerId,5,['ALERT_DELIVERY'])){try{await alerts.deliver(job);}catch{await engine.queue.fail(job,'ALERT_DELIVERY_FAILED');}}for(const job of await engine.queue.claim(workerId,1,['RETENTION'])){try{await retention.execute(job);}catch{await engine.queue.fail(job,'RETENTION_FAILED');}}if(this.investigator){for(const job of await engine.queue.claim(workerId,1,['INVESTIGATE'])){try{await this.investigator.execute(job);}catch{await engine.queue.fail(job,'INVESTIGATION_FAILED');}}}}catch{this.logger.warn('OBSERVABILITY_WORKER_UNAVAILABLE');}finally{this.working=false;}};
+    const drain=async()=>{if(this.working)return;this.working=true;try{const jobs=await engine.queue.claim(workerId,25,['AGGREGATE']);for(const job of jobs){try{await engine.aggregate(job);}catch{await engine.queue.fail(job,'AGGREGATION_FAILED');}}if(Date.now()-this.lastRules>=60_000){await alerts.detectPipelineFailures();await alerts.enqueue();await rules.evaluate();await retention.enqueue();await this.investigator?.schedule();this.lastRules=Date.now();}for(const job of await engine.queue.claim(workerId,5,['ALERT_DELIVERY'])){try{await alerts.deliver(job);}catch{await engine.queue.fail(job,'ALERT_DELIVERY_FAILED');}}for(const job of await engine.queue.claim(workerId,1,['RETENTION'])){try{await retention.execute(job);}catch{await engine.queue.fail(job,'RETENTION_FAILED');}}if(this.investigator){for(const job of await engine.queue.claim(workerId,1,['INVESTIGATE'])){try{await this.investigator.execute(job);}catch{await engine.queue.fail(job,'INVESTIGATION_FAILED');}}}}catch{this.diagnostics.report('WORKER_DRAIN_FAILED');}finally{this.working=false;}};
     this.timer=setInterval(()=>void drain(),2_000);this.timer.unref();void drain();
    }
-  }catch{this.api=undefined;this.logger.warn('OBSERVABILITY_NOT_READY');}
+  }catch{this.api=undefined;this.diagnostics.report('HUB_NOT_READY');}
  }
  enabled(){return Boolean(this.api&&this.configuration);}
  publicConfiguration(){return this.enabled()?{enabled:true,applicationId:this.configuration!.applicationId,environmentId:this.configuration!.environmentId,releaseVersion:process.env.JUPITER_RELEASE_VERSION??'development'}:{enabled:false};}

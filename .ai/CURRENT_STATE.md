@@ -1,5 +1,23 @@
 # Current State
 
+**2026-10-18 critical/pipeline and external-probe checkpoint (GOAL-069 IN PROGRESS):**
+DEC-042/migration 071 add the CRITICAL_EVENT rule without replacing existing
+settings. Trusted 5xx CRITICAL classification no longer downgrades to ERROR;
+real DB tests distinguish trusted server failure from Browser claims/ordinary
+403. Terminal pipeline failure sweeps generate scoped 15-minute-window alerts,
+exclude ordinary retries and suppress recursive warnings about their own failed
+delivery. The Jupiter worker invokes detection before rule evaluation. A generic
+fixed-field/throttled diagnostic reporter and separate-process bounded external
+probe/runbook complement storage/host failure. Neither public readiness nor the
+queue panel is full self-monitoring. Full metric collection, Help/publication,
+performance, host workflow breadth and final A–I audit remain required.
+Complete release gate passes 150 API, 28 Web and 141 Hub tests (319 total), all
+builds/lint/typechecks, real Browser/Python/C# execution and 82-migration rehearsal.
+Migration 071 is local; the owned API was restarted after zero-active-AI preflight.
+The independent local probe returns healthy; no temporary Hub DB or cleanup
+target remains. Evidence records fixture pacing correction and limitations.
+Preview/main hosts are unchanged; no next Goal is started.
+
 **2026-10-18 alert delivery hardening (GOAL-069 IN PROGRESS):**
 Migration 070 and DEC-041 add bounded 100-recipient continuation pages and
 durable 15-second initial-job pacing per Application/environment. Real PostgreSQL

@@ -13,3 +13,4 @@ export { AlertService } from './alerts.js';
 export { openApiDocument } from './openapi.js';
 export { RetentionService,type RetentionPolicy } from './retention.js';
 export { AesCredentialVault, JsonInvestigationProvider, validateProviderEndpoint, type CredentialVault, type InvestigationProvider, type InvestigationProviderRequest, type InvestigationProviderResponse, type ProviderEndpointPolicy } from './ai-provider.js';
+export {HubDiagnosticReporter,type HubDiagnosticCode,type HubDiagnosticEntry} from './diagnostics.js';

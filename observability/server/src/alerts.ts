@@ -7,6 +7,35 @@ import type { OperationScope } from './operations.js';
 export class AlertService {
  readonly queue:DurableQueue;
  constructor(private readonly database:HubDatabase,private readonly registry:RegistryService){this.queue=new DurableQueue(database);}
+ /** Terminal pipeline failures are grouped in stable 15-minute failure windows.
+  * This observer never re-ingests telemetry into the pipeline it monitors. */
+ async detectPipelineFailures(limit=100){return this.database.worker(async c=>{
+  const result=await c.query(`WITH failures AS (
+   SELECT j.application_id,j.environment_id,j.tenant_reference,j.kind,
+    floor(extract(epoch FROM j.completed_at)/900)::bigint AS failure_window
+   FROM observability.jobs j JOIN observability.applications a ON a.id=j.application_id
+    JOIN observability.environments e ON e.id=j.environment_id AND e.application_id=j.application_id
+   WHERE a.enabled AND e.enabled AND j.status='FAILED' AND j.completed_at>=now()-interval '24 hours' AND j.completed_at<=now()
+    AND j.kind IN ('AGGREGATE','RULE_EVALUATION','ALERT_DELIVERY','RETENTION')
+    AND NOT (j.kind='ALERT_DELIVERY' AND EXISTS(SELECT 1 FROM observability.alerts prior
+     WHERE prior.application_id=j.application_id AND prior.environment_id=j.environment_id
+      AND prior.id::text=split_part(j.dedupe_key,':',2) AND prior.dedupe_key LIKE 'pipeline-failure:%'))
+   GROUP BY j.application_id,j.environment_id,j.tenant_reference,j.kind,failure_window
+  ), candidates AS (
+   SELECT *, 'pipeline-failure:'||kind||':'||md5(COALESCE(tenant_reference,''))||':'||failure_window AS alert_key
+   FROM failures
+  ) INSERT INTO observability.alerts(application_id,environment_id,tenant_reference,title,dedupe_key)
+   SELECT application_id,environment_id,tenant_reference,
+    CASE kind WHEN 'AGGREGATE' THEN 'خرابی نهایی پردازش رویدادهای مرکز پایش'
+     WHEN 'RULE_EVALUATION' THEN 'خرابی نهایی ارزیابی قواعد مرکز پایش'
+     WHEN 'ALERT_DELIVERY' THEN 'خرابی نهایی ارسال هشدار مرکز پایش'
+     ELSE 'خرابی نهایی نگهداری داده‌های مرکز پایش' END,alert_key
+   FROM candidates f WHERE NOT EXISTS(SELECT 1 FROM observability.alerts old
+    WHERE old.application_id=f.application_id AND old.environment_id=f.environment_id AND old.dedupe_key=f.alert_key)
+   ORDER BY failure_window,application_id,environment_id,alert_key LIMIT $1
+   ON CONFLICT(application_id,environment_id,dedupe_key) DO NOTHING`,[Math.max(1,Math.min(500,Math.trunc(limit)))]);
+  return{created:result.rowCount??0};
+ });}
  /** Bounded repair sweep covers an alert committed before a host crash. */
  async enqueue(limit=100){return this.database.worker(async c=>{
   const rows=(await c.query<{id:string;application_id:string;environment_id:string;tenant_reference:string|null}>(`SELECT a.id,a.application_id,a.environment_id,a.tenant_reference FROM observability.alerts a JOIN observability.applications p ON p.id=a.application_id JOIN observability.environments e ON e.id=a.environment_id WHERE p.enabled AND e.enabled AND NOT EXISTS(SELECT 1 FROM observability.jobs j WHERE j.application_id=a.application_id AND j.environment_id=a.environment_id AND j.kind='ALERT_DELIVERY' AND j.dedupe_key='alert:'||a.id::text) ORDER BY a.created_at,a.id LIMIT $1`,[Math.max(1,Math.min(500,limit))])).rows;
