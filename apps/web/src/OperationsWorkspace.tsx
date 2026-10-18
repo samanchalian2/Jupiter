@@ -5,6 +5,6 @@ const client: OperationsClient = {
   request: (path, init) => authenticatedHubFetch(`/observability${path}`, init),
 };
 export function OperationsWorkspace() {
-  return <main className="page" dir="rtl"><a className="ui-button secondary" href="/">بازگشت به ژوپیتر</a><OperationsConsole client={client}/></main>;
+  return <main className="page" dir="rtl"><a className="ui-button secondary" href="/">بازگشت به ژوپیتر</a><OperationsConsole client={client} initialSection={window.location.hash==='#alerts'?'alert-inbox':'overview'}/></main>;
 }
 export function OperationsPanel() { return <OperationsConsole client={client}/>; }

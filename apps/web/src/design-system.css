@@ -501,6 +501,17 @@ button.theme-mode-control:focus-visible {
 .account-menu summary { width: auto; min-width: 40px; padding-inline: 8px; font-size: var(--font-body-small); font-weight: 400; }
 .account-menu[open] { min-width: 272px; }
 
+.header-actions .operational-notifications > div { overflow-wrap: anywhere; }
+@media (max-width: 640px) {
+  .header-actions .operational-notifications > div {
+    position: fixed;
+    inset-inline: 12px;
+    top: 64px;
+    width: auto;
+    max-height: calc(100dvh - 88px);
+  }
+}
+
 .header-actions .notifications > div,
 .header-actions .global-search-panel {
   border-color: var(--color-border);

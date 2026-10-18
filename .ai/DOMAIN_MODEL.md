@@ -1,5 +1,14 @@
 # Domain Model
 
+## Operational alert inbox (GOAL-069)
+
+An Alert has a composite Application/environment/tenant identity. A durable
+ALERT_DELIVERY job inserts one inbox row per authorized recipient principal;
+the unique Alert/principal key prevents duplicate delivery. Each recipient owns
+an optional read timestamp; read acknowledgement does not change the related
+Incident lifecycle. Jupiter's NotificationService projects this inbox via an
+account-scoped source port rather than creating a business-ticket notification.
+
 ## Operational Investigator (GOAL-069)
 
 Hub Application configuration owns encrypted provider credential, enablement,

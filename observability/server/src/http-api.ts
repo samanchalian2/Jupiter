@@ -6,6 +6,7 @@ import { FeedbackService } from './feedback.js';
 import { OperationsService, type OperationScope, type QueryFilter, type Resource } from './operations.js';
 import { IssueEngine } from './engine.js';
 import { MonitoringEngine } from './rules.js';
+import { AlertService } from './alerts.js';
 import type { InvestigatorService, InvestigatorConfiguration } from './investigator.js';
 
 /** Host-supplied verified identity. Implementations can use JWT/OIDC/session
@@ -77,6 +78,15 @@ export class HubHttpApi {
       let verified:VerifiedPrincipal;try{verified=await this.identities.verify(token);}catch{throw new ContractError('AUTHENTICATION_REQUIRED');}
       const principalId=await this.registry.principal(verified);
       if(!this.operationsLimiter.allow(principalId))return{status:429,body:{reasonCode:'OPERATIONS_RATE_LIMIT'}};
+      const inboxRoute=/^\/operations\/applications\/([0-9a-f-]{36})\/alert-inbox(?:\/([0-9a-f-]{36})\/read)?$/.exec(path);
+      if(inboxRoute){
+       const body=request.method==='GET'?{}:this.body(request),environmentId=request.method==='GET'?url.searchParams.get('environmentId'):body.environmentId;
+       if(!isUuid(environmentId))throw new ContractError('INVALID_DATA_SCOPE');
+       if(request.method==='GET'&&[...url.searchParams.keys()].some(k=>!['environmentId','tenantReference'].includes(k)||url.searchParams.getAll(k).length!==1)||request.method!=='GET'&&Object.keys(body).some(k=>!['environmentId','tenantReference'].includes(k)))throw new ContractError('INVALID_QUERY');
+       const scope={applicationId:inboxRoute[1],environmentId,...(request.method==='GET'?url.searchParams.has('tenantReference')?{tenantReference:url.searchParams.get('tenantReference')||null}:{}:body.tenantReference!==undefined?{tenantReference:body.tenantReference as string|null}:{})},service=new AlertService(this.database,this.registry);
+       if(request.method==='GET'&&!inboxRoute[2])return{status:200,body:await service.inbox(principalId,scope)};
+       if(request.method==='POST'&&inboxRoute[2])return{status:200,body:await service.markRead(principalId,scope,inboxRoute[2])};
+      }
       const reconciliationRoute=/^\/operations\/applications\/([0-9a-f-]{36})\/ai\/attempts\/([0-9a-f-]{36})\/reconcile$/.exec(path);
       if(reconciliationRoute&&request.method==='POST'){
        if(!this.investigator)return{status:503,body:{reasonCode:'INVESTIGATOR_NOT_CONFIGURED'}};

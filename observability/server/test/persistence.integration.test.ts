@@ -4,7 +4,7 @@ import { randomUUID } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import { readFile, readdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import { HubDatabase, RegistryService, IngestionService, DurableQueue, HubHttpApi, createHubServer, BoundedRateLimiter, FeedbackService, IssueEngine, MonitoringEngine, OperationsService, csvCell, InvestigatorService, AesCredentialVault, type InvestigationProvider } from '../src/index.js';
+import { HubDatabase, RegistryService, IngestionService, DurableQueue, HubHttpApi, createHubServer, BoundedRateLimiter, FeedbackService, IssueEngine, MonitoringEngine, OperationsService, csvCell, InvestigatorService, AesCredentialVault, AlertService, type InvestigationProvider } from '../src/index.js';
 import type { TelemetryEvent } from '@observability/contracts';
 
 // Real PostgreSQL, in an isolated temporary database. This test never migrates
@@ -29,6 +29,7 @@ beforeAll(async()=>{
   await database.pool.query(await readFile(new URL('../../../apps/api/migrations/065_observability_operational_audit.sql',import.meta.url),'utf8'));
   await database.pool.query(await readFile(new URL('../../../apps/api/migrations/066_observability_host_adapters.sql',import.meta.url),'utf8'));
   await database.pool.query(await readFile(new URL('../../../apps/api/migrations/067_observability_investigator.sql',import.meta.url),'utf8'));
+  await database.pool.query(await readFile(new URL('../../../apps/api/migrations/068_observability_alert_inbox.sql',import.meta.url),'utf8'));
   root=(await registry.bootstrap({issuer:'acceptance',subject:'local-admin',displayName:'Local admin'},'Acceptance bootstrap')).principalId;
   ordinary=await registry.principal({issuer:'reference-identity',subject:'operator',displayName:'Scoped operator'});
   appA=(await registry.createApplication(root,{slug:'application-a',name:'A',allowedOrigins:['https://consumer.example.test']})).id;
@@ -131,6 +132,35 @@ describe('independent operational AI with real PostgreSQL',()=>{
   const unknown=await api.dispatch({...request,method:'GET',path:base+`/unknown-attempts?environmentId=${scope.environmentId}&tenantReference=${scope.tenantReference}`});expect(unknown.status).toBe(200);expect(unknown.body).toEqual([]);
  });
 });
+describe('durable principal-addressed operational alerts',()=>{
+ it('delivers once to eligible operators and denies other recipients, scopes and revoked access',async()=>{
+  const app=(await registry.createApplication(root,{slug:`alerts-${randomUUID()}`,name:'Alert acceptance'})).id,env=(await registry.createEnvironment(root,app,{key:'local',kind:'TEST'})).id;
+  const operator=await registry.principal({issuer:'alerts',subject:randomUUID(),displayName:'Operator'}),viewer=await registry.principal({issuer:'alerts',subject:randomUUID(),displayName:'Viewer'}),other=await registry.principal({issuer:'alerts',subject:randomUUID(),displayName:'Other tenant'});
+  const grant=await registry.grant(root,{applicationId:app,environmentId:env,tenantReference:'tenant-a',targetPrincipalId:operator,role:'OPERATOR',reason:'Alert acceptance'});
+  await registry.grant(root,{applicationId:app,targetPrincipalId:viewer,role:'VIEWER',reason:'Viewer not recipient'});await registry.grant(root,{applicationId:app,environmentId:env,tenantReference:'tenant-b',targetPrincipalId:other,role:'OPERATOR',reason:'Other tenant recipient'});
+  const alert=await database.worker(async c=>(await c.query<{id:string}>('INSERT INTO observability.alerts(application_id,environment_id,tenant_reference,title,dedupe_key) VALUES($1,$2,$3,$4,$5) RETURNING id',[app,env,'tenant-a','Controlled operational alert','acceptance-alert'])).rows[0]);
+  const service=new AlertService(database,registry),scope={applicationId:app,environmentId:env,tenantReference:'tenant-a'};await service.enqueue();await service.enqueue();
+  const job=(await service.queue.claim(randomUUID(),50,['ALERT_DELIVERY'])).find(row=>row.dedupe_key===`alert:${alert.id}`)!;expect(job).toBeDefined();
+  await database.control(async c=>{await c.query('UPDATE observability.applications SET enabled=false WHERE id=$1',[app]);});
+  try{await expect(service.deliver(job)).rejects.toThrow('APPLICATION_UNAVAILABLE');}finally{await database.control(async c=>{await c.query('UPDATE observability.applications SET enabled=true WHERE id=$1',[app]);});}
+  expect(await service.deliver(job)).toBe(true);expect(await service.deliver(job)).toBe(false);
+  const inbox=await service.inbox(operator,scope);expect(inbox).toHaveLength(1);expect(inbox[0].alert_id).toBe(alert.id);expect(inbox[0].read_at).toBeNull();
+  const rootHeaders={authorization:'Bearer root-identity-placeholder','content-type':'application/json'},path=`${endpoint}/operations/applications/${app}/alert-inbox`;
+  expect((await fetch(`${path}?environmentId=${env}`)).status).toBe(401);
+  const response=await fetch(`${path}?environmentId=${env}`,{headers:rootHeaders});expect(response.status).toBe(200);const rootInbox=await response.json();expect(rootInbox).toHaveLength(1);
+  expect((await fetch(`${path}?environmentId=${env}&environmentId=${env}`,{headers:rootHeaders})).status).toBe(400);
+  expect((await fetch(`${path}?environmentId=${envB}`,{headers:rootHeaders})).status).not.toBe(200);
+  expect((await fetch(`${path}/${rootInbox[0].id}/read`,{method:'POST',headers:rootHeaders,body:JSON.stringify({environmentId:env})})).status).toBe(200);
+  expect((await fetch(`${path}/${inbox[0].id}/read`,{method:'POST',headers:rootHeaders,body:JSON.stringify({environmentId:env})})).status).toBe(404);
+  const read=await service.markRead(operator,scope,inbox[0].id),again=await service.markRead(operator,scope,inbox[0].id);expect(again.read_at).toEqual(read.read_at);
+  await expect(service.inbox(viewer,scope)).rejects.toThrow('OPERATIONAL_ACCESS_DENIED');expect(await service.inbox(other,{...scope,tenantReference:'tenant-b'})).toEqual([]);
+  await expect(service.markRead(root,scope,inbox[0].id)).rejects.toThrow('ALERT_NOT_FOUND');
+  await expect(database.worker(async c=>{await c.query('INSERT INTO observability.alert_inbox(application_id,environment_id,tenant_reference,alert_id,recipient_principal_id) VALUES($1,$2,$3,$4,$5)',[app,env,'tenant-b',alert.id,other]);})).rejects.toThrow('violates foreign key constraint');
+  const ownRls=await database.scoped({...scope,actorReference:null,actorAll:true},async c=>{await c.query("SELECT set_config('obs.principal',$1,true)",[operator]);return(await c.query('SELECT recipient_principal_id FROM observability.alert_inbox')).rows;});expect(ownRls).toEqual([{recipient_principal_id:operator}]);
+  await registry.revokeGrant(root,app,grant.id,'Acceptance access revoked');await expect(service.inbox(operator,scope)).rejects.toThrow('OPERATIONAL_ACCESS_DENIED');
+  const jobs=await database.worker(async c=>(await c.query('SELECT id FROM observability.jobs WHERE application_id=$1 AND kind=$2',[app,'ALERT_DELIVERY'])).rows);expect(jobs).toHaveLength(1);
+ });
+});
 describe('Hub registry/auth/atomic storage and real PostgreSQL isolation',()=>{
   it('bootstrap is idempotent and ordinary principals gain no global privileges',async()=>{const second=await registry.bootstrap({issuer:'acceptance',subject:'local-admin',displayName:'Local admin'},'Acceptance bootstrap');expect(second.created).toBe(false);expect(second.principalId).toBe(root);await expect(registry.createApplication(ordinary,{slug:'denied-app',name:'Denied'})).rejects.toThrow('REGISTRY_CREATE_DENIED');const count=await database.control(async c=>(await c.query("SELECT count(*)::int total FROM observability.audit WHERE action='HUB_SUPER_ADMIN_BOOTSTRAPPED'")).rows[0].total);expect(count).toBe(1);});
   it('explicit application grant never escalates to another application',async()=>{await registry.grant(root,{applicationId:appA,targetPrincipalId:ordinary,role:'ADMIN',reason:'Acceptance scoped access'});await expect(registry.createEnvironment(ordinary,appA,{key:'test',kind:'TEST'})).resolves.toHaveProperty('id');await expect(registry.createEnvironment(ordinary,appB,{key:'denied',kind:'TEST'})).rejects.toThrow('OPERATIONAL_ACCESS_DENIED');await expect(registry.issueServerCredential(ordinary,appB,envB,'Unauthorized credential')).rejects.toThrow();});
@@ -180,8 +210,8 @@ describe('Hub registry/auth/atomic storage and real PostgreSQL isolation',()=>{
       // Substitute only that identifier for this isolated rehearsal so the
       // existing business runtime role is neither dropped nor modified.
       for(const file of files){const sql=(await readFile(new URL(file,directory),'utf8')).replace(/\bjupiter_app\b/g,role);await client.query('BEGIN');try{await client.query(sql);await client.query('COMMIT');}catch(error){await client.query('ROLLBACK');throw error;}}
-      expect(files.at(-1)).toBe('067_observability_investigator.sql');expect(files.length).toBe(78);
-      expect((await client.query("SELECT count(*)::int total FROM information_schema.tables WHERE table_schema='observability'")).rows[0].total).toBe(23);
+      expect(files.at(-1)).toBe('068_observability_alert_inbox.sql');expect(files.length).toBe(79);
+      expect((await client.query("SELECT count(*)::int total FROM information_schema.tables WHERE table_schema='observability'")).rows[0].total).toBe(24);
     }finally{await client.end();await admin.query('SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname=$1 AND pid<>pg_backend_pid()',[name]);await admin.query(`DROP DATABASE "${name}"`);if((await admin.query('SELECT 1 FROM pg_roles WHERE rolname=$1',[role])).rowCount)await admin.query(`DROP ROLE "${role}"`);}
   },30_000);
   it('real HTTP ingestion is cookie-free, credential-bound and replay-safe',async()=>{const credential=await registry.mintBrowserCredential(serverA,scope()),f=event();const send=()=>fetch(`${endpoint}/events/batch`,{method:'POST',headers:{authorization:`Bearer ${credential.token}`,'content-type':'application/json',origin:'https://consumer.example.test'},body:JSON.stringify({events:[f]})});const first=await send();expect(first.status).toBe(200);expect((await first.json()).acknowledgements[0].status).toBe('ACCEPTED');expect((await (await send()).json()).acknowledgements[0].status).toBe('DUPLICATE');});

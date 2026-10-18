@@ -2,6 +2,14 @@
 
 ## GOAL-069 — Reusable Observability Hub (IN PROGRESS)
 
+2026-10-18: durable recipient inbox, delivery worker, scoped/read APIs,
+Console inbox and Jupiter NotificationService source adapter are implemented.
+Continue the same Goal: complete alert trigger breadth (important feedback,
+pipeline/worker failure), explicit flood/recipient-bound handling and final
+notification acceptance, then maintenance/self-monitoring, OpenAPI and the
+remaining A–I requirements. Do not declare all alert requirements accepted
+merely because durable delivery works. No Preview/main promotion.
+
 2026-10-17 continuation: the provider-choice blocker is resolved by the owner's
 explicit GapGPT settings and 100,000 monthly token budget. Local configuration
 and real successful bounded AI calls are now established. Do not ask for an

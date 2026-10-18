@@ -2,6 +2,16 @@
 
 ## GOAL-069 Observability Hub
 
+Operational inbox access requires both a current operational grant and the
+recipient principal in RLS. Even a Hub super-admin cannot acknowledge another
+recipient's inbox row. Composite Application/environment/tenant FK prevents
+cross-tenant alert attachment. Delivery snapshots active authorized operational
+recipients only; revoked access denies subsequent reads. Jupiter notification
+projection verifies the current account and synchronizes its managed Jupiter
+grant on every read. No ordinary business role implies operational access.
+Operational notices are not copied into organization ticket notifications or
+stored in browser localStorage; the durable Hub inbox is their source of truth.
+
 Investigator credentials are encrypted with Application-bound AES-256-GCM and
 never returned by configuration APIs. External provider hosts are deployment-
 allowlisted, redirects/query credentials are rejected, and response bodies are

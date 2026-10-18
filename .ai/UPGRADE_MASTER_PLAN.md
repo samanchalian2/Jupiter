@@ -2,6 +2,13 @@
 
 ## GOAL-069 — Observability Hub continuation (IN PROGRESS)
 
+The 2026-10-18 checkpoint adds migration 068, durable recipient-addressed alert
+delivery and read acknowledgement, independent Console inbox and a Jupiter
+NotificationService account adapter. Local authenticated RTL acceptance includes
+all four responsive widths and mobile popover-bounds correction. Full A–I scope
+remains active: additional alert sources/flood controls, maintenance, self-health,
+OpenAPI, independent consumer/offline/Help and final QC are not waived.
+
 The 2026-10-17 owner amendment resolves provider selection with local GapGPT,
 encrypted credential and 100,000-token monthly budget; real AI execution is now
 verified. Independent configuration/scheduling/usage/findings UI and migration

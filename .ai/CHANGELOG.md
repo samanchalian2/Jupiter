@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-10-18 — GOAL-069 durable operational alert delivery (IN PROGRESS)
+
+- Added migration 068: recipient inbox, composite tenant-safe alert FK, scoped
+  principal RLS and restricted read-state update permission.
+- Added bounded repair sweep and leased ALERT_DELIVERY jobs; recipient inserts
+  and completion share a transaction and repeated delivery cannot duplicate.
+- Added authenticated inbox/read HTTP APIs and independent Persian Console UI.
+- Added Jupiter NotificationService account source port plus compact operational
+  notification entry, independent of tenant memberships and ticket notices.
+- Added real PostgreSQL/HTTP authorization, RLS, recipient/read idempotency and
+  cross-tenant FK tests; added NotificationService/session-boundary tests.
+- Existing explicit 100,000 combined input/output monthly AI token cap retained.
+  Full Goal remains in progress; no host promotion or next Goal.
+
 ## 2026-10-17 — GOAL-069 human operations controls (IN PROGRESS)
 
 - Added scoped ADMIN unknown-attempt listing and Console reconciliation form:

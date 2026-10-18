@@ -1,5 +1,23 @@
 # Current State
 
+**2026-10-18 durable alert inbox checkpoint (GOAL-069 IN PROGRESS):**
+Migration 068 adds a recipient-addressed operational inbox with composite
+Application/environment/tenant FK and principal-plus-scope RLS. Bounded repair
+sweeps enqueue durable delivery jobs; delivery and job completion are atomic,
+deduplicated and restricted to active scoped ADMIN/OPERATOR or Hub super-admin
+recipients. Read acknowledgement is idempotent and does not resolve an Incident.
+The independent Console exposes “هشدارهای من”. The Jupiter adapter uses the
+existing NotificationService through an account-scoped source port, with fresh
+verified profile/grant checks and no copy into tenant ticket notifications.
+Full GOAL-069 remains in progress; alert-type breadth, retention/self-monitoring,
+OpenAPI, independent references, offline/Help and final acceptance still remain.
+Latest complete gate: 150 API, 28 Web and 111 Hub tests; all builds, lint and
+typechecks pass, including 79-migration rehearsal. Migration 068 is applied only
+locally. Authenticated inbox/read/notification-link acceptance passes at
+375/768/1024/1440 RTL, including actual popover bounds; Incident status remains
+unchanged. Temporary viewport overrides are reset. Final cleanup dry-run has
+zero targets after five known retained fixtures were reversibly archived.
+
 **2026-10-17 operational human controls checkpoint (GOAL-069 IN PROGRESS):**
 The Console now exposes ADMIN-only unknown-usage review with blank counts,
 provider-verification acknowledgement, mandatory reason and immutable settlement
@@ -25,10 +43,11 @@ atomic token reservations, conservative unknown holds, evidence validation,
 UTC daily/weekly plus periodic/critical scheduling, HTTP routes and Console UI.
 Full GOAL-069 acceptance still remains in progress.
 
-Latest complete checkpoint gate: 147 API, 28 Web and 105 Hub tests; all
+Earlier Investigator checkpoint gate: 147 API, 28 Web and 105 Hub tests; all
 builds/lint/typechecks, 78-migration rehearsal and diff validation pass. Unknown
 AI usage reconciliation now has explicit ADMIN-only API/service with Audit and
-idempotency tests; the corresponding Console control remains unfinished.
+idempotency tests; the corresponding Console control was unfinished at that
+earlier checkpoint (implemented in the human-controls checkpoint above).
 
 The explicit local cleanup retained `jupiter-demo` and safely archived 34 other
 workspaces via supported, audited suspend/archive services. No physical data or

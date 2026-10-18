@@ -43,6 +43,12 @@ There is no physical cascade purge and no mutation of Preview/canonical hosts.
 
 ## Execution utility
 
+2026-10-18 regression follow-up: five enumerated retained organization fixtures
+were suspended/archived via the same supported local-only administrative path.
+No physical rows or accounts were deleted. The final dry-run has zero targets;
+`jupiter-demo` remains the sole non-archived workspace. Neither target host nor
+external provider organizations/workspaces were changed.
+
 Final checkpoint gate passes: 147 API tests, 28 Web tests, 105 Hub tests,
 all builds/lint/typechecks, 78-migration rehearsal and `git diff --check`.
 Serial API file execution prevents shared singleton fixture races; in-test

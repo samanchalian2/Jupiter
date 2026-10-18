@@ -1,10 +1,19 @@
-import { Controller, Get, Headers, Param, Post, Sse } from '@nestjs/common';
+import { Controller, Get, Headers, Param, Post, Sse, UnauthorizedException } from '@nestjs/common';
+import { AuthService } from '../auth/auth.service.js';
 import { TicketActorService } from '../tickets/ticket-actor.service.js';
 import { NotificationService } from './notification.service.js';
 
 @Controller('notifications')
 export class NotificationController {
-  constructor(private readonly actors: TicketActorService, private readonly notifications: NotificationService) {}
+  constructor(private readonly actors: TicketActorService, private readonly notifications: NotificationService,private readonly auth:AuthService) {}
+
+  @Get('operations')
+  async operations(@Headers('authorization')authorization?:string){
+    const token=authorization?.replace(/^Bearer\s+/i,'');if(!token)throw new UnauthorizedException();
+    const identity=await this.auth.verify(token).catch(()=>{throw new UnauthorizedException();});
+    await this.auth.profile(identity.sub);
+    return this.notifications.operationalInbox(identity.sub);
+  }
 
   @Sse('events')
   async events(@Headers('authorization') authorization?: string, @Headers('x-organization-id') organizationId?: string) {

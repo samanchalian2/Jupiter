@@ -1,13 +1,14 @@
 import { Injectable, Logger, type OnModuleInit, type OnModuleDestroy } from '@nestjs/common';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { HubDatabase, RegistryService, IngestionService, HubHttpApi, IssueEngine, MonitoringEngine, InvestigatorService, AesCredentialVault, JsonInvestigationProvider, type HubHttpRequest } from '@observability/server';
+import { HubDatabase, RegistryService, IngestionService, HubHttpApi, IssueEngine, MonitoringEngine, AlertService, InvestigatorService, AesCredentialVault, JsonInvestigationProvider, type HubHttpRequest } from '@observability/server';
 import { NodeSdk, type NodeContext } from '@observability/node-sdk';
 import { ContractError, isUuid, type IdentityScope } from '@observability/contracts';
 import { AuthService } from '../auth/auth.service.js';
 import { DatabaseService } from '../database/database.service.js';
 import { databaseUrl, loadLocalEnvironment, aiCredentialEncryptionKey } from '../config.js';
 import { observeSessionRevocation } from './security-events.js';
+import { NotificationService } from '../notifications/notification.service.js';
 export interface HubBindingConfiguration {applicationId:string;environmentId:string;enabled:boolean;}
 export function hubBindingConfiguration():HubBindingConfiguration|undefined{
  loadLocalEnvironment();if(process.env.OBSERVABILITY_ENABLED==='false')return;
@@ -23,7 +24,8 @@ export class HubBindingService implements OnModuleInit,OnModuleDestroy {
  private hub?:HubDatabase;private registry?:RegistryService;private api?:HubHttpApi;private configuration?:HubBindingConfiguration;private servicePrincipal?:string;
  private sdk?:NodeSdk;private timer?:NodeJS.Timeout;private working=false;private lastRules=0;private unsubscribe?:()=>void;
  private investigator?:InvestigatorService;
- constructor(private readonly auth:AuthService,private readonly productDatabase:DatabaseService){}
+ private unregisterNotifications?:()=>void;
+ constructor(private readonly auth:AuthService,private readonly productDatabase:DatabaseService,private readonly notifications:NotificationService){}
  async onModuleInit(){
   this.configuration=hubBindingConfiguration();if(!this.configuration)return;
   try{
@@ -48,9 +50,17 @@ export class HubBindingService implements OnModuleInit,OnModuleDestroy {
    const endpoint=`http://127.0.0.1:${Number(process.env.API_PORT??3000)}/api/v1/observability`;
    this.sdk=new NodeSdk({applicationId:config.applicationId,environmentId:config.environmentId,endpoint,release:process.env.JUPITER_RELEASE_VERSION??'development',credentialProvider:async()=>{if(!cached||Date.parse(cached.expiresAt)<Date.now()+60_000)cached=await this.registry!.mintForTrustedHost({...config,actorReference:null,tenantReference:null},'SERVER',this.servicePrincipal!);return cached.token;}}).start();
    this.unsubscribe=observeSessionRevocation(userId=>this.registry!.revokeActorCredentials(config.applicationId,userId));
+   const alerts=new AlertService(this.hub,this.registry);
+   this.unregisterNotifications=this.notifications.registerOperationalSource('jupiter-observability',async userId=>{
+    const user=await this.auth.profile(userId);
+    const principal=await this.registry!.principal({issuer:'jupiter',subject:user.id,displayName:user.display_name});
+    await this.registry!.synchronizeExternalAdmin(principal,config.applicationId,'jupiter-platform-admin',user.is_platform_admin,this.servicePrincipal!);
+    try{return(await alerts.inbox(principal,config)).map(row=>({id:row.id,type:'observability.alert' as const,title:row.title,href:'/operations#alerts' as const,occurredAt:new Date(row.delivered_at).toISOString(),read:Boolean(row.read_at)}));}
+    catch(error){if(error instanceof ContractError&&error.reasonCode==='OPERATIONAL_ACCESS_DENIED')return[];throw error;}
+   });
    if(process.env.JUPITER_WORKER_ENABLED==='true'||process.env.OBSERVABILITY_WORKER_ENABLED==='true'){
     const engine=new IssueEngine(this.hub,this.registry),rules=new MonitoringEngine(this.hub,this.registry),workerId=crypto.randomUUID();
-    const drain=async()=>{if(this.working)return;this.working=true;try{const jobs=await engine.queue.claim(workerId,25,['AGGREGATE']);for(const job of jobs){try{await engine.aggregate(job);}catch{await engine.queue.fail(job,'AGGREGATION_FAILED');}}if(Date.now()-this.lastRules>=60_000){await rules.evaluate();await this.investigator?.schedule();this.lastRules=Date.now();}if(this.investigator){for(const job of await engine.queue.claim(workerId,1,['INVESTIGATE'])){try{await this.investigator.execute(job);}catch{await engine.queue.fail(job,'INVESTIGATION_FAILED');}}}}catch{this.logger.warn('OBSERVABILITY_WORKER_UNAVAILABLE');}finally{this.working=false;}};
+    const drain=async()=>{if(this.working)return;this.working=true;try{const jobs=await engine.queue.claim(workerId,25,['AGGREGATE']);for(const job of jobs){try{await engine.aggregate(job);}catch{await engine.queue.fail(job,'AGGREGATION_FAILED');}}if(Date.now()-this.lastRules>=60_000){await rules.evaluate();await alerts.enqueue();await this.investigator?.schedule();this.lastRules=Date.now();}for(const job of await engine.queue.claim(workerId,5,['ALERT_DELIVERY'])){try{await alerts.deliver(job);}catch{await engine.queue.fail(job,'ALERT_DELIVERY_FAILED');}}if(this.investigator){for(const job of await engine.queue.claim(workerId,1,['INVESTIGATE'])){try{await this.investigator.execute(job);}catch{await engine.queue.fail(job,'INVESTIGATION_FAILED');}}}}catch{this.logger.warn('OBSERVABILITY_WORKER_UNAVAILABLE');}finally{this.working=false;}};
     this.timer=setInterval(()=>void drain(),2_000);this.timer.unref();void drain();
    }
   }catch{this.api=undefined;this.logger.warn('OBSERVABILITY_NOT_READY');}
@@ -72,5 +82,5 @@ export class HubBindingService implements OnModuleInit,OnModuleDestroy {
   return{applicationId:this.configuration.applicationId,environmentId:this.configuration.environmentId,actorReference,tenantReference};
  }
  instrumentation(){return this.sdk;}
- async onModuleDestroy(){if(this.timer)clearInterval(this.timer);this.unsubscribe?.();await this.sdk?.shutdown();await this.hub?.close();}
+ async onModuleDestroy(){if(this.timer)clearInterval(this.timer);this.unsubscribe?.();this.unregisterNotifications?.();await this.sdk?.shutdown();await this.hub?.close();}
 }

@@ -3,12 +3,26 @@ import { Observable } from 'rxjs';
 import { DatabaseService } from '../database/database.service.js';
 
 export type TicketNotification = { type: string; ticketId?: string; occurredAt: string };
+export type OperationalNotification = { id:string; type:'observability.alert'; title:string; href:'/operations#alerts'; occurredAt:string; read:boolean };
 
 @Injectable()
 export class NotificationService {
   private readonly subscribers = new Map<string, Set<(event: TicketNotification) => void>>();
+  // Durable storage/authorization belongs to the source. Do not copy operational
+  // alerts into tenant ticket notifications or retain account data in this port.
+  private readonly operationalSources = new Map<string,(verifiedUserId:string)=>Promise<OperationalNotification[]>>();
 
   constructor(private readonly database?: DatabaseService) {}
+
+  registerOperationalSource(key:string,source:(verifiedUserId:string)=>Promise<OperationalNotification[]>) {
+    if(this.operationalSources.has(key))throw new Error('NOTIFICATION_SOURCE_ALREADY_REGISTERED');
+    this.operationalSources.set(key,source);
+    return ()=>{if(this.operationalSources.get(key)===source)this.operationalSources.delete(key);};
+  }
+  async operationalInbox(verifiedUserId:string) {
+    const rows=await Promise.all([...this.operationalSources.values()].map(source=>source(verifiedUserId)));
+    return rows.flat().sort((a,b)=>Date.parse(b.occurredAt)-Date.parse(a.occurredAt)).slice(0,100);
+  }
 
   stream(organizationId: string, userId: string): Observable<{ data: TicketNotification }> {
     const key = `${organizationId}:${userId}`;

@@ -4,6 +4,62 @@ Status: IN PROGRESS. Owner-approved plan supersedes the stale GOAL-060 identifie
 in the supplied specification. GOAL-060 Personal Service history is preserved.
 GOAL-059 remains BLOCKED; LOCAL evidence is not staging acceptance.
 
+## 2026-10-18 — Durable operational alert checkpoint (LOCAL)
+
+- Migration 068 adds `observability.alert_inbox` with composite
+  Application/environment/tenant alert FK, recipient-principal RLS and restricted
+  update of `read_at`. Runtime cannot insert or change recipients.
+- A bounded repair sweep finds alerts without an outbox job. `ALERT_DELIVERY`
+  uses the existing lease/retry queue; authorized-recipient insertion and job
+  completion commit atomically. Unique Alert/principal delivery is replay-safe.
+  Batch limits: at most 100 alerts per regular sweep (hard cap 500), five leased
+  deliveries per host tick, at most 100 inbox rows per read. More than 1,000
+  recipients explicitly fails/retries rather than silently dropping recipients;
+  scalable recipient pagination/flood policy remains a follow-up in this Goal.
+- Only active scoped ADMIN/OPERATOR and explicit Hub super-admin principals are
+  recipients. VIEWER/ANALYST and ordinary tenant users are excluded. Revocation
+  blocks subsequent access to history. A super-admin reads/acknowledges its own
+  delivered copy, not another person's inbox row.
+- `GET /operations/applications/{id}/alert-inbox` and corresponding
+  `POST /alert-inbox/{inboxId}/read` use explicit environment/optional tenant
+  scope. Acknowledgement preserves the first read timestamp; it does not resolve
+  or otherwise mutate Incident state.
+- The independent Console provides Persian “هشدارهای من”, refresh, scoped
+  selection and read acknowledgement. Irrelevant event search/date filters are
+  not shown for this inbox. Host notifications remain account-scoped and use
+  Jupiter NotificationService's source port, with current identity/grant checks.
+  No alert is copied into business tenant notification rows or localStorage.
+- Real PostgreSQL/HTTP tests cover anonymous denial, duplicate delivery/read,
+  duplicate query rejection, wrong environment, wrong recipient, excluded viewer,
+  revoked scope, raw RLS and cross-tenant FK enforcement. Three focused host
+  tests cover source identity, unregister/outage and invalid/disabled sessions.
+- Still pending: additional required alert sources (important feedback and
+  pipeline self-failure), full flood/self-monitoring policy and final live
+  notification workflow acceptance. Durable inbox delivery alone does not
+  complete all Alerts or the overall A–I Definition of Done.
+- Local migration 068 was applied after the isolated forward rehearsal (79
+  migrations, 24 Hub tables). The owned Jupiter services run API 3000/Web 5174;
+  no Preview/main host or separate local application was changed.
+- Authenticated browser verified a real alert was delivered, acknowledged once
+  and then rendered read/disabled. The associated Incident remained `NEW`
+  before/after; no ticket or business lifecycle changed. The same delivered copy
+  appeared in Jupiter's operational notification menu and linked to the Console.
+- Inbox acceptance passed Persian RTL at 375/768/1024/1440 with no document
+  overflow. Visual inspection found mobile popover clipping despite a passing
+  document-width check; fixed with a viewport-bound compact panel. Actual panel
+  bounds were then inside the viewport at all four widths. Temporary viewport
+  overrides are reset after acceptance.
+- After regression, five retained known organization fixtures were identified. The
+  existing local-only utility explicitly enumerated them, then used supported
+  suspension/archive services under the existing authorized administrator.
+  They remain recoverable; zero physical rows/users were deleted and
+  `jupiter-demo` remains retained. This is not a scheduled cleanup policy.
+- Final `pnpm verify:release` passes: 150 API, 28 Web, 111 Hub tests (40
+  SDK/core/adapters, 64 server/provider, seven Console), all builds/lint/typechecks
+  and 79-migration rehearsal. `git diff --check` passes. Existing Vite >500 KiB
+  chunk-size advisory remains explicit. A final cleanup dry-run reports zero
+  targets. No credentials or raw provider content enter Evidence or Git.
+
 ## Architecture inventory (Phase A)
 
 | Surface | Actual implementation | Integration decision |
