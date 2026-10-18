@@ -44,7 +44,9 @@ export class BrowserSdk {
     if(url.username||url.password||url.search||url.hash)throw new ContractError('INVALID_SDK_ENDPOINT');
     this.storage=config.storage??(typeof indexedDB!=='undefined'?new IndexedDbQueue():new MemoryQueue());
     this.mode=this.storage instanceof MemoryQueue?'MEMORY':'DURABLE';
-    this.status.storage=this.mode;this.transport=config.transport??fetch;this.clock=config.clock??Date.now;
+    // Native Window.fetch must not be invoked with the SDK instance as receiver.
+    // A wrapper also leaves injected transports independent of browser binding.
+    this.status.storage=this.mode;this.transport=config.transport??((input,init)=>fetch(input,init));this.clock=config.clock??Date.now;
     this.partition=scopeKey(this.context());
   }
   private context(){const scope=this.config.contextProvider();if(scope.applicationId!==this.config.applicationId||scope.environmentId!==this.config.environmentId)throw new ContractError('SDK_CONTEXT_MISMATCH');return scope;}

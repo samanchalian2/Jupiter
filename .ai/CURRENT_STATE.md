@@ -1,5 +1,28 @@
 # Current State
 
+**2026-10-18 independent real-Browser checkpoint (GOAL-069 IN PROGRESS):**
+`@observability/reference-browser` now builds/runs an independent React Browser
+consumer and trusted backend/session port with no Jupiter domain imports. A real
+headless installed Edge context plus temporary PostgreSQL proves native-fetch
+ingestion, real IndexedDB across network loss/reload, lost-ACK replay with one
+persisted event, frontend/backend trace correlation, Feedback, React boundary,
+independent Issue/AI service evidence and Application selection/isolation.
+Maintenance shared-Console acceptance passes RTL at 375/768/1024/1440; explicit
+policy save changes only the disposable fixture. This is not full live-Jupiter
+shell acceptance. Storage denial, tenant switch, logout/revocation and next-actor
+isolation are included. The Investigator port in this scenario is controlled,
+not an external provider call; the prior authorized GapGPT evidence stays separate.
+QC found/fixed Browser SDK default `fetch` receiver binding (custom-transport
+tests missed it) and added a regression test. Console selectors now have explicit
+accessible names. Full self-monitoring, remaining alert breadth/flood controls,
+Help/publication, performance and final requirement-by-requirement audit remain.
+Complete release gate with real Browser and Python/C# flags passes 150 API,
+28 Web and 126 Hub tests (41 SDK/core/adapters, 76 server including the real
+browser workflow, nine Console), all builds/lint/typechecks and 80-migration
+rehearsal. The reference package's build passes but adds no inflated standalone
+test count. Final same-origin scheme hardening was rebuilt and the complete
+real-browser workflow rerun successfully. Existing Vite chunk advisory remains.
+
 **2026-10-18 bounded retention checkpoint (GOAL-069 IN PROGRESS):**
 Migration 069 adds environment maintenance state and targeted retention indexes
 (80 total migrations, 25 Hub tables). Per-Application ADMIN policy APIs and

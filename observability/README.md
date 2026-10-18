@@ -21,8 +21,9 @@ explicitly opt-in and must be executed before claiming that evidence.
 Operational AI now has a host-injected provider/vault, Application-bound AES-GCM
 credential storage, combined monthly token reservation/settlement, curated
 evidence validation, deduplicated scheduler and independent Console panel.
-Unknown provider usage remains held. Human reconciliation is implemented; full maintenance/reference
-and offline acceptance remain unfinished; inspect Evidence, not this inventory,
+Unknown provider usage remains held. Human reconciliation and independent
+real-Browser reference/offline acceptance are implemented. Full self-monitoring,
+remaining alert breadth, final host acceptance and Help are unfinished; inspect Evidence, not this inventory,
 before claiming complete platform delivery.
 
 - `packages/contracts`: versioned JSON event/feedback/AI contracts and limits.
@@ -36,6 +37,8 @@ before claiming complete platform delivery.
 - `server`: independent PostgreSQL Registry/credentials/ingestion/leased queue.
 - `console`: independent React Operations UI; host injects authenticated fetch
   and semantic CSS tokens. No Jupiter role/session imports.
+- `examples/browser`: independent Browser/React/Node/Console reference and
+  [real-browser acceptance instructions](examples/browser/README.md).
 
 No package imports Jupiter business modules. Each package has independent
 build/typecheck/test commands. Build workspace dependencies before testing a

@@ -2,6 +2,16 @@
 
 ## GOAL-069 Observability Hub
 
+Independent Browser acceptance uses a fresh headless context, random HttpOnly
+fixture session, explicit operational grants and a disposable database, never a
+signed-in user's profile. The sample backend resolves scope from its trusted
+session port; browser-supplied mint scope and unauthorized tenant switches are
+denied. Native browser fetch/IndexedDB/network interception run for real. Logout
+revokes prior actor credentials and clears queue; next-actor and storage-denial
+cases are separately verified. The controlled reference AI port makes no external
+provider call and cannot consume the real configured budget. See the reference
+README for production-consumer identity/CSRF responsibilities and limitations.
+
 Operational retention (DEC-040) never touches business/security Audit or tenant
 tables. Only application-wide ADMIN can shorten an Application's windows, with
 reason/Audit; environment-only grants cannot escalate. Persisted lease metadata,

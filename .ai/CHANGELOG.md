@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-10-18 — GOAL-069 real independent Browser acceptance (IN PROGRESS)
+
+- Added independent Browser/React/Node reference consumer with verified-session
+  adapter, server-only credential exchange and no Jupiter domain dependencies.
+- Added opt-in headless Edge + real PostgreSQL acceptance: native fetch,
+  IndexedDB/network/reload, lost committed ACK replay, correlation, Feedback,
+  React recovery, scope/identity isolation and controlled evidence-grounded AI.
+- Shared Console maintenance verified in four RTL viewports, including explicit
+  policy save in disposable fixture only; storage denial degrades to memory.
+- Fixed default Browser SDK native fetch receiver bug; added regression test.
+  Added explicit accessible Application/environment selector names.
+- No new migration, real provider spend, live tenant mutation or host promotion.
+  Full remaining Goal scope is still active; no next Goal starts.
+
 ## 2026-10-18 — GOAL-069 bounded operational retention (IN PROGRESS)
 
 - Added per-Application policy API and hourly durable maintenance jobs with

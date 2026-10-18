@@ -2,6 +2,15 @@
 
 ## GOAL-069 — Reusable Observability Hub (IN PROGRESS)
 
+The independent reference Browser/backend and actual IndexedDB/network-loss/
+reload/lost-ACK/identity acceptance now execute in a disposable DB and headless
+installed Edge. Shared Console maintenance RTL and explicit fixture-only save
+pass at four widths; do not confuse that with final live-Jupiter shell acceptance.
+Default-native-fetch binding defect is fixed and regression-tested. Continue full
+self-monitoring (not just queue/retention), missing alert sources/flood handling,
+remaining workflow/analytics, product Help/runtime publication and full security/
+performance/browser requirement audit. Keep all 44 public API parity tests current.
+
 Bounded retention (DEC-040/migration 069) now has policy/status APIs, hourly
 durable jobs/continuations, parent/child scope safety, immutable Audit and a
 Console form. The local zero-expiry batch completed with all counts zero.

@@ -4,6 +4,65 @@ Status: IN PROGRESS. Owner-approved plan supersedes the stale GOAL-060 identifie
 in the supplied specification. GOAL-060 Personal Service history is preserved.
 GOAL-059 remains BLOCKED; LOCAL evidence is not staging acceptance.
 
+## 2026-10-18 — Independent real-Browser acceptance (LOCAL)
+
+- Added `@observability/reference-browser` in `observability/examples/browser`:
+  generic Browser/React/Node SDKs and shared Console, separate backend verified-
+  session port; no Jupiter domain/User/membership/ticket/API imports. The backend
+  mints only resolved authenticated scope, rejects client scope bodies/unknown
+  tenants and validates same-origin commands. Server secret stays backend-only.
+- `observability/server/test/browser-acceptance.ts` is enabled explicitly by
+  `OBSERVABILITY_BROWSER_ACCEPTANCE=true`. Actual installed Edge is launched
+  headless with a fresh temporary context, not an existing profile. The harness
+  creates two independent Applications/environments and explicit operational
+  grants/session identities in the disposable real PostgreSQL fixture.
+- Real native Browser fetch, frontend error, backend Node SDK error, React
+  boundary and user Feedback persist. Browser/backend failures have identical
+  trace/request IDs. Real aggregation produces independent Application B Issues.
+  Console discovers/selects Apps A/B and a cross-App environment combination
+  is denied. No Jupiter business dependency is imported by the reference.
+- Browser context networking is fully disconnected before capture. An actual
+  IndexedDB sanitized envelope is inspected (no test secret/server credential).
+  Connectivity is restored with ingestion still intercepted offline; page reload
+  reopens IndexedDB and the original ID remains. Re-enabling delivery persists
+  that same ID. A separate interceptor discards a real ACK AFTER commit; bounded
+  retry clears the queue and PostgreSQL still contains exactly one matching row.
+- Offline tenant switching deletes old-scope queued data rather than relabeling
+  it. Tenant-free authenticated Feedback persists. Logout clears durable queue
+  and revokes all actor Browser credentials; a second host-authenticated actor
+  reuses storage without old actor events. Forced IDBFactory SecurityError
+  verifies visible MEMORY fallback and continued capture/UI; no storage guarantee.
+- Independent Application B Investigator runs with persisted evidence, validates
+  citations and records success through a controlled provider port. No external
+  GapGPT call or real budget is used here. This is separate from earlier actual
+  authorized local GapGPT evidence; it is not an external-provider connectivity
+  test for this disposable Application.
+- Shared Console maintenance renders authenticated RTL/no document overflow at
+  375/768/1024/1440; unconfirmed save disabled, explicit reason/acknowledgement
+  saves unchanged default policy ONLY in fixture. This closes shared-component
+  maintenance Browser acceptance, not all final live-Jupiter screen acceptance.
+  Screenshots are local ignored output (`output/goal069-browser`); inspect them
+  as visual evidence rather than relying only on scroll-width measurements.
+- QC defect: default native fetch was stored and invoked with the SDK as receiver,
+  producing illegal invocation before any ingest request. Custom-transport tests
+  missed it. Wrapped native fetch, added regression and reran real-browser flow.
+  Explicit accessible labels also fix exact Application/environment lookup.
+- Reference README documents fixture auth responsibilities, executable commands,
+  network/retry guarantees and limitations. All listeners/browser/temporary DB
+  cleanup use finally paths. No new migration/live tenant change/provider spend
+    or target-host promotion occurred. Full self-monitoring, remaining alerts/flood,
+    runtime Help, performance and whole-Goal final audit remain open.
+- Complete `pnpm verify:release` ran with BOTH Browser and Python/C# execution
+  flags enabled: 150 API, 28 Web and 126 Hub tests passed (41 SDK/core/adapters,
+  76 server/contract/provider including one comprehensive real-Browser case,
+  nine Console). The reference build/lint/typecheck passes; its no-test-file
+  script does not add invented acceptance counts. All workspace builds/lint/
+  typechecks and 80-migration rehearsal pass. Final same-origin protocol check
+  was rebuilt and the full Browser scenario rerun with success. Pre-existing
+  Jupiter Vite chunk advisory remains explicit. Final cleanup dry-run has zero
+  targets; no temporary `obs069_*` DB remains, with one non-archived workspace
+  and 80 applied migrations in the local business DB (unchanged this checkpoint).
+
 ## 2026-10-18 — Bounded retention checkpoint (LOCAL)
 
 - Migration `069_observability_retention.sql` adds environment maintenance state,
@@ -220,11 +279,11 @@ Every requirement remains pending unless actual execution evidence is recorded.
 | A | inventory, ADR, approved specification | initial inventory/DEC-038/source recorded |
 | B | independent packages, registry/auth/contracts/OpenAPI | packages/registry/auth, HTTP operations and real OpenAPI parity implemented; future Goal routes must extend the contract |
 | C | schema/RLS, atomic ingestion, browser/API/worker capture | PostgreSQL and Jupiter Browser/API adapters implemented; product Worker execution coverage pending |
-| D | IndexedDB/replay/backoff/logout/scope isolation | SDK protocol verified; real-browser IndexedDB/replay pending |
+| D | IndexedDB/replay/backoff/logout/scope isolation | protocol plus actual independent Edge/IndexedDB/network-loss/reload/lost-ACK/tenant/logout/next-actor/storage-denial verified; final host breadth audit remains |
 | E | fingerprint, issues/incidents/rules/alerts | all rule scenarios verified; issue management and incident transitions implemented; full incident workspace/delivery pending |
 | F | feedback/user tracking, Console/live/analytics/export | own Feedback and operational Console/live/filter/CSV implemented; richer analytics and final workflow acceptance pending |
 | G | evidence-grounded AI, opt-in/budget/schedule/security | implemented; real GapGPT findings/usage, SQL isolation/budget/scheduler and reconciliation UI verified; final breadth QC pending |
-| H | independent second application, C#/Python clients | actual Python/C# backend execution/retry/replay/denial verified against independent fixture App; mandatory separate Browser reference still pending |
+| H | independent second application, C#/Python clients | actual Python/C# and separate Browser/backend reference execution verified with real PostgreSQL; reference AI uses controlled provider, actual GapGPT evidence remains separate |
 | I | retention, self-health/runbook, Help, full QC/cleanup | pending |
 
 ## Required evidence sections

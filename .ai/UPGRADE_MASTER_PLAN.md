@@ -2,6 +2,13 @@
 
 ## GOAL-069 — Observability Hub continuation (IN PROGRESS)
 
+Independent Browser B now has executable real Edge/PostgreSQL offline/reload/
+replay/identity/Console acceptance plus backend correlation and validated AI via
+a controlled provider port. Maintenance shared-Console RTL is verified at four
+widths. Default SDK native-fetch receiver binding was corrected. Full remaining
+self-health, alert completeness, Help, performance and final all-requirements
+audit are still required; no live-Jupiter blanket acceptance or promotion implied.
+
 Bounded per-Application retention is implemented under DEC-040 with durable
 continuations, protected active/recent data and immutable Audit. Migration 069,
 policy/status APIs and Console maintenance form are local-only. OpenAPI now has
