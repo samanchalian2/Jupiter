@@ -1,5 +1,18 @@
 # Business Rules
 
+## Self-monitoring measurements (DEC-043)
+
+- Server ACK counts distinguish accepted, duplicate, rejected and retryable;
+  replay does not become another accepted event. Persistence failure degrades
+  remaining valid entries in that batch to RETRYABLE, preserving IDs instead of
+  multiplying a connection timeout by 50. Validation rejections stay separate.
+- SDK retry recovery requires a valid ACCEPTED/DUPLICATE ACK after an attempt;
+  online events alone are not recovery. Attempted entries later dropped/expired
+  count as failed recovery; intentional sampling/logout do not count as loss.
+- Metrics never consume AI/customer allowance or mutate Incidents. SDK-reported
+  and server-measured totals remain visibly separate; missing observations are
+  not proof of zero faults. Logical growth is not physical/shared-database space.
+
 ## Operational critical and pipeline warnings (DEC-042)
 
 - Trusted SERVER/WORKER CRITICAL events can trigger the default one-event rule;

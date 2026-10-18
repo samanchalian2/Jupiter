@@ -3,6 +3,12 @@
 Product-independent packages and PostgreSQL server adapters for GOAL-069.
 Implementation is IN PROGRESS; no complete platform claim is made.
 
+The [self-metric foundation](SELF_MONITORING.md) adds scoped immutable counters,
+hourly logical storage snapshots and a 46-operation OpenAPI contract. Server
+measurement and reported SDK deltas remain separate. Automatic SDK reporting,
+self-health Console and source acceptance remain pending; coverage is explicitly
+SOURCE_COLLECTION_IN_PROGRESS, not a complete monitoring claim.
+
 Trusted critical-event detection and scoped terminal pipeline warnings use the
 existing rule/inbox engines. Public health/readiness have an executable external
 probe and [integration runbook](EXTERNAL_MONITORING_RUNBOOK.md), complemented by

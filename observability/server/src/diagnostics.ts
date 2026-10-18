@@ -1,4 +1,4 @@
-export type HubDiagnosticCode='HUB_NOT_READY'|'WORKER_DRAIN_FAILED';
+export type HubDiagnosticCode='HUB_NOT_READY'|'WORKER_DRAIN_FAILED'|'METRICS_BUFFER_FULL'|'METRICS_STORAGE_UNAVAILABLE';
 export interface HubDiagnosticEntry {event:'observability.diagnostic';code:HubDiagnosticCode;severity:'WARNING';}
 /** Out-of-band fallback: fixed fields only, no exception, payload, URL or secret.
  * This path must never re-enter ingestion or make business execution fail. */

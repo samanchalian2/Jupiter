@@ -1,5 +1,26 @@
 # Current State
 
+**2026-10-18 self-metric foundation (GOAL-069 IN PROGRESS):**
+DEC-043/migration 072 add immutable fixed-counter reports and hourly logical-row
+storage snapshots, tenant-safe RLS/FKs and bounded retention. Ingestion records
+actual accepted/duplicate/rejected/retryable/failed-batch counters without raw
+content. Metrics persistence is best effort in a bounded out-of-band buffer;
+its failure cannot change event ACKs. Self-health ADMIN API combines distinct
+measurement sources, queue/lag/Issue/AI/delivery/retention and nullable growth.
+SDK metrics POST binds verified scope/source, dedupes report UUID/hash and rejects
+identity/provenance injection. OpenAPI now covers 46 operations with real parity.
+Browser/Node SDKs expose fixed idempotent deltas; TTL expiry, retry ACK recovery
+and rejected-ACK drop counting are tested/fixed. Automatic SDK report transport,
+authenticated self-health Console and real Browser source acceptance remain
+pending: coverage deliberately says SOURCE_COLLECTION_IN_PROGRESS. Do not claim
+complete self-monitoring. Help/performance/host breadth and final A–I audit also
+remain. Full release gate passes 150 API, 28 Web and 162 Hub tests (340 total),
+all builds/lint/typechecks, real Browser/Python/C# and 83-migration rehearsal.
+Migration 072 is local; the owned API was restarted with zero active AI attempts.
+Authorized runtime service check has an actual storage snapshot, null initial
+growth and unobserved server counters (no synthetic tenant events were created).
+External probe passes; no target host changed. Existing Vite advisory remains.
+
 **2026-10-18 critical/pipeline and external-probe checkpoint (GOAL-069 IN PROGRESS):**
 DEC-042/migration 071 add the CRITICAL_EVENT rule without replacing existing
 settings. Trusted 5xx CRITICAL classification no longer downgrades to ERROR;

@@ -92,3 +92,12 @@ slice continuation, forbidden Audit/AI ledger deletes, failure rollback and
 parallel duplicate execution. OpenAPI parity covers policy GET/PUT and maintenance
 status. Do not substitute this for full self-monitoring, performance/load or final
 browser acceptance recorded separately in Goal Evidence.
+
+## Self-metric retention extension (DEC-043)
+
+Health-report receipts survive eight days, exceeding the SDK's 48-hour replay
+window. Logical storage snapshots use the Application aggregate retention days.
+Both are worker-only, at-most-batch-size deletes in the existing atomic retention
+transaction with safe counts/Audit. Runtime cannot update or delete these metrics.
+Neither category changes canonical Audit/AI accounting preservation. Full
+source instrumentation is still in progress; see `SELF_MONITORING.md`.

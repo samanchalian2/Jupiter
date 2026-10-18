@@ -61,6 +61,15 @@ export interface PersistedEvent extends TelemetryEvent {
 export type AckStatus = 'ACCEPTED' | 'DUPLICATE' | 'REJECTED' | 'RETRYABLE';
 export interface EventAcknowledgement { eventId: string; status: AckStatus; reasonCode?: string; }
 export interface BatchAcknowledgement { schemaVersion: '1.1'; acknowledgements: EventAcknowledgement[]; }
+export const SDK_METRIC_FIELDS=['dropped','retryDelivered','retryDropped'] as const;
+export interface SdkMetricReport {reportId:string;observedAt:string;counters:Record<typeof SDK_METRIC_FIELDS[number],number>;}
+/** Fixed counters only: this is not a route for arbitrary client telemetry. */
+export function validateSdkMetricReport(value:unknown,now=Date.now()):SdkMetricReport {
+ if(!isRecord(value)||Object.keys(value).some(k=>!['reportId','observedAt','counters'].includes(k))||!isUuid(value.reportId)||typeof value.observedAt!=='string'||!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,9})?Z$/.test(value.observedAt)||!isRecord(value.counters)||Object.keys(value.counters).length!==3||Object.keys(value.counters).some(k=>!(SDK_METRIC_FIELDS as readonly string[]).includes(k)))throw new ContractError('INVALID_SDK_METRICS');
+ const time=Date.parse(value.observedAt);if(!Number.isFinite(time)||time<now-48*3_600_000||time>now+300_000)throw new ContractError('INVALID_METRIC_TIME');
+ if(SDK_METRIC_FIELDS.some(k=>!Number.isInteger((value.counters as Record<string,unknown>)[k])||Number((value.counters as Record<string,unknown>)[k])<0||Number((value.counters as Record<string,unknown>)[k])>1_000_000)||SDK_METRIC_FIELDS.every(k=>(value.counters as Record<string,unknown>)[k]===0))throw new ContractError('INVALID_SDK_METRICS');
+ return value as unknown as SdkMetricReport;
+}
 export interface IngestionAuthorization extends IdentityScope {
   credentialId: string;
   credentialVersion: number;

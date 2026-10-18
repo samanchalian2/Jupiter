@@ -2,6 +2,17 @@
 
 ## GOAL-069 Observability Hub
 
+DEC-043 self-metrics accept no identity/provenance/payload fields from clients.
+Verified credentials bind App/environment/tenant/actor and report provenance;
+hashes prevent same-ID mutation or another actor's replay. SDK reports have
+strict ISO UTC/replay/count/rate bounds. Runtime cannot INSERT/UPDATE reports;
+current environment-wide ADMIN authority is required for full health/storage.
+Tenant-bound grants, other Applications/environments and revoked grants fail.
+Metric write failure cannot alter a committed event ACK; bounded buffer loss is
+explicitly logged with fixed fields, never raw exceptions. Browser context/logout
+clears metric deltas before another actor can use them. Client-reported counts
+are not trusted rule/Incident evidence. This is not full source/UI acceptance.
+
 DEC-042 accepts critical-event classification only from trusted SERVER/WORKER
 sources. Browser severity and ordinary HTTP 4xx cannot elevate Incidents. Pipeline
 warnings include no raw failure content. The independent probe uses no bearer,

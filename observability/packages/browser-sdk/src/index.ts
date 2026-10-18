@@ -1,5 +1,5 @@
 import { SCHEMA_VERSION, LIMITS, ContractError, encodedBytes, validateFeedback, isRecord, type IdentityScope, type TelemetryEvent, type BatchAcknowledgement, type FeedbackSubmission } from '@observability/contracts';
-import { sanitizeEvent, redactText, sanitizeStack, scopeKey, retryDelay, routeTemplate, newTrace } from '@observability/core';
+import { sanitizeEvent, redactText, sanitizeStack, scopeKey, retryDelay, routeTemplate, newTrace, SdkMetricBuffer } from '@observability/core';
 import { IndexedDbQueue, MemoryQueue, type QueueStorage, type OfflineEnvelope } from './storage.js';
 export { IndexedDbQueue, MemoryQueue, type QueueStorage, type OfflineEnvelope } from './storage.js';
 export { redactText, sanitizeStack, routeTemplate } from '@observability/core';
@@ -38,6 +38,10 @@ export class BrowserSdk {
   private cleanups:(()=>void)[]=[];
   private status:SdkStatus={queued:0,storage:'DURABLE',lastFailure:null,dropped:0};
   private readonly sessionId=crypto.randomUUID();
+  private readonly metrics=new SdkMetricBuffer();
+  getMetricReport(){if(scopeKey(this.context())!==this.partition){this.metrics.reset();return;}return this.metrics.snapshot(this.clock());}
+  acknowledgeMetricReport(id:string){this.metrics.acknowledge(id);}
+  private countDropped(entries:OfflineEnvelope[]){this.status.dropped+=entries.length;const events=entries.filter(e=>e.kind==='EVENT');this.metrics.add('dropped',events.length);this.metrics.add('retryDropped',events.filter(e=>e.attempts>0).length);}
   constructor(private readonly config:BrowserSdkConfiguration){
     const url=new URL(config.endpoint);
     if(url.protocol!=='https:'&&!(url.protocol==='http:'&&['localhost','127.0.0.1','[::1]'].includes(url.hostname)))throw new ContractError('SDK_ENDPOINT_REQUIRES_HTTPS');
@@ -56,18 +60,18 @@ export class BrowserSdk {
   private serialize<T>(work:()=>Promise<T>):Promise<T>{const next=this.queueChain.then(work,work);this.queueChain=next.then(()=>undefined,()=>undefined);return next;}
   async setContext():Promise<void>{
     const next=scopeKey(this.context());if(next===this.partition)return;
-    this.generation++;this.abort?.abort();this.partition=next;
+    this.generation++;this.abort?.abort();this.partition=next;this.metrics.reset();this.status.dropped=0;
     await this.serialize(async()=>{const old=await this.entries();await this.storage.remove(old.filter(e=>e.partition!==next).map(e=>e.id));});
     await this.updateStatus();
   }
-  async logout():Promise<void>{this.generation++;this.abort?.abort();await this.serialize(async()=>{const old=await this.entries();await this.storage.remove(old.map(e=>e.id));});await this.updateStatus();}
+  async logout():Promise<void>{this.generation++;this.abort?.abort();this.metrics.reset();this.status.dropped=0;await this.serialize(async()=>{const old=await this.entries();await this.storage.remove(old.map(e=>e.id));});await this.updateStatus();}
   private async enqueue(envelope:OfflineEnvelope):Promise<boolean>{
     return this.serialize(async()=>{
       if(this.stopped||envelope.partition!==this.partition)return false;
-      let items=await this.entries();const expired=items.filter(e=>e.expiresAt<=this.clock());await this.storage.remove(expired.map(e=>e.id));items=items.filter(e=>e.expiresAt>this.clock());
+      let items=await this.entries();const expired=items.filter(e=>e.expiresAt<=this.clock());await this.storage.remove(expired.map(e=>e.id));this.countDropped(expired);items=items.filter(e=>e.expiresAt>this.clock());
       const maximumCount=Math.min(500,Math.max(1,this.config.maxQueueCount??500)),maximumBytes=Math.min(2_097_152,Math.max(16_384,this.config.maxQueueBytes??2_097_152));
       const bytes=items.reduce((n,e)=>n+encodedBytes(e),0)+encodedBytes(envelope);
-      if(items.length>=maximumCount||bytes>maximumBytes){this.status.dropped++;this.status.lastFailure='OFFLINE_QUEUE_FULL';this.emit();return false;}
+      if(items.length>=maximumCount||bytes>maximumBytes){this.countDropped([envelope]);this.status.lastFailure='OFFLINE_QUEUE_FULL';this.emit();return false;}
       try{await this.storage.put(envelope);}catch{await this.degrade();await this.storage.put(envelope);}
       await this.updateStatus();return true;
     });
@@ -80,7 +84,7 @@ export class BrowserSdk {
       const event=sanitizeEvent({...input,eventId,schemaVersion:SCHEMA_VERSION,applicationId:scope.applicationId,environmentId:scope.environmentId,occurredAt:new Date(now).toISOString(),source:input.source??'BROWSER',releaseVersion:this.config.release,actorReference:scope.actorReference,tenantReference:scope.tenantReference,sessionCorrelationId:this.sessionId,safeMetadata:{...input.safeMetadata,sdkVersion:'0.1.0',sampleRate:sampling,sampleWeight:sampling?1/sampling:1}});
       const stored=await this.enqueue({id:eventId,partition:scopeKey(scope),kind:'EVENT',payload:event,createdAt:now,expiresAt:now+48*3_600_000,attempts:0,nextRetryAt:now});
       return stored?eventId:null;
-    }catch{this.status.lastFailure='EVENT_CAPTURE_REJECTED';this.emit();return null;}
+    }catch{this.metrics.add('dropped');this.status.dropped++;this.status.lastFailure='EVENT_CAPTURE_REJECTED';this.emit();return null;}
   }
   async submitFeedback(input:FeedbackSubmission):Promise<boolean>{
     await this.setContext();const scope=this.context();if(!scope.actorReference)throw new ContractError('AUTHENTICATED_FEEDBACK_REQUIRED');
@@ -90,15 +94,15 @@ export class BrowserSdk {
   private async updateStatus(){this.status.queued=(await this.entries()).filter(e=>e.partition===this.partition&&e.expiresAt>this.clock()).length;this.emit();}
   async getStatus(){await this.updateStatus();return {...this.status};}
   private async postpone(entries:OfflineEnvelope[],permanent=false){
-    if(permanent){await this.storage.remove(entries.map(e=>e.id));this.status.dropped+=entries.length;return;}
-    for(const item of entries){const attempts=item.attempts+1;if(attempts>=12){await this.storage.remove([item.id]);this.status.dropped++;continue;}await this.storage.put({...item,attempts,nextRetryAt:this.clock()+retryDelay(attempts)});}
+    if(permanent){await this.storage.remove(entries.map(e=>e.id));this.countDropped(entries);return;}
+    for(const item of entries){const attempts=item.attempts+1;if(attempts>=12){await this.storage.remove([item.id]);this.countDropped([{...item,attempts}]);continue;}await this.storage.put({...item,attempts,nextRetryAt:this.clock()+retryDelay(attempts)});}
   }
   async flush():Promise<void>{
     if(this.stopped||this.flushing)return;this.flushing=true;
     const generation=this.generation;
     try{
       await this.setContext();const scope=this.context(),partition=scopeKey(scope),startedGeneration=this.generation;
-      const all=await this.entries();await this.storage.remove(all.filter(e=>e.expiresAt<=this.clock()).map(e=>e.id));
+      const all=await this.entries(),expired=all.filter(e=>e.expiresAt<=this.clock());await this.storage.remove(expired.map(e=>e.id));this.countDropped(expired);
       const pending=all.filter(e=>e.partition===partition&&e.expiresAt>this.clock()&&e.nextRetryAt<=this.clock());if(!pending.length)return;
       const credential=await this.config.authProvider(scope);
       if(!credential||credential.expiresAt<=this.clock()||scopeKey(credential.scope)!==partition||startedGeneration!==this.generation)return;
@@ -115,7 +119,8 @@ export class BrowserSdk {
             const ack=(value as unknown as BatchAcknowledgement).acknowledgements;
             if(ack.some(a=>!isRecord(a)||!allowed.has(a.eventId as string)||seen.has(a.eventId as string)||(seen.add(a.eventId as string),!['ACCEPTED','DUPLICATE','REJECTED','RETRYABLE'].includes(String(a.status)))))throw new Error('INVALID_ACK');
             await this.storage.remove(ack.filter(a=>a.status==='ACCEPTED'||a.status==='DUPLICATE'||a.status==='REJECTED').map(a=>a.eventId));
-            this.status.dropped+=ack.filter(a=>a.status==='REJECTED').length;
+            this.countDropped(events.filter(e=>ack.some(a=>a.eventId===e.id&&a.status==='REJECTED')));
+            this.metrics.add('retryDelivered',events.filter(e=>e.attempts>0&&ack.some(a=>a.eventId===e.id&&(a.status==='ACCEPTED'||a.status==='DUPLICATE'))).length);
             const unfinished=new Set(ack.filter(a=>a.status!=='RETRYABLE').map(a=>a.eventId));await this.postpone(events.filter(e=>!unfinished.has(e.id)));
           }else{await this.postpone(events,[400,403,404,410,413,422].includes(response.status));this.status.lastFailure=`INGESTION_HTTP_${response.status}`;}
         }

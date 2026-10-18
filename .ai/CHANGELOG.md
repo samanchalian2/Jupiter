@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-10-18 — GOAL-069 scoped self-metric foundation (IN PROGRESS)
+
+- Added migration 072, fixed immutable health reports, hourly logical storage
+  samples, scoped ADMIN projection, SDK report API and bounded retention.
+- Server ACK counters have measured provenance; SDK counters stay reported.
+  UUID/hash replay, fresh grant checks, count/time/rate bounds and RLS protect
+  scope. Out-of-band buffering cannot change a committed ACK.
+- Added Browser/Node fixed metric deltas and fixed TTL/rejected drop accounting.
+  Added same-batch persistence-outage short circuit without changing replay IDs.
+- DEC-043 documents limits. Automatic SDK transport, self-health Console and
+  source acceptance remain pending; no full self-monitoring/Goal completion.
+
 ## 2026-10-18 — GOAL-069 critical/pipeline detection and external probe (IN PROGRESS)
 
 - Added compatible CRITICAL_EVENT rule/migration 071 and OpenAPI enum extension;

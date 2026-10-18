@@ -79,3 +79,4 @@ export function validateInvestigation(output: unknown, permitted: readonly Evide
 }
 export interface Clock { now():number; }
 export interface SafeLogger { write(entry:{code:string;severity:'INFO'|'WARNING'|'ERROR';requestId?:string}):void; }
+export {SdkMetricBuffer} from './metrics.js';

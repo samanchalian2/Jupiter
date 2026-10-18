@@ -2,6 +2,20 @@
 
 ## GOAL-069 — Reusable Observability Hub (IN PROGRESS)
 
+DEC-043/migration 072 implement the self-metric backend, 46-operation contract,
+bounded report buffer/storage sampling/retention and tested Browser/Node counter
+ports. Continue by wiring automatic authenticated SDK report transport with
+lost-ACK/idempotency/48-hour expiry and safe context/logout cancellation. Decide
+and document bounded report persistence/reload semantics; never relabel pending
+deltas under a new actor. Add the Persian authenticated self-health Console,
+explicit source/unobserved labels and real Browser drop/recovery/report/RTL tests.
+SOURCE_COLLECTION_IN_PROGRESS must remain until those sources really execute.
+Migration 072 is applied locally with a real storage snapshot; all 340 release
+tests/builds/lint/typechecks pass. Review bounded storage-sampling fairness and
+scan overhead at the final scale/performance gate, not only small fixtures.
+Then complete Help/publication, performance, host/worker breadth and final A–I
+audit. This is still the same Goal, with no Preview/main promotion.
+
 DEC-042 adds trusted CRITICAL_EVENT, terminal pipeline failure detection and
 bounded out-of-band logs plus external-probe/runbook acceptance. Continue the
 complete self-metric set (ingestion/failure/reject/drop/offline recovery/storage
@@ -16,8 +30,8 @@ unresolved Issues, alert delivery failures, AI failures, storage growth and
 retention lag. Do not substitute the existing maintenance projection. Evaluate
 collection/reporting with explicit trusted-server vs client-reported provenance;
 network-online events alone are not successful recovery evidence. Browser TTL
-expiry currently removes envelopes without incrementing dropped status, so
-include that path when instrumenting real drop/recovery counts. Preserve logout/
+expiry now increments drop/recovery-failure counters; verify actual collection
+of those deltas when wiring transport. Preserve logout/
 tenant isolation, no payload/secret collection, bounded metrics and no recursive
 ingestion when the Hub itself fails. Document any contract/schema choice as ADR.
 

@@ -4,7 +4,7 @@ import { randomUUID } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import { readFile, readdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import { HubDatabase, RegistryService, IngestionService, DurableQueue, HubHttpApi, createHubServer, BoundedRateLimiter, FeedbackService, IssueEngine, MonitoringEngine, OperationsService, csvCell, InvestigatorService, AesCredentialVault, AlertService, RetentionService, type InvestigationProvider } from '../src/index.js';
+import { HubDatabase, RegistryService, IngestionService, DurableQueue, HubHttpApi, createHubServer, BoundedRateLimiter, FeedbackService, IssueEngine, MonitoringEngine, OperationsService, csvCell, InvestigatorService, AesCredentialVault, AlertService, RetentionService, SelfMonitoringService, type InvestigationProvider } from '../src/index.js';
 import type { TelemetryEvent } from '@observability/contracts';
 import SwaggerParser from '@apidevtools/swagger-parser';
 import Ajv from 'ajv';
@@ -43,6 +43,7 @@ beforeAll(async()=>{
   await database.pool.query(await readFile(new URL('../../../apps/api/migrations/069_observability_retention.sql',import.meta.url),'utf8'));
   await database.pool.query(await readFile(new URL('../../../apps/api/migrations/070_observability_alert_delivery.sql',import.meta.url),'utf8'));
   await database.pool.query(await readFile(new URL('../../../apps/api/migrations/071_observability_critical_rule.sql',import.meta.url),'utf8'));
+  await database.pool.query(await readFile(new URL('../../../apps/api/migrations/072_observability_self_metrics.sql',import.meta.url),'utf8'));
   root=(await registry.bootstrap({issuer:'acceptance',subject:'local-admin',displayName:'Local admin'},'Acceptance bootstrap')).principalId;
   ordinary=await registry.principal({issuer:'reference-identity',subject:'operator',displayName:'Scoped operator'});
   appA=(await registry.createApplication(root,{slug:'application-a',name:'A',allowedOrigins:['https://consumer.example.test']})).id;
@@ -59,6 +60,44 @@ const scope=()=>({applicationId:appA,environmentId:envA,actorReference:'userA',t
 
 describe('real independent Browser acceptance',()=>{
  it.skipIf(process.env.OBSERVABILITY_BROWSER_ACCEPTANCE!=='true')('proves IndexedDB/network recovery, independent reference, correlation, scope and maintenance RTL',async()=>{await browserAcceptance(database,registry,root);},120000);
+});
+
+describe('scoped self-monitoring measurements',()=>{
+ it('counts persistence failure and later delivery separately without changing the event retry contract',async()=>{
+  const app=(await registry.createApplication(root,{slug:`metric-failure-${randomUUID()}`,name:'Failed persistence counter'})).id,env=(await registry.createEnvironment(root,app,{key:'test',kind:'TEST'})).id,metrics=new SelfMonitoringService(database,registry),broken={scoped:async()=>{throw Error('Controlled private database fault');}} as unknown as HubDatabase,service=new IngestionService(broken,metrics),s={...scope(),applicationId:app,environmentId:env},item=event({applicationId:app,environmentId:env});
+  expect((await service.ingest({events:[item]},s)).acknowledgements[0]).toMatchObject({status:'RETRYABLE',reasonCode:'PERSISTENCE_UNAVAILABLE'});expect((await new IngestionService(database,metrics).ingest({events:[item]},s)).acknowledgements[0].status).toBe('ACCEPTED');await metrics.flush();await metrics.flush();const state=await metrics.status(root,app,env);expect(state.sources.SERVER_MEASURED).toMatchObject({received_events:2,accepted_events:1,retryable_events:1,failed_batches:1});expect(JSON.stringify(state)).not.toContain('private');
+ });
+ it('measures actual ingestion ACKs without counting replay as a second accepted event',async()=>{
+  const app=(await registry.createApplication(root,{slug:`metrics-${randomUUID()}`,name:'Measured ingestion'})).id,env=(await registry.createEnvironment(root,app,{key:'test',kind:'TEST'})).id,metrics=new SelfMonitoringService(database,registry),service=new IngestionService(database,metrics),s={...scope(),applicationId:app,environmentId:env},item=event({applicationId:app,environmentId:env});
+  await service.ingest({events:[item]},s);await service.ingest({events:[item,{...item,eventId:randomUUID(),source:'INVALID'}]},s);await expect(service.ingest({events:[]},s)).rejects.toThrow();await metrics.flush();await metrics.flush();
+  const state=await metrics.status(root,app,env);expect(state.sources.SERVER_MEASURED).toMatchObject({received_events:3,accepted_events:1,duplicate_events:1,rejected_events:1,failed_batches:1});expect(state.sources.CLIENT_REPORTED.last_report_at).toBeNull();expect(state.sources.CLIENT_REPORTED.recovery_rate).toBeNull();expect(state.sources.SERVER_MEASURED.ingestion_rate_per_second).toBe(1/3600);
+ });
+ it('deduplicates immutable SDK reports, binds identity, and never promotes reported metrics to measured counts',async()=>{
+  const app=(await registry.createApplication(root,{slug:`sdk-metrics-${randomUUID()}`,name:'Reported counters'})).id,env=(await registry.createEnvironment(root,app,{key:'test',kind:'TEST'})).id,metrics=new SelfMonitoringService(database,registry),s={applicationId:app,environmentId:env,tenantReference:'same-tenant',actorReference:'actor-a',source:'BROWSER'},report={reportId:randomUUID(),observedAt:new Date().toISOString(),counters:{dropped:3,retryDelivered:2,retryDropped:1}};
+  expect(await metrics.reportSdk(s,report)).toMatchObject({duplicate:false});expect(await metrics.reportSdk(s,report)).toMatchObject({duplicate:true});
+  await expect(metrics.reportSdk({...s,actorReference:'actor-b'},report)).rejects.toThrow('METRIC_ID_CONFLICT');await expect(metrics.reportSdk(s,{...report,counters:{...report.counters,dropped:4}})).rejects.toThrow('METRIC_ID_CONFLICT');await expect(metrics.reportSdk(s,{...report,provenance:'SERVER_MEASURED'})).rejects.toThrow('INVALID_SDK_METRICS');
+  const state=await metrics.status(root,app,env);expect(state.sources.SERVER_MEASURED.accepted_events).toBe(0);expect(state.sources.CLIENT_REPORTED).toMatchObject({dropped_events:3,recovered_events:2,recovery_failed_events:1,recovery_rate:2/3});
+  await expect(database.scoped({applicationId:app,environmentId:env,tenantReference:'same-tenant',actorReference:null},c=>c.query('UPDATE observability.health_reports SET dropped_events=99'))).rejects.toThrow();
+  const other=(await registry.createApplication(root,{slug:`metrics-other-${randomUUID()}`,name:'Other App'})).id;expect(await database.scoped({applicationId:other,environmentId:envB,tenantReference:'same-tenant',actorReference:null},async c=>(await c.query('SELECT * FROM observability.health_reports')).rows)).toEqual([]);
+ });
+ it('enforces HTTP credential origin, server-owned scope, ADMIN authorization and current grants',async()=>{
+  const app=(await registry.createApplication(root,{slug:`metric-http-${randomUUID()}`,name:'Metric HTTP',allowedOrigins:['https://metric.example.test']})).id,env=(await registry.createEnvironment(root,app,{key:'test',kind:'TEST'})).id,server=(await registry.issueServerCredential(root,app,env,'Controlled metric fixture')).token,credential=await registry.mintBrowserCredential(server,{applicationId:app,environmentId:env,tenantReference:'tenant-a',actorReference:'metric-user'}),report={reportId:randomUUID(),observedAt:new Date().toISOString(),counters:{dropped:1,retryDelivered:0,retryDropped:1}},post=(body:unknown=report,origin='https://metric.example.test',token=credential.token)=>fetch(`${endpoint}/sdk-metrics`,{method:'POST',headers:{authorization:`Bearer ${token}`,'content-type':'application/json',origin},body:JSON.stringify(body)});
+  expect((await post(report,'https://wrong.example.test')).status).toBe(403);expect((await post({...report,tenantReference:'tenant-b'})).status).toBe(400);expect((await post()).status).toBe(201);expect((await post()).status).toBe(201);
+  const refreshed=await registry.mintBrowserCredential(server,{applicationId:app,environmentId:env,tenantReference:'tenant-a',actorReference:'metric-user'});const replay=await post(report,'https://metric.example.test',refreshed.token);expect(replay.status).toBe(201);expect(await replay.json()).toEqual({accepted:true,duplicate:true});
+  const metrics=new SelfMonitoringService(database,registry),grant=await registry.grant(root,{applicationId:app,environmentId:env,tenantReference:'tenant-a',targetPrincipalId:ordinary,role:'ADMIN',reason:'Tenant admin cannot inspect full environment'});await expect(metrics.status(ordinary,app,env)).rejects.toThrow('OPERATIONAL_ACCESS_DENIED');await registry.revokeGrant(root,app,grant.id,'Fixture revoke');
+  const full=await registry.grant(root,{applicationId:app,environmentId:env,targetPrincipalId:ordinary,role:'ADMIN',reason:'Explicit environment health authority'});expect((await metrics.status(ordinary,app,env)).sources.CLIENT_REPORTED.dropped_events).toBe(1);await expect(metrics.status(ordinary,app,envB)).rejects.toThrow();await registry.revokeGrant(root,app,full.id,'Fixture revoke');await expect(metrics.status(ordinary,app,env)).rejects.toThrow('OPERATIONAL_ACCESS_DENIED');await registry.revokeCredential(root,app,credential.credentialId,'Fixture credential revoke');expect((await post()).status).toBe(401);
+ });
+ it('samples logical rows once per hour and reports actual measured growth without claiming physical disk',async()=>{
+  const app=(await registry.createApplication(root,{slug:`metric-storage-${randomUUID()}`,name:'Logical storage'})).id,env=(await registry.createEnvironment(root,app,{key:'test',kind:'TEST'})).id,metrics=new SelfMonitoringService(database,registry);
+  expect((await metrics.status(root,app,env)).storage.growth_bytes).toBeNull();await metrics.sampleStorage(100);await metrics.sampleStorage(100);let state=await metrics.status(root,app,env);expect(state.storage.logical_bytes).toBeGreaterThanOrEqual(0);expect(state.storage.growth_bytes).toBeNull();
+  await database.pool.query("UPDATE observability.storage_samples SET bucket_start=bucket_start-interval '1 hour',measured_at=measured_at-interval '1 hour' WHERE application_id=$1",[app]);
+  await ingestion.ingest({events:[event({applicationId:app,environmentId:env,normalizedMessage:'Logical storage acceptance row'})]},{...scope(),applicationId:app,environmentId:env});await ingestion.metrics.flush();await ingestion.metrics.flush();await metrics.sampleStorage(100);state=await metrics.status(root,app,env);expect(state.storage.basis).toBe('LOGICAL_ENVIRONMENT_ROWS');expect(state.storage.growth_bytes).toBeGreaterThan(0);expect(state.storage.interval_seconds).toBeGreaterThanOrEqual(3600);
+ });
+ it('retains eligible metric receipts and purges expired reports/snapshots through bounded retention only',async()=>{
+  const app=(await registry.createApplication(root,{slug:`metric-retention-${randomUUID()}`,name:'Metric retention'})).id,env=(await registry.createEnvironment(root,app,{key:'test',kind:'TEST'})).id,service=new RetentionService(database,registry);
+  await database.worker(async c=>{await c.query("INSERT INTO observability.health_reports(application_id,environment_id,report_id,provenance,observed_at,received_at,payload_hash,dropped_events) VALUES($1,$2,$3,'CLIENT_REPORTED',now()-interval '9 days',now()-interval '9 days','fixture-old',1),($1,$2,$4,'CLIENT_REPORTED',now(),now(),'fixture-replay',1)",[app,env,randomUUID(),randomUUID()]);await c.query("INSERT INTO observability.storage_samples(application_id,environment_id,bucket_start,measured_at,logical_bytes) VALUES($1,$2,now()-interval '366 days',now()-interval '366 days',123)",[app,env]);await c.query("INSERT INTO observability.jobs(application_id,environment_id,kind,dedupe_key) VALUES($1,$2,'RETENTION','retention:77:0')",[app,env]);});
+  const job=(await service.queue.claim(randomUUID(),50,['RETENTION'])).find(row=>row.application_id===app)!;expect(job).toBeDefined();await service.execute(job,1);const state=await service.status(root,app,env);expect(state.last_counts.healthReports).toBe(1);expect(state.last_counts.storageSamples).toBe(1);expect(await database.worker(async c=>(await c.query('SELECT count(*)::int total FROM observability.health_reports WHERE application_id=$1',[app])).rows[0].total)).toBe(1);
+ });
 });
 
 describe('bounded per-Application retention with real PostgreSQL',()=>{
@@ -163,6 +202,8 @@ describe('complete public OpenAPI over actual HTTP and PostgreSQL',()=>{
     expect(persisted).toEqual([{event_code:'reference.csharp',total:1},{event_code:'reference.python',total:1}]);
    }
    const browser=await call('/credentials/browser','POST',{...operationScope,actorReference:'contract-user'},credential.token);
+   await call('/sdk-metrics','POST',{reportId:randomUUID(),observedAt:new Date().toISOString(),counters:{dropped:1,retryDelivered:2,retryDropped:1}},browser.token,'https://contract.example.test');
+   await call(base+'/self-health'+`?environmentId=${environment.id}`);
    const message=event({...operationScope,source:'REFERENCE_CLIENT',actorReference:'contract-user',eventCode:'contract.operation'});await call('/events/batch','POST',{events:[message]},credential.token);
    const feedback=await call('/feedback','POST',{feedbackId:randomUUID(),subject:'Contract report',description:'Controlled independent report',category:'BUG',relatedEventId:message.eventId},browser.token,'https://contract.example.test');
    await call('/feedback/mine','GET',undefined,browser.token,'https://contract.example.test');await call(`/feedback/${feedback.feedbackId}`,'GET',undefined,browser.token,'https://contract.example.test');
@@ -403,8 +444,8 @@ describe('Hub registry/auth/atomic storage and real PostgreSQL isolation',()=>{
       }
       const migrated=(await client.query('SELECT code,threshold,minimum_samples,enabled FROM observability.monitoring_rules WHERE application_id=$1 ORDER BY code',[legacyApplication])).rows;
       expect(migrated).toEqual([{code:'CRITICAL_EVENT',threshold:1,minimum_samples:1,enabled:true},{code:'ERROR_BURST',threshold:17,minimum_samples:9,enabled:false}]);
-      expect(files.at(-1)).toBe('071_observability_critical_rule.sql');expect(files.length).toBe(82);
-      expect((await client.query("SELECT count(*)::int total FROM information_schema.tables WHERE table_schema='observability'")).rows[0].total).toBe(25);
+      expect(files.at(-1)).toBe('072_observability_self_metrics.sql');expect(files.length).toBe(83);
+      expect((await client.query("SELECT count(*)::int total FROM information_schema.tables WHERE table_schema='observability'")).rows[0].total).toBe(27);
     }finally{await client.end();await admin.query('SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname=$1 AND pid<>pg_backend_pid()',[name]);await admin.query(`DROP DATABASE "${name}"`);if((await admin.query('SELECT 1 FROM pg_roles WHERE rolname=$1',[role])).rowCount)await admin.query(`DROP ROLE "${role}"`);}
   },30_000);
   it('real HTTP ingestion is cookie-free, credential-bound and replay-safe',async()=>{const credential=await registry.mintBrowserCredential(serverA,scope()),f=event();const send=()=>fetch(`${endpoint}/events/batch`,{method:'POST',headers:{authorization:`Bearer ${credential.token}`,'content-type':'application/json',origin:'https://consumer.example.test'},body:JSON.stringify({events:[f]})});const first=await send();expect(first.status).toBe(200);expect((await first.json()).acknowledgements[0].status).toBe('ACCEPTED');expect((await (await send()).json()).acknowledgements[0].status).toBe('DUPLICATE');});

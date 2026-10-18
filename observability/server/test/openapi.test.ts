@@ -17,7 +17,7 @@ describe('public language-neutral OpenAPI',()=>{
    for(const match of path.matchAll(/\{([^}]+)\}/g))expect(op.parameters?.some(p=>p.name===match[1]&&p.in==='path'&&p.required)).toBe(true);
    if(!['/health','/ready','/openapi.json'].includes(path))expect(op.security).not.toEqual([]);
   }
-  expect(new Set(ids).size).toBe(ids.length);expect(ids.length).toBe(44);
+  expect(new Set(ids).size).toBe(ids.length);expect(ids.length).toBe(46);
  });
  it('matches shared event enums, strict fields and null primitive metadata',async()=>{
   const doc=await SwaggerParser.dereference(structuredClone(openApiDocument) as never,{resolve:{external:false}}) as unknown as {components:{schemas:Record<string,unknown>}};

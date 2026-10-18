@@ -1,5 +1,37 @@
 # Architecture Decisions
 
+## DEC-043 — Scoped self-metrics with explicit measurement provenance
+
+GOAL-069 adds bounded health reports and environment storage snapshots inside
+the existing Hub schema, not business telemetry or commercial usage. Server
+ingestion counters are SERVER_MEASURED; SDK drop/retry-delivery reports are
+CLIENT_REPORTED or SERVER_SDK_REPORTED, never trusted Incident evidence. The
+credential supplies App/environment/tenant/source; the body contains only an
+idempotent UUID, UTC observation time and three bounded counters. No actor,
+payload, URL, exception, credential or free-form tag is stored. Report hashes
+bind idempotency to the verified scope/actor without storing the actor itself.
+
+Report replay is accepted for 48 hours and receipts retained at least eight
+days. Counter reports are immutable; bounded retention can delete old metrics,
+never canonical Audit/AI accounting. The server buffers a bounded amount of
+metrics during storage failure, logs a fixed diagnostic on failure/overflow and
+never changes a committed event ACK because a metrics write failed. Buffered
+metrics are best effort across process loss; missing measurements are not zero
+proof. Public readiness is not the authenticated self-metrics endpoint.
+
+Environment-wide ADMIN alone reads the full health projection. Tenant-bound
+grants cannot infer other tenants' queue/storage metrics. SQL scope/FKs and
+current grants remain mandatory. Storage growth measures logical persisted rows
+of explicitly enumerated environment-scoped Hub tables, not OS free space,
+indexes, global registry or shared databases. Hourly snapshots make the interval
+and nullable initial growth explicit. An actual retry ACK, not navigator.onLine,
+counts as SDK recovery; retries discarded/expired after an attempt are failures.
+Logout/context changes discard old-scope metrics, never relabel them.
+
+These contracts support the full section-51 metric set. Source collection,
+authenticated UI and real recovery/drop acceptance must all execute before full
+self-monitoring completion is claimed. External probes/logs remain complementary.
+
 ## DEC-042 — Trusted critical events and out-of-band pipeline diagnostics
 
 GOAL-069's required critical/pipeline alerts extend the existing engine and

@@ -1,7 +1,7 @@
 import { Injectable, Logger, type OnModuleInit, type OnModuleDestroy } from '@nestjs/common';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { HubDatabase, RegistryService, IngestionService, HubHttpApi, IssueEngine, MonitoringEngine, AlertService, RetentionService, InvestigatorService, AesCredentialVault, JsonInvestigationProvider, HubDiagnosticReporter, type HubHttpRequest } from '@observability/server';
+import { HubDatabase, RegistryService, IngestionService, HubHttpApi, IssueEngine, MonitoringEngine, AlertService, RetentionService, InvestigatorService, AesCredentialVault, JsonInvestigationProvider, HubDiagnosticReporter, SelfMonitoringService, type HubHttpRequest } from '@observability/server';
 import { NodeSdk, type NodeContext } from '@observability/node-sdk';
 import { ContractError, isUuid, type IdentityScope } from '@observability/contracts';
 import { AuthService } from '../auth/auth.service.js';
@@ -25,12 +25,14 @@ export class HubBindingService implements OnModuleInit,OnModuleDestroy {
  private hub?:HubDatabase;private registry?:RegistryService;private api?:HubHttpApi;private configuration?:HubBindingConfiguration;private servicePrincipal?:string;
  private sdk?:NodeSdk;private timer?:NodeJS.Timeout;private working=false;private lastRules=0;private unsubscribe?:()=>void;
  private investigator?:InvestigatorService;
+ private selfMonitoring?:SelfMonitoringService;
  private unregisterNotifications?:()=>void;
  constructor(private readonly auth:AuthService,private readonly productDatabase:DatabaseService,private readonly notifications:NotificationService){}
  async onModuleInit(){
   this.configuration=hubBindingConfiguration();if(!this.configuration)return;
   try{
    this.hub=new HubDatabase({connectionString:databaseUrl(),max:4});this.registry=new RegistryService(this.hub);const config=this.configuration;
+   this.selfMonitoring=new SelfMonitoringService(this.hub,this.registry,entry=>this.logger.warn(JSON.stringify(entry)));
    this.servicePrincipal=await this.registry.principal({issuer:'jupiter-adapter',subject:config.applicationId,displayName:'Jupiter host adapter'});
    const vaultKey=aiCredentialEncryptionKey();
    if(vaultKey){
@@ -39,7 +41,7 @@ export class HubBindingService implements OnModuleInit,OnModuleDestroy {
     const policy={allowedHosts,allowLoopback:process.env.NODE_ENV!=='production'&&process.env.OBSERVABILITY_AI_ALLOW_LOCAL_FAKE==='true'};
     this.investigator=new InvestigatorService(this.hub,this.registry,new AesCredentialVault(vaultKey),new JsonInvestigationProvider(policy),policy);
    }
-   this.api=new HubHttpApi(this.hub,this.registry,new IngestionService(this.hub),{verify:async bearer=>{
+   this.api=new HubHttpApi(this.hub,this.registry,new IngestionService(this.hub,this.selfMonitoring),{verify:async bearer=>{
     const user=await this.user(`Bearer ${bearer}`);const identity={issuer:'jupiter',subject:user.id,displayName:user.display_name};const principalId=await this.registry!.principal(identity);
     await this.registry!.synchronizeExternalAdmin(principalId,config.applicationId,'jupiter-platform-admin',user.is_platform_admin,this.servicePrincipal!);return identity;
    }},{allow:async credential=>{
@@ -61,7 +63,7 @@ export class HubBindingService implements OnModuleInit,OnModuleDestroy {
    });
    if(process.env.JUPITER_WORKER_ENABLED==='true'||process.env.OBSERVABILITY_WORKER_ENABLED==='true'){
     const engine=new IssueEngine(this.hub,this.registry),rules=new MonitoringEngine(this.hub,this.registry),workerId=crypto.randomUUID();
-    const drain=async()=>{if(this.working)return;this.working=true;try{const jobs=await engine.queue.claim(workerId,25,['AGGREGATE']);for(const job of jobs){try{await engine.aggregate(job);}catch{await engine.queue.fail(job,'AGGREGATION_FAILED');}}if(Date.now()-this.lastRules>=60_000){await alerts.detectPipelineFailures();await alerts.enqueue();await rules.evaluate();await retention.enqueue();await this.investigator?.schedule();this.lastRules=Date.now();}for(const job of await engine.queue.claim(workerId,5,['ALERT_DELIVERY'])){try{await alerts.deliver(job);}catch{await engine.queue.fail(job,'ALERT_DELIVERY_FAILED');}}for(const job of await engine.queue.claim(workerId,1,['RETENTION'])){try{await retention.execute(job);}catch{await engine.queue.fail(job,'RETENTION_FAILED');}}if(this.investigator){for(const job of await engine.queue.claim(workerId,1,['INVESTIGATE'])){try{await this.investigator.execute(job);}catch{await engine.queue.fail(job,'INVESTIGATION_FAILED');}}}}catch{this.diagnostics.report('WORKER_DRAIN_FAILED');}finally{this.working=false;}};
+    const drain=async()=>{if(this.working)return;this.working=true;try{const jobs=await engine.queue.claim(workerId,25,['AGGREGATE']);for(const job of jobs){try{await engine.aggregate(job);}catch{await engine.queue.fail(job,'AGGREGATION_FAILED');}}if(Date.now()-this.lastRules>=60_000){await alerts.detectPipelineFailures();await alerts.enqueue();await rules.evaluate();await retention.enqueue();await this.selfMonitoring?.flush();await this.selfMonitoring?.sampleStorage().catch(()=>this.diagnostics.report('METRICS_STORAGE_UNAVAILABLE'));await this.investigator?.schedule();this.lastRules=Date.now();}for(const job of await engine.queue.claim(workerId,5,['ALERT_DELIVERY'])){try{await alerts.deliver(job);}catch{await engine.queue.fail(job,'ALERT_DELIVERY_FAILED');}}for(const job of await engine.queue.claim(workerId,1,['RETENTION'])){try{await retention.execute(job);}catch{await engine.queue.fail(job,'RETENTION_FAILED');}}if(this.investigator){for(const job of await engine.queue.claim(workerId,1,['INVESTIGATE'])){try{await this.investigator.execute(job);}catch{await engine.queue.fail(job,'INVESTIGATION_FAILED');}}}}catch{this.diagnostics.report('WORKER_DRAIN_FAILED');}finally{this.working=false;}};
     this.timer=setInterval(()=>void drain(),2_000);this.timer.unref();void drain();
    }
   }catch{this.api=undefined;this.diagnostics.report('HUB_NOT_READY');}
@@ -83,5 +85,5 @@ export class HubBindingService implements OnModuleInit,OnModuleDestroy {
   return{applicationId:this.configuration.applicationId,environmentId:this.configuration.environmentId,actorReference,tenantReference};
  }
  instrumentation(){return this.sdk;}
- async onModuleDestroy(){if(this.timer)clearInterval(this.timer);this.unsubscribe?.();this.unregisterNotifications?.();await this.sdk?.shutdown();await this.hub?.close();}
+ async onModuleDestroy(){if(this.timer)clearInterval(this.timer);this.unsubscribe?.();this.unregisterNotifications?.();await this.sdk?.shutdown();await this.selfMonitoring?.flush();await this.hub?.close();}
 }

@@ -4,6 +4,60 @@ Status: IN PROGRESS. Owner-approved plan supersedes the stale GOAL-060 identifie
 in the supplied specification. GOAL-060 Personal Service history is preserved.
 GOAL-059 remains BLOCKED; LOCAL evidence is not staging acceptance.
 
+## 2026-10-18 — Scoped self-metric foundation (LOCAL, IN PROGRESS)
+
+- DEC-043/migration 072 add immutable fixed-counter HealthReport and hourly
+  StorageSample tables (27 Hub tables, 83 migrations). Composite FK/RLS and
+  worker-only write/delete grants preserve existing runtime isolation. Reports
+  retain eight days, snapshots the aggregate policy window, through bounded
+  atomic audited retention. Real tests preserve eligible replay receipts.
+- Actual ingestion ACKs produce SERVER_MEASURED accepted/duplicate/rejected/
+  retryable/failed-batch counts without payloads. A bounded 200-report out-of-band
+  buffer retries the same UUID/hash, catches storage/logging errors and emits
+  fixed overflow/failure diagnostics; it is best effort across process death.
+  Unit tests cover outage/recovery, bounded cardinality and an empty-flush guard.
+- SDK POST takes only UUID/time/three bounded counters. Credential supplies scope,
+  actor and provenance. Report replay, changed body/actor conflict, unauthorized
+  origin/identity fields, revoked credential and current ADMIN authority are
+  exercised against real HTTP/PostgreSQL. Reported counts never become server
+  measurements or Incident evidence. No raw report/actor/secret is projected.
+- Environment-wide ADMIN self-health API has one-hour source-separated counters,
+  queue/aggregation/Issue/alert/AI/retention measurements and hourly logical-row
+  storage growth. Tenant ADMIN/cross-App/cross-env/revoked grants are denied.
+  Initial growth/recovery observations are null, not fabricated zero. Real
+  snapshot tests measure growth after persisted rows and one sample per hour.
+- Both new operations are covered by real OpenAPI request/response parity (46
+  total). Public health/readiness stays unchanged. Storage basis excludes physical
+  disks/indexes/global metadata/shared databases. See `SELF_MONITORING.md` for
+  units, unobserved state and collection limitations.
+- Shared SDK metric buffer keeps immutable UUID/delta through lost ACK, bounds
+  each report and carries later counts forward. Browser/Node ports count actual
+  retry ACK recovery, queue/expiry/rejection loss and clear old Browser scope.
+  QC fixed Browser TTL expiry not incrementing drops and Node rejected ACK not
+  being counted as loss. These ports are not automatic report transport yet.
+- Outage review found sequential persistence could multiply a connection timeout
+  by 50 entries. The batch now attempts storage once after an unexpected failure,
+  preserving all remaining valid IDs as RETRYABLE; a 50-event test proves the
+  bound. Validation rejects remain separate. No committed ACK depends on metrics.
+- Still required within this same Goal: automatic authenticated SDK reporting,
+  report persistence/reload behavior, self-health Console, actual Browser source/
+  RTL acceptance, remaining host/worker breadth, Help/publication, performance and
+  final A–I audit. API coverage is deliberately SOURCE_COLLECTION_IN_PROGRESS.
+- Full release gate passes 150 API, 28 Web and 162 Hub tests (52 SDK/core/adapters,
+  101 server, nine Console): 340 total, with real Browser and separate-process
+  Python/C# flags enabled. All builds/lint/typechecks, 83-migration rehearsal and
+  diff check pass; existing Vite >500-KiB advisory remains. Fresh-credential SDK
+  report replay is additionally verified as duplicate with no extra count.
+- Migration 072 is applied only to the verified local loopback database. After
+  zero-active-AI preflight, only the owned local Jupiter API was restarted.
+  Authorized service-level runtime check sees an actual storage snapshot, null
+  first growth and unobserved server counters; no synthetic customer event was
+  inserted to manufacture observations. This is not authenticated Console UI
+  acceptance. The local external health/readiness probe passes.
+- No temporary Hub acceptance DB remains; workspace cleanup dry-run has zero
+  targets. Owner-approved enabled 100,000-token monthly budget is unchanged.
+  No Preview/main/co-hosted application or tenant/business data was modified.
+
 ## 2026-10-18 — Critical/pipeline warnings and independent probes (LOCAL)
 
 - DEC-042/migration 071 add `CRITICAL_EVENT` with default threshold/minimum 1.

@@ -1,6 +1,6 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { SCHEMA_VERSION, isRecord, encodedBytes, type IdentityScope, type TelemetryEvent } from '@observability/contracts';
-import { sanitizeEvent, sanitizeStack, redactText, enforceScope, newTrace, retryDelay } from '@observability/core';
+import { sanitizeEvent, sanitizeStack, redactText, enforceScope, newTrace, retryDelay, SdkMetricBuffer } from '@observability/core';
 export interface NodeContext extends IdentityScope {requestId?:string;traceId?:string;spanId?:string;}
 export interface NodeSdkConfiguration {
   endpoint:string;
@@ -23,6 +23,9 @@ export class NodeSdk {
   private abort?:AbortController;
   private nextFlush=0;
   private dropped=0;
+  private readonly metrics=new SdkMetricBuffer();
+  getMetricReport(){return this.metrics.snapshot();}
+  acknowledgeMetricReport(id:string){this.metrics.acknowledge(id);}
   constructor(private readonly config:NodeSdkConfiguration){
     const url=new URL(config.endpoint);if(url.protocol!=='https:'&&!(url.protocol==='http:'&&['localhost','127.0.0.1','[::1]'].includes(url.hostname)))throw new Error('SDK_ENDPOINT_REQUIRES_HTTPS');
     if(url.username||url.password||url.search||url.hash)throw new Error('INVALID_SDK_ENDPOINT');
@@ -43,9 +46,9 @@ export class NodeSdk {
       const context=this.context()??{applicationId:this.config.applicationId,environmentId:this.config.environmentId,actorReference:null,tenantReference:null};
       const event=sanitizeEvent(enforceScope({...input,eventId:input.eventId??crypto.randomUUID(),schemaVersion:SCHEMA_VERSION,applicationId:context.applicationId,environmentId:context.environmentId,occurredAt:input.occurredAt??new Date().toISOString(),source:input.source??'SERVER',releaseVersion:this.config.release,requestId:context.requestId,traceId:context.traceId,spanId:context.spanId},context));
       const bytes=this.pending.reduce((n,item)=>n+encodedBytes(item.event),0)+encodedBytes(event);
-      if(this.pending.length>=Math.min(500,this.config.maxQueueCount??500)||bytes>Math.min(2_097_152,this.config.maxQueueBytes??2_097_152)){this.dropped++;this.fallback('QUEUE_FULL',event);return null;}
+      if(this.pending.length>=Math.min(500,this.config.maxQueueCount??500)||bytes>Math.min(2_097_152,this.config.maxQueueBytes??2_097_152)){this.dropped++;this.metrics.add('dropped');this.fallback('QUEUE_FULL',event);return null;}
       this.pending.push({event,attempts:0,nextRetryAt:Date.now()});return event.eventId;
-    }catch{this.fallback('EVENT_REJECTED');return null;}
+    }catch{this.dropped++;this.metrics.add('dropped');this.fallback('EVENT_REJECTED');return null;}
   }
   captureException(error:unknown,input:{category?:TelemetryEvent['category'];operationName?:string;eventCode?:string;source?:TelemetryEvent['source']}={}){
     return this.capture({category:input.category??'BACKEND',source:input.source??'SERVER',severity:'ERROR',eventCode:input.eventCode??'server.exception',normalizedMessage:error instanceof Error?redactText(error.message).slice(0,2000):'Unexpected operation failure',exceptionType:error instanceof Error?error.name:'UnknownError',sanitizedStack:error instanceof Error?sanitizeStack(error.stack??''):undefined,operationName:input.operationName});
@@ -62,13 +65,13 @@ export class NodeSdk {
         const ids=new Set(batch.map(p=>p.event.eventId)),seen=new Set<string>();
         for(const ack of value.acknowledgements){if(!isRecord(ack)||typeof ack.eventId!=='string'||!ids.has(ack.eventId)||seen.has(ack.eventId)||!['ACCEPTED','DUPLICATE','REJECTED','RETRYABLE'].includes(String(ack.status)))throw new Error('INVALID_ACK');seen.add(ack.eventId);}
         const complete=new Set<string>(value.acknowledgements.filter(a=>a.status!=='RETRYABLE').map(a=>a.eventId));
-        for(const item of batch){if(complete.has(item.event.eventId)){const i=this.pending.indexOf(item);if(i>=0)this.pending.splice(i,1);}else this.defer(item);}
+        for(const item of batch){if(complete.has(item.event.eventId)){const rejected=value.acknowledgements.some(a=>a.eventId===item.event.eventId&&a.status==='REJECTED');if(rejected){this.dropped++;this.metrics.add('dropped');if(item.attempts>0)this.metrics.add('retryDropped');}else if(item.attempts>0)this.metrics.add('retryDelivered');const i=this.pending.indexOf(item);if(i>=0)this.pending.splice(i,1);}else this.defer(item);}
       }finally{clearTimeout(timeout);}
     }catch{
       for(const item of batch){this.fallback('INGESTION_UNAVAILABLE',item.event);this.defer(item);}
     }finally{this.busy=false;}
   }
-  private defer(item:Pending){item.attempts++;if(item.attempts>=12){const index=this.pending.indexOf(item);if(index>=0)this.pending.splice(index,1);this.dropped++;}else item.nextRetryAt=Date.now()+retryDelay(item.attempts);}
+  private defer(item:Pending){item.attempts++;if(item.attempts>=12){const index=this.pending.indexOf(item);if(index>=0)this.pending.splice(index,1);this.dropped++;this.metrics.add('dropped');this.metrics.add('retryDropped');}else item.nextRetryAt=Date.now()+retryDelay(item.attempts);}
   stats(){return {queued:this.pending.length,dropped:this.dropped};}
   start(){if(!this.timer){this.stopped=false;this.timer=setInterval(()=>void this.flush(),10_000);this.timer.unref();}return this;}
   async shutdown(){if(this.timer)clearInterval(this.timer);await this.flush();this.stopped=true;this.abort?.abort();for(const item of this.pending)this.fallback('SHUTDOWN_UNDELIVERED',item.event);this.pending.splice(0);}

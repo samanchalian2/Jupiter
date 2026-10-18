@@ -10,6 +10,7 @@ import { AlertService } from './alerts.js';
 import type { InvestigatorService, InvestigatorConfiguration } from './investigator.js';
 import { openApiDocument } from './openapi.js';
 import {RetentionService,type RetentionPolicy} from './retention.js';
+import {SelfMonitoringService} from './self-monitoring.js';
 
 /** Host-supplied verified identity. Implementations can use JWT/OIDC/session
  * exchange; the core never imports a product's user or membership model. */
@@ -32,6 +33,7 @@ export class HubHttpApi {
   private readonly mintLimiter=new BoundedRateLimiter(60);
   private readonly operationsLimiter=new BoundedRateLimiter(120);
   private readonly feedbackLimiter=new BoundedRateLimiter(10);
+  private readonly metricLimiter=new BoundedRateLimiter(6);
   constructor(private readonly database:HubDatabase,private readonly registry:RegistryService,private readonly ingestion:IngestionService,private readonly identities:OperationalIdentityProvider,private readonly ingestionPolicy?:IngestionPolicy,private readonly investigator?:InvestigatorService){}
   private bearer(request:HubHttpRequest){const match=/^Bearer ([A-Za-z0-9._~-]{16,4096})$/.exec(request.authorization??'');if(!match)throw new ContractError('AUTHENTICATION_REQUIRED');return match[1];}
   private body(request:HubHttpRequest){if(!isRecord(request.body))throw new ContractError('INVALID_REQUEST');return request.body;}
@@ -53,6 +55,11 @@ export class HubHttpApi {
       if(!this.requestLimiter.allow(request.clientKey.slice(0,160)))return{status:429,body:{reasonCode:'REQUEST_RATE_LIMIT'},headers:{'Retry-After':'60'}};
       if(request.method==='GET'&&path==='/openapi.json')return{status:200,body:openApiDocument};
       const token=this.bearer(request);
+      if(request.method==='POST'&&path==='/sdk-metrics'){
+        const credential=await this.registry.credential(token,'events:write');await this.actorAllowed(credential);await this.origin(credential.applicationId,credential.source,request.origin);
+        if(!this.metricLimiter.allow(credential.credentialId))return{status:429,body:{reasonCode:'METRIC_RATE_LIMIT'},headers:{'Retry-After':'60'}};
+        return{status:201,body:await this.ingestion.metrics.reportSdk(credential,request.body)};
+      }
       if(request.method==='POST'&&path==='/events/batch'){
         const credential=await this.registry.credential(token,'events:write');
         await this.actorAllowed(credential);
@@ -81,6 +88,11 @@ export class HubHttpApi {
       let verified:VerifiedPrincipal;try{verified=await this.identities.verify(token);}catch{throw new ContractError('AUTHENTICATION_REQUIRED');}
       const principalId=await this.registry.principal(verified);
       if(!this.operationsLimiter.allow(principalId))return{status:429,body:{reasonCode:'OPERATIONS_RATE_LIMIT'}};
+      const health=/^\/operations\/applications\/([0-9a-f-]{36})\/self-health$/.exec(path);
+      if(health&&request.method==='GET'){
+       if([...url.searchParams.keys()].some(k=>k!=='environmentId'||url.searchParams.getAll(k).length!==1))throw new ContractError('INVALID_QUERY');
+       return{status:200,body:await new SelfMonitoringService(this.database,this.registry).status(principalId,health[1],url.searchParams.get('environmentId')??'')};
+      }
       const maintenance=/^\/operations\/applications\/([0-9a-f-]{36})\/(retention-policy|maintenance)$/.exec(path);
       if(maintenance){const service=new RetentionService(this.database,this.registry);if(maintenance[2]==='retention-policy'&&[...url.searchParams.keys()].length)throw new ContractError('INVALID_QUERY');
        if(maintenance[2]==='retention-policy'&&request.method==='GET')return{status:200,body:await service.policy(principalId,maintenance[1])};

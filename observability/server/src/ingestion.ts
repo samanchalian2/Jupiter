@@ -1,12 +1,14 @@
 import { validateBatch, validateEvent, isUuid, ContractError, type TelemetryEvent, type EventAcknowledgement, type BatchAcknowledgement } from '@observability/contracts';
 import { sanitizeEvent, enforceScope, fingerprint, FINGERPRINT_VERSION, sha256, canonicalJson } from '@observability/core';
 import { HubDatabase, type DataScope } from './database.js';
+import {SelfMonitoringService} from './self-monitoring.js';
 
 export interface IngestionScope extends DataScope {source:'BROWSER'|'SERVER';}
 export class IngestionService {
-  constructor(private readonly database:HubDatabase){}
+  readonly metrics:SelfMonitoringService;
+  constructor(private readonly database:HubDatabase,metrics?:SelfMonitoringService){this.metrics=metrics??new SelfMonitoringService(database);}
   async ingest(body:unknown,scope:IngestionScope):Promise<BatchAcknowledgement>{
-    const events=validateBatch(body),acknowledgements:EventAcknowledgement[]=[];
+    let events:unknown[];try{events=validateBatch(body);}catch(error){this.metrics.record(scope);throw error;}const acknowledgements:EventAcknowledgement[]=[];let persistenceUnavailable=false;
     for(const raw of events){
       let event:TelemetryEvent;
       try{
@@ -18,9 +20,12 @@ export class IngestionService {
         event=sanitizeEvent(enforceScope(parsed,{...scope,tenantReference:tenant,actorReference:actor}));
         if(scope.source==='BROWSER'&&event.source!=='BROWSER')throw new ContractError('UNTRUSTED_SOURCE');
       }catch(error){acknowledgements.push({eventId:typeof raw==='object'&&raw!==null&&'eventId' in raw&&isUuid(raw.eventId)?raw.eventId:'invalid',status:'REJECTED',reasonCode:error instanceof ContractError?error.reasonCode:'INVALID_EVENT'});continue;}
-      try{acknowledgements.push(await this.persist(event,scope));}catch{acknowledgements.push({eventId:event.eventId,status:'RETRYABLE',reasonCode:'PERSISTENCE_UNAVAILABLE'});}
+      // One storage failure must not multiply a connect timeout by 50 events.
+      // Remaining valid entries keep their IDs and are safely retried later.
+      if(persistenceUnavailable){acknowledgements.push({eventId:event.eventId,status:'RETRYABLE',reasonCode:'PERSISTENCE_UNAVAILABLE'});continue;}
+      try{acknowledgements.push(await this.persist(event,scope));}catch{persistenceUnavailable=true;acknowledgements.push({eventId:event.eventId,status:'RETRYABLE',reasonCode:'PERSISTENCE_UNAVAILABLE'});}
     }
-    return {schemaVersion:'1.1',acknowledgements};
+    const result:BatchAcknowledgement={schemaVersion:'1.1',acknowledgements};this.metrics.record(scope,result);return result;
   }
   private async persist(event:TelemetryEvent,scope:IngestionScope):Promise<EventAcknowledgement>{
     const digest=await sha256(canonicalJson(event)),print=await fingerprint(event);

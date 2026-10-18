@@ -2,6 +2,11 @@
 
 ## GOAL-069 — Observability Hub continuation (IN PROGRESS)
 
+DEC-043/migration 072 add the scoped self-metric backend/API and SDK counter
+ports. Automatic SDK transport, Console/source acceptance still remain; coverage
+is SOURCE_COLLECTION_IN_PROGRESS, not full section-51 delivery. Continue full
+Help/performance/host/worker/final A–I requirements in this same Goal.
+
 DEC-042/migration 071 extend trusted critical detection, terminal pipeline
 warnings and out-of-band structured diagnostics/external probes. Full self-metrics,
 Help/publication, performance and final host/A–I acceptance remain outstanding.

@@ -1,5 +1,17 @@
 # Domain Model
 
+## Self-metric measurements (GOAL-069, DEC-043)
+
+HealthReport is an immutable App/environment/optional-tenant scoped counter
+delta with an idempotent UUID/hash and explicit SERVER_MEASURED, CLIENT_REPORTED
+or SERVER_SDK_REPORTED provenance. It has no payload/actor/free-form metadata.
+StorageSample is an hourly environment-scoped logical-row byte snapshot; growth
+is nullable until two observations exist. These are not Issues, customer usage,
+AI evidence or disk capacity. Reports survive at least eight days; snapshots use
+the Application aggregate retention window. Worker-only bounded deletion does
+not change canonical Audit or AI accounting. SDK buffers expose fixed deltas;
+automatic transport/Console collection remains pending at this checkpoint.
+
 ## Critical/pipeline alert extension (GOAL-069, DEC-042)
 
 MonitoringRule adds `CRITICAL_EVENT` to the existing nine codes. Existing settings
