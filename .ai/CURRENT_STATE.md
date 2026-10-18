@@ -1,5 +1,29 @@
 # Current State
 
+**2026-10-18 bounded retention checkpoint (GOAL-069 IN PROGRESS):**
+Migration 069 adds environment maintenance state and targeted retention indexes
+(80 total migrations, 25 Hub tables). Per-Application ADMIN policy APIs and
+bounded hourly RETENTION/continuation jobs implement 30/365/180/180 defaults.
+Raw events pending aggregation, active/recent Incident/Feedback, canonical Audit
+and AI usage are preserved. Receipts survive at least eight days and as long as
+the raw event remains. Child/history deletion, safe counts, automation Audit and
+lease completion are atomic; queue completion/failure now validates persisted
+scope/kind/dedupe in addition to lease identity. DEC-040 and the retention runbook
+record the invariants. The independent Console has an explicit reason/impact
+confirmation form and queue/retention-only status; OpenAPI now covers 44 operations.
+The local DB received migration 069 after isolated tests; preflight found no
+expired source/history data and the local worker's first successful batch deleted
+zero rows across all categories. No tenant/business data or target host changed.
+Authenticated responsive browser acceptance of the new maintenance panel remains
+pending; no complete UI claim is made. Full self-monitoring/drop/recovery/storage
+metrics, additional alerts, Browser reference/offline, Help and final QC remain.
+QC: 150 API, 28 Web and 124 Hub tests pass (40 SDK/core/adapters, 75
+server/contract/provider, nine Console); builds/lint/typechecks and 80-migration
+rehearsal pass. Final strict maintenance-query validation was rechecked with
+the complete 75-test server suite plus server build/typecheck and Console tests.
+The complete release run included actual Python/C# external-client acceptance.
+Pre-existing Vite chunk-size advisory remains; no whole-Goal completion is claimed.
+
 **2026-10-18 public HTTP contract/reference-client checkpoint (GOAL-069 IN PROGRESS):**
 The independent server exports/serves OpenAPI 3.0.3 at
 `/api/v1/observability/openapi.json`. All 41 documented operations have a real

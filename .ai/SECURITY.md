@@ -2,6 +2,16 @@
 
 ## GOAL-069 Observability Hub
 
+Operational retention (DEC-040) never touches business/security Audit or tenant
+tables. Only application-wide ADMIN can shorten an Application's windows, with
+reason/Audit; environment-only grants cannot escalate. Persisted lease metadata,
+policy/environment locks, bounded parent/child deletion, atomic Audit/completion
+and eight-day receipt retention protect cross-scope execution and eligible retry.
+Active or recently discussed histories and pending aggregation are preserved.
+Runtime gets SELECT only on maintenance state; worker cannot delete canonical
+Audit or AI usage ledger. Maintenance API explicitly reports partial coverage,
+not complete self-monitoring or staging health.
+
 The public OpenAPI document is static code-derived metadata, not tenant/runtime
 data. Its unauthenticated download is under the request limiter; it never reveals
 credentials, encrypted configuration or actual Application IDs. Operational,

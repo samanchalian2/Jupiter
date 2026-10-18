@@ -1,5 +1,37 @@
 # Architecture Decisions
 
+## DEC-040 — Bounded operational retention and evidence preservation
+
+GOAL-069 implements the already-approved per-Application retention policy in
+the existing PostgreSQL queue, not a business-data purge service. Default raw,
+aggregate, terminal Incident and closed Feedback windows remain 30/365/180/180
+days. Application-wide ADMIN configures policy with a sanitized reason/Audit;
+an environment-only administrator cannot shorten all-Application history.
+
+Each hourly environment job processes at most 100 rows per category (hard cap
+1,000), under the persisted lease and environment advisory lock. Parent locks
+serialize human replies/reopen with bounded child/history deletion. Recent
+activity, active incidents/feedback and pending aggregation are protected.
+When a category reaches its bound, a uniquely keyed continuation drains later
+batches. Policy update and batch execution share an Application policy lock.
+The job scope/kind/dedupe must match the persisted leased row, not just its ID.
+
+Ingestion receipts stay at least eight days and as long as the raw event exists:
+the ingestion contract rejects events older than seven days, so deletion cannot
+turn an eligible replay into new business effects. Alert delivery and retention
+share environment locking; an alert is rechecked after locking before enqueue.
+All deletes, maintenance counts, automation-attributed Audit and completion
+commit atomically; Audit failure rolls them back. No worker delete permission is
+added for canonical Audit, issue/human activity history or operational AI usage.
+AI accounting and evidence findings remain separate from raw-source retention;
+missing expired raw references must never be represented as available evidence.
+No customer/ticket/tenant table is queried or deleted by the generic service.
+
+Maintenance status is explicitly only queue/retention coverage, not full Hub
+self-monitoring or Staging monitoring acceptance. The remaining self-health,
+ingestion/drop/recovery/storage metrics and external monitoring remain required
+within this same Goal; a green maintenance panel cannot stand in for them.
+
 ## DEC-039 — Explicit reversible workspace administration
 
 The owner's 2026-10-17 request extends Platform administration to both personal

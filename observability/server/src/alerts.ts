@@ -10,11 +10,12 @@ export class AlertService {
  /** Bounded repair sweep covers an alert committed before a host crash. */
  async enqueue(limit=100){return this.database.worker(async c=>{
   const rows=(await c.query<{id:string;application_id:string;environment_id:string;tenant_reference:string|null}>(`SELECT a.id,a.application_id,a.environment_id,a.tenant_reference FROM observability.alerts a JOIN observability.applications p ON p.id=a.application_id JOIN observability.environments e ON e.id=a.environment_id WHERE p.enabled AND e.enabled AND NOT EXISTS(SELECT 1 FROM observability.jobs j WHERE j.application_id=a.application_id AND j.environment_id=a.environment_id AND j.kind='ALERT_DELIVERY' AND j.dedupe_key='alert:'||a.id::text) ORDER BY a.created_at,a.id LIMIT $1`,[Math.max(1,Math.min(500,limit))])).rows;
-  let count=0;for(const alert of rows){const result=await c.query("INSERT INTO observability.jobs(application_id,environment_id,tenant_reference,kind,dedupe_key) VALUES($1,$2,$3,'ALERT_DELIVERY',$4) ON CONFLICT(application_id,environment_id,kind,dedupe_key) DO NOTHING",[alert.application_id,alert.environment_id,alert.tenant_reference,`alert:${alert.id}`]);count+=result.rowCount??0;}return{enqueued:count};
+  let count=0;for(const alert of rows.sort((a,b)=>`${a.application_id}:${a.environment_id}`.localeCompare(`${b.application_id}:${b.environment_id}`))){await c.query('SELECT pg_advisory_xact_lock(hashtext($1))',[`obs-maintenance:${alert.application_id}:${alert.environment_id}`]);const result=await c.query("INSERT INTO observability.jobs(application_id,environment_id,tenant_reference,kind,dedupe_key) SELECT application_id,environment_id,tenant_reference,'ALERT_DELIVERY',$4 FROM observability.alerts WHERE id=$5 AND application_id=$1 AND environment_id=$2 AND tenant_reference IS NOT DISTINCT FROM $3 ON CONFLICT(application_id,environment_id,kind,dedupe_key) DO NOTHING",[alert.application_id,alert.environment_id,alert.tenant_reference,`alert:${alert.id}`,alert.id]);count+=result.rowCount??0;}return{enqueued:count};
  });}
  async deliver(job:LeasedJob){
   if(job.kind!=='ALERT_DELIVERY'||!/^alert:[0-9a-f-]{36}$/.test(job.dedupe_key))throw new ContractError('INVALID_ALERT_JOB');
   return this.queue.complete(job,async c=>{
+   await c.query('SELECT pg_advisory_xact_lock(hashtext($1))',[`obs-maintenance:${job.application_id}:${job.environment_id}`]);
    // Registry reads occur under the limited control role, never bypassing user
    // authorization. Only scoped active operators are recipients; no tenant users.
    await c.query('SET LOCAL ROLE observability_control');

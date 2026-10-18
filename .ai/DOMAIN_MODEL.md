@@ -1,5 +1,15 @@
 # Domain Model
 
+## Operational retention (GOAL-069, DEC-040)
+
+Existing Hub Application owns separate raw/aggregate/Incident/Feedback day
+windows. An environment maintenance state holds last successful batch time and
+safe category counts. Hourly RETENTION jobs and idempotent continuations use
+the existing durable queue, not a new business scheduler. Old raw event removal
+can expire source links while retained Issues/AI findings remain historical;
+clients must not infer that an expired source is still fetchable. Canonical Audit
+and immutable AI accounting have independent preservation and no purge here.
+
 ## Operational alert inbox (GOAL-069)
 
 An Alert has a composite Application/environment/tenant identity. A durable

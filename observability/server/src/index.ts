@@ -11,4 +11,5 @@ export { OperationsService, csvCell, type OperationScope, type QueryFilter, type
 export { InvestigatorService, INVESTIGATOR_SYSTEM, type InvestigatorConfiguration } from './investigator.js';
 export { AlertService } from './alerts.js';
 export { openApiDocument } from './openapi.js';
+export { RetentionService,type RetentionPolicy } from './retention.js';
 export { AesCredentialVault, JsonInvestigationProvider, validateProviderEndpoint, type CredentialVault, type InvestigationProvider, type InvestigationProviderRequest, type InvestigationProviderResponse, type ProviderEndpointPolicy } from './ai-provider.js';

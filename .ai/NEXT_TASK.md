@@ -2,6 +2,15 @@
 
 ## GOAL-069 — Reusable Observability Hub (IN PROGRESS)
 
+Bounded retention (DEC-040/migration 069) now has policy/status APIs, hourly
+durable jobs/continuations, parent/child scope safety, immutable Audit and a
+Console form. The local zero-expiry batch completed with all counts zero.
+Next verify authenticated responsive maintenance UI, then implement the full
+self-monitoring set and missing alert sources/flood handling, and complete the
+independent Browser/offline/Help and remaining full-scope acceptance. Maintenance
+status explicitly is NOT complete self-monitoring; do not shrink that requirement.
+Extend the current 44-operation OpenAPI parity whenever adding further routes.
+
 The public OpenAPI and executable C#/Python examples now exist and are tested
 against real HTTP/PostgreSQL, including actual separate-process replay/retry and
 credential/redirect failure behavior. Keep the document synchronized whenever

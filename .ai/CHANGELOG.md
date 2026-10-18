@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-10-18 — GOAL-069 bounded operational retention (IN PROGRESS)
+
+- Added per-Application policy API and hourly durable maintenance jobs with
+  bounded child/history slices, continuation, parent/policy/environment locks.
+- Preserved active/recent histories, pending raw aggregation, eligible replay
+  receipts, canonical Audit and operational AI ledger; no business-domain purge.
+- Added maintenance state/indexes (069), queue/retention-only API and compact
+  Console form with reason, range validation and irreversible-effect warning.
+- Hardened job complete/fail against altered scope/kind/dedupe; alert enqueue
+  rechecks persistence after taking the retention-coordination lock.
+- Real DB tests cover scope isolation, bounded continuation, parallel duplicates,
+  Audit outage rollback, recent replies, protected ledger and retry idempotency.
+  OpenAPI parity expands to 44 actual operations; DEC-040/runbook document safety.
+- Applied migration locally only; preflight zero expiry and actual maintenance
+  batch zero deletes. Maintenance browser/full self-monitoring remain pending.
+
 ## 2026-10-18 — GOAL-069 OpenAPI and independent HTTP clients (IN PROGRESS)
 
 - Added public, rate-limited OpenAPI download with 41 implemented operations,

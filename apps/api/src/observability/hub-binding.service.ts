@@ -1,7 +1,7 @@
 import { Injectable, Logger, type OnModuleInit, type OnModuleDestroy } from '@nestjs/common';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { HubDatabase, RegistryService, IngestionService, HubHttpApi, IssueEngine, MonitoringEngine, AlertService, InvestigatorService, AesCredentialVault, JsonInvestigationProvider, type HubHttpRequest } from '@observability/server';
+import { HubDatabase, RegistryService, IngestionService, HubHttpApi, IssueEngine, MonitoringEngine, AlertService, RetentionService, InvestigatorService, AesCredentialVault, JsonInvestigationProvider, type HubHttpRequest } from '@observability/server';
 import { NodeSdk, type NodeContext } from '@observability/node-sdk';
 import { ContractError, isUuid, type IdentityScope } from '@observability/contracts';
 import { AuthService } from '../auth/auth.service.js';
@@ -50,7 +50,7 @@ export class HubBindingService implements OnModuleInit,OnModuleDestroy {
    const endpoint=`http://127.0.0.1:${Number(process.env.API_PORT??3000)}/api/v1/observability`;
    this.sdk=new NodeSdk({applicationId:config.applicationId,environmentId:config.environmentId,endpoint,release:process.env.JUPITER_RELEASE_VERSION??'development',credentialProvider:async()=>{if(!cached||Date.parse(cached.expiresAt)<Date.now()+60_000)cached=await this.registry!.mintForTrustedHost({...config,actorReference:null,tenantReference:null},'SERVER',this.servicePrincipal!);return cached.token;}}).start();
    this.unsubscribe=observeSessionRevocation(userId=>this.registry!.revokeActorCredentials(config.applicationId,userId));
-   const alerts=new AlertService(this.hub,this.registry);
+   const alerts=new AlertService(this.hub,this.registry),retention=new RetentionService(this.hub,this.registry);
    this.unregisterNotifications=this.notifications.registerOperationalSource('jupiter-observability',async userId=>{
     const user=await this.auth.profile(userId);
     const principal=await this.registry!.principal({issuer:'jupiter',subject:user.id,displayName:user.display_name});
@@ -60,7 +60,7 @@ export class HubBindingService implements OnModuleInit,OnModuleDestroy {
    });
    if(process.env.JUPITER_WORKER_ENABLED==='true'||process.env.OBSERVABILITY_WORKER_ENABLED==='true'){
     const engine=new IssueEngine(this.hub,this.registry),rules=new MonitoringEngine(this.hub,this.registry),workerId=crypto.randomUUID();
-    const drain=async()=>{if(this.working)return;this.working=true;try{const jobs=await engine.queue.claim(workerId,25,['AGGREGATE']);for(const job of jobs){try{await engine.aggregate(job);}catch{await engine.queue.fail(job,'AGGREGATION_FAILED');}}if(Date.now()-this.lastRules>=60_000){await rules.evaluate();await alerts.enqueue();await this.investigator?.schedule();this.lastRules=Date.now();}for(const job of await engine.queue.claim(workerId,5,['ALERT_DELIVERY'])){try{await alerts.deliver(job);}catch{await engine.queue.fail(job,'ALERT_DELIVERY_FAILED');}}if(this.investigator){for(const job of await engine.queue.claim(workerId,1,['INVESTIGATE'])){try{await this.investigator.execute(job);}catch{await engine.queue.fail(job,'INVESTIGATION_FAILED');}}}}catch{this.logger.warn('OBSERVABILITY_WORKER_UNAVAILABLE');}finally{this.working=false;}};
+    const drain=async()=>{if(this.working)return;this.working=true;try{const jobs=await engine.queue.claim(workerId,25,['AGGREGATE']);for(const job of jobs){try{await engine.aggregate(job);}catch{await engine.queue.fail(job,'AGGREGATION_FAILED');}}if(Date.now()-this.lastRules>=60_000){await rules.evaluate();await alerts.enqueue();await retention.enqueue();await this.investigator?.schedule();this.lastRules=Date.now();}for(const job of await engine.queue.claim(workerId,5,['ALERT_DELIVERY'])){try{await alerts.deliver(job);}catch{await engine.queue.fail(job,'ALERT_DELIVERY_FAILED');}}for(const job of await engine.queue.claim(workerId,1,['RETENTION'])){try{await retention.execute(job);}catch{await engine.queue.fail(job,'RETENTION_FAILED');}}if(this.investigator){for(const job of await engine.queue.claim(workerId,1,['INVESTIGATE'])){try{await this.investigator.execute(job);}catch{await engine.queue.fail(job,'INVESTIGATION_FAILED');}}}}catch{this.logger.warn('OBSERVABILITY_WORKER_UNAVAILABLE');}finally{this.working=false;}};
     this.timer=setInterval(()=>void drain(),2_000);this.timer.unref();void drain();
    }
   }catch{this.api=undefined;this.logger.warn('OBSERVABILITY_NOT_READY');}

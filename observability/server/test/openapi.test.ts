@@ -17,7 +17,7 @@ describe('public language-neutral OpenAPI',()=>{
    for(const match of path.matchAll(/\{([^}]+)\}/g))expect(op.parameters?.some(p=>p.name===match[1]&&p.in==='path'&&p.required)).toBe(true);
    if(!['/health','/ready','/openapi.json'].includes(path))expect(op.security).not.toEqual([]);
   }
-  expect(new Set(ids).size).toBe(ids.length);expect(ids.length).toBe(41);
+  expect(new Set(ids).size).toBe(ids.length);expect(ids.length).toBe(44);
  });
  it('matches shared event enums, strict fields and null primitive metadata',async()=>{
   const doc=await SwaggerParser.dereference(structuredClone(openApiDocument) as never,{resolve:{external:false}}) as unknown as {components:{schemas:Record<string,unknown>}};
@@ -35,7 +35,7 @@ describe('public language-neutral OpenAPI',()=>{
   expect((openApiDocument.components.schemas.ServerCredential.properties as Record<string,{writeOnly?:boolean}>).token.writeOnly).toBeUndefined();
  });
  it('does not advertise unsupported HTTP registry/grant/rotation or future routes',()=>{
-  expect(Object.keys(openApiDocument.paths).some(path=>/bootstrap|grants|rotation|retention|self-monitor/.test(path))).toBe(false);
+  expect(Object.keys(openApiDocument.paths).some(path=>/bootstrap|grants|rotation|self-monitor/.test(path))).toBe(false);
   expect(openApiDocument.paths['/operations/applications/{applicationId}/issues/{issueId}']).toHaveProperty('get');expect(openApiDocument.paths['/operations/applications/{applicationId}/issues/{issueId}']).toHaveProperty('post');
  });
  it('preserves strict-positive rule bounds when validating OAS 3.0 with Ajv draft-7',()=>{

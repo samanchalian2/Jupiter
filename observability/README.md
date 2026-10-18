@@ -3,6 +3,12 @@
 Product-independent packages and PostgreSQL server adapters for GOAL-069.
 Implementation is IN PROGRESS; no complete platform claim is made.
 
+Per-Application operational retention now uses the existing durable queue,
+bounded child/history batches and immutable automation Audit. See the
+[retention runbook](RETENTION_RUNBOOK.md). The Console maintenance panel and
+API expose queue/retention status only; they explicitly do not claim full
+Hub self-monitoring or external host monitoring coverage.
+
 The public OpenAPI 3.0.3 document is served at
 `GET /api/v1/observability/openapi.json` and exported as `openApiDocument` by
 `@observability/server`. Real HTTP/PostgreSQL tests exercise every documented

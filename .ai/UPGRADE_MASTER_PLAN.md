@@ -2,6 +2,12 @@
 
 ## GOAL-069 — Observability Hub continuation (IN PROGRESS)
 
+Bounded per-Application retention is implemented under DEC-040 with durable
+continuations, protected active/recent data and immutable Audit. Migration 069,
+policy/status APIs and Console maintenance form are local-only. OpenAPI now has
+44 operations. This does not satisfy full self-monitoring or maintenance browser
+acceptance; those and all remaining original A–I requirements remain active.
+
 OpenAPI now documents all 41 implemented public HTTP operations and has real
 request/response parity tests. Executable independent Python/C# clients pass
 actual HTTP/PostgreSQL lost-ACK/replay/denial/redirect checks. The separate Browser

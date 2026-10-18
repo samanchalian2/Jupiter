@@ -9,6 +9,7 @@ import { MonitoringEngine } from './rules.js';
 import { AlertService } from './alerts.js';
 import type { InvestigatorService, InvestigatorConfiguration } from './investigator.js';
 import { openApiDocument } from './openapi.js';
+import {RetentionService,type RetentionPolicy} from './retention.js';
 
 /** Host-supplied verified identity. Implementations can use JWT/OIDC/session
  * exchange; the core never imports a product's user or membership model. */
@@ -80,6 +81,12 @@ export class HubHttpApi {
       let verified:VerifiedPrincipal;try{verified=await this.identities.verify(token);}catch{throw new ContractError('AUTHENTICATION_REQUIRED');}
       const principalId=await this.registry.principal(verified);
       if(!this.operationsLimiter.allow(principalId))return{status:429,body:{reasonCode:'OPERATIONS_RATE_LIMIT'}};
+      const maintenance=/^\/operations\/applications\/([0-9a-f-]{36})\/(retention-policy|maintenance)$/.exec(path);
+      if(maintenance){const service=new RetentionService(this.database,this.registry);if(maintenance[2]==='retention-policy'&&[...url.searchParams.keys()].length)throw new ContractError('INVALID_QUERY');
+       if(maintenance[2]==='retention-policy'&&request.method==='GET')return{status:200,body:await service.policy(principalId,maintenance[1])};
+       if(maintenance[2]==='retention-policy'&&request.method==='PUT'){const body=this.body(request);if(Object.keys(body).some(k=>!['rawDays','aggregateDays','incidentDays','feedbackDays','reason'].includes(k)))throw new ContractError('INVALID_RETENTION_POLICY');return{status:200,body:await service.configure(principalId,maintenance[1],body as unknown as RetentionPolicy&{reason:string})};}
+       if(maintenance[2]==='maintenance'&&request.method==='GET'){if([...url.searchParams.keys()].some(k=>k!=='environmentId'||url.searchParams.getAll(k).length!==1))throw new ContractError('INVALID_QUERY');return{status:200,body:await service.status(principalId,maintenance[1],url.searchParams.get('environmentId')??'')};}
+      }
       const inboxRoute=/^\/operations\/applications\/([0-9a-f-]{36})\/alert-inbox(?:\/([0-9a-f-]{36})\/read)?$/.exec(path);
       if(inboxRoute){
        const body=request.method==='GET'?{}:this.body(request),environmentId=request.method==='GET'?url.searchParams.get('environmentId'):body.environmentId;

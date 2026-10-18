@@ -4,6 +4,67 @@ Status: IN PROGRESS. Owner-approved plan supersedes the stale GOAL-060 identifie
 in the supplied specification. GOAL-060 Personal Service history is preserved.
 GOAL-059 remains BLOCKED; LOCAL evidence is not staging acceptance.
 
+## 2026-10-18 — Bounded retention checkpoint (LOCAL)
+
+- Migration `069_observability_retention.sql` adds environment maintenance state,
+  RLS, explicit worker state permissions and targeted parent/expiry indexes.
+  Full forward chain now has 80 migrations and 25 Hub tables. No business-table
+  query/delete or permission expansion to business/security Audit is introduced.
+- Existing per-Application policy defaults remain raw 30, aggregate 365,
+  terminal Incident 180 and closed Feedback 180 days. Whole-Application ADMIN
+  configures validated limits/reason with actual actor Audit; environment-only
+  ADMIN cannot shorten Application-wide data windows.
+- `RetentionService` enqueues hourly environment jobs (100 per sweep, hard cap
+  500). The host checks each minute and claims one RETENTION job per tick. Each
+  batch deletes at most 100 rows per category normally (hard cap 1,000), including
+  bounded children, with uniquely keyed continuations when a category hits bound.
+  Pending/running aggregation protects its raw source; source→Issue deletion has
+  at most one association per event, not unlimited cascade fanout.
+- Terminal parents are locked before bounded child deletion. Active histories,
+  recent replies/notes, recent/pending alert delivery and pending target Incident
+  investigations are protected. Same feedback UUID in another Application or
+  environment is explicitly verified to remain. Aggregates expire independently.
+- Receipts persist at least eight days and while the event remains, beyond the
+  seven-day accepted event age. An eligible same-ID retry after raw removal still
+  returns DUPLICATE. Terminal jobs retain dedupe; alert delivery's job remains
+  while its alert exists. No AI attempts, findings, Issue/history or Audit are
+  purged by this policy. Expired raw references cannot be reconstructed as facts.
+- Policy edit/batch share Application lock; alert enqueue/delivery/retention share
+  environment lock. Alert existence is rechecked under lock before enqueue.
+  Complete/fail now require persisted scope, kind, event/dedupe and valid lease.
+  Tampered-scope work is denied. Batch deletion, counts, automatic Audit and job
+  completion are one transaction. Controlled Audit failure rolls back every
+  deletion; parallel execution then commits once with one Audit.
+- Added GET/PUT `/operations/applications/{id}/retention-policy` and GET
+  `/maintenance?environmentId={env}`. OpenAPI/schema/real HTTP parity now includes
+  all 44 operations. Maintenance reports retained queue counts, oldest aggregation
+  lag, failed alert delivery, unresolved Issues, raw retention lag and last batch.
+  It explicitly returns `coverage=QUEUE_AND_RETENTION_ONLY`; this is not full
+  ingest/rejection/drop/offline-recovery/storage-growth self-monitoring.
+- Console “نگه‌داری داده و صف” exposes explicit independent windows, reason,
+  irreversible-effect acknowledgement and disabled unconfirmed save; it does not
+  pretend tenant filters affect Application policy. Commands have range/confirmation
+  tests. Authenticated responsive acceptance of this new panel is STILL PENDING;
+  this checkpoint provides no replacement claim based on SSR/API checks.
+- Local preflight found zero expired raw/aggregate/terminal Incident/closed
+  Feedback rows. After isolated migration/security tests, 069 was applied only
+  locally. The owned API/Web were restarted on 3000/5174 after confirming the
+  old listeners were absent. Worker recorded one SUCCEEDED RETENTION batch with
+  zero deletions in every category. All destructive acceptance scenarios use
+  disposable PostgreSQL only; no live tenant or target host was purged.
+- See DEC-040 and `observability/RETENTION_RUNBOOK.md`. Browser maintenance,
+  complete self-monitoring/external probe runbook, missing alert sources, richer
+  workflows, independent Browser/offline, runtime Help and final Goal QC remain
+  required. GOAL-069 is IN PROGRESS; no next Goal/deployment/completion claim.
+- Complete `pnpm verify:release` with actual external-client flag passes 150 API,
+  28 Web and 124 Hub tests (40 SDK/core/adapters, 75 server/contract/provider,
+  nine Console). All builds/lint/typechecks and the 80-migration rehearsal pass.
+  Final strict maintenance-query validation also passed the full 75-test server
+  suite, server build/typecheck and all nine Console tests. Anonymous/other actor,
+  unexpected/duplicate query and tenant-filter injection checks deny access.
+  Existing Vite >500 KiB chunk advisory remains explicit. Final workspace cleanup
+  uses the existing local-only dry-run; no automatic broad cleanup is introduced.
+
 ## 2026-10-18 — Public OpenAPI and external-language clients (LOCAL)
 
 - `observability/server/src/openapi.ts` is the canonical OpenAPI 3.0.3 document,

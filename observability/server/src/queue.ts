@@ -14,7 +14,7 @@ export class DurableQueue {
   }
   async complete(job:LeasedJob,work?:(client:PoolClient)=>Promise<void>):Promise<boolean>{
     return this.database.worker(async c=>{
-      const owned=await c.query(`SELECT 1 FROM observability.jobs WHERE id=$1 AND lease_owner=$2 AND status='RUNNING' AND lease_until>now() FOR UPDATE`,[job.id,job.lease_owner]);if(!owned.rowCount)return false;
+      const owned=await c.query(`SELECT 1 FROM observability.jobs WHERE id=$1 AND lease_owner=$2 AND application_id=$3 AND environment_id=$4 AND tenant_reference IS NOT DISTINCT FROM $5 AND event_id IS NOT DISTINCT FROM $6 AND kind=$7 AND dedupe_key=$8 AND status='RUNNING' AND lease_until>now() FOR UPDATE`,[job.id,job.lease_owner,job.application_id,job.environment_id,job.tenant_reference,job.event_id,job.kind,job.dedupe_key]);if(!owned.rowCount)return false;
       // Consumer aggregation and job completion share a single transaction.
       if(work)await work(c);
       await c.query(`UPDATE observability.jobs SET status='SUCCEEDED',completed_at=now(),lease_owner=NULL,lease_until=NULL WHERE id=$1 AND lease_owner=$2`,[job.id,job.lease_owner]);return true;
@@ -22,6 +22,6 @@ export class DurableQueue {
   }
   async fail(job:LeasedJob,failureCode:string):Promise<boolean>{
     if(!/^[A-Z0-9_]{1,100}$/.test(failureCode))throw new ContractError('INVALID_JOB_FAILURE_CODE');
-    return this.database.worker(async c=>Boolean((await c.query(`UPDATE observability.jobs SET status=CASE WHEN attempts>=12 THEN 'FAILED' ELSE 'PENDING' END,available_at=now()+($3::int*interval '1 millisecond'),completed_at=CASE WHEN attempts>=12 THEN now() ELSE NULL END,lease_owner=NULL,lease_until=NULL,failure_code=$4 WHERE id=$1 AND lease_owner=$2 AND status='RUNNING' AND lease_until>now()`,[job.id,job.lease_owner,retryDelay(job.attempts),failureCode])).rowCount));
+    return this.database.worker(async c=>Boolean((await c.query(`UPDATE observability.jobs SET status=CASE WHEN attempts>=12 THEN 'FAILED' ELSE 'PENDING' END,available_at=now()+($3::int*interval '1 millisecond'),completed_at=CASE WHEN attempts>=12 THEN now() ELSE NULL END,lease_owner=NULL,lease_until=NULL,failure_code=$4 WHERE id=$1 AND lease_owner=$2 AND application_id=$5 AND environment_id=$6 AND tenant_reference IS NOT DISTINCT FROM $7 AND event_id IS NOT DISTINCT FROM $8 AND kind=$9 AND dedupe_key=$10 AND status='RUNNING' AND lease_until>now()`,[job.id,job.lease_owner,retryDelay(job.attempts),failureCode,job.application_id,job.environment_id,job.tenant_reference,job.event_id,job.kind,job.dedupe_key])).rowCount));
   }
 }
