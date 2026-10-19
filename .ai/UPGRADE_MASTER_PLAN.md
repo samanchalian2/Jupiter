@@ -2,6 +2,13 @@
 
 ## GOAL-069 — Observability Hub continuation (IN PROGRESS)
 
+Queued intake acceptance now includes four real HTTP success-after-validation-
+failure paths, single settlement, no automatic ticket, explicit submit and real
+10-second Node SDK outage/recovery while product work continues. Full LOCAL
+411-test/build/lint/typecheck/Browser/client/performance/migration gate passes.
+Jupiter Browser observer-callback failure isolation is a concrete next
+QC target, alongside full host/process and requirement-level final acceptance.
+
 DEC-048 completes the twenty-case offline evidence map with real Edge quota,
 Feedback lost-ACK/backoff/expiry/foreign replay and data-write fallback regression
 coverage. The full LOCAL gate passes 411 tests, builds/typechecks/lint and real

@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-10-19 — GOAL-069 queued intake recovery / timer outage (IN PROGRESS)
+
+- Added four real queued HTTP intake recovery paths with invalid-output retry,
+  single-unit settlement, one voice transcription and explicit-only ticket submit.
+- Actual unchanged Node SDK timer encounters loopback 503 while business work
+  completes; automatic recovery sends queued worker events without drops.
+- Full LOCAL gate passes 411 tests/builds/lint/typechecks and real Browser/client/
+  performance/migration acceptance; cleanup and owned listener continuity pass.
+  No production contract,
+  migration, external provider or deployment changes; broader acceptance remains.
+
 ## 2026-10-19 — GOAL-069 offline lifecycle / storage writes (IN PROGRESS)
 
 - Added actual Edge offline Feedback/lost-ACK/backoff/expiry/forged/foreign

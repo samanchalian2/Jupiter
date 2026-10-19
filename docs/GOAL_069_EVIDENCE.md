@@ -4,6 +4,62 @@ Status: IN PROGRESS. Owner-approved plan supersedes the stale GOAL-060 identifie
 in the supplied specification. GOAL-060 Personal Service history is preserved.
 GOAL-059 remains BLOCKED; LOCAL evidence is not staging acceptance.
 
+## 2026-10-19 — Queued intake recovery and automatic-flush outage (LOCAL)
+
+- Implementation/test paths: `apps/api/test/lifecycle-worker.integration.spec.ts`,
+  `test/support/queued-intake-acceptance.ts` and
+  `test/support/automatic-hub-outage-acceptance.ts` under `apps/api/`.
+  Existing actual QueueWorker, HttpAiProvider/HttpTranscriptionProvider,
+  TicketIntakeService, CommercialService, TicketService, NodeSdk and generic
+  HTTP/SQL Hub run against the disposable 83-migration database. Production
+  processing, provider/metering contracts and retry policies are not changed.
+- Four real queued paths execute: text, text conversation, legacy voice and
+  conversation voice. The loopback HTTP provider returns one invalid structured
+  analysis per path, then a valid v6 response. The first failure retains one
+  RESERVED action with no settlement; only the fixture's retry due timestamp is
+  advanced. Each successful path settles exactly one unit despite duplicate
+  analyze/drain calls. Each has exactly two chat calls; each voice path has one
+  actual multipart transcription, not one per analysis retry. Duration telemetry
+  is one second and belongs to that same AI_SMART_INTAKE action.
+- Conversation voice retains TRANSCRIBING on analysis failure, while the saved
+  message transcript prevents another transcription. This is existing behavior,
+  not a renamed stage or modified production retry. Initial test assumptions
+  about ledger FK shape, numeric text formatting and this state were corrected
+  against actual schema/service behavior; none is claimed as a product defect.
+- Analysis creates zero tickets. Only the explicit test caller creates a DRAFT
+  and subsequently submits it to OPEN. Existing review recovery and terminal
+  failure assertions remain intact. Stored operational events/warnings exclude
+  the synthetic private input/transcript/provider marker, use null automation
+  actor and the actual persisted job organization; real aggregation finds Issues.
+- During all four recovery paths and explicit submit, the actual Node SDK's
+  unchanged 10-second interval targets a loopback HTTP 503 outage proxy. No fake
+  timer, transport mock or manual flush is used in this outage assertion. First
+  timer dispatch fails, records fixed INGESTION_UNAVAILABLE fallback and retains
+  the bounded queue. All business work finishes before the proxy is restored.
+  The next real interval forwards to authenticated Hub HTTP; queue drains with
+  zero drops. Focused execution observed one HTTP 503 attempt and one recovered
+  batch. Final SQL assertions then inspect the actual persisted worker events.
+- Executed focused integration: 3/3 pass (24.534s), including ~21.299s real
+  timer/outage scenario; API typecheck passes. The subsequent full LOCAL release
+  gate exits zero: 411 tests (173 API, 30 Web, 208 Hub), all builds/lint/typechecks,
+  real four-width Edge/offline/quota, Python/C# clients, performance and migration
+  rehearsal. Existing integration cases were expanded; the scenario matrix is
+  not falsely added to the test count. The final queued integration takes
+  24.992s, including 21.390s real timer/outage; Browser takes 81.518s. Vite's
+  existing >500-KiB chunk advisory remains. Post-gate cleanup confirms zero
+  disposable acceptance DBs and zero RESERVED AI attempts; owned API/Web remain
+  PIDs 19440/49740 on 3000/5174. The approved budget stays enabled at 100000.
+  These are stronger service/worker/automatic-flush proofs, not full AppModule
+  bootstrap, process-crash, external provider or authenticated Browser business
+  workflow acceptance. Those remaining scope items and the A–I/47-section audit
+  are not marked complete. No shared business tenant or preview/main host changed.
+- Next code-audit finding (not fixed or counted as accepted here): Jupiter's
+  `instrumentJupiterFetch` directly calls observer.trace and unguarded diagnostic
+  callbacks. Its existing four Web cases prove normal HTTP/network/identity
+  behavior, not a throwing observer or rejected diagnostic promise. This is a
+  concrete remaining section-55 failure-isolation target; green service/worker
+  gates cannot establish that browser-host invariant.
+
 ## 2026-10-19 — Offline lifecycle and data-write isolation (LOCAL, DEC-048)
 
 - `observability/server/test/offline-browser-acceptance.ts` extends actual Edge

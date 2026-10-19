@@ -1,5 +1,20 @@
 # Current State
 
+**2026-10-19 queued intake recovery/automatic flush (GOAL-069 IN PROGRESS):**
+Actual QueueWorker plus loopback HTTP v6 analysis/multipart voice now exercise
+text, conversation, legacy voice and conversation voice through invalid-output
+retry to success. Four actions each settle once; no automatic ticket is created,
+and only explicit caller draft/submit produces OPEN. Each voice transcribes once
+despite analysis retry. Real 10-second Node SDK timer hits a 503 outage while
+business work succeeds, then recovers one batch with no drops after reconnect.
+Focused integration 3/3 and API typecheck pass; full LOCAL release gate exits
+zero with 411 tests, builds/lint/typechecks, real four-width Edge/offline/quota,
+external-language clients, performance and migration rehearsal. Expanded
+existing cases do not inflate the count. Zero disposable DBs/RESERVED AI attempts
+remain; owned API/Web PIDs and the enabled 100000 monthly budget are unchanged.
+No production contract/architecture/migration change. Full AppModule/process,
+authenticated Browser business workflow and complete acceptance audit remain.
+
 **2026-10-19 offline data-write isolation (GOAL-069 IN PROGRESS, DEC-048):**
 New real Edge scenarios verify offline Feedback/lost-ACK dedupe/backoff, controlled
 Event/Feedback expiry, real storage QuotaExceededError and MEMORY→reload→DURABLE.

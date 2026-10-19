@@ -67,8 +67,19 @@ latest Evidence for gates/runtime/remote commit.
    Actual loopback HTTP review/text/multipart-voice failure now verifies real
    service retries/release, unchanged manual submit, review recovery/idempotent
    settlement and SDK/HTTP event→Issue. Preserve that disposable integration;
-   finish intake-success breadth and bootstrap/process failure isolation without
-   changing commercial/provider rules.
+   intake-success breadth now includes actual queued text/conversation/legacy-
+   voice/conversation-voice invalid-output retry, single settlement and explicit
+   submit. Actual 10-second Node SDK timer/HTTP outage recovery also passes
+   focused integration and the full 411-test release gate. Finish AppModule/bootstrap/process
+   and authenticated Browser business acceptance without changing commercial/
+   provider rules. Do not mistake controlled service execution for process boot.
+   Concrete next QC target: `apps/web/src/JupiterObservability.tsx`
+   `instrumentJupiterFetch` calls observer.trace/identity/capture without an
+   isolation boundary; a throwing observer can prevent dispatch or replace the
+   business response/error, and a rejecting capture promise is not consumed.
+   Existing four Web tests do not inject these observer failures. Prove red
+   regressions, then isolate synchronous/asynchronous diagnostic failures while
+   retaining exact-once dispatch, original response/error and identity guards.
 3. Preserve the completed section-63 Help checkpoint: eleven registry-validated
    RUNTIME guides, explicit slug-only publication and unchanged unrelated Help.
    The original revision-2 checkpoint is historical; Console now has subsequent

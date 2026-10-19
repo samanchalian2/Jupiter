@@ -22,6 +22,9 @@ import { AttachmentService } from '../src/attachments/attachment.service.js';
 import type { AttachmentStorage, StoredObject } from '../src/attachments/attachment-storage.js';
 import { NodeSdk } from '@observability/node-sdk';
 import { HubDatabase, RegistryService, IngestionService, HubHttpApi, createHubServer, IssueEngine } from '@observability/server';
+import { acceptQueuedIntakeRecovery } from './support/queued-intake-acceptance.js';
+import { TICKET_INTAKE_CONTRACT_VERSION } from '../src/ticket-intake/ticket-intake-provider.js';
+import { withAutomaticHubOutage } from './support/automatic-hub-outage-acceptance.js';
 
 const name=`obs069_worker_${randomUUID().replaceAll('-','')}`,role=`jupiter_app_${name}`;
 const admin=new Client({connectionString:databaseUrl()});
@@ -59,8 +62,21 @@ afterAll(async()=>{
 describe('actual lifecycle worker with real product services and PostgreSQL/HTTP Hub',()=>{
  it('observes real HTTP provider failures and retry exhaustion without charging failed actions or blocking manual submission',async()=>{
   const previousKey=process.env.AI_CREDENTIAL_ENCRYPTION_KEY;process.env.AI_CREDENTIAL_ENCRYPTION_KEY=randomBytes(32).toString('base64');
-  let successful=false,providerCalls=0;const privateMarker=`private-provider-body-${randomUUID()}`,requests:Array<{path:string;contentType:string}>=[];
-  const provider=createServer(async(request,response)=>{for await(const _chunk of request){/* Consume fixture input, never log or retain it. */}providerCalls++;requests.push({path:request.url??'',contentType:request.headers['content-type']??''});response.setHeader('content-type','application/json');if(!successful){response.statusCode=503;response.end(JSON.stringify({error:{message:privateMarker}}));return;}response.end(JSON.stringify({choices:[{message:{content:JSON.stringify({title:'Reviewed fixture',normalizedDescription:'Valid local response',priority:'NORMAL',confidence:.9})}}],usage:{prompt_tokens:2,completion_tokens:3}}));});
+  let successful=false,providerCalls=0,invalidIntakeReplies=0;const privateMarker=`private-provider-body-${randomUUID()}`,requests:Array<{path:string;contentType:string}>=[];
+  const provider=createServer(async(request,response)=>{
+   const chunks:Buffer[]=[];for await(const chunk of request)chunks.push(Buffer.from(chunk));
+   // Synthetic fixture input is inspected in memory only; never log/store bodies.
+   const schema=request.url==='/v1/chat/completions'?JSON.parse(Buffer.concat(chunks).toString()).response_format?.json_schema?.name:'';
+   providerCalls++;requests.push({path:request.url??'',contentType:request.headers['content-type']??''});response.setHeader('content-type','application/json');
+   if(!successful){response.statusCode=503;response.end(JSON.stringify({error:{message:privateMarker}}));return;}
+   if(request.url==='/v1/audio/transcriptions'){response.end(JSON.stringify({text:`Synthetic voice ${privateMarker}`}));return;}
+   let output:unknown={title:'Reviewed fixture',normalizedDescription:'Valid local response',priority:'NORMAL',confidence:.9};
+   if(schema==='jupiter_ticket_intake_v6'){
+    output={contractVersion:TICKET_INTAKE_CONTRACT_VERSION,title:'درخواست آزمایشی پشتیبانی چاپگر',titleLibraryId:null,categoryId:null,subcategoryId:null,departmentId:null,locationId:null,disciplineId:null,priority:'NORMAL',customFields:[],tags:[],missingFields:[],confidenceByField:[{field:'title',confidence:.99},{field:'priority',confidence:.99}],interpretation:'Synthetic validated interpretation',primaryIssue:{summary:'Synthetic printer outage',serviceAsset:'printer',issueType:'outage',confidence:.99},secondaryIssues:[],clarificationQuestion:null,clarificationConfidence:null};
+    if(invalidIntakeReplies>0){invalidIntakeReplies--;output={};}
+   }
+   response.end(JSON.stringify({choices:[{message:{content:JSON.stringify(output)}}],usage:{prompt_tokens:2,completion_tokens:3}}));
+  });
   await new Promise<void>(done=>provider.listen(0,'127.0.0.1',done));
   const address=provider.address();if(!address||typeof address==='string')throw Error('Missing provider fixture listener');
   const warnings:unknown[]=[];const warning=vi.spyOn(Logger.prototype,'warn').mockImplementation(value=>{warnings.push(value);});
@@ -103,6 +119,10 @@ describe('actual lifecycle worker with real product services and PostgreSQL/HTTP
    expect(providerCalls).toBe(8);expect((await gateway.enqueue(actor,draft.id,'Synthetic review recovery',good.id)).id).toBe(good.id);await drain();expect(providerCalls).toBe(8);
    expect((await database.query("SELECT unit_count FROM commercial_usage_ledger WHERE organization_id=$1 AND event_type='SMART_ACTION_SETTLED'",[organizationId])).rows).toEqual([{unit_count:-1}]);
    expect((await database.query("SELECT count(*)::int total FROM commercial_smart_actions WHERE organization_id=$1 AND status='SETTLED'",[organizationId])).rows[0].total).toBe(1);
+   const hubAddress=server.address();if(!hubAddress||typeof hubAddress==='string')throw Error('Missing Hub listener');
+   const outageCredential=await registry.issueServerCredential(root,appId,environmentId,'Disposable automatic-flush acceptance');
+   await withAutomaticHubOutage({applicationId:appId,environmentId,hubOrigin:`http://127.0.0.1:${hubAddress.port}`,credential:outageCredential.token,binding,originalSdk:sdk,
+    work:afterFirstRetry=>acceptQueuedIntakeRecovery({database,intakes,tickets,actor,drain,requests,privateMarker,failNextAnalysis:()=>{invalidIntakeReplies=1;},afterFirstRetry})});
    await sdk.flush();const events=(await hub.worker(async c=>(await c.query('SELECT event_id,operation_name,source,category,severity,safe_metadata,actor_reference,tenant_reference,normalized_message FROM observability.events WHERE application_id=$1',[appId])).rows)).filter(row=>!before.has(row.event_id));
    for(const [operation,outcome] of [['queue.ai.process','FAILED'],['queue.intake.process','FAILED'],['queue.intake.process','RETRY'],['queue.transcription.process','RETRY'],['queue.transcription.process','DEAD_LETTER']])expect(events.some(row=>row.operation_name===operation&&row.safe_metadata.failureCode===outcome)).toBe(true);
    expect(events.every(row=>row.actor_reference===null&&row.tenant_reference===organizationId)).toBe(true);expect(JSON.stringify({events,warnings})).not.toContain(privateMarker);
@@ -110,7 +130,7 @@ describe('actual lifecycle worker with real product services and PostgreSQL/HTTP
    const engine=new IssueEngine(hub,registry);for(const job of await engine.queue.claim(randomUUID(),50,['AGGREGATE']))await engine.aggregate(job);
    expect((await hub.worker(async c=>(await c.query("SELECT count(*)::int total FROM observability.issues WHERE application_id=$1 AND tenant_reference=$2",[appId,organizationId])).rows[0].total))).toBeGreaterThan(0);
   }finally{warning.mockRestore();provider.closeAllConnections();await new Promise<void>(done=>provider.close(()=>done()));if(previousKey===undefined)delete process.env.AI_CREDENTIAL_ENCRYPTION_KEY;else process.env.AI_CREDENTIAL_ENCRYPTION_KEY=previousKey;}
- },30000);
+ },45000);
  it('captures the actual queued-worker SQL boundary and outcome events over HTTP without provider calls',async()=>{
   const binding=new HubBindingService(undefined as never,database,undefined as never);Object.assign(binding,{configuration:{applicationId:appId,environmentId,enabled:true},sdk});const worker=new QueueWorker(database,undefined as never,undefined as never,undefined as never,binding);
   const warning=vi.spyOn(Logger.prototype,'warn').mockImplementation(()=>undefined);
