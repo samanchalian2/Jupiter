@@ -44,7 +44,7 @@ beforeAll(async()=>{
  webOrigin=`http://127.0.0.1:${await freePort()}`;
  appId=(await registry.createApplication(root,{slug:'host-fixture',name:'Disposable Jupiter host',allowedOrigins:[webOrigin]})).id;environmentId=(await registry.createEnvironment(root,appId,{key:'test',kind:'TEST'})).id;
  const port=await freePort();base=`http://127.0.0.1:${port}/api/v1`;
- child=spawn(process.execPath,['dist/main.js'],{cwd:process.cwd(),windowsHide:true,env:{...process.env,NODE_ENV:'test',DATABASE_URL:configured.toString(),JWT_SECRET:randomBytes(48).toString('base64url'),AI_CREDENTIAL_ENCRYPTION_KEY:'',API_HOST:'127.0.0.1',API_PORT:String(port),WEB_ORIGIN:`http://127.0.0.1:${port},${webOrigin}`,JUPITER_WORKER_ENABLED:'false',OBSERVABILITY_ENABLED:'true',OBSERVABILITY_WORKER_ENABLED:'true',OBSERVABILITY_APPLICATION_ID:appId,OBSERVABILITY_ENVIRONMENT_ID:environmentId,PUBLIC_ACCOUNT_VERIFICATION_DELIVERY:'disabled',AWS_EC2_METADATA_DISABLED:'true',S3_BUCKET:'',S3_ENDPOINT:'',S3_ACCESS_KEY_ID:'',S3_SECRET_ACCESS_KEY:''},stdio:['ignore','pipe','pipe']});
+ child=spawn(process.execPath,['dist/main.js'],{cwd:process.cwd(),windowsHide:true,env:{...process.env,NODE_ENV:'test',DATABASE_URL:configured.toString(),JWT_SECRET:randomBytes(48).toString('base64url'),AI_CREDENTIAL_ENCRYPTION_KEY:'',API_HOST:'127.0.0.1',API_PORT:String(port),WEB_ORIGIN:`http://127.0.0.1:${port},${webOrigin}`,JUPITER_WORKER_ENABLED:'false',OBSERVABILITY_ENABLED:'true',OBSERVABILITY_WORKER_ENABLED:'true',OBSERVABILITY_RULE_EVALUATION_INTERVAL_MS:'10000',OBSERVABILITY_APPLICATION_ID:appId,OBSERVABILITY_ENVIRONMENT_ID:environmentId,PUBLIC_ACCOUNT_VERIFICATION_DELIVERY:'disabled',AWS_EC2_METADATA_DISABLED:'true',S3_BUCKET:'',S3_ENDPOINT:'',S3_ACCESS_KEY_ID:'',S3_SECRET_ACCESS_KEY:''},stdio:['ignore','pipe','pipe']});
  // Discard raw child logs. Retain only allowlisted structured request outcomes.
  let pending='';child.stdout!.on('data',chunk=>{pending+=String(chunk);for(let index;(index=pending.indexOf('\n'))>=0;){const line=pending.slice(0,index);pending=pending.slice(index+1);try{const entry=JSON.parse(line);if(entry.event==='http.request'&&typeof entry.path==='string'&&Number.isInteger(entry.statusCode))requests.push({path:entry.path,statusCode:entry.statusCode});}catch{/* Nest startup text is not retained. */}}if(pending.length>16384)pending='';});child.stderr!.on('data',()=>undefined);
  await vi.waitFor(async()=>{if(child!.exitCode!==null)throw Error('Fixture AppModule process exited');expect((await call('/health/ready')).status).toBe(200);},{timeout:20000,interval:100});
@@ -61,6 +61,23 @@ afterAll(async()=>{
 },30000);
 
 describe('actual compiled Jupiter main/AppModule process',()=>{
+ it('evaluates two successive rule cohorts at the configured cadence in the actual worker process',async()=>{
+  const operator=await login('admin@host.invalid');
+  try{
+   const configured=await fetch(`${base}/observability/operations/applications/${appId}/rules`,{method:'PUT',headers:{authorization:`Bearer ${operator.token}`,'content-type':'application/json'},body:JSON.stringify({code:'CRITICAL_EVENT',enabled:true,threshold:1,minimum_samples:1,window_seconds:60,cooldown_seconds:60,reason:'Disposable actual worker cadence acceptance'})});expect(configured.status).toBe(200);
+   const credential=await call(`/observability/operations/applications/${appId}/credentials`,operator.token,{environmentId,reason:'Disposable cadence test ingestion'});expect(credential.status).toBe(201);const server=(await credential.json()).token as string;
+   const times:number[]=[];
+   for(const cohort of ['first','second']){
+    const id=randomUUID(),response=await call('/observability/events/batch',server,{events:[{schemaVersion:'1.1',eventId:id,applicationId:appId,environmentId,occurredAt:new Date().toISOString(),category:'WORKER',source:'WORKER',severity:'CRITICAL',eventCode:`fixture.cadence.${cohort}`,normalizedMessage:`Synthetic ${cohort} cadence failure`,tenantReference:org}]});expect(response.status).toBe(200);expect((await response.json()).acknowledgements).toEqual([{eventId:id,status:'ACCEPTED'}]);
+    await vi.waitFor(async()=>{
+     const incident=(await pool!.query("SELECT i.created_at FROM observability.incidents i JOIN observability.issue_events e ON e.application_id=i.application_id AND e.environment_id=i.environment_id AND e.issue_id=i.issue_id AND e.tenant_scope_key=i.tenant_scope_key WHERE e.application_id=$1 AND e.environment_id=$2 AND e.event_id=$3 AND i.rule_code='CRITICAL_EVENT'",[appId,environmentId,id])).rows;
+     expect(incident).toHaveLength(1);times[cohort==='first'?0:1]=new Date(incident[0].created_at).getTime();
+    },{timeout:16000,interval:100});
+   }
+   expect(times[1]-times[0]).toBeGreaterThanOrEqual(8000);
+   console.log(JSON.stringify({event:'observability.actual_host_rule_cadence',result:'PASS',configuredIntervalMs:10000,successiveIncidentDeltaMs:times[1]-times[0],cohorts:2,source:'ACTUAL_COMPILED_APPMODULE_WORKER_HTTP_SQL',limits:'Disposable database; target cadence on existing two-second drain, not a production real-time guarantee or changed AI cadence.'}));
+  }finally{await fetch(`${base}/auth/logout`,{method:'POST',headers:{cookie:operator.cookie}});}
+ },40000);
  it('preserves normal login/tenant authorization, captures real draft failure and recovers while Hub persistence is unavailable',async()=>{
   const ticketsBefore=(await pool!.query('SELECT count(*)::int total FROM tickets WHERE organization_id=$1',[org])).rows[0].total;
   expect((await call('/auth/login',undefined,{identifier:'requester@host.invalid',password:randomUUID()})).status).toBe(401);

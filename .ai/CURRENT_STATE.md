@@ -1,5 +1,20 @@
 # Current State
 
+**2026-10-19 bounded rule cadence (GOAL-069 IN PROGRESS):** DEC-050 adds
+deployment-only OBSERVABILITY_RULE_EVALUATION_INTERVAL_MS, default 60000 and
+10000–300000 range; invalid values safely default. Rules use a separate
+last-attempt timestamp and contained/rate-limited failures; existing two-second
+non-overlapping drain and one-minute AI/maintenance cadence remain. Three unit
+regressions and API typecheck pass. Actual compiled AppModule fixture configured
+10000ms produces two successive real HTTP→SQL incident cohorts 10012ms apart;
+fixture test passes and disposes its database. Full LOCAL gate exits zero:
+432 tests (179 API, 37 Web, 216 Hub), builds/lint/typechecks, actual Browser,
+client/performance/migration acceptance and both isolation scripts. The full
+host run repeats the configured cadence with a 10048ms separation. Post-gate:
+zero temporary DBs/active AI attempts, healthy readiness, unchanged owned
+listeners (19440/3000, 49740/5174) and enabled 100000 monthly budget.
+A01/A03/A05 and complete requirement audit remain open. No live host promotion.
+
 **2026-10-19 configurable Browser retention (GOAL-069 IN PROGRESS):** DEC-049
 records additive enqueue-time event/feedback TTL with preserved 48h/24h defaults,
 integer 1000ms minimum and existing maxima. Constructor snapshots values and

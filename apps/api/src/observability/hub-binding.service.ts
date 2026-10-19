@@ -10,7 +10,11 @@ import { DatabaseService } from '../database/database.service.js';
 import { databaseUrl, loadLocalEnvironment, aiCredentialEncryptionKey } from '../config.js';
 import { observeSessionRevocation } from './security-events.js';
 import { NotificationService } from '../notifications/notification.service.js';
-export interface HubBindingConfiguration {applicationId:string;environmentId:string;enabled:boolean;}
+export interface HubBindingConfiguration {applicationId:string;environmentId:string;enabled:boolean;ruleEvaluationIntervalMs?:number;}
+export function monitoringRuleIntervalMs(value:string|undefined):number{
+ const normalized=value?.trim();if(!normalized||!/^\d+$/.test(normalized))return 60_000;
+ const interval=Number(normalized);return Number.isSafeInteger(interval)&&interval>=10_000&&interval<=300_000?interval:60_000;
+}
 export type ProductWorkerOperation='subscription.expire_due'|'commercial.enumerate_organizations'|'commercial.provision_current'|'directory.schedule_due'|'directory.evaluate_health'|'queue.providers.initialize'|'queue.ai.enumerate'|'queue.ai.process'|'queue.transcription.enumerate'|'queue.transcription.process'|'queue.intake.enumerate'|'queue.intake.process'|'queue.intake.cleanup';
 export function hubBindingConfiguration():HubBindingConfiguration|undefined{
  loadLocalEnvironment();if(process.env.OBSERVABILITY_ENABLED==='false')return;
@@ -18,14 +22,14 @@ export function hubBindingConfiguration():HubBindingConfiguration|undefined{
  if(process.env.NODE_ENV!=='production'&&!config.applicationId){const file=resolve(process.cwd(),'../../.local/observability.json');if(existsSync(file)){try{config=JSON.parse(readFileSync(file,'utf8')) as HubBindingConfiguration;}catch{return;}}}
  if(process.env.NODE_ENV==='production'&&process.env.OBSERVABILITY_ENABLED!=='true')return;
  if(!isUuid(config.applicationId)||!isUuid(config.environmentId))return;
- return {applicationId:config.applicationId,environmentId:config.environmentId,enabled:true};
+ return {applicationId:config.applicationId,environmentId:config.environmentId,enabled:true,ruleEvaluationIntervalMs:monitoringRuleIntervalMs(process.env.OBSERVABILITY_RULE_EVALUATION_INTERVAL_MS)};
 }
 @Injectable()
 export class HubBindingService implements OnModuleInit,OnModuleDestroy {
  private readonly logger=new Logger(HubBindingService.name);
  private readonly diagnostics=new HubDiagnosticReporter(entry=>this.logger.warn(JSON.stringify(entry)));
  private hub?:HubDatabase;private registry?:RegistryService;private api?:HubHttpApi;private configuration?:HubBindingConfiguration;private servicePrincipal?:string;
- private sdk?:NodeSdk;private timer?:NodeJS.Timeout;private working=false;private lastRules=0;private unsubscribe?:()=>void;
+ private sdk?:NodeSdk;private timer?:NodeJS.Timeout;private working=false;private lastRules?:number;private lastMaintenance=0;private unsubscribe?:()=>void;
  private investigator?:InvestigatorService;
  private selfMonitoring?:SelfMonitoringService;
  private storageSampling?:Promise<unknown>;
@@ -66,10 +70,16 @@ export class HubBindingService implements OnModuleInit,OnModuleDestroy {
    });
    if(process.env.JUPITER_WORKER_ENABLED==='true'||process.env.OBSERVABILITY_WORKER_ENABLED==='true'){
     const engine=new IssueEngine(this.hub,this.registry),rules=new MonitoringEngine(this.hub,this.registry),workerId=crypto.randomUUID();
-    const drain=async()=>{if(this.working)return;this.working=true;try{const jobs=await engine.queue.claim(workerId,25,['AGGREGATE']);for(const job of jobs){try{await engine.aggregate(job);}catch{await engine.queue.fail(job,'AGGREGATION_FAILED');}}if(Date.now()-this.lastRules>=60_000){await alerts.detectPipelineFailures();await alerts.enqueue();await rules.evaluate();await retention.enqueue();await this.selfMonitoring?.flush();this.scheduleStorageSampling();await this.investigator?.schedule();this.lastRules=Date.now();}for(const job of await engine.queue.claim(workerId,5,['ALERT_DELIVERY'])){try{await alerts.deliver(job);}catch{await engine.queue.fail(job,'ALERT_DELIVERY_FAILED');}}for(const job of await engine.queue.claim(workerId,1,['RETENTION'])){try{await retention.execute(job);}catch{await engine.queue.fail(job,'RETENTION_FAILED');}}if(this.investigator){for(const job of await engine.queue.claim(workerId,1,['INVESTIGATE'])){try{await this.investigator.execute(job);}catch{await engine.queue.fail(job,'INVESTIGATION_FAILED');}}}}catch{this.diagnostics.report('WORKER_DRAIN_FAILED');}finally{this.working=false;}};
+    const drain=async()=>{if(this.working)return;this.working=true;try{const jobs=await engine.queue.claim(workerId,25,['AGGREGATE']);for(const job of jobs){try{await engine.aggregate(job);}catch{await engine.queue.fail(job,'AGGREGATION_FAILED');}}await this.evaluateRulesIfDue(rules);if(Date.now()-this.lastMaintenance>=60_000){await alerts.detectPipelineFailures();await alerts.enqueue();await retention.enqueue();await this.selfMonitoring?.flush();this.scheduleStorageSampling();await this.investigator?.schedule();this.lastMaintenance=Date.now();}for(const job of await engine.queue.claim(workerId,5,['ALERT_DELIVERY'])){try{await alerts.deliver(job);}catch{await engine.queue.fail(job,'ALERT_DELIVERY_FAILED');}}for(const job of await engine.queue.claim(workerId,1,['RETENTION'])){try{await retention.execute(job);}catch{await engine.queue.fail(job,'RETENTION_FAILED');}}if(this.investigator){for(const job of await engine.queue.claim(workerId,1,['INVESTIGATE'])){try{await this.investigator.execute(job);}catch{await engine.queue.fail(job,'INVESTIGATION_FAILED');}}}}catch{this.diagnostics.report('WORKER_DRAIN_FAILED');}finally{this.working=false;}};
     this.timer=setInterval(()=>void drain(),2_000);this.timer.unref();void drain();
    }
   }catch{this.api=undefined;this.diagnostics.report('HUB_NOT_READY');}
+ }
+ private async evaluateRulesIfDue(rules:Pick<MonitoringEngine,'evaluate'>,now=Date.now()){
+  const interval=this.configuration?.ruleEvaluationIntervalMs??60_000;
+  if(this.lastRules!==undefined&&now-this.lastRules<interval)return;
+  this.lastRules=now;
+  try{await rules.evaluate();}catch{this.diagnostics.report('WORKER_DRAIN_FAILED');}
  }
  enabled(){return Boolean(this.api&&this.configuration);}
  publicConfiguration(){return this.enabled()?{enabled:true,applicationId:this.configuration!.applicationId,environmentId:this.configuration!.environmentId,releaseVersion:process.env.JUPITER_RELEASE_VERSION??'development'}:{enabled:false};}

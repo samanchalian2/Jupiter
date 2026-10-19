@@ -4,7 +4,7 @@
 
 The entire approved objective remains active. Source of truth:
 `docs/GOAL_069_SPECIFICATION.md` (all sections and A–I Definition of Done),
-`docs/GOAL_069_EVIDENCE.md`, current state and DEC-038 through DEC-048.
+`docs/GOAL_069_EVIDENCE.md`, current state and DEC-038 through DEC-050.
 Historical GOAL-060 Personal Service is not renamed. Do not start another Goal.
 
 ### Latest implementation boundary
@@ -20,7 +20,7 @@ This is not a blanket completion claim for all product workflows or the live
 Jupiter shell. Section-63 Help is runtime-published with actual Jupiter operations,
 Platform-panel and Feedback acceptance. The measured local performance checkpoint
 and Node hot-path remediation plus full-limit Browser/batch/redaction QC bring
-the full release gate to 428 tests with configurable retention/native expiry, actual authenticated Web/AppModule, React/fetch failure isolation, data-write/diagnostic-checkpoint isolation/real quota, explicit product comparison, scoped analytics, real queued provider failure/metering and concurrent/product-read boundary
+the full release gate to 432 tests with configurable rule cadence/actual worker, configurable retention/native expiry, actual authenticated Web/AppModule, React/fetch failure isolation, data-write/diagnostic-checkpoint isolation/real quota, explicit product comparison, scoped analytics, real queued provider failure/metering and concurrent/product-read boundary
 measurements and the performance flag enabled. Inspect
 latest Evidence for gates/runtime/remote commit.
 
@@ -33,8 +33,11 @@ host rule cadence (34) and full required Overview (39) were audited. A02 now has
 DEC-049/enqueue-time bounded options, four new regressions and native IndexedDB
 acceptance; SDK 41/typecheck and full LOCAL 428-test gate/both fault scripts pass.
 Post-gate cleanup/readiness/owned listeners and 100000 budget are unchanged.
-A01/A03/A04/A05 remain
-incomplete/unverified; do not treat A02 as full-Goal delivery.
+A04 now has DEC-050, bounded deployment setting, separate maintenance cadence,
+three unit tests/typecheck and actual compiled host two-cohort 10000ms acceptance.
+Full LOCAL 432-test gate/both isolation scripts and cleanup/readiness pass.
+A01/A03/A05 remain incomplete/unverified; do not treat
+these individual remediations as full-Goal delivery.
 Select and record backward-compatible decisions before public API/config changes.
 Do not replace them with SQL edits or claim separate pages satisfy Overview.
 A06 metric-checkpoint/data-queue violation is fixed with a red→green regression;

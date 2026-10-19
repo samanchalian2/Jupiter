@@ -2,10 +2,15 @@
 
 ## GOAL-069 — Observability Hub continuation (IN PROGRESS)
 
+DEC-050 implements A04 bounded deployment-owned rule cadence independently of
+AI/maintenance; unit/typecheck and actual compiled worker two-cohort acceptance
+pass. Full LOCAL 432-test release gate, both isolation scripts and post-gate
+cleanup/readiness pass. A01/A03/A05 and full audit remain required.
+
 DEC-049 closes implementation of A02 configurable bounded Browser retention;
 41 SDK tests/typecheck and native IndexedDB expiry acceptance pass. Full LOCAL
 428-test release gate/both isolation scripts and cleanup/readiness pass.
-No final acceptance; A01/A03/A04/A05 and full requirement reconciliation remain.
+No final acceptance; A01/A03/A05 and full requirement reconciliation remain.
 
 Requirement-level audit A01–A06 now identifies concrete missing Registry, SDK,
 host cadence and Overview features. Preserve the original scope and implement

@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-10-19 — GOAL-069 configurable monitoring cadence (IN PROGRESS)
+
+- DEC-050 adds bounded deployment-owned rule evaluation interval with one-minute
+  default and safe fallback; independent maintenance/AI cadence preserved.
+- Rule failures are contained and attempts throttled. Three unit tests/typecheck
+  pass; actual compiled API/worker accepts HTTP events and creates two successive
+  incidents 10012ms apart with a 10000ms setting, isolated disposable DB cleaned.
+- Full LOCAL 432-test/build/lint/typecheck/Browser/client/performance/migration
+  gate and both isolation scripts pass; actual full host repeats cadence at
+  10048ms, cleanup/readiness/listeners/100000 budget unchanged.
+- Registry/recovery triggers/Overview and full audit
+  remain open; no deployment, schema, provider or commercial changes.
+
 ## 2026-10-19 — GOAL-069 bounded Browser retention (IN PROGRESS)
 
 - DEC-049 records additive event/feedback offline retention configuration,

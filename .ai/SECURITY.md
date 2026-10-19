@@ -2,6 +2,13 @@
 
 ## GOAL-069 Observability Hub
 
+DEC-050 rule cadence is deployment-owned, bounded and read once at boot. Invalid
+values use a fixed safe default without logging their contents or disabling the
+product. Rules cannot increase AI/maintenance frequency. Failure diagnostics
+contain only existing fixed codes; no provider error, credential or raw input.
+Runtime acceptance changes only an ephemeral child-process environment and
+disposable Hub data, never live tenant settings or shared-role attributes.
+
 DEC-049 Browser offline retention accepts only bounded integer durations; it
 cannot extend the previous 48h event/24h feedback security limits. Absolute
 enqueue-time expiry survives reload/retry without renewal. Constructor options

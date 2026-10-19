@@ -1,5 +1,25 @@
 # Architecture Decisions
 
+## DEC-050 — Bounded host monitoring-rule cadence
+
+GOAL-069 section 34 uses deployment-owned
+`OBSERVABILITY_RULE_EVALUATION_INTERVAL_MS`, default 60000, supported integer
+range 10000–300000 milliseconds. Omission, malformed input and out-of-range
+values safely resolve to the default; no supplied value/secret is logged and
+an invalid optional setting must not prevent product boot. Changes take effect
+on host restart. Existing two-second drain controls scheduling granularity;
+this is a target interval, not a hard real-time guarantee.
+
+Rule evaluation has its own last-attempt timestamp. It runs immediately on the
+first worker drain, then no more frequently than configured, including failures.
+The existing non-overlapping drain remains authoritative. Rule failures use the
+existing fixed, rate-limited WORKER_DRAIN_FAILED diagnostic and do not prevent
+other maintenance/queue work in that drain. The independent 60000ms maintenance
+schedule for alerts, retention, self-metrics, storage sampling and Investigator
+scheduling stays unchanged; rule cadence cannot increase automatic AI frequency.
+No queue/service, database schema, customer allowance, rule cooldown, lifecycle,
+auth or provider contract changes. The setting is not client-controlled.
+
 ## DEC-049 — Bounded Browser offline retention configuration
 
 GOAL-069 section 14 adds optional `retentionMs: { events?, feedback? }` to

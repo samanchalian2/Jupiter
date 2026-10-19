@@ -3,6 +3,19 @@
 Product-independent packages and PostgreSQL server adapters for GOAL-069.
 Implementation is IN PROGRESS; no complete platform claim is made.
 
+## Host monitoring cadence
+
+The Jupiter adapter accepts deployment-owned
+`OBSERVABILITY_RULE_EVALUATION_INTERVAL_MS` (integer milliseconds, 10000–300000,
+default 60000). Invalid/omitted values use the default without blocking product
+boot. Restart the host to apply a change. The existing two-second worker drain
+is non-overlapping, so this is a target cadence, not a real-time deadline.
+First drain evaluates rules immediately; failed evaluations remain throttled
+and do not stop other maintenance. Alerts, retention, self-monitoring, storage
+sampling and Investigator scheduling keep their separate one-minute cadence.
+This setting does not change AI budgets, rule thresholds/cooldowns, queue or
+commercial metering. No live host setting is changed by acceptance fixtures.
+
 The [self-metric subsystem](SELF_MONITORING.md) has scoped immutable counters,
 hourly logical storage snapshots, automatic Browser/Node reporting and a Persian
 ADMIN Console with actual replay/source/RTL acceptance. Server measurement and

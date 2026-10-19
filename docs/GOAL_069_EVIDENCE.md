@@ -4,6 +4,42 @@ Status: IN PROGRESS. Owner-approved plan supersedes the stale GOAL-060 identifie
 in the supplied specification. GOAL-060 Personal Service history is preserved.
 GOAL-059 remains BLOCKED; LOCAL evidence is not staging acceptance.
 
+## 2026-10-19 — Configurable bounded host rule cadence / A04 (LOCAL)
+
+- DEC-050 adds OBSERVABILITY_RULE_EVALUATION_INTERVAL_MS, bounded integer
+  10000–300000 milliseconds, default/fallback 60000 and restart semantics.
+  .env.example and Observability README describe granularity, failure behavior
+  and independence from AI/maintenance. No actual .env/live host value changed.
+- Existing two-second non-overlapping drain invokes separate rule scheduling.
+  First attempt is immediate; last-attempt time throttles successful AND failed
+  work. Failure uses existing fixed/rate-limited WORKER_DRAIN_FAILED diagnostic;
+  remaining drain work still runs. Separate lastMaintenance retains the existing
+  one-minute alerts/retention/self-metrics/storage/Investigator schedule.
+- Three new unit tests initially fail against absent configuration/helper, then
+  pass after implementation: defaults/invalid/range endpoints, exact timing
+  boundaries, failed-attempt throttling, fixed diagnostics and unchanged
+  maintenance timestamp. Existing sampling separation test/typecheck also pass.
+- Actual compiled main/AppModule fixture sets 10000 only in its disposable child
+  environment. A real Platform session configures CRITICAL_EVENT via supported
+  API and creates an ingestion credential, kept solely in memory. Two distinct
+  cohorts enter actual HTTP ingestion, automatic aggregation/rule scheduling and
+  real SQL incidents. Both appear within 16-second waits, successive insert times
+  10012ms apart (>=8000 assertion). This cannot pass a fixed 60-second scheduler
+  across two successive cohorts. No manual evaluate call or fabricated incident.
+  Session logs out in finally; existing DB/process/role cleanup passes.
+- Focused actual-host case passes; two unrelated cases explicitly skipped in
+  that focused run, not counted as executed. Full LOCAL release gate exits zero
+  (`output/goal069-cadence-release.log`, GOAL069_CADENCE_RELEASE_EXIT=0): 432 tests
+  = 179 API + 37 Web + 216 Hub. Builds/lint/typechecks, actual Browser/client/
+  performance/migration gates and both fault-isolation scripts pass. The full
+  actual-host suite executes all three cases; cadence repeats at 10048ms and
+  authenticated Jupiter Web/manual ticket/four-width/detail regressions pass.
+  Post-gate: 83 migrations, no temporary DBs/active AI attempts, healthy readiness,
+  unchanged owned 19440/3000 and 49740/5174 listeners plus enabled 100000 budget.
+  This is
+  LOCAL target-cadence evidence, not a production hard real-time SLO or changed
+  AI behavior. A01/A03/A05 and full requirement reconciliation remain open.
+
 ## 2026-10-19 — Configurable Browser offline retention / A02 (LOCAL)
 
 - DEC-049 documents additive `retentionMs.events/feedback` constructor options,
