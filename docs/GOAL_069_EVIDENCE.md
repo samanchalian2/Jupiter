@@ -4,6 +4,102 @@ Status: IN PROGRESS. Owner-approved plan supersedes the stale GOAL-060 identifie
 in the supplied specification. GOAL-060 Personal Service history is preserved.
 GOAL-059 remains BLOCKED; LOCAL evidence is not staging acceptance.
 
+## 2026-10-19 — Explicit multi-product comparison (LOCAL, DEC-047)
+
+- `OperationsService.compareProducts` and read-only POST
+  /operations/analytics/products accept 1–10 explicit distinct Applications,
+  each with one environment and optional tenant. All targets are preauthorized;
+  each read again uses current operational grants and runtime RLS. A denied or
+  revoked target rejects the entire response, never a silently truncated/partial
+  comparison. No global privilege, migration, worker bypass or AI call appears.
+  Existing operational identity/rate limiter applies before this route.
+- A single captured UTC window and validated <=31-day event filters apply to
+  every target. Safe server registry names identify rows; client names/unknown
+  target properties are rejected. Error-event count determines rank, measured
+  HTTP rate has its actual denominator, and distinct affected actors/tenants
+  are separate. Empty data yields zero counts and unknown rate, not invented
+  quality scores. Application-wide, concrete-tenant and tenant-free coverage
+  are distinct in the response. At most ten sequential scoped reads; existing
+  pool/statement deadlines apply, not a whole-request production SLO.
+- Two new actual PostgreSQL/HTTP scenarios prove same opaque tenant/actor IDs
+  across Products do not mix, exact metrics 3/4=.75 and 1/2=.5, absent-version
+  null rates, ten-target boundary without truncation, target duplication and
+  shape/size/filter rejection, 401/403/400 and no partial items on denial.
+  Coordinated real grant revocation between preflight and the later scoped read
+  proves reauthorization. No mocked Event or bypassed grant substitutes for SQL.
+  Public executable OpenAPI parity now exercises all 48 real HTTP operations.
+- `ProductComparisonPanel.tsx` adds explicit add/remove/current scope controls
+  INSIDE Analytics, not new navigation. Names/environment/tenant coverage remain
+  visible; one scope per product prevents overlap/double counting. All target
+  selections are client-session state, not new grants or commercial entities.
+  Changing filters/selection invalidates and aborts pending results; a generation
+  guard also discards obsolete replies if the transport ignores cancellation.
+  Two Console tests prove one common window, display-label/pagination stripping,
+  duplicate/empty/eleven-target rejection. All 13 Console tests pass focused.
+- Actual authenticated independent Edge adds two Applications across real
+  selectors and compares their authorized environments. A held real HTTP reply
+  is released only after removing a target; the obsolete result never reappears.
+  All four widths 375/768/1024/1440 retain RTL, a named keyboard-focusable inner
+  table scroll region and no document overflow. Focused Browser scenario passes
+  in 39,003ms; screenshots are inspected locally, not committed. Final wider
+  name columns avoid breaking product names into fragments on mobile.
+- Browser fixture isolation defect is fixed: Vite port=0 previously fell back
+  to the preview port. Node now reserves an actual OS ephemeral port, closes
+  that reservation and starts Vite on that exact port with strictPort. A race
+  fails closed, never tries product ports 3000/5173/5174. Actual run used 53446;
+  the owned local API/Web PIDs 49416/49740 stayed unchanged throughout.
+- QC removes redundant analytics reads: changing between the ten single-App
+  tables now reuses its complete filtered cohort. Entering/leaving product
+  comparison, changing scope/filter or refresh still performs the required read.
+  Real Browser request counting asserts no additional /analytics request during
+  all ten table selections at every width; the final complete gate verifies it.
+- First complete run exposed three OLD retention fixture failures after the new
+  target scopes expanded the queue: helper wrongly expected its target in one
+  50-job claim. The scoped-deletion suite now pages the real scheduler and advances
+  ONLY its generated target's pending due time before a real one-job claim. It
+  neither leases/deletes protected other-scope fixtures nor fabricates completion
+  for unrelated jobs. Child batches use the same scoped helper. Global queue
+  FIFO/lease tests remain separate and unchanged. Nine combined analytics/
+  retention focused cases pass, including protected data and rollback assertions;
+  the failed complete run is not counted as a pass. The final complete gate passes.
+- Focused server scenarios plus HTTP/OpenAPI parity pass (three cases), server
+  and Console typechecks pass. New performance measurement exercises actual HTTP
+  reports against 1,000 events and comparison with a second empty product; final
+  full gate passes below. This does not claim ten loaded products or production SLO.
+- Executed LOCAL report timing (10 actual HTTP calls each, 1,000 events): single-
+  Application analytics p50/p95/max 55.56/61.43/61.43ms; two-product comparison
+  35.46/41.02/41.02ms. SQL-backed responses assert 100 errors/1,000 operations/
+  100 failures/.1 rate and an empty second product with null rate. A 5s local
+  maximum regression guard passes. These observations do not replace the full
+  specification's host/concurrent performance acceptance or establish an SLO.
+- Persian Console Help source now explains explicit comparison, shared filters,
+  frozen per-product tenant scope, all-or-nothing authorization, rate denominator
+  and stale-response behavior. Supported local slug-only runtime publication
+  completes: 0 created/1 revised; public API lookup confirms the comparison
+  heading, ten-program limit and unknown-rate explanation. History/unrelated
+  guides are preserved; this is not a new Help article or a global republish.
+  Full Jupiter host/cross-domain/browser breadth, bootstrap/process/security,
+  representative loaded multi-product performance and A–I/47-section audit remain.
+  No Preview/main-host promotion or overall GOAL-069 completion is claimed.
+- Final `pnpm verify:release` exits 0 (durable local log records the exit):
+  406 tests = 173 API + 30 Web + 203 Hub (79 SDK/core/adapters, 111 server,
+  13 Console). All builds/lint/typechecks, 48-operation real HTTP/OpenAPI parity,
+  actual Edge four-width analytics/comparison/cache/late-response/offline/default
+  capacity, Python/C#, performance and 83-migration rehearsal execute. Existing
+  Vite chunk-size advisory remains. `git diff --check` passes; skipped filtered
+  focused cases are never counted as full-gate executions.
+- Final LOCAL analytics timing with 1,000 events: single-App p50/p95/max
+  62.67/77.51/77.51ms, two-product 29.22/33.22/33.22ms (10 calls each).
+  Differences from the earlier measured run are reported, not normalized away.
+  The Browser fixture uses port 54282 and owned product PIDs stay 49416/49740
+  throughout tests. Post-gate preflight confirms zero temporary DBs/reserved AI
+  attempts, 83 migrations and unchanged enabled 100,000-token configuration.
+- Only the identity-verified owned LOCAL API is restarted after the build;
+  product Worker remains explicitly false and Hub drain retains its prior flag.
+  Web PID 49740 is untouched. Health/readiness pass; runtime public OpenAPI
+  advertises compareProducts and 48 operations; revised public Help loads and
+  Web /operations returns 200. No staging/main host or co-hosted app changes.
+
 ## 2026-10-19 — Real queued provider failure, metering and recovery (LOCAL)
 
 - Implementation under test: actual QueueWorker, AiGatewayService,

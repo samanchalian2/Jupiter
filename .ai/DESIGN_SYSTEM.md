@@ -1,5 +1,13 @@
 # Jupiter Design System V2
 
+DEC-047 comparison stays inside the Analytics report selector. Explicit current
+scope add/remove controls preserve the selected per-product environment/tenant
+list while navigating App selectors; no new sidebar, wizard or decorative cards.
+Results show server-provided product/environment names and scope coverage, with
+readable product-name widths and a named keyboard-scrollable inner table region.
+Filter/selection changes clear obsolete results; do not leave stale cross-scope
+numbers visible while a replacement request is pending.
+
 GOAL-069 analytics uses one compact report selector and existing semantic colors,
 not a new navigation pattern. Ranked tables retain readable minimum column widths
 and a named keyboard-focusable inner scroll region on small screens; never let

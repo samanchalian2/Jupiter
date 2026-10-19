@@ -1,5 +1,19 @@
 # Current State
 
+**2026-10-19 explicit product comparison (GOAL-069 IN PROGRESS, DEC-047):**
+The read-only comparison endpoint (48 OpenAPI operations) and shared Console
+selection/result panel compare 1–10 explicit distinct products/environments.
+Actual SQL/HTTP proves metrics, scope separation, ten-target bounds and grant
+revocation denial with no partial response. Independent authenticated Edge proves
+two-product workflow, late-response discard and four-width RTL/no overflow.
+The reference fixture now uses an actual strict ephemeral port, not a product
+preview port; owned local API/Web PIDs remain unchanged during tests. Final gate
+passes 406 tests (173 API, 30 Web, 203 Hub: 79 SDK/core/adapters, 111 server,
+13 Console), builds/lint/typechecks, real Edge/Python/C#/offline/performance and
+83-migration rehearsal. Only Console Help received a supported new local runtime
+revision. Full host/process/security/performance and
+the complete A–I/47-section audit still remain; no promotion or final acceptance.
+
 **2026-10-19 scoped analytics checkpoint (GOAL-069 IN PROGRESS, DEC-046):**
 Ten bounded real analytics reports now replace shared Console overview reuse,
 with current grants/RLS and a strict read-only endpoint (47 OpenAPI operations).

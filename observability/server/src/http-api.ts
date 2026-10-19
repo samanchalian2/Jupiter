@@ -89,6 +89,10 @@ export class HubHttpApi {
       let verified:VerifiedPrincipal;try{verified=await this.identities.verify(token);}catch{throw new ContractError('AUTHENTICATION_REQUIRED');}
       const principalId=await this.registry.principal(verified);
       if(!this.operationsLimiter.allow(principalId))return{status:429,body:{reasonCode:'OPERATIONS_RATE_LIMIT'}};
+      if(path==='/operations/analytics/products'&&request.method==='POST'){
+        const body=this.body(request);if(url.searchParams.size||Object.keys(body).some(key=>!['targets','from','to','q','severity','category','release'].includes(key)))throw new ContractError('INVALID_QUERY');
+        const {targets,...filter}=body;return{status:200,body:await new OperationsService(this.database,this.registry).compareProducts(principalId,targets as OperationScope[],filter as QueryFilter)};
+      }
       const health=/^\/operations\/applications\/([0-9a-f-]{36})\/self-health$/.exec(path);
       if(health&&request.method==='GET'){
        if([...url.searchParams.keys()].some(k=>k!=='environmentId'||url.searchParams.getAll(k).length!==1))throw new ContractError('INVALID_QUERY');

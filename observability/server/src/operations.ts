@@ -1,5 +1,5 @@
 import type { PoolClient } from 'pg';
-import { ContractError, isUuid, SEVERITIES, CATEGORIES, type IncidentStatus } from '@observability/contracts';
+import { ContractError, isUuid, isRecord, SEVERITIES, CATEGORIES, type IncidentStatus } from '@observability/contracts';
 import { redactText } from '@observability/core';
 import { HubDatabase, type DataScope } from './database.js';
 import { RegistryService } from './registry.js';
@@ -96,6 +96,20 @@ export class OperationsService {
    const report=(await c.query(cohort,values)).rows[0];
    return{...report,from:query.values[2],to:query.values[3],scope:'FILTERED_APPLICATION_ENVIRONMENT',limits:{rankedGroups:50,hourlyBuckets:750},feedbackScope:filter.severity||filter.category||filter.release?'MATCHING_LINKED_EVENTS':'WINDOW_AND_SUBJECT',releaseComparison:'OBSERVED_HTTP_FAILURE_RATE_NOT_CAUSAL'};
   });
+ }
+ async compareProducts(principalId:string,targets:OperationScope[],filter:QueryFilter={}){
+  if(!Array.isArray(targets)||targets.length<1||targets.length>10||targets.some(target=>!isRecord(target)||Object.keys(target).some(key=>!['applicationId','environmentId','tenantReference'].includes(key))||!isUuid(target.applicationId)||!isUuid(target.environmentId))||new Set(targets.map(target=>target.applicationId)).size!==targets.length)throw new ContractError('INVALID_COMPARISON_TARGETS');
+  if(Object.entries(filter).some(([key,value])=>!['from','to','q','severity','category','release'].includes(key)||typeof value!=='string'))throw new ContractError('INVALID_ANALYTICS_FILTER');
+  const now=Date.now(),window=this.filters('events',targets[0],{...filter,from:filter.from??new Date(now-86400000).toISOString(),to:filter.to??new Date(now).toISOString()}),normalized={...filter,from:String(window.values[2]),to:String(window.values[3])};
+  // Fail the whole request before data reads if any requested scope is denied.
+  for(const target of targets)await this.registry.dataScope(principalId,target);
+  const items=[];
+  for(const target of targets){const query=this.filters('events',target,normalized);items.push(await this.scoped(principalId,target,async c=>{
+   const metadata=(await c.query('SELECT a.name application_name,e.key environment_key FROM observability.applications a JOIN observability.environments e ON e.application_id=a.id WHERE a.id=$1 AND e.id=$2',[target.applicationId,target.environmentId])).rows[0];if(!metadata)throw new ContractError('ENVIRONMENT_NOT_FOUND');
+   const counts=(await c.query(`SELECT count(*) FILTER(WHERE severity IN ('ERROR','CRITICAL'))::int errors,count(DISTINCT actor_reference) FILTER(WHERE severity IN ('ERROR','CRITICAL'))::int affected_users,count(DISTINCT tenant_reference) FILTER(WHERE severity IN ('ERROR','CRITICAL'))::int affected_tenants,count(*) FILTER(WHERE event_code IN ('http.operation','api.operation'))::int operations,count(*) FILTER(WHERE event_code IN ('http.operation','api.operation') AND http_status>=500)::int failures FROM observability.events WHERE ${query.where}`,query.values)).rows[0];
+   return{applicationId:target.applicationId,applicationName:metadata.application_name,environmentId:target.environmentId,environmentKey:metadata.environment_key,tenantReference:target.tenantReference??null,tenantScope:target.tenantReference===undefined?'APPLICATION_WIDE':target.tenantReference===null?'TENANT_FREE':'TENANT',errors:counts.errors,affectedUsers:counts.affected_users,affectedTenants:counts.affected_tenants,operations:counts.operations,failures:counts.failures,errorRate:counts.operations?counts.failures/counts.operations:null};
+  }));}
+  items.sort((a,b)=>b.errors-a.errors||a.applicationId.localeCompare(b.applicationId));return{items,from:normalized.from,to:normalized.to,ranking:'ERROR_EVENT_COUNT',scope:'EXPLICIT_AUTHORIZED_SELECTION',maximumApplications:10};
  }
  async annotateIncident(principalId:string,input:OperationScope,id:string,command:{assignedPrincipalId?:string|null;note?:string;reason:string}){
   if(!isUuid(id)||typeof command.reason!=='string'||command.reason.trim().length<3||command.reason.length>500||command.note!==undefined&&(typeof command.note!=='string'||command.note.trim().length<3||command.note.length>4000)||command.assignedPrincipalId!==undefined&&command.assignedPrincipalId!==null&&!isUuid(command.assignedPrincipalId))throw new ContractError('INVALID_INCIDENT_COMMAND');

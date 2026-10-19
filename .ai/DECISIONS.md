@@ -1,5 +1,26 @@
 # Architecture Decisions
 
+## DEC-047 — Explicit-scope multi-product impact comparison
+
+GOAL-069 section 43 adds read-only POST /operations/analytics/products, not a
+global grant or a new data warehouse. The caller supplies 1–10 distinct
+Applications, each with exactly one concrete environment and optional explicit
+tenant. One row per Application prevents overlapping scopes/double counting.
+Every scope is pre-authorized before querying; each scoped query revalidates
+current grants and uses existing runtime RLS. Any denied/invalid scope rejects
+the entire response, never a partial result or silent omission.
+
+All targets use the same validated <=31-day received-at window and event filters.
+Ranking is error-event count, with measured HTTP failures/rate and distinct
+affected actors/tenants as separate metrics; it is neither a global product
+quality score nor a causal diagnosis. Application/environment names come from
+the authorized server registry, never client display labels. Results identify
+the exact compared environment/tenant coverage, sorted deterministically.
+At most ten sequential bounded existing-DB queries, no fan-out worker or AI call;
+existing pool/statement timeouts apply, not a production latency guarantee.
+The Console adds/removes explicit current selections inside Analytics; no new
+navigation or implicit all-product scope. Existing theme/contracts remain intact.
+
 ## DEC-046 — Bounded operational analytics projection
 
 GOAL-069 section 43 requires reports beyond overview/CSV. Add a read-only

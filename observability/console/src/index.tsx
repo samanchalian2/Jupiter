@@ -4,6 +4,7 @@ import { InvestigatorPanel } from './InvestigatorPanel.js';
 import { AlertInbox } from './AlertInbox.js';
 import {MaintenancePanel} from './MaintenancePanel.js';
 import {SelfHealthPanel} from './SelfHealthPanel.js';
+import {ProductComparisonPanel} from './ProductComparisonPanel.js';
 export { initialFilters, result, scopeQuery, type OperationsClient, type Filters } from './client.js';
 type Row = Record<string, unknown>;
 type Application = { id: string; name: string; slug: string; enabled: boolean };
@@ -32,12 +33,13 @@ export function OperationsConsole({ client,initialSection='overview' }: { client
   const prefix=`/operations/applications/${applicationId}`;
   const query=useMemo(()=>scopeQuery(environmentId,filters),[environmentId,filters,revision]);
   const resource:Resource=section==='live'?'events':section==='analytics'?'events':section==='incidents'?'incidents':section==='feedback'?'feedback':'issues';
+  const comparingProducts=section==='analytics'&&analyticsReport==='products';
   const refresh=()=>setRevision(value=>value+1);
   useEffect(()=>{let live=true;void client.request('/operations/applications').then(result<Application[]>).then(items=>{if(live){setApplications(items);setApplicationId(current=>items.some(item=>item.id===current)?current:items[0]?.id??'');}}).catch(cause=>{if(live)setError(text(cause instanceof Error?cause.message:'دریافت برنامه‌ها ناموفق بود.'));});return()=>{live=false;};},[client,revision]);
   useEffect(()=>{let live=true;setEnvironments([]);setEnvironmentId('');setDetail(null);detailGeneration.current++;if(applicationId)void client.request(`${prefix}/environments`).then(result<Environment[]>).then(items=>{if(live){setEnvironments(items);setEnvironmentId(items[0]?.id??'');}}).catch(cause=>{if(live)setError(text(cause.message));});return()=>{live=false;};},[client,applicationId]);
   useEffect(()=>{
     const requestGeneration=++generation.current;detailGeneration.current++;setDetail(null);setRows([]);setOverview(null);setError('');setLoading(false);
-    if(section==='ai'||section==='alert-inbox'||section==='maintenance'||section==='self-health')return;
+    if(section==='ai'||section==='alert-inbox'||section==='maintenance'||section==='self-health'||comparingProducts)return;
     if(!applicationId||(!environmentId&&section!=='rules'&&section!=='applications'))return;
     setLoading(true);
     const reportQuery=new URLSearchParams(query);if(section==='analytics'){reportQuery.delete('page');reportQuery.delete('pageSize');}
@@ -50,7 +52,7 @@ export function OperationsConsole({ client,initialSection='overview' }: { client
       else{const page=value as {items:Row[];total:number};setRows(page.items);setTotal(page.total);}
     }).catch(cause=>{if(requestGeneration===generation.current)setError(text(cause.message));}).finally(()=>{if(requestGeneration===generation.current)setLoading(false);});
     return()=>{generation.current++;};
-  },[client,applicationId,environmentId,section,filters,revision]);
+  },[client,applicationId,environmentId,section,filters,revision,comparingProducts]);
   useEffect(()=>{if(section!=='live'||paused)return;const timer=setInterval(()=>{if(document.visibilityState==='visible')refresh();},10000);return()=>clearInterval(timer);},[section,paused]);
   const open=async(row:Row)=>{const current=++detailGeneration.current;setDetail(null);setNote('');setReason('');setNextStatus('');setAssigned('');try{const value=await result<Row>(await client.request(`${prefix}/${resource}/${row.id}?${query}`));if(current===detailGeneration.current)setDetail(value);}catch(cause){if(current===detailGeneration.current)setError(text((cause as Error).message));}};
   const mutate=async(event:FormEvent)=>{event.preventDefault();if(!detail)return;setBusy(true);setError('');try{
@@ -75,9 +77,10 @@ export function OperationsConsole({ client,initialSection='overview' }: { client
     {section==='ai'&&<InvestigatorPanel client={client} applicationId={applicationId} environmentId={environmentId} tenant={filters.tenant}/>}
     {section==='alert-inbox'&&<><form className="obs-filters" onSubmit={event=>{event.preventDefault();setFilters({...filters,tenant:draft.tenant});}}><label>محدودهٔ سازمان مجاز<input value={draft.tenant} maxLength={160} onChange={event=>setDraft({...draft,tenant:event.target.value})}/></label><button>اعمال محدوده</button></form><AlertInbox key={revision} client={client} applicationId={applicationId} environmentId={environmentId} tenant={filters.tenant}/></>}
     {overview&&section==='overview'&&<><p className="hint">شمارنده‌های فعال، وضعیت فعلی‌اند؛ آمار رویدادها و نرخ خطا محدود به بازه و فیلترهای انتخاب‌شده است.</p><div className="obs-metrics">{['active_issues','active_incidents','pending_feedback','affected_users','affected_tenants','operations','failures'].map(key=><div key={key}><span>{labels[key]}</span><strong>{text(overview[key])}</strong></div>)}<div><span>نرخ خطای عملیات</span><strong>{typeof overview.errorRate==='number'?`${(overview.errorRate*100).toFixed(1)}٪`:'دادهٔ کافی نیست'}</strong></div></div><h2>روند ساعتی UTC</h2><DataTable rows={overview.trend as Row[]}/></>}
-    {overview&&section==='analytics'&&<section className="obs-analytics" aria-label="گزارش‌های تحلیلی">
-      <label>گزارش<select aria-label="گزارش" value={analyticsReport} onChange={event=>setAnalyticsReport(event.target.value)}>{Object.entries({incidentTrend:'روند رخدادهای عملیاتی',feedbackTrend:'روند بازخورد',issueRecurrence:'خطاهای تکرارشونده',operationImpact:'عملیات متأثر',browserDevices:'مرورگر و دستگاه',releases:'مقایسهٔ نسخه‌ها',resolution:'زمان رفع؛ ثانیه',recurringCauses:'الگوهای پرتکرار خطا',userImpact:'کاربران متأثر',tenantImpact:'سازمان‌های متأثر'}).map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label>
-      <p className="hint">این گزارش برای برنامه و محیط انتخاب‌شده است؛ حداکثر ۵۰ گروه برتر و بازهٔ ۳۱ روز. مقایسهٔ نسخه‌ها علت قطعی خطا نیست. بازخورد بدون ارتباط فنی، با فیلتر شدت، دسته یا نسخه کنار گذاشته می‌شود.</p><DataTable label="جدول گزارش تحلیلی" rows={(overview[analyticsReport]??[]) as Row[]}/><button className="secondary" disabled={busy} onClick={()=>void exportCsv()}>CSV رویدادهای مجاز این بازه</button></section>}
+    {section==='analytics'&&<section className="obs-analytics" aria-label="گزارش‌های تحلیلی">
+      <label>گزارش<select aria-label="گزارش" value={analyticsReport} onChange={event=>setAnalyticsReport(event.target.value)}>{Object.entries({incidentTrend:'روند رخدادهای عملیاتی',feedbackTrend:'روند بازخورد',issueRecurrence:'خطاهای تکرارشونده',operationImpact:'عملیات متأثر',browserDevices:'مرورگر و دستگاه',releases:'مقایسهٔ نسخه‌ها',resolution:'زمان رفع؛ ثانیه',recurringCauses:'الگوهای پرتکرار خطا',userImpact:'کاربران متأثر',tenantImpact:'سازمان‌های متأثر',products:'مقایسهٔ برنامه‌ها'}).map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label>
+      {analyticsReport==='products'?<ProductComparisonPanel client={client} selected={{applicationId,environmentId,applicationName:applications.find(row=>row.id===applicationId)?.name??'',environmentKey:environments.find(row=>row.id===environmentId)?.key??'',...(filters.tenant?{tenantReference:filters.tenant}:{})}} filters={filters}/>:overview&&<><p className="hint">این گزارش برای برنامه و محیط انتخاب‌شده است؛ حداکثر ۵۰ گروه و بازهٔ ۳۱ روز. نسخه‌ها به ترتیب اولین مشاهده‌اند و مقایسهٔ آن‌ها علت قطعی خطا نیست. بازخورد بدون ارتباط فنی، با فیلتر شدت، دسته یا نسخه کنار گذاشته می‌شود.</p><DataTable label="جدول گزارش تحلیلی" rows={(overview[analyticsReport]??[]) as Row[]}/><button className="secondary" disabled={busy} onClick={()=>void exportCsv()}>CSV رویدادهای مجاز این بازه</button></>}
+    </section>}
     {['live','issues','incidents','feedback'].includes(section)&&<><DataTable rows={rows} open={row=>void open(row)}/><div className="obs-pagination"><button className="secondary" disabled={filters.page<=1||loading} onClick={()=>setFilters({...filters,page:filters.page-1})}>قبلی</button><span>صفحهٔ {filters.page.toLocaleString('fa-IR')} · {total.toLocaleString('fa-IR')} نتیجه</span><button className="secondary" disabled={filters.page*25>=total||loading} onClick={()=>setFilters({...filters,page:filters.page+1})}>بعدی</button><button className="secondary" disabled={busy} onClick={()=>void exportCsv()}>CSV</button></div></>}
     {detail&&<section className="obs-detail" aria-label="جزئیات">
       <header><h2>{text(detail.title??detail.subject??'جزئیات رویداد')}</h2><button className="secondary" onClick={()=>{detailGeneration.current++;setDetail(null);}}>بستن</button></header>

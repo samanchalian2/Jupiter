@@ -4,7 +4,11 @@ GOAL-069 DEC-046 adds a bounded read-only analytics projection to the existing
 OperationsService/public HTTP contract and shared Console. It uses the same
 current operational grants/RLS, parameterized 31-day event cohort and fixed SQL;
 no business imports, warehouse, schema/provider/commercial changes. Ten report
-tables are one Application/environment; cross-product comparison is still open.
+tables are one Application/environment. DEC-047 adds read-only explicit-scope
+comparison over 1–10 distinct Applications, one environment/optional tenant each,
+with current grants and runtime RLS on every read. It has no global report role,
+new worker, schema or commercial entity. Any target denial rejects the response;
+the Console keeps selections inside Analytics and invalidates obsolete results.
 
 ## GOAL-069 Observability Hub (implementation in progress)
 

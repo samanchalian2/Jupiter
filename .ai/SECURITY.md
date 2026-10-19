@@ -2,6 +2,15 @@
 
 ## GOAL-069 Observability Hub
 
+DEC-047 comparison preauthorizes every explicit target before data reads and
+revalidates current grants under runtime RLS for each target query. Mixed-access
+or revoked scope rejects the whole response without partial rows. One target per
+Application prevents overlapping scope counts; server registry supplies names.
+Strict 1–10 bounds and common validated window/filters apply. Operational rate
+limiting precedes this read-only POST. Client labels/unknown fields are rejected.
+Real SQL/HTTP grant-revocation and independent Browser late-response tests verify
+the boundaries; client cancellation is complemented by a generation guard.
+
 DEC-046 analytics uses current operational authorization and runtime RLS, never
 worker/admin bypass. Fixed SQL reads only needed safe columns and returns bounded
 projections. Unknown filters/status/pagination are rejected for this aggregate

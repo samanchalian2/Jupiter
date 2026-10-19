@@ -10,3 +10,4 @@
 .obs-self-health>button{min-height:44px}
 .obs-analytics>label{max-width:28rem}.obs-analytics select{min-height:44px}
 .obs-analytics table{min-width:38rem}.obs-analytics th{min-width:5.5rem}
+.obs-comparison th:first-child,.obs-comparison td:first-child{min-width:10rem}

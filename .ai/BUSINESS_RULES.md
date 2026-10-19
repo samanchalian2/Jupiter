@@ -1,5 +1,16 @@
 # Business Rules
 
+## Explicit product comparison (DEC-047)
+
+- Compare 1–10 distinct Applications with one concrete environment/optional
+  tenant each; no implicit all-platform product set or overlapping target rows.
+- All targets share the same captured <=31-day window and event filters. Any
+  invalid/denied/revoked target rejects the response, never silently omits a row.
+- Rank by error-event count; measured HTTP rate and distinct user/tenant impact
+  are separate. No measured denominator means unknown rate, not zero quality.
+- Names come from authorized registry reads. UI selections are temporary and
+  grant no access; selection/filter changes clear/abort obsolete results.
+
 ## Scoped analytical reports (DEC-046)
 
 - Current operational grant and explicit App/environment/tenant guard aggregates;

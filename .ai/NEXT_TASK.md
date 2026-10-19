@@ -4,7 +4,7 @@
 
 The entire approved objective remains active. Source of truth:
 `docs/GOAL_069_SPECIFICATION.md` (all sections and A–I Definition of Done),
-`docs/GOAL_069_EVIDENCE.md`, current state and DEC-038 through DEC-046.
+`docs/GOAL_069_EVIDENCE.md`, current state and DEC-038 through DEC-047.
 Historical GOAL-060 Personal Service is not renamed. Do not start another Goal.
 
 ### Latest implementation boundary
@@ -20,7 +20,7 @@ This is not a blanket completion claim for all product workflows or the live
 Jupiter shell. Section-63 Help is runtime-published with actual Jupiter operations,
 Platform-panel and Feedback acceptance. The measured local performance checkpoint
 and Node hot-path remediation plus full-limit Browser/batch/redaction QC bring
-the full release gate to 402 tests with scoped analytics, real queued provider failure/metering and concurrent/product-read boundary
+the full release gate to 406 tests with explicit product comparison, scoped analytics, real queued provider failure/metering and concurrent/product-read boundary
 measurements and the performance flag enabled. Inspect
 latest Evidence for gates/runtime/remote commit.
 
@@ -33,13 +33,21 @@ latest Evidence for gates/runtime/remote commit.
    Do not mark broad phases complete from narrow service tests.
    Section-43 single-App analytics now has ten bounded reports/DEC-046, actual
    HTTP/SQL/OpenAPI isolation/rates/limits tests and independent four-width Edge
-   acceptance. Preserve them; finish separately authorized multi-product ranking,
-   representative analytics performance and actual Jupiter host acceptance.
+   acceptance. Explicit multi-product ranking now has DEC-047, 1–10 bounded
+   scopes/current grants/RLS, actual SQL/HTTP/OpenAPI tests and four-width Edge
+   workflow/late-response acceptance. Preserve it and the new measured LOCAL
+   analytics/2-product timing. Map performance evidence to the actual section-64
+   requirements; ten fully loaded products or a production SLO were not separate
+   approved completion criteria. Keep their absence as a measurement limitation,
+   not a newly invented blocker. Actual Jupiter host acceptance remains required.
    Do not equate the selected-App projection with a cross-product comparison.
-   Before another reference Browser run with local Web active, harden its Vite
-   test listener: port 0 was observed falling back to 5174. Reserve a true OS
-   ephemeral port and use strictPort so the fixture cannot occupy the product
-   preview port. An ownership guard prevented restarting/replacing that listener.
+   Preserve the fixed reference fixture's reserved OS ephemeral port/strictPort
+   and actual product-PID continuity. Do not restore Vite port=0/default fallback.
+   Preserve single-App table-selection caching and the real Browser network
+   assertion: choosing another of the ten tables reuses the same filtered cohort.
+   Audit all twenty explicit Browser/offline cases in section 57, especially
+   actual storage quota failure, expiry, offline Feedback replay/idempotency and
+   unauthorized replay; do not substitute count-cap unit tests for missing cases.
 2. Verify real product Worker capture and the remaining authenticated Jupiter
    host/shell/role workflows. Independent reference/shared Console acceptance
    is not a substitute. Maintain tenant/App/environment/actor isolation,
@@ -59,8 +67,9 @@ latest Evidence for gates/runtime/remote commit.
    finish intake-success breadth and bootstrap/process failure isolation without
    changing commercial/provider rules.
 3. Preserve the completed section-63 Help checkpoint: eleven registry-validated
-   guides, RUNTIME revision 2, explicit slug-only publication and unchanged
-   unrelated Help. Actual Jupiter login/Edge covers operations, Platform panel
+   RUNTIME guides, explicit slug-only publication and unchanged unrelated Help.
+   The original revision-2 checkpoint is historical; Console now has subsequent
+   analytics/comparison revisions with full history. Actual Jupiter login/Edge covers operations, Platform panel
    and Feedback at four widths with full reader bounds. Include this evidence in
    the final audit, recheck content if subsequent functionality changes, and
    retain version history. Do not put credentials in metadata/evidence/screenshots.

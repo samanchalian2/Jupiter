@@ -12,7 +12,7 @@ const summary = (values: number[]) => {
 export async function performanceAcceptance(database: HubDatabase, registry: RegistryService, root: string, endpoint: string) {
   const app = (await registry.createApplication(root, { slug: `performance-${randomUUID()}`, name: 'LOCAL measured load' })).id;
   const env = (await registry.createEnvironment(root, app, { key: 'performance', kind: 'TEST' })).id;
-  let samplingApp: string | undefined;
+  let samplingApp: string | undefined,comparisonApp:string|undefined;
   const credential = await registry.issueServerCredential(root, app, env, 'Disposable local performance acceptance');
   const count = 1000, batchSize = 50, concurrency = 2;
   const batches: TelemetryEvent[][] = Array.from({ length: count/batchSize }, (_, batch) => Array.from({ length: batchSize }, (_, offset) => {
@@ -39,6 +39,12 @@ export async function performanceAcceptance(database: HubDatabase, registry: Reg
       const started=performance.now(),response=await fetch(`${endpoint}/operations/applications/${app}/overview?environmentId=${env}`,{headers:{authorization:'Bearer root-identity-placeholder'}});
       expect(response.status).toBe(200);const dashboard=await response.json();expect(dashboard.operations).toBe(count);expect(dashboard.failures).toBe(100);dashboardTimes.push(performance.now()-started);
     }
+    comparisonApp=(await registry.createApplication(root,{slug:`comparison-load-${randomUUID()}`,name:'LOCAL empty comparison'})).id;const comparisonEnv=(await registry.createEnvironment(root,comparisonApp,{key:'comparison',kind:'TEST'})).id,analyticsTimes:number[]=[],comparisonTimes:number[]=[];
+    for(let index=0;index<10;index++){
+      let started=performance.now();const analyticsResponse=await fetch(`${endpoint}/operations/applications/${app}/analytics?environmentId=${env}`,{headers:{authorization:'Bearer root-identity-placeholder'}});expect(analyticsResponse.status).toBe(200);const analytics=await analyticsResponse.json();expect(analytics.operationImpact.reduce((sum:number,row:any)=>sum+row.errors,0)).toBe(100);analyticsTimes.push(performance.now()-started);
+      started=performance.now();const comparisonResponse=await fetch(`${endpoint}/operations/analytics/products`,{method:'POST',headers:{authorization:'Bearer root-identity-placeholder','content-type':'application/json'},body:JSON.stringify({targets:[{applicationId:app,environmentId:env},{applicationId:comparisonApp,environmentId:comparisonEnv}]})});expect(comparisonResponse.status).toBe(200);const comparison=await comparisonResponse.json();expect(comparison.items.map((row:any)=>[row.errors,row.operations,row.failures,row.errorRate])).toEqual([[100,1000,100,.1],[0,0,0,null]]);comparisonTimes.push(performance.now()-started);
+    }
+    expect(Math.max(...analyticsTimes,...comparisonTimes)).toBeLessThan(5000);console.log(JSON.stringify({event:'observability.local_analytics_performance',events:count,singleApplication:summary(analyticsTimes),twoProductComparison:summary(comparisonTimes),limits:'LOCAL actual HTTP/PostgreSQL, one 1000-event App plus empty App, not 10 loaded products, production SLO or complete performance acceptance.'}));
     const metrics=new SelfMonitoringService(database,registry),storageStarted=performance.now();await metrics.sampleStorage(100);
     const storageMs=performance.now()-storageStarted,health=await metrics.status(root,app,env);expect(health.storage.logical_bytes).toBeGreaterThan(0);
     // Exercise the scheduler beyond one bounded claim. Existing enabled fixture
@@ -73,5 +79,5 @@ export async function performanceAcceptance(database: HubDatabase, registry: Reg
     expect(scheduled.scheduled).toBeGreaterThan(0);expect(repeated.scheduled).toBe(0);expect(providerCalls).toBe(0);
     await concurrentPerformance(database,registry,root,endpoint);
     console.log(JSON.stringify({event:'observability.local_performance',isolation:'DISPOSABLE_DATABASE',count,batchSize,concurrency,ingestion:{wallMs:ingestMs,eventsPerSecond:count/(ingestMs/1000),batch:summary(batchTimes)},aggregation:{events:aggregated,wallMs:aggregationMs,processCpuMs:(cpu.user+cpu.system)/1000,rssBeforeBytes:memoryBefore.rss,rssAfterBytes:memory.rss,heapBeforeBytes:memoryBefore.heapUsed,heapAfterBytes:memory.heapUsed},dashboard:summary(dashboardTimes),logicalSampling:{wallMs:storageMs,bytes:health.storage.logical_bytes,basis:health.storage.basis,scheduler:{environments:120,first:firstSampling.sampled,second:secondSampling.sampled,third:thirdSampling.sampled,wallMs:samplingMs,deadlineMs:30000}},retention:{wallMs:retentionMs,deletedEvents,targetBatches:targetRetentionBatches,fixtureQueueDrained:retentionDrained},aiScheduling:{wallMs:schedulingMs,scheduled:scheduled.scheduled,repeatedMs,repeatScheduled:repeated.scheduled,providerCalls},limits:'In-process HTTP/service measurements, not PostgreSQL CPU, production SLO, Browser offline or whole-product workflow acceptance.'}));
-  }finally{await database.control(async c=>{if(samplingApp)await c.query('UPDATE observability.applications SET enabled=false WHERE id=$1',[samplingApp]);await c.query('UPDATE observability.applications SET enabled=false WHERE id=$1',[app]);});}
+  }finally{await database.control(async c=>{if(samplingApp)await c.query('UPDATE observability.applications SET enabled=false WHERE id=$1',[samplingApp]);if(comparisonApp)await c.query('UPDATE observability.applications SET enabled=false WHERE id=$1',[comparisonApp]);await c.query('UPDATE observability.applications SET enabled=false WHERE id=$1',[app]);});}
 }

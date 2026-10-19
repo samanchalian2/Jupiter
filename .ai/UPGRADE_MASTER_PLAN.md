@@ -2,6 +2,12 @@
 
 ## GOAL-069 — Observability Hub continuation (IN PROGRESS)
 
+DEC-047 implements explicit 1–10-product impact comparison, 48-operation
+OpenAPI/SQL/HTTP authorization/metrics tests, compact Console and independent
+four-width Browser/late-response acceptance. Reference tests now use a strict
+OS ephemeral listener without touching local product ports. Full loaded-product
+performance and actual Jupiter host/process/security/final audit remain open.
+
 DEC-046 adds ten scoped analytical projections, strict 47-operation OpenAPI,
 real PostgreSQL/HTTP report/security tests and independent four-width Console
 acceptance, plus revised local Persian Help. Cross-product ranking, representative

@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-10-19 — GOAL-069 explicit multi-product comparison (IN PROGRESS)
+
+- DEC-047/read-only comparison joins explicit authorized scopes without global
+  privileges, partial results, double-counted products or AI/customer charges.
+- SQL/HTTP/OpenAPI test exact rates, ten targets, body filters and real grant
+  revocation. Console uses explicit add/remove selections and stale-response
+  cancellation; independent four-width Edge confirms workflow and late discard.
+- Fixed reference Vite fixture port fallback; actual strict ephemeral port leaves
+  the product preview/API untouched. Console table changes reuse the same cohort;
+  real Browser request counting confirms no redundant reads. Scoped retention
+  helper fixes its one-claim assumption without changing deletion/lease rules.
+- Full gate passes 406 tests/builds/lint/typechecks/real Edge/Python/C#/offline/
+  performance/83-migration rehearsal. Console Help locally revised/published with
+  history intact. No external deployment or whole-Goal completion.
+
 ## 2026-10-19 — GOAL-069 scoped analytics projection (IN PROGRESS)
 
 - Added DEC-046, read-only scoped aggregate endpoint and strict 47-operation

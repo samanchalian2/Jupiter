@@ -1,5 +1,11 @@
 # Domain Model
 
+DEC-047 product comparison is another scoped read projection over registered
+Applications/Environments and Events, not commercial_products, a new Product
+entity, global grant, stored selection or billing aggregate. Each row declares
+its environment and tenant coverage. Opaque tenant/actor IDs in different Apps
+remain independent; counts are never joined by those IDs across Applications.
+
 GOAL-069 analytics (DEC-046) is a read projection, not a new aggregate/entity.
 It derives scoped window occurrences, release operation rates, impact, resolved
 durations and linked histories from existing Events/Issues/Incidents/Feedback.
