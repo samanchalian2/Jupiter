@@ -43,7 +43,9 @@ beforeAll(async()=>{
 afterAll(async()=>{
  await sdk?.shutdown();if(server){server.closeAllConnections();await new Promise<void>(done=>server.close(()=>done()));}await hub?.close();await database?.onModuleDestroy();
  if(created){await admin.query('SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname=$1 AND pid<>pg_backend_pid()',[name]);await admin.query(`DROP DATABASE "${name}"`);}
- if((await admin.query('SELECT 1 FROM pg_roles WHERE rolname=$1',[role])).rowCount)await admin.query(`DROP ROLE "${role}"`);await admin.end();vi.restoreAllMocks();
+ if((await admin.query('SELECT 1 FROM pg_roles WHERE rolname=$1',[role])).rowCount)await admin.query(`DROP ROLE "${role}"`);
+ expect((await admin.query('SELECT 1 FROM pg_database WHERE datname=$1',[name])).rowCount).toBe(0);expect((await admin.query('SELECT 1 FROM pg_roles WHERE rolname=$1',[role])).rowCount).toBe(0);
+ await admin.end();vi.restoreAllMocks();
 },30000);
 describe('actual lifecycle worker with real product services and PostgreSQL/HTTP Hub',()=>{
  it('runs the cycle, persists a real SQL failure with safe automation scope, and recovers',async()=>{
