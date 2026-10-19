@@ -96,6 +96,8 @@ export class BrowserSdk {
   }
   private context(){const scope=this.config.contextProvider();if(scope.applicationId!==this.config.applicationId||scope.environmentId!==this.config.environmentId)throw new ContractError('SDK_CONTEXT_MISMATCH');if(!isUuid(scope.applicationId)||!isUuid(scope.environmentId)||[scope.actorReference,scope.tenantReference].some(value=>value!==null&&(typeof value!=='string'||!value.trim()||value.length>160)))throw new ContractError('INVALID_SDK_CONTEXT');return scope;}
   private async degrade(){this.storage.close();this.storage=new MemoryQueue();this.mode='MEMORY';this.status.storage='MEMORY';this.status.lastFailure='OFFLINE_STORAGE_UNAVAILABLE';this.emit();}
+  private async putData(envelope:OfflineEnvelope){const generation=this.generation;try{await this.storage.put(envelope);}catch{await this.degrade();if(generation!==this.generation||envelope.partition!==this.partition)return false;await this.storage.put(envelope);}return generation===this.generation&&envelope.partition===this.partition;}
+  private async removeData(ids:string[]){if(!ids.length)return;const generation=this.generation;try{await this.storage.remove(ids);}catch{await this.degrade();if(generation===this.generation)await this.storage.remove(ids);}}
   private emit(){try{this.config.onStatus?.({...this.status});}catch{/* Consumer callbacks cannot break telemetry. */}}
   private async entries(){try{return await this.storage.list();}catch{await this.degrade();return this.storage.list();}}
   private serialize<T>(work:()=>Promise<T>):Promise<T>{const next=this.queueChain.then(work,work);this.queueChain=next.then(()=>undefined,()=>undefined);return next;}
@@ -103,18 +105,18 @@ export class BrowserSdk {
   async setContext():Promise<void>{
     const next=scopeKey(this.context());if(next===this.partition&&this.contextInitialized)return;this.contextInitialized=true;
     if(next!==this.partition){this.generation++;this.abort?.abort();this.metricAbort?.abort();this.partition=next;this.metrics.reset();this.nextMetricAt=0;this.status.dropped=0;this.status.metricFailure=null;}
-    await this.serialize(async()=>{const old=await this.entries();await this.storage.remove(old.filter(e=>e.partition!==next).map(e=>e.id));});
+    await this.serialize(async()=>{const old=await this.entries();await this.removeData(old.filter(e=>e.partition!==next).map(e=>e.id));});
     await this.updateStatus();
   }
-  async logout():Promise<void>{this.generation++;this.abort?.abort();this.metricAbort?.abort();this.metrics.reset();this.nextMetricAt=0;this.status.metricFailure=null;this.status.dropped=0;await this.serialize(async()=>{const old=await this.entries();await this.storage.remove(old.map(e=>e.id));});await this.updateStatus();}
+  async logout():Promise<void>{this.generation++;this.abort?.abort();this.metricAbort?.abort();this.metrics.reset();this.nextMetricAt=0;this.status.metricFailure=null;this.status.dropped=0;await this.serialize(async()=>{const old=await this.entries();await this.removeData(old.map(e=>e.id));});await this.updateStatus();}
   private async enqueue(envelope:OfflineEnvelope):Promise<boolean>{
     return this.serialize(async()=>{
       if(this.stopped||envelope.partition!==this.partition)return false;
-      let items=await this.entries();if(envelope.partition!==this.partition)return false;const expired=items.filter(e=>e.expiresAt<=this.clock());await this.storage.remove(expired.map(e=>e.id));if(envelope.partition!==this.partition)return false;this.countDropped(expired);items=items.filter(e=>e.expiresAt>this.clock());
+      let items=await this.entries();if(envelope.partition!==this.partition)return false;const expired=items.filter(e=>e.expiresAt<=this.clock());await this.removeData(expired.map(e=>e.id));if(envelope.partition!==this.partition)return false;this.countDropped(expired);items=items.filter(e=>e.expiresAt>this.clock());
       const maximumCount=Math.min(500,Math.max(1,this.config.maxQueueCount??500)),maximumBytes=Math.min(2_097_152,Math.max(16_384,this.config.maxQueueBytes??2_097_152));
       const data=items.filter(e=>e.kind!=='METRICS'),bytes=data.reduce((n,e)=>n+encodedBytes(e),0)+encodedBytes(envelope);
       if(data.length>=maximumCount||bytes>maximumBytes){this.countDropped([envelope]);this.status.lastFailure='OFFLINE_QUEUE_FULL';this.emit();return false;}
-      try{await this.storage.put(envelope);}catch{await this.degrade();await this.storage.put(envelope);}
+      if(!await this.putData(envelope))return false;
       await this.updateStatus();return true;
     });
   }
@@ -139,8 +141,8 @@ export class BrowserSdk {
   private async postpone(entries:OfflineEnvelope[],permanent=false){
     const generation=this.generation;return this.serialize(async()=>{
       if(generation!==this.generation)return;
-      if(permanent){await this.storage.remove(entries.map(e=>e.id));if(generation===this.generation)this.countDropped(entries);return;}
-      for(const item of entries){if(generation!==this.generation||item.partition!==this.partition)return;const attempts=item.attempts+1;if(attempts>=12){await this.storage.remove([item.id]);if(generation===this.generation)this.countDropped([{...item,attempts}]);continue;}await this.storage.put({...item,attempts,nextRetryAt:this.clock()+retryDelay(attempts)});}
+      if(permanent){await this.removeData(entries.map(e=>e.id));if(generation===this.generation)this.countDropped(entries);return;}
+      for(const item of entries){if(generation!==this.generation||item.partition!==this.partition)return;const attempts=item.attempts+1;if(attempts>=12){await this.removeData([item.id]);if(generation===this.generation)this.countDropped([{...item,attempts}]);continue;}await this.putData({...item,attempts,nextRetryAt:this.clock()+retryDelay(attempts)});}
     });
   }
   async flush():Promise<void>{
@@ -148,7 +150,7 @@ export class BrowserSdk {
     const generation=this.generation;
     try{
       await this.setContext();const scope=this.context(),partition=scopeKey(scope),startedGeneration=this.generation;
-      const all=await this.entries(),expired=all.filter(e=>e.expiresAt<=this.clock());await this.storage.remove(expired.map(e=>e.id));if(startedGeneration!==this.generation)return;this.countDropped(expired);
+      const all=await this.entries(),expired=all.filter(e=>e.expiresAt<=this.clock());await this.removeData(expired.map(e=>e.id));if(startedGeneration!==this.generation)return;this.countDropped(expired);
       const pending=all.filter(e=>e.kind!=='METRICS'&&e.partition===partition&&e.expiresAt>this.clock()&&e.nextRetryAt<=this.clock());if(!pending.length)return;
       const credential=await this.config.authProvider(scope);
       if(!credential||credential.expiresAt<=this.clock()||scopeKey(credential.scope)!==partition||startedGeneration!==this.generation)return;
@@ -166,7 +168,7 @@ export class BrowserSdk {
             const allowed=new Set(events.map(e=>e.id)),seen=new Set<string>();
             const ack=(value as unknown as BatchAcknowledgement).acknowledgements;
             if(ack.some(a=>!isRecord(a)||!allowed.has(a.eventId as string)||seen.has(a.eventId as string)||(seen.add(a.eventId as string),!['ACCEPTED','DUPLICATE','REJECTED','RETRYABLE'].includes(String(a.status)))))throw new Error('INVALID_ACK');
-            await this.storage.remove(ack.filter(a=>a.status==='ACCEPTED'||a.status==='DUPLICATE'||a.status==='REJECTED').map(a=>a.eventId));
+            await this.removeData(ack.filter(a=>a.status==='ACCEPTED'||a.status==='DUPLICATE'||a.status==='REJECTED').map(a=>a.eventId));
             if(startedGeneration!==this.generation)return;
             this.countDropped(events.filter(e=>ack.some(a=>a.eventId===e.id&&a.status==='REJECTED')));
             this.metrics.add('retryDelivered',events.filter(e=>e.attempts>0&&ack.some(a=>a.eventId===e.id&&(a.status==='ACCEPTED'||a.status==='DUPLICATE'))).length);
@@ -177,7 +179,7 @@ export class BrowserSdk {
           if(startedGeneration!==this.generation)return;
           const response=await this.transport(`${this.config.endpoint}/feedback`,{method:'POST',headers:{authorization:`Bearer ${credential.token}`,'content-type':'application/json'},body:JSON.stringify(item.payload),signal:this.abort.signal,credentials:'omit'});
           if(startedGeneration!==this.generation)return;
-          if(response.ok){const value:unknown=await response.json();if(startedGeneration!==this.generation)return;if(!isRecord(value)||value.feedbackId!==item.id||typeof value.trackingId!=='string'||!/^FB-[A-Z0-9-]{8,64}$/.test(value.trackingId))throw new Error('INVALID_FEEDBACK_ACK');await this.storage.remove([item.id]);if(startedGeneration!==this.generation)return;try{this.config.onFeedbackAcknowledged?.(item.id,value.trackingId);}catch{}}
+          if(response.ok){const value:unknown=await response.json();if(startedGeneration!==this.generation)return;if(!isRecord(value)||value.feedbackId!==item.id||typeof value.trackingId!=='string'||!/^FB-[A-Z0-9-]{8,64}$/.test(value.trackingId))throw new Error('INVALID_FEEDBACK_ACK');await this.removeData([item.id]);if(startedGeneration!==this.generation)return;try{this.config.onFeedbackAcknowledged?.(item.id,value.trackingId);}catch{}}
           else await this.postpone([item],[400,403,404,410,413,422].includes(response.status));
         }
       }finally{clearTimeout(timeout);}

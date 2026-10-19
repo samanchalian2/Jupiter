@@ -1,5 +1,15 @@
 # Business Rules
 
+## Offline data-write failure isolation (DEC-048)
+
+- Retry metadata and ACK/expiry/context removal failures must not reject consumer
+  work merely because storage failed. Use the existing bounded memory fallback.
+- Preserve envelope ID, payload, original expiry and partition. Never copy an
+  old-context envelope after a generation change. Denials remain terminal.
+- Memory is not durable across reload. Unavailable physical storage deletion is
+  best-effort; no alternate storage channel or credential persistence is added.
+- Automatic diagnostic journal failures retain DEC-044's independent policy.
+
 ## Explicit product comparison (DEC-047)
 
 - Compare 1–10 distinct Applications with one concrete environment/optional

@@ -1,5 +1,11 @@
 # System Architecture
 
+DEC-048 isolates data-queue storage failures during retry, ACK, expiry and
+identity cleanup using the existing bounded MemoryQueue. Generation/partition
+guards prevent copying an obsolete envelope into a new identity. Diagnostic
+journal writes retain their separate best-effort policy. No new persistence
+channel, provider contract or schema is introduced; memory is not page-durable.
+
 GOAL-069 DEC-046 adds a bounded read-only analytics projection to the existing
 OperationsService/public HTTP contract and shared Console. It uses the same
 current operational grants/RLS, parameterized 31-day event cohort and fixed SQL;

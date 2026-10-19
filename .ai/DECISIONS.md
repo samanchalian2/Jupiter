@@ -1,5 +1,26 @@
 # Architecture Decisions
 
+## DEC-048 — Data-queue write failure isolation
+
+GOAL-069 failure isolation also covers retry/ACK/expiry/context cleanup writes,
+not only initial capture or IndexedDB open. Data writes/removals fall back to
+the existing bounded MemoryQueue on storage failure, never reject consumer work
+because retry bookkeeping itself failed. Failed retry writes keep the SAME
+envelope ID, payload, original expiry and partition; only attempt/due metadata
+changes. A generation/context check prevents copying old-scope data into a new
+memory partition. Permanent denials stay terminal in the active memory queue.
+
+The SDK never claims physical deletion when the browser refuses durable writes.
+Old inaccessible IndexedDB rows may remain until a later reload/available store;
+fresh SDK context synchronization still purges foreign partitions before replay,
+and server credentials/ACK idempotency remain authoritative. Memory fallback is
+not durable across page loss. Logout/switch cannot relabel or send another actor's
+rows. No credential is persisted and no fallback storage channel is introduced.
+
+Automatic diagnostic journal writes keep DEC-044's separate best-effort policy:
+their failure does not switch the business data queue or recurse into ingestion.
+No auth, event/provider/commercial contract, TTL, retry limit or queue cap changes.
+
 ## DEC-047 — Explicit-scope multi-product impact comparison
 
 GOAL-069 section 43 adds read-only POST /operations/analytics/products, not a

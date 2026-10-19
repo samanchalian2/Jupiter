@@ -4,6 +4,103 @@ Status: IN PROGRESS. Owner-approved plan supersedes the stale GOAL-060 identifie
 in the supplied specification. GOAL-060 Personal Service history is preserved.
 GOAL-059 remains BLOCKED; LOCAL evidence is not staging acceptance.
 
+## 2026-10-19 — Offline lifecycle and data-write isolation (LOCAL, DEC-048)
+
+- `observability/server/test/offline-browser-acceptance.ts` extends actual Edge
+  acceptance, using the independent consumer's verified session, real IndexedDB,
+  network interception, actual authenticated HTTP ingestion/Feedback and SQL.
+  No app business code, production tenant, credential or external provider is
+  used. Reference UI's manual-flush completion counter avoids inferring promise
+  completion merely from a click or a changing queue count.
+- Offline Feedback survives a genuine failed offline static reload and subsequent
+  reconnect with the SAME local envelope. The static reference document is not
+  a PWA/cache: it cannot be fetched while disconnected. Journal persistence and
+  recovery are proved; offline static-shell availability is not claimed or added.
+- A real Feedback commit then lost network ACK retains the original ID; a flush
+  before its persisted retry due time makes no extra Feedback request. After
+  due, ACK yields the SAME tracking ID and one SQL row. Explicit replay of that
+  acknowledged envelope also leaves one row. Event 49h/Feedback 25h fixture ages
+  exercise the real SDK expiry path with zero corresponding server rows; this
+  is controlled age metadata, not a claim of a days-long wall-clock test.
+- A same-partition event whose payload actor is tampered receives an actual
+  REJECTED/ACTOR_SCOPE_MISMATCH ACK and is removed without persistence. A separate
+  previous-actor partition planted before reload must be purged before replay,
+  with zero outbound requests containing its ID and zero SQL rows. The full
+  release gate confirms the expanded assertion set.
+- Actual storage quota is distinct from the SDK count/byte cap. CDP override is
+  applied on an empty same-origin preflight document BEFORE IndexedDB opens;
+  a real 8-MiB bounded probe transaction must abort with QuotaExceededError.
+  Overrides applied after an opened bucket accepted earlier probes in this
+  environment; those failed setup attempts were not counted as quota acceptance.
+  The exact browser-internal allocation cause is not asserted. Official method:
+  [Chrome DevTools Storage protocol](https://chromedevtools.github.io/devtools-protocol/tot/Storage/#method-overrideQuotaForOrigin).
+- In the executed focused run, real quota causes SDK MEMORY fallback, the host's
+  manual action completes with zero page errors, and a captured in-memory event
+  persists once after quota/network recovery. Reload creates DURABLE storage
+  again and a new durable event persists once. This does not claim memory data
+  survives page loss or that an inaccessible old store was physically erased.
+- A new regression test first proved a real defect: storage failure while writing
+  RETRY metadata escaped flush's network-error handler into the consumer promise.
+  SDK data writes/removals now use existing MemoryQueue fallback with generation/
+  partition checks, same ID/body/expiry and unchanged retry/TTL/cap policy.
+  Automatic diagnostic writes retain separate DEC-044 behavior; they do not
+  trigger data fallback or recursive event reporting.
+- Five new focused SDK cases plus the original 31 pass: retry-write failure,
+  permanent denial/removal failure, identity switch during fallback, successful
+  ACK with failed durable deletion/reload of same ID, and foreign cleanup/logout
+  failure without relabeling old data. Failed clock-fixture/physical-erasure
+  assumptions were corrected without weakening the actual isolation assertions:
+  old inaccessible rows remain old-partitioned until a later available store
+  purges them. No physical deletion is invented; active memory replay is blocked.
+- Persian offline Help now explains temporary memory, unavailable static reload,
+  best-effort physical cleanup versus authoritative credential/context isolation.
+  Reference logout wording says sending stopped, not guaranteed physical wipe.
+  Supported local slug-only runtime publication revised this one article, with
+  no creation or unrelated article changes. The full LOCAL release gate exits
+  zero: 411 tests (173 API, 30 Web, 208 Hub: 84 SDK/core/adapters, 111 server,
+  13 Console), builds/lint/typechecks, real Edge/offline/Python/C#/performance
+  and 83-migration rehearsal. Edge completes in 81.841s; all four widths remain
+  RTL without document overflow. The actual quota transaction reports
+  QuotaExceededError; MEMORY event and post-reload DURABLE event each persist
+  once with zero page errors. Temporary acceptance databases and RESERVED AI
+  attempts are zero after cleanup; the existing enabled configuration retains
+  the owner-approved 100000 monthly input+output token budget. No provider call
+  is made by these acceptance scenarios. The anonymous local runtime article
+  check is separate from authenticated Jupiter reader acceptance; the latter
+  has not been repeated for this particular revised wording.
+  Full actual Jupiter host/process/cross-domain and A–I/47-section audit remain;
+  this is not overall GOAL-069 completion or staging acceptance.
+
+### Section 57 — twenty-case evidence map
+
+BA = `server/test/browser-acceptance.ts`; OB =
+`server/test/offline-browser-acceptance.ts`, both under `observability/`.
+All entries below refer to actual Browser/HTTP/storage execution, not merely
+function-call mocks. The expanded full release gate confirms these assertions.
+
+| # | Required case | Actual assertion/path and boundary |
+| --- | --- | --- |
+| 1 | Normal event | BA captures and SQL finds reference.frontend |
+| 2 | Disconnect | BA/OB actual context.setOffline(true) |
+| 3 | IndexedDB persistence | BA/OB inspect real envelopes object store |
+| 4 | Reload offline | OB real disconnected navigation fails; exact journal survives reconnect; no static-PWA claim |
+| 5 | Reconnect | BA/OB restore network and authenticated host session |
+| 6 | Batch replay | BA normal/lost-ACK and default-capacity Browser performance |
+| 7 | ACK | BA SDK removes only corresponding acknowledged IDs |
+| 8 | Idempotent persistence | BA commit/lost-ACK/reload leaves exactly one SQL event |
+| 9 | Local cleanup | BA event ID and OB Feedback ID absent after valid ACK |
+| 10 | Backoff | OB persisted attempts/due and no Feedback request before due |
+| 11 | Tenant switch | BA verified host switch removes old-tenant ID |
+| 12 | Logout | BA actual host revocation, queue empty and SDK stopped under available storage |
+| 13 | Different login identity | BA host-authenticated next actor reuses Browser storage; old actor not replayed (not a Jupiter password-login test) |
+| 14 | IndexedDB unavailable | BA controlled SecurityError at real Browser API boundary; UI memory fallback/HTTP remain usable |
+| 15 | Storage quota | OB real CDP quota + actual QuotaExceededError, MEMORY and successful post-recovery delivery |
+| 16 | Expiry | OB real stored Event/Feedback age metadata, removal and zero corresponding SQL rows |
+| 17 | Offline Feedback | OB verified enqueue while disconnected, journal survives failed reload |
+| 18 | Duplicate Feedback | OB real commit/lost ACK and explicit duplicate replay, same tracking/one row |
+| 19 | Unauthorized replay | OB actual server ACTOR_SCOPE_MISMATCH rejection, no persisted forged event |
+| 20 | Incompatible identity | OB planted foreign partition, fresh SDK purge, zero matching network requests/SQL rows |
+
 ## 2026-10-19 — Explicit multi-product comparison (LOCAL, DEC-047)
 
 - `OperationsService.compareProducts` and read-only POST

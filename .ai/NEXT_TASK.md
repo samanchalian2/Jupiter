@@ -4,7 +4,7 @@
 
 The entire approved objective remains active. Source of truth:
 `docs/GOAL_069_SPECIFICATION.md` (all sections and A–I Definition of Done),
-`docs/GOAL_069_EVIDENCE.md`, current state and DEC-038 through DEC-047.
+`docs/GOAL_069_EVIDENCE.md`, current state and DEC-038 through DEC-048.
 Historical GOAL-060 Personal Service is not renamed. Do not start another Goal.
 
 ### Latest implementation boundary
@@ -20,7 +20,7 @@ This is not a blanket completion claim for all product workflows or the live
 Jupiter shell. Section-63 Help is runtime-published with actual Jupiter operations,
 Platform-panel and Feedback acceptance. The measured local performance checkpoint
 and Node hot-path remediation plus full-limit Browser/batch/redaction QC bring
-the full release gate to 406 tests with explicit product comparison, scoped analytics, real queued provider failure/metering and concurrent/product-read boundary
+the full release gate to 411 tests with data-write isolation/real quota, explicit product comparison, scoped analytics, real queued provider failure/metering and concurrent/product-read boundary
 measurements and the performance flag enabled. Inspect
 latest Evidence for gates/runtime/remote commit.
 
@@ -45,9 +45,12 @@ latest Evidence for gates/runtime/remote commit.
    and actual product-PID continuity. Do not restore Vite port=0/default fallback.
    Preserve single-App table-selection caching and the real Browser network
    assertion: choosing another of the ten tables reuses the same filtered cohort.
-   Audit all twenty explicit Browser/offline cases in section 57, especially
-   actual storage quota failure, expiry, offline Feedback replay/idempotency and
-   unauthorized replay; do not substitute count-cap unit tests for missing cases.
+   Section-57 twenty-case map now exists in Evidence. Preserve expanded actual
+   Browser quota/lifecycle/expiry/Feedback lost-ACK/foreign replay coverage and
+   DEC-048 data-write fallback; the 411-test full gate passes. Offline static shell
+   is not a PWA guarantee, and inaccessible physical storage erasure is not
+   promised. Do not equate memory fallback with durability or reduce this to
+   count-cap unit tests. Complete remaining actual Jupiter host/final audit.
 2. Verify real product Worker capture and the remaining authenticated Jupiter
    host/shell/role workflows. Independent reference/shared Console acceptance
    is not a substitute. Maintain tenant/App/environment/actor isolation,

@@ -2,6 +2,14 @@
 
 ## GOAL-069 Observability Hub
 
+DEC-048 does not promise physical erasure when browser storage rejects writes.
+Unavailable old durable rows retain their original partition; fresh context
+synchronization purges foreign rows before replay. Credentials are never stored,
+and server scope checks/idempotency remain authoritative. Data fallback checks
+generation and partition before copying retry state; logout stops active replay.
+Memory fallback cannot guarantee survival across page loss. Real Browser quota,
+foreign partition and forged-actor tests complement storage-write fault tests.
+
 DEC-047 comparison preauthorizes every explicit target before data reads and
 revalidates current grants under runtime RLS for each target query. Mixed-access
 or revoked scope rejects the whole response without partial rows. One target per

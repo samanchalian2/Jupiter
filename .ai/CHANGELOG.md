@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-10-19 — GOAL-069 offline lifecycle / storage writes (IN PROGRESS)
+
+- Added actual Edge offline Feedback/lost-ACK/backoff/expiry/forged/foreign
+  partition and real quota scenarios with a twenty-case section-57 map.
+- Proved and fixed retry-bookkeeping storage rejection escaping consumer flush;
+  DEC-048 uses existing bounded memory fallback while preserving IDs/scopes/TTL.
+  Five new SDK regressions pass, without pretending unavailable disk is erased.
+- Clarified public Help and reference logout wording; one supported local Help
+  runtime revision is published. Full LOCAL gate passes 411 tests plus builds,
+  lint/typechecks, real Browser/reference-client/performance/migration checks.
+  Zero temporary acceptance DBs/active AI reservations after cleanup; configured
+  monthly input+output budget remains 100000. No external promotion/completion.
+
 ## 2026-10-19 — GOAL-069 explicit multi-product comparison (IN PROGRESS)
 
 - DEC-047/read-only comparison joins explicit authorized scopes without global

@@ -2,11 +2,18 @@
 
 ## GOAL-069 — Observability Hub continuation (IN PROGRESS)
 
+DEC-048 completes the twenty-case offline evidence map with real Edge quota,
+Feedback lost-ACK/backoff/expiry/foreign replay and data-write fallback regression
+coverage. The full LOCAL gate passes 411 tests, builds/typechecks/lint and real
+Browser/reference-client/performance/migration checks. Actual Jupiter host and
+complete A–I/47-section acceptance remain open; no staging or main promotion.
+
 DEC-047 implements explicit 1–10-product impact comparison, 48-operation
 OpenAPI/SQL/HTTP authorization/metrics tests, compact Console and independent
 four-width Browser/late-response acceptance. Reference tests now use a strict
-OS ephemeral listener without touching local product ports. Full loaded-product
-performance and actual Jupiter host/process/security/final audit remain open.
+OS ephemeral listener without touching local product ports. Measured LOCAL
+performance is not a production SLO; actual Jupiter host/process/security/final
+audit remain open.
 
 DEC-046 adds ten scoped analytical projections, strict 47-operation OpenAPI,
 real PostgreSQL/HTTP report/security tests and independent four-width Console

@@ -1,5 +1,20 @@
 # Current State
 
+**2026-10-19 offline data-write isolation (GOAL-069 IN PROGRESS, DEC-048):**
+New real Edge scenarios verify offline Feedback/lost-ACK dedupe/backoff, controlled
+Event/Feedback expiry, real storage QuotaExceededError and MEMORY→reload→DURABLE.
+Quota is established before origin IndexedDB opens; failed quota setup probes
+are not counted as passes. A regression proved retry-bookkeeping write failure
+could reject consumer flush. Data writes/removals now fall back without changing
+ID/partition/expiry or diagnostic-journal policy; five new SDK cases (36 total)
+pass. Physical erasure of unavailable storage is not promised. Expanded Browser
+foreign-partition purge and full release gate pass: 411 tests (173 API, 30 Web,
+208 Hub), builds/lint/typechecks, Edge/reference clients/performance and migration
+rehearsal. Only offline Help received one local runtime revision. Cleanup leaves
+zero temporary acceptance DBs/RESERVED AI attempts; enabled monthly token budget
+is the approved 100000. No external promotion or provider acceptance call.
+Actual Jupiter host/cross-domain/process/security/A–I audit still remains.
+
 **2026-10-19 explicit product comparison (GOAL-069 IN PROGRESS, DEC-047):**
 The read-only comparison endpoint (48 OpenAPI operations) and shared Console
 selection/result panel compare 1–10 explicit distinct products/environments.
