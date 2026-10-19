@@ -1,5 +1,26 @@
 # Current State
 
+**2026-10-20 complete Overview projections (GOAL-069 IN PROGRESS):** DEC-052
+adds current critical count, observed-health basis, recent releases, high-impact
+Issue cohorts and latest persisted AI summaries to existing scoped Overview.
+All event panels share the exact selected cohort; AI filters require linked
+Issue/Incident evidence, no provider call. Unknown health is not healthy uptime.
+Compact Persian panels/labels preserve navigation and colors. Real PostgreSQL
+fixture verifies empty/filtered/current counts, top-ten release bound, tenant
+VIEWER isolation/revocation and actual HTTP safe projection; focused test passes.
+Console 16/OpenAPI 5 tests and affected typechecks pass. First native four-width
+run passed overflow checks, but screenshot review found squeezed title columns;
+scoped table minimum widths/internal-scroll and long-cell native details/summary
+preview/full-text acceptance added after a second visual review. Final-source
+four-width native acceptance and keyboard/44px/internal-scroll checks pass;
+375/1440 screenshots inspected. Full LOCAL release gate exits zero: 444 tests
+(179 API, 40 Web, 225 Hub), builds/lint/typechecks, Browser/client/performance/
+migration gates and both fault scripts. Post-gate: 83 migrations, zero temporary
+DBs/active attempts, healthy readiness, unchanged owned listeners and enabled
+100000 monthly budget. LOCAL Console Help version 5 published/read back through the
+supported authorized utility. A01 and remaining full audit stay open.
+No production/Preview deployment, schema or customer accounting change.
+
 **2026-10-19 named recovery triggers (GOAL-069 IN PROGRESS):** DEC-051 adds
 scoped probe-success/authenticated-activity notifications. They coalesce with
 two-second throttling, preserve retry deadlines and cancel on identity/logout/

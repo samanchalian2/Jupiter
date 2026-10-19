@@ -1,4 +1,6 @@
 .obs-console{min-width:0;max-width:100%;padding:var(--space-4,16px);color:var(--color-text-primary);font:inherit}
+.obs-overview{min-width:0;max-width:100%}.obs-overview .obs-table table{min-width:640px}.obs-overview .obs-table th:first-child,.obs-overview .obs-table td:first-child{min-width:180px}
+.obs-overview summary{min-height:44px;box-sizing:border-box;padding-block:8px;cursor:pointer}
 .obs-console header h1{font-size:1.25rem;font-weight:500}.obs-console h2{font-size:1.05rem}.obs-console h3{font-size:1rem}
 .obs-console nav,.obs-scope,.obs-filters,.obs-pagination{display:flex;flex-wrap:wrap;align-items:end;gap:8px;margin-block:12px}
 .obs-console nav button{font-weight:500}.obs-selected{background:var(--color-brand);color:var(--color-on-primary)}

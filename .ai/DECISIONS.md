@@ -1,5 +1,34 @@
 # Architecture Decisions
 
+## DEC-052 — Bounded, evidence-scoped Overview panels
+
+GOAL-069 section 39 extends the existing Overview response additively with a
+current-state critical_issues counter and four bounded projections: observed
+applicationHealth, recentReleases, highImpactProblems and latestAiFindings.
+Existing fields/roles/current-grant checks/RLS are preserved; no new route,
+schema, service or provider call. Current active counts remain CURRENT_STATE;
+all event-derived panels use the exact selected time/severity/category/release/
+text cohort and authorized tenant scope. Tables return at most ten rows with
+deterministic tie-breaking; no unbounded payload or credential projection.
+
+applicationHealth is explicitly FILTERED_TELEMETRY_OBSERVATION, not an uptime
+probe: no events => UNKNOWN, observed errors => ERRORS_OBSERVED, otherwise
+NO_ERRORS_OBSERVED. It never asserts a healthy host from silence. Release
+first/last observation is within the selected window, not deployment time.
+High-impact problems rank matched ERROR/CRITICAL Issue events by distinct
+affected actors, tenants, occurrences, then ID; counts describe that cohort,
+not lifetime totals. Missing release/actor/tenant remains null/zero as appropriate.
+
+Latest AI findings are successful persisted investigations created in the
+selected window under the same scope. With severity/category/release/text
+filters, only ISSUE/INCIDENT investigations whose target Issue has matching
+events qualify; unlinked DAILY/WEEKLY summaries are excluded rather than
+misrepresented as filtered evidence. Without these event filters, authorized
+successful summaries may appear. Only ID/kind/summary/created time/target are
+projected, no provider configuration, cost or raw attempt data. Querying persisted
+findings does not run AI; missing findings are an empty list, not a provider
+failure. Console shows scope/basis wording and compact tables, not a new nav.
+
 ## DEC-051 — Scoped, coalesced Browser recovery notifications
 
 GOAL-069 section 19 adds non-awaitable Browser SDK notifications

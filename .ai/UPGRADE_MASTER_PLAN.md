@@ -2,6 +2,12 @@
 
 ## GOAL-069 — Observability Hub continuation (IN PROGRESS)
 
+DEC-052 implements A05 Overview projections/compact Persian panels; real SQL/
+HTTP filtered/unknown/tenant/revocation tests and gates pass. Final four-width
+native/keyboard/44px/scroll acceptance and full LOCAL 444-test release gate/both
+fault scripts pass; screenshots/cleanup/readiness verified. Console Help v5
+published locally. A01 and full audit remain required.
+
 DEC-051 implements A03 named scoped/coalesced recovery notifications and Jupiter
 fetch integration; both native no-start/no-manual-flush cases and full LOCAL
 440-test release gate/both fault scripts pass; cleanup/readiness verified.

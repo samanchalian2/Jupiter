@@ -1,5 +1,11 @@
 # Domain Model
 
+DEC-052 Overview panels are bounded read projections over existing scoped
+Events/Issues/Investigations, not a new health/deployment or commercial entity.
+Current critical-issue count is distinct from filtered-window impact. Observed
+health cannot establish uptime; release timestamps are first/last observations
+within the window. AI summaries are persisted findings, not new provider work.
+
 DEC-047 product comparison is another scoped read projection over registered
 Applications/Environments and Events, not commercial_products, a new Product
 entity, global grant, stored selection or billing aggregate. Each row declares

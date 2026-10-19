@@ -2,6 +2,13 @@
 
 ## GOAL-069 Observability Hub
 
+DEC-052 Overview additions use the same revalidated grant and tenant-scoped
+transaction as existing statistics; no cross-tenant precomputed health cache or
+provider call. AI summaries expose only a bounded persisted summary/kind/time/
+target reference under RLS, not credentials, raw attempts/cost or new authority.
+Event filters require linked target evidence; unlinked summaries are excluded
+instead of leaking a broader cohort. No-event health explicitly remains unknown.
+
 DEC-051 recovery notifications carry only an expected scope, never a token,
 URL/body or provider error. Current scope/generation are rechecked at scheduled
 execution, with cancellation on context switch/logout/shutdown. Anonymous

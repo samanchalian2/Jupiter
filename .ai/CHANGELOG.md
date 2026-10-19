@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-10-20 — GOAL-069 full Overview evidence panels (IN PROGRESS)
+
+- DEC-052 extends existing Overview with critical issues, explicitly observed
+  health, recent releases, high-impact problems and persisted AI summaries.
+- Exact cohort/current-state semantics, bounds, tenant/current-grant revalidation
+  and no-provider-on-read preserved; Persian compact panels add no navigation.
+- Real SQL/HTTP fixture passes filters/unknown/tenant/revocation/release-bound
+  checks; Console 16/OpenAPI 5 tests/typechecks pass. Screenshot review corrected
+  squeezed/mobile long-text rows; native 44px/Enter/full-content/internal-scroll
+  and four-width RTL/no-overflow acceptance pass. Console Help v5 published.
+- Final full LOCAL 444-test release gate/both fault scripts pass; cleanup,
+  readiness, owned listeners and 100000 budget remain unchanged.
+- A01 and full requirement audit remain open. No schema/accounting/deployment.
+
 ## 2026-10-19 — GOAL-069 scoped automatic recovery notifications (IN PROGRESS)
 
 - DEC-051 adds probe-success/authenticated-activity hints with current scope,

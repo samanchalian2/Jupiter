@@ -4,6 +4,73 @@ Status: IN PROGRESS. Owner-approved plan supersedes the stale GOAL-060 identifie
 in the supplied specification. GOAL-060 Personal Service history is preserved.
 GOAL-059 remains BLOCKED; LOCAL evidence is not staging acceptance.
 
+## 2026-10-20 — Complete Overview projections / A05 (LOCAL)
+
+- DEC-052 extends the existing Overview/OpenAPI response, not a parallel route.
+  critical_issues is a current-state CRITICAL active-Issue count. Observed health
+  declares FILTERED_TELEMETRY_OBSERVATION, counts and last observation; empty
+  scope is UNKNOWN, errors yield ERRORS_OBSERVED, other data NO_ERRORS_OBSERVED.
+  None is an uptime/host-health guarantee. Existing event metrics remain intact.
+- recentReleases returns <=10 versions (nullable unknown), first/last observed
+  IN WINDOW and error counts. highImpactProblems returns <=10 matched Issue
+  ERROR/CRITICAL cohorts ranked by distinct users/tenants/occurrences/ID. Latest
+  AI findings return <=10 successful persisted scoped summaries created within
+  the window. Event filters require matching Issue/Incident target links; general
+  summaries are omitted in narrowed views. Reads never invoke a provider.
+- All new queries use the existing grant-revalidated scoped transaction/RLS,
+  parameterized exact event filter cohort and fixed bounded projection. Console
+  adds compact Persian headings/tables plus explicit basis/window wording and
+  unknown/observation-only labels; no new navigation, theme or business changes.
+- New disposable real-SQL test creates its own App/environment and 14 events
+  across 13 versions/two tenants, actually aggregates Issues and seeds explicit
+  persisted finding fixtures (NOT provider-execution evidence). It verifies
+  unknown empty state, 10-version cap, critical current count, filtered impact/
+  summaries, healthy-observation wording basis, tenant VIEWER isolation, whole-
+  environment denial, revocation and real HTTP safe projections. Initial fixture
+  attempts correctly hit actor mismatch and control-role INSERT denial; fixed
+  test attribution/worker fixture setup, never auth/permissions. Focused pass.
+- Console 16 tests, OpenAPI 5 and affected typechecks pass. An initial wrong
+  package filter matched no project and is not counted; correct operations-ui
+  suite/typecheck executed. Native fixture now checks all new headings and actual
+  successful controlled AI summary at 375/768/1024/1440 with RTL/no document
+  overflow and synthetic screenshots. First native run passed widths but image
+  review found a real usability defect: high-impact title columns squeezed into
+  near-character-width on mobile, yielding a 6572px page. No-overflow alone was
+  insufficient. Scoped Overview tables now retain a 640px minimum/180px leading
+  column and keyboard-focusable internal scrolling, with no palette change.
+  Native assertion now verifies that internal table width/scrolling at 375px.
+  A second image review found a 2000-character title still dominated vertical
+  space despite readable columns. Overview-only long cells now use a native
+  details/summary preview, with full content expandable (not discarded); native
+  acceptance explicitly opens/closes it. Other table defaults are unchanged.
+  The next full run failed solely because the test assumed native summary had
+  ARIA role button in Chromium. Corrected to the actual summary element, keeps
+  its accessible-label assertion and now requires >=44px target plus native Enter
+  open/close. No app assertion/authorization/bounds requirement was removed.
+  Final-source verification is recorded below, not inferred from the earlier
+  source runs. A01/full audit remain required; no deployment.
+- Final native Overview acceptance now passes at all four widths. At 375px the
+  actual table is >=640px, scroll is internal, summary target >=44px, and native
+  Enter opens/closes the full text without document overflow. Final synthetic
+  375/1440 screenshots inspected after both visual fixes. Known presentation
+  kinds/severity/status are Persian; stored codes/API values stay unchanged.
+  Full final-source release gate exits zero:
+  `output/goal069-overview-accepted-release.log`,
+  GOAL069_OVERVIEW_ACCEPTED_RELEASE_EXIT=0. 444 tests = 179 API + 40 Web + 225 Hub
+  (97 SDK/core/adapters + 112 server + 16 Console). Builds/lint/typechecks,
+  Browser/client/performance/migration gates and both fault scripts pass.
+  Actual compiled host cadence/login/manual ticket and actual Web/detail
+  regressions also pass. Post-gate: 83 migrations, zero temporary DBs/active AI
+  attempts, healthy readiness, unchanged owned 19440/3000 and 49740/5174 listeners
+  and enabled 100000 monthly budget. This is LOCAL evidence, not host promotion.
+- Persian Console Help adds clear current-count/filtered-panel/unknown health/
+  release observation/AI-read semantics. Existing authorized LOCAL publication
+  utility updates only observability-console: 0 created, 1 revised. Public API
+  returns runtime version 5 and all three new explanation markers; prior history
+  is retained. Repeating the exact targeted publication returns 0 created,
+  0 revised, 1 unchanged; runtime remains version 5 with one Overview and one
+  Analytics heading. No other article target or credential is passed to publication.
+
 ## 2026-10-19 — Named scoped Browser recovery triggers / A03 (LOCAL)
 
 - DEC-051 adds immediate-return notifyApiConnectivity(expectedScope, successful)
