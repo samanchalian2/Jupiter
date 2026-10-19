@@ -20,7 +20,7 @@ This is not a blanket completion claim for all product workflows or the live
 Jupiter shell. Section-63 Help is runtime-published with actual Jupiter operations,
 Platform-panel and Feedback acceptance. The measured local performance checkpoint
 and Node hot-path remediation plus full-limit Browser/batch/redaction QC bring
-the full release gate to 421 tests with React/fetch failure isolation, data-write isolation/real quota, explicit product comparison, scoped analytics, real queued provider failure/metering and concurrent/product-read boundary
+the full release gate to 422 tests with actual AppModule/API process, React/fetch failure isolation, data-write isolation/real quota, explicit product comparison, scoped analytics, real queued provider failure/metering and concurrent/product-read boundary
 measurements and the performance flag enabled. Inspect
 latest Evidence for gates/runtime/remote commit.
 
@@ -85,6 +85,14 @@ latest Evidence for gates/runtime/remote commit.
    whole-shell or actual SQL-event acceptance. Next prioritize the actual
    AppModule/process/authenticated Jupiter workflow and final requirement audit,
    using disposable supported fixtures rather than modifying business tenants.
+   Actual compiled main/AppModule is now exercised by the new disposable host
+   integration: real password/JWT/membership, trigger failure→event→Issue and
+   manual submit during real Hub table outage, timer retry/one-row recovery and
+   session revocation. Its full 422-test release gate and cleanup pass. This is
+   full actual API process, not Browser business UI or worker-entrypoint crash
+   recovery. Next extend to authenticated actual Web shell against a disposable
+   API, using explicit isolated origins/ports and supported fixture memberships;
+   never point acceptance writes at the shared development/preview tenant.
 3. Preserve the completed section-63 Help checkpoint: eleven registry-validated
    RUNTIME guides, explicit slug-only publication and unchanged unrelated Help.
    The original revision-2 checkpoint is historical; Console now has subsequent

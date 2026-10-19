@@ -1,5 +1,21 @@
 # Current State
 
+**2026-10-19 actual AppModule process (GOAL-069 IN PROGRESS):** New disposable
+83-migration integration spawns actual `dist/main.js` with unmodified AppModule/
+middleware/interceptor/auth/controllers/services/Node SDK/Hub worker on an
+ephemeral loopback port. Real login, scoped registry/tenant denials, SQL-trigger
+draft failure→HTTP events→Issue, manual OPEN ticket during actual Hub table
+outage and timer-driven one-row event recovery pass focused execution. No
+commercial entries; sessions revoked; generated DB removed and original role
+attributes unchanged. Normal original role grants apply only to new fixture DB
+objects; no production role/tenant/architecture modification. Focused test/API
+typecheck pass; full LOCAL gate exits zero: 422 tests (174 API, 37 Web, 211 Hub),
+builds/lint/typechecks, actual four-width Browser/offline/quota, reference clients,
+performance/migration rehearsal and both Browser fault scripts. No disposable
+DBs/active AI attempts remain; owned listeners, healthy readiness and enabled
+100000 budget unchanged. Authenticated Browser shell, remaining
+worker/process and final requirement audit remain open.
+
 **2026-10-19 mounted React fault isolation (GOAL-069 IN PROGRESS):** Red tests
 prove throwing/rejecting capture escapes the boundary; actual mounted Edge
 proves SDK startup throw removes the consumer UI. Provider start/cleanup, route

@@ -4,6 +4,66 @@ Status: IN PROGRESS. Owner-approved plan supersedes the stale GOAL-060 identifie
 in the supplied specification. GOAL-060 Personal Service history is preserved.
 GOAL-059 remains BLOCKED; LOCAL evidence is not staging acceptance.
 
+## 2026-10-19 — Actual compiled Jupiter AppModule process (LOCAL)
+
+- Execution path: `apps/api/test/observability-host.integration.spec.ts` starts
+  the ACTUAL `node dist/main.js` with the existing AppModule, middleware/global
+  interceptor, identity resolution, controllers, services, Node SDK timer and
+  Hub worker. This is not an ephemeral one-controller Nest wrapper or injected
+  fake DatabaseService. API binds an OS-selected loopback port, never 3000/5174.
+- A fresh `obs069_host_*` database runs all 83 migrations. The existing
+  `jupiter_app` role must already exist; only its unconditional CREATE statement
+  is skipped in the harness copy of migration 001. All normal GRANT statements
+  target NEW disposable-database objects. No role attributes/membership or
+  existing database ACL is altered; original role attributes are snapshotted
+  before and after. Migration source files are unchanged. Teardown stops only
+  the owned child, closes pools and drops only the validated generated database.
+- Generated fixture passwords/JWT secret live only in memory/child environment;
+  real scrypt login creates normal JWT/refresh sessions. No secret appears in
+  command arguments, logs, Evidence or fixtures on disk. Raw child stdout/stderr
+  is discarded, except bounded allowlisted HTTP path/status outcomes. Product
+  queued Worker and verification delivery are disabled; no provider credential,
+  AI encryption key, storage bucket or external AI call is configured. The real
+  Hub ingestion/aggregation Worker remains enabled in that temporary process.
+- Actual wrong password returns 401. Requester sees an EMPTY 200 registry, not
+  private apps, and scoped overview returns 403. An early fixture incorrectly
+  expected 403 on the authorized discovery endpoint; its actual scoped contract
+  is an empty list and was preserved. Platform Admin discovers its managed App,
+  but receives no invented tenant membership. Other-tenant ticket queue and
+  Browser-credential mint are denied. Authorized mint binds actual user/org.
+- A controlled SQL trigger makes real `/tickets/drafts` fail with 500 and zero
+  tickets. Original trigger is removed in finally. The actual SDK's normal
+  timer sends the failure to Hub; SQL finds one exception plus operation event
+  with the real requester/tenant, valid shared request/trace context and no
+  synthetic sensitive marker. The real Hub worker then creates a scoped Issue.
+- Only the disposable Hub events table is temporarily renamed to simulate
+  storage outage while business tables stay available. A real draft+submit
+  still produces ONE OPEN ticket and zero commercial ledger entries. A new
+  automatic HTTP ingestion attempt occurs while the table is absent, and the
+  underlying renamed table has no corresponding persisted event. Once restored,
+  normal retry delivers that operation exactly once, with the original request
+  ID. No manual SDK flush, mock transport, fake timer or duplicate business write.
+- A second incorrect fixture expected HTTP >=500 for every ingestion storage
+  failure. The real batch protocol can return HTTP 200 with retryable item ACKs;
+  acceptance now checks the actual network attempt, absent persistence during
+  outage and exact one-row recovery rather than treating HTTP 200 as delivery.
+- Real logout revokes both generated refresh sessions; the old requester cookie
+  cannot refresh (401). Focused test passes in 34.978s (~29.958s actual scenario)
+  and API typecheck passes. The full LOCAL gate exits zero, including latest
+  managed-App identity and Platform-without-membership assertions: 422 tests
+  (174 API, 37 Web, 211 Hub), builds/lint/typechecks, actual four-width Edge /
+  offline/quota, Python/C# clients, measured performance and migration rehearsal.
+  Both fetch and mounted-React Browser fault scripts pass afterward. The final
+  actual-main test takes 34.979s (29.978s scenario). Zero disposable acceptance
+  DBs/RESERVED AI attempts remain; owned API/Web PIDs 19440/49740 and enabled
+  100000 monthly budget are unchanged; public local readiness remains healthy.
+  Existing Vite >500-KiB advisory remains. This is
+  actual AppModule/bootstrap/API/service/worker execution, not Browser shell,
+  provider, worker-entrypoint process-crash recovery or staging acceptance.
+  No shared business tenant, preview/main host, role configuration or existing
+  listener was changed. Generated child/process/DB teardown and original role
+  snapshot assertions pass after the full gate.
+
 ## 2026-10-19 — Mounted React diagnostic isolation and evidence index (LOCAL)
 
 - Implementation: `observability/packages/react-adapter/src/index.tsx`.
@@ -1528,7 +1588,7 @@ Path abbreviations: O = `observability/`; A = `apps/api/`; W = `apps/web/`.
 S = `O/server/test/persistence.integration.test.ts` (actual PostgreSQL/HTTP);
 B = `O/server/test/browser-acceptance.ts` plus `offline-browser-acceptance.ts`;
 G = executed full `pnpm verify:release` with Browser/reference/performance flags.
-The latest executed G=421 tests, with the zero-exit React checkpoint above.
+The latest executed G=422 tests, with the zero-exit actual-AppModule checkpoint above.
 References to G below identify executed coverage, not tests merely present.
 
 | Required section | Implementation path | Tests executed | Actual result | Limitations / remaining proof |
@@ -1546,12 +1606,12 @@ References to G below identify executed coverage, not tests merely present.
 | 11. Frontend SDK | O/packages/browser-sdk/src/index.ts | 36 SDK tests; B real browser/network/quota; G | Bounded queue, ACK/replay/context/lifecycle validated | Memory fallback is not durable after page loss |
 | 12. React Adapter | O/packages/react-adapter/src/index.tsx | Five tests in G421 and sixteen mounted Edge cases | Startup/capture/cleanup fault containment and reset pass focused/full QC | Not authenticated whole shell or SQL-event acceptance |
 | 13. Backend SDK | O/packages/node-sdk/src/index.ts | 12 Node tests; actual queued outage integration; G | Bounded async capture, real 10s timer failure/recovery, no business retry | In-memory Node queue is not a durable outbox |
-| 14. NestJS Adapter | O/packages/nestjs-adapter/src/index.ts | Nine adapter tests; A/test/hub-workflow-performance.ts actual controller HTTP | Original response/error and one subscription preserved; scoped trace context | Ephemeral controller wrapper is not full AppModule bootstrap |
+| 14. NestJS Adapter | O/packages/nestjs-adapter/src/index.ts | Nine adapter tests; actual controller HTTP; A/test/observability-host.integration.spec.ts in G422 | Original response/error preserved; actual main/AppModule/interceptor executes with real JWT | Authenticated Browser business shell remains |
 | 15. .NET/Python Integration Examples | O/examples/csharp; O/examples/python | S reference-client flag launches real external processes | Actual JSON/HTTPS-contract clients ingest/replay against fixture | Loopback/local acceptance, not installed customer deployment |
 | 16. Offline IndexedDB | O/packages/browser-sdk/src/storage.ts | B native IndexedDB/real network/reload/QuotaExceededError | Journal persists offline, same IDs replay after reconnect | Offline static HTML/PWA availability not promised |
 | 17. Retry and Idempotency | O/server/src/ingestion.ts, queue.ts; SDK retry code | S parallel/lost ACK/lease tests; B Feedback and event replay | One persistence/receipt, bounded retry and matching ACK cleanup | Failure to delete unavailable physical disk rows is best effort |
 | 18. Privacy and Redaction | O/packages/core/src/index.ts; SDK/browser redaction | core golden/generated redaction; S privacy/export; real queued marker check | Sensitive synthetic markers excluded, technical metadata retained | Cannot promise detection of every possible free-form secret |
-| 19. Distributed Correlation | core trace helpers; A/src/observability/hub.interceptor.ts; W/src/JupiterObservability.tsx | Nest/Node/Web tests; B frontend/backend correlation | Valid trace/request fields cross adapter boundaries | Full Jupiter authenticated write trace journey still unproven |
+| 19. Distributed Correlation | core trace helpers; A/src/observability/hub.interceptor.ts; W/src/JupiterObservability.tsx | Nest/Node/Web tests; B correlation; actual-main authenticated failed draft HTTP/SQL | Actual authenticated API failure events share request/trace and verified tenant/actor | Full Jupiter Browser→API write trace journey still unproven |
 | 20. Ingestion Reliability | O/server/src/ingestion.ts, queue.ts, http-api.ts | S concurrent/partial ACK/failed persistence/lease recovery | Atomic receipt/event/outbox and bounded retryable failure work | LOCAL pg fixture, not multi-host outage endurance |
 | 21. Fingerprinting | O/packages/core/src/index.ts; O/server/src/engine.ts | core fingerprint tests; S grouping/recurrence | Stable scope-aware grouping and distinct affected identities | Not a semantic AI deduplication system |
 | 22. Issue Engine | O/server/src/engine.ts | S real aggregation/reopen/atomic job completion | Persisted issue occurrences and histories reflect committed events | No blanket host capture coverage from engine tests |
@@ -1574,12 +1634,12 @@ References to G below identify executed coverage, not tests merely present.
 | 39. Performance Measurements | O/server/test/performance-acceptance.ts, concurrent-performance.ts, browser-performance.ts; A/test/hub-workflow-performance.ts | G performance flag; actual 1000/200-event SQL/HTTP, 120 scopes, Browser caps | Bounded throughput/latency/overhead samples recorded in checkpoints | LOCAL only; sampled heap not peak RSS; full host load still unproven |
 | 40. Browser Responsive Acceptance | B shared Console; scripts/accept-observability-help.mjs | Four widths 375/768/1024/1440; native fetch and React fault fixtures | RTL/no document overflow in tested shared Console/Help; recovery fixture at 375/1440 | Not all authenticated Jupiter business workflows |
 | 41. Help Publication | docs/help/observability-*.md; A/scripts/publish-help-catalog.ts | Runtime slug-only publication; real Jupiter Help browser checkpoint | Eleven guides runtime-published with version history; later Console/offline revisions preserved | Revised offline wording not re-read in authenticated host after latest revision |
-| 42. Known Limitations | Explicit dated limits in this document; .ai/NEXT_TASK.md | Source/evidence audit and actual gate inspections | No staging/promoted host/full-shell/PWA/physical-disk claims substituted | Full AppModule/process and final all-requirement audit remain |
+| 42. Known Limitations | Explicit dated limits in this document; .ai/NEXT_TASK.md | Source/evidence audit and actual gate inspections | No staging/promoted host/full-shell/PWA/physical-disk claims substituted | Actual AppModule API proof exists; Browser shell, worker-entrypoint crash recovery and final all-requirement audit remain |
 | 43. Defects Found | Dated red tests in Evidence: storage, sampler, analytics, fetch, React | Red regressions and real mounted startup failure | Concrete defects distinguished from incorrect fixture assumptions | No count of hypothetical defects presented as acceptance |
 | 44. Defects Fixed | SDK/server/adapters and their paired regression paths above | Subsequent focused/full gates plus actual Browser checks | Earlier defects and React remediation pass bounded focused/full QC | This does not establish all remaining host workflows |
-| 45. Cleanup | Disposable S/A integration teardown; fresh Browser contexts; owned listeners | DB/role absence assertions, local status and listener checks | G421 leaves zero temporary DBs/reservations; shared tenant/profile untouched | Do not delete unrelated output/tmp or pretend fixture teardown is backup proof |
-| 46. Quality Gates | package.json verify:release; exact logs/exit markers | G421 zero, both real Browser fault scripts pass; git diff --check | Builds/lint/typechecks/tests and actual optional scenarios executed when flags set | No-test reference package is not counted as extra unit tests |
-| 47. Final Verdict | This Evidence; .ai/CURRENT_STATE.md and NEXT_TASK.md | Full-scope completion audit remains incomplete | IN PROGRESS; no next Goal, promotion or blanket acceptance | Must close actual host/process and explicit remaining audit before COMPLETE |
+| 45. Cleanup | Disposable S/A integration teardown; fresh Browser contexts; owned listeners | DB/role absence and actual-main original-role assertions, local status/listeners | G422 leaves zero temporary DBs/reservations; shared tenant/profile untouched | Do not delete unrelated output/tmp or pretend fixture teardown is backup proof |
+| 46. Quality Gates | package.json verify:release; exact logs/exit markers | G422 zero, both real Browser fault scripts pass; git diff --check | Builds/lint/typechecks/tests and actual optional scenarios executed when flags set | No-test reference package is not counted as extra unit tests |
+| 47. Final Verdict | This Evidence; .ai/CURRENT_STATE.md and NEXT_TASK.md | Full-scope completion audit remains incomplete | IN PROGRESS; no next Goal, promotion or blanket acceptance | Must close Browser host/remaining process and explicit audit before COMPLETE |
 
 ## Owner decisions
 

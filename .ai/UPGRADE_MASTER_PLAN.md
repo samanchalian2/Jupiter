@@ -2,6 +2,13 @@
 
 ## GOAL-069 — Observability Hub continuation (IN PROGRESS)
 
+Actual compiled Jupiter main/AppModule now has disposable 83-migration process
+acceptance with normal login/JWT/tenant authorization, real failed draft capture,
+automatic event/Issue processing and one manual OPEN ticket through Hub storage
+outage/retry recovery. Full LOCAL 422-test/build/lint/typecheck/Browser/client/
+performance/migration gate and both Browser fault scripts pass; cleanup verified.
+Authenticated Browser business flow and remaining process/final audit stay open.
+
 React startup/cleanup/route/boundary fault containment has red regressions and
 sixteen passing native mounted Browser cases plus five focused tests; full LOCAL
 421-test/build/lint/typecheck/Browser/client/performance/migration gate passes,

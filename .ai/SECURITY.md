@@ -2,6 +2,14 @@
 
 ## GOAL-069 Observability Hub
 
+Actual-main acceptance uses only a generated local disposable database. Its
+existing jupiter_app role is not recreated/altered; normal migration grants
+refer only to new objects in that database, removed with teardown. Generated
+password/JWT values stay in process memory/environment, never command arguments
+or logs. Raw child logs are discarded; only allowlisted path/status outcomes
+are retained. Normal scrypt/JWT/membership/session revocation remain enabled,
+and no provider/storage secret or outbound AI/verification work is configured.
+
 React diagnostic-failure containment introduces no new fallback log or data
 channel; sanitization and safe component identification stay unchanged. Mounted
 Browser fixtures use fresh contexts, synthetic form input and controlled SDK

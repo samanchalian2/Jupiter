@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-10-19 — GOAL-069 actual AppModule/API process (IN PROGRESS)
+
+- Added disposable actual compiled-main bootstrap with real password/JWT/session,
+  tenant denial, failed draft→event→Issue and manual submit during Hub SQL outage.
+- Actual SDK timer and Hub worker recover one event without duplicate ticket or
+  commercial effect; normal refresh sessions are revoked afterward.
+- Full LOCAL gate passes 422 tests/builds/lint/typechecks, actual Browser/client/
+  performance/migrations and both Browser fault scripts; cleanup confirmed.
+  Harness expectations
+  corrected for empty authorized discovery and item-level retryable HTTP 200.
+  No production contract/role/tenant/deployment change; broader acceptance open.
+
 ## 2026-10-19 — GOAL-069 React diagnostic isolation (IN PROGRESS)
 
 - Reproduced capture throw/unhandled rejection and mounted startup UI loss.
