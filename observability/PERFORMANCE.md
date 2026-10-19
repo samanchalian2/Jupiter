@@ -45,9 +45,13 @@ or generated synthetic identity is printed in the numeric result.
 Measured worker CPU/memory belongs to the shared test Node process, not a separate
 worker or PostgreSQL. Ingestion and aggregation are separate phases; aggregation
 wall time is not concurrent arrival-to-Issue latency. Logical byte scanning is
-not physical disk/index measurement. Larger-scale scan cost/fairness/deadlines,
-main Jupiter workflow overhead remain required before complete section-64
-acceptance. Keep these limits in reports.
+not physical disk/index measurement. The same case creates 120 additional empty
+test environments after the existing current-hour cohort is sampled. Sampling
+must make bounded progress in claims of 100 then 20, return zero on a third
+call, and persist exactly one sample per environment within a 30-second local
+regression deadline. This checks continuation/fairness beyond one claim; the
+deadline is not a production SLO. Main Jupiter write/Browser workflow overhead
+remains a separate acceptance boundary. Keep these limits in reports.
 
 ## Full-limit offline Browser fixture
 

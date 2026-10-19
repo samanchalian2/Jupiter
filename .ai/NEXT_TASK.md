@@ -55,9 +55,10 @@ latest Evidence for gates/runtime/remote commit.
    covered. Preserve concurrent 200-event overlap/commit latency and actual
    TicketController read-path baseline/observed boundary measurements. These
    do not replace full AppModule/Browser/write lifecycle/automatic-flush impact.
-   Review representative larger-scale bounded logical
-   storage-sampling fairness/deadlines/scan cost at scale; small fixtures alone
-   do not prove performance. Keep source provenance and unobserved states honest.
+   The 120-environment bounded logical storage-sampling continuation/fairness
+   and local deadline check now passes; preserve its explicit logical-row /
+   non-production limitations. Finish the remaining main-product write/Browser
+   automatic-flush impact and do not turn local measurements into an SLO.
 5. Finish security/failure-isolation acceptance (sections 55–58 and 65), full
    responsive RTL host coverage, cleanup and final requirement-level QC.
    Run complete API/Web/Hub tests, lint/typechecks/builds, migration rehearsal

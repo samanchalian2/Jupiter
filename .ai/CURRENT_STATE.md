@@ -1,5 +1,15 @@
 # Current State
 
+**2026-10-19 storage-sampling scale/fairness (GOAL-069 IN PROGRESS):** The
+disposable real PostgreSQL performance acceptance now exercises 120 additional
+environments beyond one sampler claim. Actual progress is 100 then 20 then zero,
+with exactly one row per environment and 1,230.39ms total under a 30-second
+local regression deadline. The existing 1,000-event logical scan is 68.46ms /
+753,425 logical bytes. Scale fixtures are disabled before later retention/AI
+measurements and again in cleanup. This closes bounded continuation/fairness,
+not physical-disk or production-capacity proof. Security/host/browser breadth
+and final requirement/A–I audit remain active; no host promotion occurred.
+
 **2026-10-19 actual product Worker capture (GOAL-069 IN PROGRESS):** The real
 Jupiter lifecycle Worker now observes subscription, commercial-provisioning and
 directory stages through the reusable NestJS adapter with trusted automation /

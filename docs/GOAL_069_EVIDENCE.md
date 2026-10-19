@@ -4,6 +4,30 @@ Status: IN PROGRESS. Owner-approved plan supersedes the stale GOAL-060 identifie
 in the supplied specification. GOAL-060 Personal Service history is preserved.
 GOAL-059 remains BLOCKED; LOCAL evidence is not staging acceptance.
 
+## 2026-10-19 — Bounded storage-sampling scale/fairness (LOCAL)
+
+- The disposable performance acceptance now creates 120 enabled environments
+  after sampling the pre-existing current-hour cohort. The real sampler makes
+  bounded progress in claims of 100 then 20; an immediate third call returns
+  zero. SQL verifies exactly one current-hour sample for every one of the 120
+  distinct environments, so the limit does not starve rows beyond its first
+  ordered claim and idempotency prevents duplicate work.
+- The complete three-call sampling sequence took 1,230.39ms locally against
+  empty scale-only scopes, below the explicit 30,000ms regression deadline.
+  The existing measured 1,000-event environment logical scan took 68.46ms and
+  reported 753,425 logical row bytes. These are disposable LOCAL measurements,
+  not physical table/index bytes or a production SLO.
+- The scale-only Application is disabled immediately after sampling so it
+  cannot contaminate retention or AI scheduling measurements, and is disabled
+  again in `finally` for failed-run cleanup. The focused real PostgreSQL/HTTP
+  performance case passed: 1,000 events, 304.03 events/s, 5,019.76ms sequential
+  aggregation, 42.13ms dashboard p95, 100 retained rows deleted, eleven then
+  zero AI jobs and zero provider calls. Its separate concurrent phase completed
+  200/200 jobs and five Issues/200 occurrences.
+- This closes the representative bounded sampling continuation/deadline gap.
+  It does not claim physical-storage scalability, production capacity, or full
+  main-product write/Browser automatic-flush overhead.
+
 ## 2026-10-19 — Actual Jupiter lifecycle Worker capture (LOCAL)
 
 - `apps/api/src/worker.ts` now routes the existing subscription-expiry,

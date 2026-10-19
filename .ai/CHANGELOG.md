@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-10-19 — GOAL-069 bounded storage-sampling checkpoint
+
+- Extended disposable performance acceptance to 120 additional environments,
+  proving bounded 100/20/0 progress and exactly one hourly sample per scope.
+- Recorded an actual 1,230.39ms local scheduler sequence under a 30-second
+  regression deadline and isolated the scale cohort from later retention/AI
+  measurements. This is logical-row/local evidence, not a production SLO.
+
 ## 2026-10-19 — GOAL-069 actual lifecycle Worker capture checkpoint
 
 - Routed Jupiter's real subscription, commercial-provisioning and directory

@@ -12,6 +12,7 @@ const summary = (values: number[]) => {
 export async function performanceAcceptance(database: HubDatabase, registry: RegistryService, root: string, endpoint: string) {
   const app = (await registry.createApplication(root, { slug: `performance-${randomUUID()}`, name: 'LOCAL measured load' })).id;
   const env = (await registry.createEnvironment(root, app, { key: 'performance', kind: 'TEST' })).id;
+  let samplingApp: string | undefined;
   const credential = await registry.issueServerCredential(root, app, env, 'Disposable local performance acceptance');
   const count = 1000, batchSize = 50, concurrency = 2;
   const batches: TelemetryEvent[][] = Array.from({ length: count/batchSize }, (_, batch) => Array.from({ length: batchSize }, (_, offset) => {
@@ -40,6 +41,19 @@ export async function performanceAcceptance(database: HubDatabase, registry: Reg
     }
     const metrics=new SelfMonitoringService(database,registry),storageStarted=performance.now();await metrics.sampleStorage(100);
     const storageMs=performance.now()-storageStarted,health=await metrics.status(root,app,env);expect(health.storage.logical_bytes).toBeGreaterThan(0);
+    // Exercise the scheduler beyond one bounded claim. Existing enabled fixture
+    // environments have already received their current-hour sample above.
+    samplingApp=(await registry.createApplication(root,{slug:`sampling-${randomUUID()}`,name:'LOCAL sampling fairness'})).id;
+    const samplingEnvironments:string[]=[];
+    for(let index=0;index<120;index++)samplingEnvironments.push((await registry.createEnvironment(root,samplingApp,{key:`sample-${String(index).padStart(3,'0')}`,kind:'TEST'})).id);
+    const samplingStarted=performance.now(),firstSampling=await metrics.sampleStorage(100),secondSampling=await metrics.sampleStorage(100),thirdSampling=await metrics.sampleStorage(100),samplingMs=performance.now()-samplingStarted;
+    expect(firstSampling.sampled).toBe(100);expect(secondSampling.sampled).toBe(20);expect(thirdSampling.sampled).toBe(0);
+    const sampled=await database.worker(c=>c.query<{environment_id:string,count:string}>("SELECT environment_id,count(*)::text count FROM observability.storage_samples WHERE application_id=$1 AND bucket_start=date_trunc('hour',now()) GROUP BY environment_id",[samplingApp!]));
+    expect(sampled.rows).toHaveLength(120);expect(sampled.rows.every(row=>row.count==='1'&&samplingEnvironments.includes(row.environment_id))).toBe(true);
+    // Local regression guard only; this is not a production SLO.
+    expect(samplingMs).toBeLessThan(30_000);
+    // The scale-only cohort must not expand later retention/AI measurements.
+    await database.control(c=>c.query('UPDATE observability.applications SET enabled=false WHERE id=$1',[samplingApp!]));
     await database.worker(c=>c.query("UPDATE observability.events SET received_at=now()-interval '40 days' WHERE application_id=$1 AND environment_id=$2 AND event_id=ANY($3::uuid[])",[app,env,batches.flat().slice(0,100).map(event=>event.eventId)]));
     const retention=new RetentionService(database,registry);await retention.enqueue();let retentionMs=0;
     for(const job of await retention.queue.claim(workerId,50,['RETENTION'])){const started=performance.now();expect(await retention.execute(job,100)).toBe(true);if(job.application_id===app)retentionMs=performance.now()-started;}
@@ -51,6 +65,6 @@ export async function performanceAcceptance(database: HubDatabase, registry: Reg
     const repeatedStart=performance.now(),repeated=await ai.schedule(100),repeatedMs=performance.now()-repeatedStart;
     expect(scheduled.scheduled).toBeGreaterThan(0);expect(repeated.scheduled).toBe(0);expect(providerCalls).toBe(0);
     await concurrentPerformance(database,registry,root,endpoint);
-    console.log(JSON.stringify({event:'observability.local_performance',isolation:'DISPOSABLE_DATABASE',count,batchSize,concurrency,ingestion:{wallMs:ingestMs,eventsPerSecond:count/(ingestMs/1000),batch:summary(batchTimes)},aggregation:{events:aggregated,wallMs:aggregationMs,processCpuMs:(cpu.user+cpu.system)/1000,rssBeforeBytes:memoryBefore.rss,rssAfterBytes:memory.rss,heapBeforeBytes:memoryBefore.heapUsed,heapAfterBytes:memory.heapUsed},dashboard:summary(dashboardTimes),logicalSampling:{wallMs:storageMs,bytes:health.storage.logical_bytes,basis:health.storage.basis},retention:{wallMs:retentionMs,deletedEvents:retained.last_counts.events},aiScheduling:{wallMs:schedulingMs,scheduled:scheduled.scheduled,repeatedMs,repeatScheduled:repeated.scheduled,providerCalls},limits:'In-process HTTP/service measurements, not PostgreSQL CPU, production SLO, Browser offline or whole-product workflow acceptance.'}));
-  }finally{await database.control(c=>c.query('UPDATE observability.applications SET enabled=false WHERE id=$1',[app]));}
+    console.log(JSON.stringify({event:'observability.local_performance',isolation:'DISPOSABLE_DATABASE',count,batchSize,concurrency,ingestion:{wallMs:ingestMs,eventsPerSecond:count/(ingestMs/1000),batch:summary(batchTimes)},aggregation:{events:aggregated,wallMs:aggregationMs,processCpuMs:(cpu.user+cpu.system)/1000,rssBeforeBytes:memoryBefore.rss,rssAfterBytes:memory.rss,heapBeforeBytes:memoryBefore.heapUsed,heapAfterBytes:memory.heapUsed},dashboard:summary(dashboardTimes),logicalSampling:{wallMs:storageMs,bytes:health.storage.logical_bytes,basis:health.storage.basis,scheduler:{environments:120,first:firstSampling.sampled,second:secondSampling.sampled,third:thirdSampling.sampled,wallMs:samplingMs,deadlineMs:30000}},retention:{wallMs:retentionMs,deletedEvents:retained.last_counts.events},aiScheduling:{wallMs:schedulingMs,scheduled:scheduled.scheduled,repeatedMs,repeatScheduled:repeated.scheduled,providerCalls},limits:'In-process HTTP/service measurements, not PostgreSQL CPU, production SLO, Browser offline or whole-product workflow acceptance.'}));
+  }finally{await database.control(async c=>{if(samplingApp)await c.query('UPDATE observability.applications SET enabled=false WHERE id=$1',[samplingApp]);await c.query('UPDATE observability.applications SET enabled=false WHERE id=$1',[app]);});}
 }
