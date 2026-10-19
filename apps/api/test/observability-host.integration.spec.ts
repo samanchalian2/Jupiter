@@ -9,10 +9,11 @@ import {join} from 'node:path';
 import {databaseUrl} from '../src/config.js';
 import {hashPassword} from '../src/auth/password.js';
 import {HubDatabase,RegistryService} from '@observability/server';
+import {acceptActualHostBrowser} from './support/actual-host-browser.js';
 
 const name=`obs069_host_${randomUUID().replaceAll('-','')}`;
 const admin=new Client({connectionString:databaseUrl()});
-let connected=false,created=false,pool:Pool|undefined,hub:HubDatabase|undefined,child:ChildProcess|undefined,base='',org='',otherOrg='',requester='',platformAdmin='',appId='',environmentId='',priorRole='';
+let connected=false,created=false,pool:Pool|undefined,hub:HubDatabase|undefined,child:ChildProcess|undefined,base='',webOrigin='',org='',otherOrg='',requester='',platformAdmin='',appId='',environmentId='',priorRole='';
 const password=randomBytes(24).toString('base64url');
 const requests:Array<{path:string;statusCode:number}>=[];
 const roleSnapshot=async()=>JSON.stringify((await admin.query("SELECT rolname,rolsuper,rolinherit,rolcreaterole,rolcreatedb,rolcanlogin,rolreplication,rolbypassrls FROM pg_roles WHERE rolname='jupiter_app'")).rows);
@@ -40,9 +41,10 @@ beforeAll(async()=>{
  await pool.query('INSERT INTO memberships(organization_id,user_id) VALUES($1,$2)',[org,requester]);
  await pool.query("INSERT INTO membership_roles(membership_id,role_id) SELECT m.id,r.id FROM memberships m CROSS JOIN roles r WHERE m.organization_id=$1 AND m.user_id=$2 AND r.code='REQUESTER'",[org,requester]);
  hub=new HubDatabase({connectionString:configured.toString()});const registry=new RegistryService(hub),root=(await registry.bootstrap({issuer:'host-fixture',subject:randomUUID(),displayName:'Disposable host bootstrap'},'Disposable host acceptance')).principalId;
- appId=(await registry.createApplication(root,{slug:'host-fixture',name:'Disposable Jupiter host'})).id;environmentId=(await registry.createEnvironment(root,appId,{key:'test',kind:'TEST'})).id;
+ webOrigin=`http://127.0.0.1:${await freePort()}`;
+ appId=(await registry.createApplication(root,{slug:'host-fixture',name:'Disposable Jupiter host',allowedOrigins:[webOrigin]})).id;environmentId=(await registry.createEnvironment(root,appId,{key:'test',kind:'TEST'})).id;
  const port=await freePort();base=`http://127.0.0.1:${port}/api/v1`;
- child=spawn(process.execPath,['dist/main.js'],{cwd:process.cwd(),windowsHide:true,env:{...process.env,NODE_ENV:'test',DATABASE_URL:configured.toString(),JWT_SECRET:randomBytes(48).toString('base64url'),AI_CREDENTIAL_ENCRYPTION_KEY:'',API_HOST:'127.0.0.1',API_PORT:String(port),WEB_ORIGIN:`http://127.0.0.1:${port}`,JUPITER_WORKER_ENABLED:'false',OBSERVABILITY_ENABLED:'true',OBSERVABILITY_WORKER_ENABLED:'true',OBSERVABILITY_APPLICATION_ID:appId,OBSERVABILITY_ENVIRONMENT_ID:environmentId,PUBLIC_ACCOUNT_VERIFICATION_DELIVERY:'disabled',AWS_EC2_METADATA_DISABLED:'true',S3_BUCKET:'',S3_ENDPOINT:'',S3_ACCESS_KEY_ID:'',S3_SECRET_ACCESS_KEY:''},stdio:['ignore','pipe','pipe']});
+ child=spawn(process.execPath,['dist/main.js'],{cwd:process.cwd(),windowsHide:true,env:{...process.env,NODE_ENV:'test',DATABASE_URL:configured.toString(),JWT_SECRET:randomBytes(48).toString('base64url'),AI_CREDENTIAL_ENCRYPTION_KEY:'',API_HOST:'127.0.0.1',API_PORT:String(port),WEB_ORIGIN:`http://127.0.0.1:${port},${webOrigin}`,JUPITER_WORKER_ENABLED:'false',OBSERVABILITY_ENABLED:'true',OBSERVABILITY_WORKER_ENABLED:'true',OBSERVABILITY_APPLICATION_ID:appId,OBSERVABILITY_ENVIRONMENT_ID:environmentId,PUBLIC_ACCOUNT_VERIFICATION_DELIVERY:'disabled',AWS_EC2_METADATA_DISABLED:'true',S3_BUCKET:'',S3_ENDPOINT:'',S3_ACCESS_KEY_ID:'',S3_SECRET_ACCESS_KEY:''},stdio:['ignore','pipe','pipe']});
  // Discard raw child logs. Retain only allowlisted structured request outcomes.
  let pending='';child.stdout!.on('data',chunk=>{pending+=String(chunk);for(let index;(index=pending.indexOf('\n'))>=0;){const line=pending.slice(0,index);pending=pending.slice(index+1);try{const entry=JSON.parse(line);if(entry.event==='http.request'&&typeof entry.path==='string'&&Number.isInteger(entry.statusCode))requests.push({path:entry.path,statusCode:entry.statusCode});}catch{/* Nest startup text is not retained. */}}if(pending.length>16384)pending='';});child.stderr!.on('data',()=>undefined);
  await vi.waitFor(async()=>{if(child!.exitCode!==null)throw Error('Fixture AppModule process exited');expect((await call('/health/ready')).status).toBe(200);},{timeout:20000,interval:100});
@@ -60,8 +62,10 @@ afterAll(async()=>{
 
 describe('actual compiled Jupiter main/AppModule process',()=>{
  it('preserves normal login/tenant authorization, captures real draft failure and recovers while Hub persistence is unavailable',async()=>{
+  const ticketsBefore=(await pool!.query('SELECT count(*)::int total FROM tickets WHERE organization_id=$1',[org])).rows[0].total;
   expect((await call('/auth/login',undefined,{identifier:'requester@host.invalid',password:randomUUID()})).status).toBe(401);
   const user=await login('requester@host.invalid'),operator=await login('admin@host.invalid');
+  try{
   expect((await call('/observability/operations/applications')).status).toBe(401);
   const emptyRegistry=await call('/observability/operations/applications',user.token);expect(emptyRegistry.status).toBe(200);expect(await emptyRegistry.json()).toEqual([]);
   expect((await call(`/observability/operations/applications/${appId}/overview?environmentId=${environmentId}`,user.token)).status).toBe(403);
@@ -73,8 +77,11 @@ describe('actual compiled Jupiter main/AppModule process',()=>{
   const marker=`fixture-sensitive-${randomUUID()}`,failedRequest=randomUUID();
   await pool!.query(`CREATE FUNCTION fixture_draft_failure() RETURNS trigger LANGUAGE plpgsql AS $$BEGIN RAISE EXCEPTION 'password=${marker}'; END$$; CREATE TRIGGER fixture_draft_failure BEFORE INSERT ON tickets FOR EACH ROW EXECUTE FUNCTION fixture_draft_failure()`);
   try{expect((await call('/tickets/drafts',user.token,{title:'Synthetic failed draft',description:'Synthetic input'},org,failedRequest)).status).toBe(500);}finally{await pool!.query('DROP TRIGGER fixture_draft_failure ON tickets; DROP FUNCTION fixture_draft_failure()');}
-  expect((await pool!.query('SELECT count(*)::int total FROM tickets WHERE organization_id=$1',[org])).rows[0].total).toBe(0);
-  await vi.waitFor(async()=>expect((await pool!.query("SELECT count(*)::int total FROM observability.events WHERE application_id=$1 AND request_id=$2 AND event_code='server.exception'",[appId,failedRequest])).rows[0].total).toBe(1),{timeout:16000,interval:100});
+  expect((await pool!.query('SELECT count(*)::int total FROM tickets WHERE organization_id=$1',[org])).rows[0].total).toBe(ticketsBefore);
+  await vi.waitFor(async()=>{
+   const result=(await pool!.query("SELECT event_code FROM observability.events WHERE application_id=$1 AND request_id=$2",[appId,failedRequest])).rows.map(row=>row.event_code);
+   expect(result.filter(code=>code==='server.exception')).toHaveLength(1);expect(result.filter(code=>code==='http.operation')).toHaveLength(1);
+  },{timeout:16000,interval:100});
   const events=(await pool!.query('SELECT normalized_message,sanitized_stack,actor_reference,tenant_reference,trace_id FROM observability.events WHERE application_id=$1 AND request_id=$2',[appId,failedRequest])).rows;
   expect(events.length).toBeGreaterThanOrEqual(2);expect(events.every(row=>row.actor_reference===requester&&row.tenant_reference===org&&/^[a-f0-9]{32}$/.test(row.trace_id))).toBe(true);expect(JSON.stringify(events)).not.toContain(marker);
   await vi.waitFor(async()=>expect((await pool!.query('SELECT 1 FROM observability.issues WHERE application_id=$1 AND tenant_reference=$2',[appId,org])).rowCount).toBeGreaterThan(0),{timeout:5000,interval:100});
@@ -93,12 +100,17 @@ describe('actual compiled Jupiter main/AppModule process',()=>{
    expect((await pool!.query('SELECT 1 FROM observability.fixture_unavailable_events WHERE application_id=$1 AND request_id=$2',[appId,recoveryRequest])).rowCount).toBe(0);
   }finally{await pool!.query('ALTER TABLE observability.fixture_unavailable_events RENAME TO events');}
   await vi.waitFor(async()=>expect((await pool!.query("SELECT count(*)::int total FROM observability.events WHERE application_id=$1 AND request_id=$2 AND event_code='http.operation'",[appId,recoveryRequest])).rows[0].total).toBe(1),{timeout:16000,interval:100});
-  expect((await pool!.query('SELECT count(*)::int total FROM tickets WHERE organization_id=$1',[org])).rows[0].total).toBe(1);
+  expect((await pool!.query('SELECT count(*)::int total FROM tickets WHERE organization_id=$1',[org])).rows[0].total).toBe(ticketsBefore+1);
   expect((await pool!.query('SELECT count(*)::int total FROM commercial_usage_ledger WHERE organization_id=$1',[org])).rows[0].total).toBe(0);
   const logout=await fetch(`${base}/auth/logout`,{method:'POST',headers:{cookie:user.cookie}});expect(logout.status).toBe(201);
   expect((await fetch(`${base}/auth/refresh`,{method:'POST',headers:{cookie:user.cookie}})).status).toBe(401);
   await fetch(`${base}/auth/logout`,{method:'POST',headers:{cookie:operator.cookie}});
   expect((await pool!.query('SELECT 1 FROM refresh_sessions WHERE user_id=ANY($1::uuid[]) AND revoked_at IS NULL',[[requester,platformAdmin]])).rowCount).toBe(0);
   console.log(JSON.stringify({event:'observability.actual_appmodule_host',result:'PASS',process:'dist/main.js',migrations:83,auth:'REAL_PASSWORD_JWT_MEMBERSHIP',failedDraft:'500_ZERO_TICKETS_EVENT_ISSUE',hubOutage:'REAL_TABLE_UNAVAILABLE_TIMER_ATTEMPT',manualSubmit:'ONE_OPEN_TICKET',commercialEntries:0,sessions:'REVOKED',limits:'Disposable database; real compiled AppModule/API/SDK/worker HTTP process. No browser shell, provider call or process-crash recovery claim.'}));
+  }finally{await Promise.all([user.cookie,operator.cookie].map(cookie=>fetch(`${base}/auth/logout`,{method:'POST',headers:{cookie}})));}
  },60000);
+ it.runIf(process.env.OBSERVABILITY_BROWSER_ACCEPTANCE==='true')('runs authenticated actual Web/manual ticket/automatic trace acceptance without touching shared tenants',async()=>{
+  await acceptActualHostBrowser({pool:pool!,base,webOrigin,organizationId:org,requesterId:requester,applicationId:appId,password});
+  expect((await pool!.query('SELECT 1 FROM refresh_sessions WHERE user_id=ANY($1::uuid[]) AND revoked_at IS NULL',[[requester,platformAdmin]])).rowCount).toBe(0);
+ },90000);
 });

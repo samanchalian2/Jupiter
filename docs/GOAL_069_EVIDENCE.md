@@ -4,6 +4,72 @@ Status: IN PROGRESS. Owner-approved plan supersedes the stale GOAL-060 identifie
 in the supplied specification. GOAL-060 Personal Service history is preserved.
 GOAL-059 remains BLOCKED; LOCAL evidence is not staging acceptance.
 
+## 2026-10-19 — Authenticated actual Jupiter Web and automatic offline trace (LOCAL)
+
+- Paths: `apps/api/test/support/actual-host-browser.ts`, invoked by the existing
+  disposable `observability-host.integration.spec.ts`. A real Vite server loads
+  the unchanged `apps/web/src/main.tsx`, App/router/Shell/TicketComposer/detail
+  and JupiterObservability against the actual compiled AppModule process.
+  It is not the independent reference App, a fixture React root or route mock.
+  Existing Vite config is overridden IN MEMORY to strict ephemeral loopback
+  port and `/api` proxy to this disposable API; VITE_API_URL is explicitly
+  `/api/v1` so an unrelated environment value cannot target a real deployment.
+  Helper rejects shared development ports and non-loopback origins, and checks
+  current_database matches the generated obs069_host UUID namespace.
+- Fixture App explicitly registers only the isolated Web origin. Browser uses a
+  fresh native Edge context, normal login form/password, real JWT/HttpOnly
+  refresh cookie and supported REQUESTER membership. No sessionStorage injection,
+  trusted-host bypass, shared signed-in profile, custom credential or disabled
+  browser-security switch is used. Credentials remain in memory, not artifacts.
+- Through `/o/host-acceptance/tickets`, the requester enters description/title,
+  expands actual manual details and clicks the real submit button. Exactly one
+  POST /tickets/drafts is observed and exactly one additional OPEN ticket exists.
+  The actual detail heading renders afterward. No AI/provider setting is enabled
+  and commercial ledger remains empty: manual work does not charge telemetry.
+- Browser network interception aborts ONLY Hub event-batch POSTs, never ticket,
+  login, catalog, credential-mint or backend SDK traffic. Manual UI submission
+  succeeds while telemetry is blocked. A genuine normal-timer attempt is seen;
+  no Browser event is stored on the server yet. Native IndexedDB contains that
+  request's event envelope. After removing the interception, the unchanged SDK
+  timer/retry sends the SAME ID; SQL holds exactly that one Browser event, and
+  valid ACK removes that ID from IndexedDB. No explicit SDK.flush call.
+- Real Browser and SERVER events have the SAME request ID and W3C trace ID from
+  the actual browser outbound headers, actual requester and organization. The
+  event sources are asserted separately, not two invented fixture records.
+  This closes the previously unproven actual Browser→API manual-write trace path.
+- Composer AND rendered ticket detail pass 375/768/1024/1440: Persian RTL,
+  document width <= viewport and zero page errors. Screenshots at 375/1440 are
+  visually inspected: compact logo/header/menu, readable form/detail controls
+  and no horizontal cut-off/overlap. Artifacts are only synthetic authenticated
+  fixture UI in output/goal069-browser/jupiter-{composer,detail}-{375,1440}.png;
+  no login/password/cookie/token screen is captured or committed.
+- Initial combined execution put Browser ticket creation before a test assuming
+  an empty organization; that was a harness order failure, not data loss. API
+  no-effect assertions now use before/after counts and scenarios have a clear
+  order. Another run exposed per-item ingestion timing: observing the exception
+  row can precede its sibling operation row in the same HTTP batch. The test now
+  waits for both exact event codes; it does not weaken the required assertions.
+  Normal logout runs in finally even on failed assertions, preventing one test's
+  leftover refresh sessions from contaminating another. No fixture failure is
+  recorded as an accepted full run.
+- Latest focused two-test execution passes in 59.823s (API 30.055s, Browser
+  25.035s), including real telemetry abort/IndexedDB replay/ACK cleanup and both
+  page width sets. API typecheck passes; full LOCAL release gate with strengthened
+  fixture-origin/database guards and relative-count assertions exits zero:
+  423 tests (175 API, 37 Web, 211 Hub), builds/lint/typechecks, actual four-width
+  reference Browser/offline/quota, Python/C# clients, performance/migrations and
+  both Browser diagnostic-fault scripts. Final host pair takes 60.453s (API
+  30.118s, actual Web 25.365s). No temporary DB/RESERVED AI attempt remains;
+  owned API/Web PIDs 19440/49740, enabled 100000 budget and healthy local
+  readiness are unchanged. Existing Vite chunk advisory remains.
+  Browser flag is required; default skipped optional execution is not counted
+  as acceptance. Finally uses normal logout/refresh-401, closes fresh context /
+  Browser/Vite even on failure, then existing API/DB teardown verifies cleanup.
+- Scope: real requester/manual ticket/detail/trace/offline behavior. Not a claim
+  that every Platform/Owner management mutation, worker-entrypoint crash,
+  external provider or every Goal requirement is accepted. Whole requirement
+  audit and remaining concrete gaps stay open. No preview/main promotion.
+
 ## 2026-10-19 — Actual compiled Jupiter AppModule process (LOCAL)
 
 - Execution path: `apps/api/test/observability-host.integration.spec.ts` starts
@@ -1588,7 +1654,7 @@ Path abbreviations: O = `observability/`; A = `apps/api/`; W = `apps/web/`.
 S = `O/server/test/persistence.integration.test.ts` (actual PostgreSQL/HTTP);
 B = `O/server/test/browser-acceptance.ts` plus `offline-browser-acceptance.ts`;
 G = executed full `pnpm verify:release` with Browser/reference/performance flags.
-The latest executed G=422 tests, with the zero-exit actual-AppModule checkpoint above.
+The latest executed G=423 tests, with the zero-exit actual-Web checkpoint above.
 References to G below identify executed coverage, not tests merely present.
 
 | Required section | Implementation path | Tests executed | Actual result | Limitations / remaining proof |
@@ -1606,12 +1672,12 @@ References to G below identify executed coverage, not tests merely present.
 | 11. Frontend SDK | O/packages/browser-sdk/src/index.ts | 36 SDK tests; B real browser/network/quota; G | Bounded queue, ACK/replay/context/lifecycle validated | Memory fallback is not durable after page loss |
 | 12. React Adapter | O/packages/react-adapter/src/index.tsx | Five tests in G421 and sixteen mounted Edge cases | Startup/capture/cleanup fault containment and reset pass focused/full QC | Not authenticated whole shell or SQL-event acceptance |
 | 13. Backend SDK | O/packages/node-sdk/src/index.ts | 12 Node tests; actual queued outage integration; G | Bounded async capture, real 10s timer failure/recovery, no business retry | In-memory Node queue is not a durable outbox |
-| 14. NestJS Adapter | O/packages/nestjs-adapter/src/index.ts | Nine adapter tests; actual controller HTTP; A/test/observability-host.integration.spec.ts in G422 | Original response/error preserved; actual main/AppModule/interceptor executes with real JWT | Authenticated Browser business shell remains |
+| 14. NestJS Adapter | O/packages/nestjs-adapter/src/index.ts | Nine adapter tests; actual controller HTTP; actual-main and authenticated Web tests in G423 | Original response/error preserved; actual main/AppModule/interceptor executes with real JWT and Browser client | Not arbitrary domain workflow coverage |
 | 15. .NET/Python Integration Examples | O/examples/csharp; O/examples/python | S reference-client flag launches real external processes | Actual JSON/HTTPS-contract clients ingest/replay against fixture | Loopback/local acceptance, not installed customer deployment |
 | 16. Offline IndexedDB | O/packages/browser-sdk/src/storage.ts | B native IndexedDB/real network/reload/QuotaExceededError | Journal persists offline, same IDs replay after reconnect | Offline static HTML/PWA availability not promised |
 | 17. Retry and Idempotency | O/server/src/ingestion.ts, queue.ts; SDK retry code | S parallel/lost ACK/lease tests; B Feedback and event replay | One persistence/receipt, bounded retry and matching ACK cleanup | Failure to delete unavailable physical disk rows is best effort |
 | 18. Privacy and Redaction | O/packages/core/src/index.ts; SDK/browser redaction | core golden/generated redaction; S privacy/export; real queued marker check | Sensitive synthetic markers excluded, technical metadata retained | Cannot promise detection of every possible free-form secret |
-| 19. Distributed Correlation | core trace helpers; A/src/observability/hub.interceptor.ts; W/src/JupiterObservability.tsx | Nest/Node/Web tests; B correlation; actual-main authenticated failed draft HTTP/SQL | Actual authenticated API failure events share request/trace and verified tenant/actor | Full Jupiter Browser→API write trace journey still unproven |
+| 19. Distributed Correlation | core trace helpers; A/src/observability/hub.interceptor.ts; W/src/JupiterObservability.tsx | Nest/Node/Web tests; B; actual-main and actual-Web host tests | Actual Browser→API manual-write BROWSER/SERVER records share outbound request/trace/verified tenant/actor | No blanket claim for every domain/provider distributed trace |
 | 20. Ingestion Reliability | O/server/src/ingestion.ts, queue.ts, http-api.ts | S concurrent/partial ACK/failed persistence/lease recovery | Atomic receipt/event/outbox and bounded retryable failure work | LOCAL pg fixture, not multi-host outage endurance |
 | 21. Fingerprinting | O/packages/core/src/index.ts; O/server/src/engine.ts | core fingerprint tests; S grouping/recurrence | Stable scope-aware grouping and distinct affected identities | Not a semantic AI deduplication system |
 | 22. Issue Engine | O/server/src/engine.ts | S real aggregation/reopen/atomic job completion | Persisted issue occurrences and histories reflect committed events | No blanket host capture coverage from engine tests |
@@ -1632,14 +1698,14 @@ References to G below identify executed coverage, not tests merely present.
 | 37. Offline Browser Tests | B and twenty-case section-57 map above | Actual Edge network/IndexedDB/quota/expiry/Feedback/foreign partition | All twenty mapped cases have concrete observed assertions | Fixture-age expiry, not a 48h wall-clock soak |
 | 38. Security Tests | Contracts/RLS/API/SDK/AI/security suites | S/G plus real Browser hostile actor/foreign identity | Auth/scope/redaction/injection/export/retention controls exercised | Full requirement-by-requirement and Jupiter host audit remains |
 | 39. Performance Measurements | O/server/test/performance-acceptance.ts, concurrent-performance.ts, browser-performance.ts; A/test/hub-workflow-performance.ts | G performance flag; actual 1000/200-event SQL/HTTP, 120 scopes, Browser caps | Bounded throughput/latency/overhead samples recorded in checkpoints | LOCAL only; sampled heap not peak RSS; full host load still unproven |
-| 40. Browser Responsive Acceptance | B shared Console; scripts/accept-observability-help.mjs | Four widths 375/768/1024/1440; native fetch and React fault fixtures | RTL/no document overflow in tested shared Console/Help; recovery fixture at 375/1440 | Not all authenticated Jupiter business workflows |
+| 40. Browser Responsive Acceptance | B shared Console; Help script; actual-host-browser.ts | Four widths 375/768/1024/1440 for Console/Help AND actual requester composer/detail; mounted fault fixtures | RTL/no document overflow; actual manual-write/trace/outage recovery and inspected synthetic screenshots | Not all unrelated Jupiter business workflows or every management mutation |
 | 41. Help Publication | docs/help/observability-*.md; A/scripts/publish-help-catalog.ts | Runtime slug-only publication; real Jupiter Help browser checkpoint | Eleven guides runtime-published with version history; later Console/offline revisions preserved | Revised offline wording not re-read in authenticated host after latest revision |
-| 42. Known Limitations | Explicit dated limits in this document; .ai/NEXT_TASK.md | Source/evidence audit and actual gate inspections | No staging/promoted host/full-shell/PWA/physical-disk claims substituted | Actual AppModule API proof exists; Browser shell, worker-entrypoint crash recovery and final all-requirement audit remain |
+| 42. Known Limitations | Explicit dated limits in this document; .ai/NEXT_TASK.md | Source/evidence audit and actual gate inspections | No staging/promotion/PWA/physical-disk or blanket UI claims substituted | Actual AppModule + requester Web proof exists; remaining required process/management coverage must be determined in final requirement audit |
 | 43. Defects Found | Dated red tests in Evidence: storage, sampler, analytics, fetch, React | Red regressions and real mounted startup failure | Concrete defects distinguished from incorrect fixture assumptions | No count of hypothetical defects presented as acceptance |
 | 44. Defects Fixed | SDK/server/adapters and their paired regression paths above | Subsequent focused/full gates plus actual Browser checks | Earlier defects and React remediation pass bounded focused/full QC | This does not establish all remaining host workflows |
-| 45. Cleanup | Disposable S/A integration teardown; fresh Browser contexts; owned listeners | DB/role absence and actual-main original-role assertions, local status/listeners | G422 leaves zero temporary DBs/reservations; shared tenant/profile untouched | Do not delete unrelated output/tmp or pretend fixture teardown is backup proof |
-| 46. Quality Gates | package.json verify:release; exact logs/exit markers | G422 zero, both real Browser fault scripts pass; git diff --check | Builds/lint/typechecks/tests and actual optional scenarios executed when flags set | No-test reference package is not counted as extra unit tests |
-| 47. Final Verdict | This Evidence; .ai/CURRENT_STATE.md and NEXT_TASK.md | Full-scope completion audit remains incomplete | IN PROGRESS; no next Goal, promotion or blanket acceptance | Must close Browser host/remaining process and explicit audit before COMPLETE |
+| 45. Cleanup | Disposable S/A integration teardown; fresh Browser contexts; owned listeners | DB/role absence and actual-main original-role assertions, local status/listeners | G423 leaves zero temporary DBs/reservations; shared tenant/profile untouched | Do not delete unrelated output/tmp or pretend fixture teardown is backup proof |
+| 46. Quality Gates | package.json verify:release; exact logs/exit markers | G423 zero, actual-Web + both Browser fault scripts pass; git diff --check | Builds/lint/typechecks/tests and actual optional scenarios executed when flags set | No-test reference package is not counted as extra unit tests |
+| 47. Final Verdict | This Evidence; .ai/CURRENT_STATE.md and NEXT_TASK.md | Full-scope completion audit remains incomplete | IN PROGRESS; no next Goal, promotion or blanket acceptance | Must finish actual requirement audit and its concrete remaining gaps, not invent broad new prerequisites |
 
 ## Owner decisions
 

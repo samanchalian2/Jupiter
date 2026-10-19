@@ -2,6 +2,14 @@
 
 ## GOAL-069 Observability Hub
 
+Actual Web acceptance checks a generated local DB namespace, rejects shared
+development ports and uses a strict ephemeral Vite listener/proxy. API base is
+explicitly overridden in harness memory to avoid inherited deployment URLs.
+The fixture origin is explicitly registered; normal login/membership/minting is
+used, never session injection or disabled browser security. Network faults target
+only Hub batches; synthetic screenshots exclude login, secrets and real tenants.
+Normal session logout/refresh denial and Browser/server teardown run in finally.
+
 Actual-main acceptance uses only a generated local disposable database. Its
 existing jupiter_app role is not recreated/altered; normal migration grants
 refer only to new objects in that database, removed with teardown. Generated

@@ -2,6 +2,12 @@
 
 ## GOAL-069 — Observability Hub continuation (IN PROGRESS)
 
+Actual authenticated Web requester/manual ticket/detail and Browser→API trace
+now have disposable full-entrypoint execution, real Hub network abort, same-ID
+IndexedDB recovery/ACK cleanup and four-width RTL/no overflow. Full LOCAL 423-test
+release gate and cleanup pass, including both Browser fault scripts. Remaining acceptance must be audited by actual
+required scenario, not equated with all-host absence or blanket completion.
+
 Actual compiled Jupiter main/AppModule now has disposable 83-migration process
 acceptance with normal login/JWT/tenant authorization, real failed draft capture,
 automatic event/Issue processing and one manual OPEN ticket through Hub storage

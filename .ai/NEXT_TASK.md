@@ -20,7 +20,7 @@ This is not a blanket completion claim for all product workflows or the live
 Jupiter shell. Section-63 Help is runtime-published with actual Jupiter operations,
 Platform-panel and Feedback acceptance. The measured local performance checkpoint
 and Node hot-path remediation plus full-limit Browser/batch/redaction QC bring
-the full release gate to 422 tests with actual AppModule/API process, React/fetch failure isolation, data-write isolation/real quota, explicit product comparison, scoped analytics, real queued provider failure/metering and concurrent/product-read boundary
+the full release gate to 423 tests with actual authenticated Web/AppModule, React/fetch failure isolation, data-write isolation/real quota, explicit product comparison, scoped analytics, real queued provider failure/metering and concurrent/product-read boundary
 measurements and the performance flag enabled. Inspect
 latest Evidence for gates/runtime/remote commit.
 
@@ -90,9 +90,15 @@ latest Evidence for gates/runtime/remote commit.
    manual submit during real Hub table outage, timer retry/one-row recovery and
    session revocation. Its full 422-test release gate and cleanup pass. This is
    full actual API process, not Browser business UI or worker-entrypoint crash
-   recovery. Next extend to authenticated actual Web shell against a disposable
-   API, using explicit isolated origins/ports and supported fixture memberships;
-   never point acceptance writes at the shared development/preview tenant.
+   recovery. Authenticated actual Web requester shell now has a disposable Vite /
+   API fixture, normal login/membership, one manual OPEN ticket, actual detail,
+   shared Browser/SERVER trace, real Hub network abort→IndexedDB same-ID replay /
+   ACK cleanup and four-width RTL/no overflow. Full 423-test release gate passes.
+   Preserve strict origin/proxy/DB namespace guards and
+   cleanup; no session injection/shared-tenant writes. Next prioritize the full
+   specification/Definition-of-Done audit against this stronger evidence and
+   identify remaining required admin/owner/process scenarios specifically, not
+   another blanket 'host untested' assertion or a newly invented requirement.
 3. Preserve the completed section-63 Help checkpoint: eleven registry-validated
    RUNTIME guides, explicit slug-only publication and unchanged unrelated Help.
    The original revision-2 checkpoint is historical; Console now has subsequent

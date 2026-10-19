@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-10-19 — GOAL-069 actual authenticated Web acceptance (IN PROGRESS)
+
+- Real Web/Vite and compiled API now verify normal requester login/manual ticket,
+  automatic Browser/SERVER trace and one OPEN write despite Hub network abort.
+- Native IndexedDB preserves same event ID; automatic replay/ACK cleanup passes.
+  Composer/detail RTL/no overflow at four widths; synthetic screenshots inspected.
+- Corrected fixture ordering/count and sibling-event wait assumptions; ensured
+  normal logout finally on failures. Full LOCAL 423-test/build/lint/typecheck/
+  Browser/client/performance/migration gate and both fault scripts pass; cleanup
+  and listener continuity confirmed.
+  No shared tenant, production source, provider, secret file or target deployment.
+
 ## 2026-10-19 — GOAL-069 actual AppModule/API process (IN PROGRESS)
 
 - Added disposable actual compiled-main bootstrap with real password/JWT/session,
