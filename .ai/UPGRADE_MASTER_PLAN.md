@@ -2,6 +2,11 @@
 
 ## GOAL-069 — Observability Hub continuation (IN PROGRESS)
 
+Performance acceptance adds real concurrent dispatch-to-aggregate timing and
+actual authorized ticket queue boundary overhead/capacity-continuity fixtures.
+Full host/workflow impact, scale/sampling fairness and final audit remain active;
+synthetic polling and an ephemeral wrapper are not production acceptance.
+
 Real Browser performance now exercises default count/byte saturation and
 offline/reload/exact-once delivery. Both SDKs honor byte/count batch ceilings;
 email-masking complexity is reduced without policy change. Main workflow impact,

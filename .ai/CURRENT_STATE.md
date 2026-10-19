@@ -1,5 +1,26 @@
 # Current State
 
+**2026-10-19 concurrent/product-read performance checkpoint (GOAL-069 IN PROGRESS):**
+Disposable real HTTP/leased-worker phase verifies 200 events, concurrent overlap,
+exactly 200 successful jobs and five Issues/200 occurrences. Focused dispatch-
+to-aggregate-commit p95 is 207.26ms with explicitly synthetic 10ms polling, not
+Jupiter's worker cadence. A new actual TicketController/Actor/Service HTTP wrapper
+uses HubInterceptor/requestContext, real JWT/profile/membership checks and
+alternating enabled/disabled measurements on an existing supported test tenant
+with a submitted fixture ticket. Full telemetry capacity cannot block authorized
+reads; missing/foreign membership remains denied. No live Hub configuration or
+identity authority is changed; no SDK flush/provider. This is boundary acceptance,
+not every middleware/write lifecycle/Browser workflow. Scale/sampling fairness,
+host/Worker breadth/security and final specification/A–I audit remain active.
+Final nonempty read-path p50 baseline/observed is 15.7764/16.4911ms, p95
+27.8774/24.8529ms; variation is not a speedup or universal overhead claim.
+Concurrent repeat p95 is 202.55ms. Full release gate passes 369 tests (153 API,
+30 Web, 186 Hub), builds/lint/typechecks, actual Edge/Python/C#/performance and
+83-migration rehearsal. Vite advisory remains. No production source changes or
+runtime restart needed in this checkpoint. Source inspection confirms the
+actual worker.ts loop still lacks Hub capture; implement that next within this
+Goal, not merely more reference WORKER events. No Preview/main promotion.
+
 **2026-10-19 full-limit offline Browser/batch checkpoint (GOAL-069 IN PROGRESS):**
 Real Edge/IndexedDB fills 500 count-limited events and 169 large UTF-8 events
 near 2MiB, survives actual offline flush/reload/renewal and proves distinct SQL

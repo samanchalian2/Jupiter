@@ -3,6 +3,7 @@ import { performance } from 'node:perf_hooks';
 import { expect } from 'vitest';
 import { HubDatabase, RegistryService, IssueEngine, RetentionService, InvestigatorService, AesCredentialVault, SelfMonitoringService, type InvestigationProvider } from '../src/index.js';
 import type { TelemetryEvent } from '@observability/contracts';
+import { concurrentPerformance } from './concurrent-performance.js';
 const summary = (values: number[]) => {
   const sorted = [...values].sort((a,b) => a-b);
   return { samples: sorted.length, p50Ms: sorted[Math.ceil(sorted.length*.5)-1], p95Ms: sorted[Math.ceil(sorted.length*.95)-1], maxMs: sorted.at(-1) };
@@ -49,6 +50,7 @@ export async function performanceAcceptance(database: HubDatabase, registry: Reg
     const schedulingStart=performance.now(),scheduled=await ai.schedule(100),schedulingMs=performance.now()-schedulingStart;
     const repeatedStart=performance.now(),repeated=await ai.schedule(100),repeatedMs=performance.now()-repeatedStart;
     expect(scheduled.scheduled).toBeGreaterThan(0);expect(repeated.scheduled).toBe(0);expect(providerCalls).toBe(0);
+    await concurrentPerformance(database,registry,root,endpoint);
     console.log(JSON.stringify({event:'observability.local_performance',isolation:'DISPOSABLE_DATABASE',count,batchSize,concurrency,ingestion:{wallMs:ingestMs,eventsPerSecond:count/(ingestMs/1000),batch:summary(batchTimes)},aggregation:{events:aggregated,wallMs:aggregationMs,processCpuMs:(cpu.user+cpu.system)/1000,rssBeforeBytes:memoryBefore.rss,rssAfterBytes:memory.rss,heapBeforeBytes:memoryBefore.heapUsed,heapAfterBytes:memory.heapUsed},dashboard:summary(dashboardTimes),logicalSampling:{wallMs:storageMs,bytes:health.storage.logical_bytes,basis:health.storage.basis},retention:{wallMs:retentionMs,deletedEvents:retained.last_counts.events},aiScheduling:{wallMs:schedulingMs,scheduled:scheduled.scheduled,repeatedMs,repeatScheduled:repeated.scheduled,providerCalls},limits:'In-process HTTP/service measurements, not PostgreSQL CPU, production SLO, Browser offline or whole-product workflow acceptance.'}));
   }finally{await database.control(c=>c.query('UPDATE observability.applications SET enabled=false WHERE id=$1',[app]));}
 }

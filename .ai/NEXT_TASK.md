@@ -20,7 +20,8 @@ This is not a blanket completion claim for all product workflows or the live
 Jupiter shell. Section-63 Help is runtime-published with actual Jupiter operations,
 Platform-panel and Feedback acceptance. The measured local performance checkpoint
 and Node hot-path remediation plus full-limit Browser/batch/redaction QC bring
-the full release gate to 368 tests with the performance flag enabled. Inspect
+the full release gate to 369 tests with concurrent/product-read boundary
+measurements and the performance flag enabled. Inspect
 latest Evidence for gates/runtime/remote commit.
 
 ### Remaining work — preserve the full original scope
@@ -34,6 +35,11 @@ latest Evidence for gates/runtime/remote commit.
    host/shell/role workflows. Independent reference/shared Console acceptance
    is not a substitute. Maintain tenant/App/environment/actor isolation,
    denial/manual-workflow continuity and genuine authorization.
+   Concrete remaining implementation gap: `apps/api/src/worker.ts` lifecycle/
+   provisioning/directory loop currently catches to console.error without the
+   Hub SDK/observeJob adapter. Wire that actual path with safe system/tenant
+   context and sanitized fallback, then exercise the real host path; controlled
+   reference WORKER events alone do not satisfy the product Worker requirement.
 3. Preserve the completed section-63 Help checkpoint: eleven registry-validated
    guides, RUNTIME revision 2, explicit slug-only publication and unchanged
    unrelated Help. Actual Jupiter login/Edge covers operations, Platform panel
@@ -46,7 +52,9 @@ latest Evidence for gates/runtime/remote commit.
    Preserve real Browser default-capacity count/byte saturation, offline/reload/
    renewal and exact SQL delivery; CDP metrics are samples, not peak/retained RSS.
    Both SDK byte-bounded batches and shared email-matcher policy parity are
-   covered. Still measure main Jupiter API/workflow overhead and concurrent aggregation latency.
+   covered. Preserve concurrent 200-event overlap/commit latency and actual
+   TicketController read-path baseline/observed boundary measurements. These
+   do not replace full AppModule/Browser/write lifecycle/automatic-flush impact.
    Review representative larger-scale bounded logical
    storage-sampling fairness/deadlines/scan cost at scale; small fixtures alone
    do not prove performance. Keep source provenance and unobserved states honest.

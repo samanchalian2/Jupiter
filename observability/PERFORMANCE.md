@@ -78,3 +78,38 @@ sample, not peak/retained memory or browser process RSS. CDP task/script duratio
 differences include the fixture UI during fill, not isolated SDK CPU. This adds
 bounded full-limit Browser evidence, not Jupiter workflow latency, automatic
 handler overhead or proof of larger-scale storage sampling safety.
+
+## Concurrent aggregation and Jupiter ticket-queue boundary
+
+The same opt-in server performance case also runs a separate disposable App with
+200 HTTP events: one producer, batches of 25, 50ms inter-batch delay; one worker
+claims 25 jobs and polls every 10ms while arrivals are active. It asserts actual
+overlap, all 200 distinct successful jobs and five Issues with 200 occurrences.
+Latency is measured from each batch's HTTP dispatch timestamp through the actual
+aggregation commit. It includes serialization, network/auth/storage and backlog,
+not just the aggregator function. The explicit fixture polling cadence is NOT
+Jupiter's two-second worker interval or a production throughput configuration.
+
+The API's `ticket.service.integration.spec.ts` has an additional performance-flag
+case. It creates/submits one synthetic ticket through the existing supported test
+tenant, then starts a random loopback Nest HTTP wrapper. The wrapper invokes the
+actual TicketController, TicketActorService and TicketService. It alternates 20
+baseline/observed request pairs after warming both paths. The observed path uses
+the actual HubInterceptor, host requestContext resolver, JWT verification, active
+user/profile and membership queries, trace creation and Node SDK queue capture.
+The fixture config supplies only synthetic App/environment IDs, never a fake
+actor or a replacement authorization resolver. No normal tenant guard is bypassed.
+
+Both paths must return identical nonempty business responses. A full telemetry
+queue must still allow the same authorized read, and absent/foreign membership
+must still deny. The SDK has no timer, provider, credential or network flush in
+this microbenchmark; it does not initialize/alter live Hub settings or authority.
+Only the normal test tenant is used and existing teardown removes its data;
+listeners/SDK close in finally. Ephemeral JWT signing material never leaves the
+process or appears in numeric results.
+
+This measures an actual product read-path boundary over HTTP, not every AppModule
+middleware, write lifecycle, main Browser interactions or outage scenario. Point
+estimates/differences are local samples, not statistically established production
+overhead limits. Use the complete release gate with the performance flag enabled
+to run the new case and all original ticket lifecycle/isolation regressions.

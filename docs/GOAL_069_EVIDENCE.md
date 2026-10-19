@@ -4,6 +4,84 @@ Status: IN PROGRESS. Owner-approved plan supersedes the stale GOAL-060 identifie
 in the supplied specification. GOAL-060 Personal Service history is preserved.
 GOAL-059 remains BLOCKED; LOCAL evidence is not staging acceptance.
 
+## 2026-10-19 — Concurrent aggregation and actual ticket read-path boundary (LOCAL)
+
+- The opt-in disposable PostgreSQL performance case now includes an independent
+  200-event concurrent arrival/aggregation phase. Actual HTTP sends eight batches
+  of 25 with a stated 50ms inter-batch delay; one worker claims 25 with a 10ms
+  empty-poll delay. Assertions require aggregation to occur BEFORE the producer
+  finishes, all 200 distinct jobs SUCCEEDED and five actual Issues totaling 200
+  occurrences. This proves overlap rather than sequential post-ingestion draining.
+- Focused run: wall 1,652.86ms; 199 events aggregated while producing; seven empty
+  polls; dispatch-to-committed-aggregation p50 129.60ms, p95 207.26ms, maximum
+  240.26ms (200 samples). A batch's events share its dispatch timestamp. Latency
+  includes HTTP serialization/network, authentication, DB, polling and backlog;
+  it is not pure aggregation CPU, the real Jupiter two-second worker cadence or
+  production SLO. Scope is a synthetic LOCAL App inside the disposable test DB.
+- New API performance helper wraps the ACTUAL TicketController queue endpoint
+  in an ephemeral loopback Nest server and uses the ACTUAL TicketActorService,
+  TicketService, HubInterceptor and host requestContext implementation. An
+  ephemeral signed JWT is verified normally against the fixture active user;
+  existing tenant membership is checked by both business and telemetry resolvers.
+  Only synthetic App/environment IDs are injected into the uninitialized binding
+  fixture; no identity resolver, normal authorization check or membership is
+  replaced. No Hub settings, credentials or runtime roles are changed.
+- The supported existing test tenant creates/submits a real synthetic ticket
+  before measuring. Both warm paths run four times, then twenty baseline/observed
+  pairs alternate order to reduce cold-path/order bias. Every response must be
+  nonempty and identical between paths; observed replies must contain traceparent.
+  Twenty-four observed warm/measured operations must reach the SDK queue.
+- Filling the telemetry queue to 500 must not block three subsequent authorized
+  queue reads; they produce drops but preserve the successful business response.
+  Missing/foreign tenant membership still returns 401 through actual actor checks.
+  The no-timer/no-credential SDK never flushes or calls Hub/provider; no external
+  quota is used. Session signing material and tokens are never printed/stored.
+- Early fixture QC initially passed empty strings where the normal Nest query
+  mapping supplies undefined for absent optional filters; the UUID tag filter
+  correctly failed. The wrapper now preserves actual omitted-query behavior.
+  Another early measurement had an empty fixture queue; the final fixture adds
+  an actual submitted ticket and asserts nonempty results. Neither early result
+  is promoted to proof of final workflow acceptance.
+- This proves a product read-path boundary and capacity failure isolation, not
+  full AppModule middleware, write lifecycle, main Browser UX, automatic flush
+  interference or every role/workflow. Larger-scale dashboard/sampling fairness/
+  deadlines, remaining host/Worker/security and the full A–I/47-section audit
+  still remain. No migration/architecture/business contract changes or host
+  promotion; the full Goal is IN PROGRESS.
+- Source inspection confirms a concrete remaining implementation gap, not merely
+  missing screenshots: `apps/api/src/worker.ts` lifecycle/provisioning/directory
+  loop currently catches errors to console.error without the Hub SDK/observeJob
+  adapter. It must be integrated and tested with safe automation/tenant context
+  and sanitized fallback before product Worker capture can be accepted. Reference
+  WORKER events/adapter unit tests do not prove this actual host path.
+- Full-gate QC exposed nondeterministic AI fixture selection: after the large
+  offline load, taking the first unordered Issue could select evidence too large
+  for the deliberately small 2KiB AI context. Correct behavior was SKIPPED, not
+  SUCCEEDED. The Browser fixture now explicitly selects its known small
+  reference.frontend Issue in tenant-a through actual issue/event links; neither
+  production context/budget nor the success assertion is loosened. The failing
+  gate is retained as a found/fixed fixture defect, not accepted as a full pass.
+- Final nonempty-queue full-gate measurement (20 alternating pairs): baseline
+  p50/p95/max 15.7764/27.8774/31.9729ms; observed 16.4911/24.8529/25.0340ms.
+  P95 difference is -3.0245ms while observed p50 is slightly higher. This is
+  sample variation, NOT evidence that instrumentation improves performance or
+  establishes a universal zero-overhead bound. Identical responses, trace headers,
+  24 captured operations, three saturated-queue successful reads and invalid-
+  membership denial all passed. There were zero Hub network/provider calls.
+- Concurrent full-gate repeat: 200 distinct successful jobs, five Issues/200
+  occurrences; 196 events aggregated while the producer remained active; wall
+  1,638.72ms, dispatch-to-commit p50/p95/max 122.33/202.55/238.61ms. All polling/
+  cadence/measurement limitations above remain. Actual product Worker cadence
+  and full AppModule/Browser/write workflows are still not accepted by this test.
+- Final release gate exits zero: 369 tests (153 API, 30 Web, 186 Hub), all builds,
+  lint/typechecks, real Edge/Python/C#, full offline/performance flags and the
+  83-migration rehearsal. Existing Vite chunk-size advisory remains. Test data
+  uses the existing supported ticket fixture teardown and disposable Hub DB;
+  no temporary user/membership was added outside those test paths. This phase
+  changes tests/evidence only, so the healthy owned local runtime requires no
+  restart or host promotion. Normal Help and the approved live provider budget
+  remain unchanged. Full GOAL-069 completion is still unproven.
+
 ## 2026-10-19 — Full-limit real Browser offline measurement and batching QC (LOCAL)
 
 The independent reference now has a development-only `performance.html` fixture.

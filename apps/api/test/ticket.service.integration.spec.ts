@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { DatabaseService } from '../src/database/database.service.js';
 import { TicketService } from '../src/tickets/ticket.service.js';
+import { measureTicketWorkflow } from './hub-workflow-performance.js';
 
 const database = new DatabaseService();
 const tickets = new TicketService(database);
@@ -32,6 +33,7 @@ afterAll(async () => {
 });
 
 describe('TicketService integration', () => {
+  it.skipIf(process.env.OBSERVABILITY_PERFORMANCE_ACCEPTANCE!=='true')('measures the real authorized ticket queue with host instrumentation enabled and disabled',async()=>{const draft=await tickets.createDraft(actor(),{title:'Controlled monitored queue fixture',description:'Synthetic local workflow measurement'});await tickets.submit(actor(),draft.id);await measureTicketWorkflow(database,tickets,managerId,organizationId);},30000);
   it('creates, submits, assigns, and transitions a tenant-scoped ticket', async () => {
     const draft = await tickets.createDraft(actor(), { title:'Lifecycle validation', description:'Exercise the ticket core.' });
     expect(draft.status).toBe('DRAFT');

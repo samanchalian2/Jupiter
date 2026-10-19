@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-10-19 — GOAL-069 concurrent and product-boundary measurements (IN PROGRESS)
+
+- Added actual overlapping HTTP ingestion/leased aggregation with per-event
+  dispatch-to-commit timing and exact job/Issue occurrence assertions.
+- Added alternating baseline/observed actual ticket queue HTTP read-path fixture
+  with production interceptor/resolver/JWT/membership services, nonempty identical
+  results, saturated telemetry continuity and unauthorized membership denial.
+- Preserved explicit measurement limits; no live config/role/provider changes.
+  Larger-scale sampling and full host/Worker/specification audit remain.
+
 ## 2026-10-19 — GOAL-069 full-limit Browser offline and batch remediation (IN PROGRESS)
 
 - Added real authenticated reference/Edge default-capacity IndexedDB measurement,
