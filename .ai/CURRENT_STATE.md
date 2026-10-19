@@ -1,5 +1,20 @@
 # Current State
 
+**2026-10-19 mounted React fault isolation (GOAL-069 IN PROGRESS):** Red tests
+prove throwing/rejecting capture escapes the boundary; actual mounted Edge
+proves SDK startup throw removes the consumer UI. Provider start/cleanup, route
+capture and boundary reporting now contain diagnostic faults without awaiting,
+recursive reporting or changing events/cleanup contract. Five focused tests and
+React/Web typechecks pass. Sixteen native Edge mounted cases at 375/1440 verify
+typed input through route change, usable Persian RTL fallback/reset, no overflow
+or uncaught/unhandled error. Required Evidence now has 47 explicit indexed
+sections with path/execution/result/limits. Full gate plus fetch/React Browser
+scripts pass: 421 tests (173 API, 37 Web, 211 Hub), builds/lint/typechecks and
+actual Browser/offline/quota/reference clients/performance/migration rehearsal.
+Zero temporary DBs/active AI reservations remain; owned listeners, healthy local
+readiness and enabled 100000 budget unchanged. Whole authenticated host/process/
+final audit remain open; no target promotion or next Goal.
+
 **2026-10-19 Jupiter fetch isolation (GOAL-069 IN PROGRESS):** Five red tests
 prove observer trace/identity/capture/report failures could block dispatch or
 replace business outcomes. Host fetch preparation and diagnostic completion are

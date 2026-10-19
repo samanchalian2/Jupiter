@@ -2,6 +2,13 @@
 
 ## GOAL-069 — Observability Hub continuation (IN PROGRESS)
 
+React startup/cleanup/route/boundary fault containment has red regressions and
+sixteen passing native mounted Browser cases plus five focused tests; full LOCAL
+421-test/build/lint/typecheck/Browser/client/performance/migration gate passes,
+including both host-adapter fault scripts. Required Evidence indexes all 47 requested sections with explicit
+paths/execution/result/limits. Final authenticated host/process and requirement
+audit remain open; no target promotion or next Goal.
+
 Jupiter fetch callback/preparation failure isolation restores section-55 behavior:
 five red regressions, eleven passing Web cases and actual native Edge/HTTP proof
 of one commit per request and preserved abort. Full LOCAL 418-test release gate

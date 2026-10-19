@@ -1,5 +1,13 @@
 # Business Rules
 
+## React diagnostic isolation (GOAL-069)
+
+- Provider startup, returned cleanup, route capture and ErrorBoundary reporting
+  failures cannot break the consumer tree/fallback or become unhandled promises.
+- Diagnostic promises are not awaited. Normal cleanup runs on unmount; if start
+  throws without returning cleanup, no invented successful shutdown is claimed.
+- Route observation must not remount or discard business form state.
+
 ## Jupiter fetch observation isolation (GOAL-069)
 
 - Observer trace/identity/preparation failure dispatches original request once.

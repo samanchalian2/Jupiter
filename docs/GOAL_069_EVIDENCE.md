@@ -4,6 +4,53 @@ Status: IN PROGRESS. Owner-approved plan supersedes the stale GOAL-060 identifie
 in the supplied specification. GOAL-060 Personal Service history is preserved.
 GOAL-059 remains BLOCKED; LOCAL evidence is not staging acceptance.
 
+## 2026-10-19 — Mounted React diagnostic isolation and evidence index (LOCAL)
+
+- Implementation: `observability/packages/react-adapter/src/index.tsx`.
+  Provider start/cleanup, route-change capture and ErrorBoundary capture use
+  best-effort diagnostic boundaries. A synchronous throw or rejected promise
+  never escapes into React; diagnostic promises are not awaited. Existing SDK
+  cleanup is still invoked on unmount, with the same lifecycle contract. Normal
+  event fields, redaction, component identification and dependency boundary are
+  unchanged. No Jupiter business import, credential/API/provider/schema change.
+- Red evidence: focused React suite first reports one failed assertion for
+  throwing capture plus one actual unhandled asynchronous rejection. A mounted
+  native Edge run additionally shows `start-throw` unmounts the child: starts=1,
+  captures=1, uncaught=1 and textbox absent. Normal mode had passed first. The
+  timeout is recorded as the reproduced startup defect, not a successful check.
+- After the fix, all five focused tests and React/Web typechecks pass.
+  `scripts/accept-observability-react-isolation.mjs` loads
+  `apps/web/src/test-fixtures/observability-react.tsx` via local Vite, using real
+  React createRoot/effects/ErrorBoundary with controlled SDK ports. The fixture
+  is not imported by the production entrypoint and is not a new product route.
+- Sixteen mounted Browser cases pass: normal, start throw/reject, cleanup
+  throw/reject, capture throw/reject/stall at 375 and 1440. Each mounts once;
+  normal cleanup is invoked once, failed startup has no returned cleanup to
+  invoke. Route change preserves the typed input and increments state. Controlled
+  child render failure shows a Persian RTL fallback; clicking reset restores
+  the working child. No document overflow, uncaught React error, page error or
+  unhandled promise rejection. Rejected startup is an adversarial runtime-port
+  robustness case, not a change to the synchronous BrowserSdk.start contract.
+- These mounted cases supplement the previous direct class-method tests; neither
+  is represented as authenticated whole-Jupiter acceptance or actual event SQL
+  persistence. A failed start cannot promise cleanup of resources allocated
+  before it threw without returning a cleanup function. No recursive telemetry
+  or raw diagnostic logging is used to hide that limitation.
+- The required 47-section names-only list is now an explicit implementation /
+  tests-executed / actual-result / limitations index. Existing historical
+  checkpoints remain intact, including failures and superseded scope limits.
+  The index is not a substitute for the remaining final requirement audit.
+- Full LOCAL release gate and both real Browser isolation scripts exit zero:
+  421 tests (173 API, 37 Web, 211 Hub: 87 SDK/core/adapters, 111 server,
+  13 Console), builds/lint/typechecks, actual four-width reference Browser /
+  offline/quota, Python/C# clients, performance and 83-migration rehearsal.
+  Six native fetch writes still commit once and all sixteen mounted React cases
+  pass after the full gate. No temporary acceptance databases or RESERVED AI
+  attempts remain; owned API/Web PIDs 19440/49740, approved 100000 enabled
+  monthly token budget and healthy local readiness remain unchanged. The existing
+  Vite chunk advisory remains. Full authenticated host/process and
+  requirement-by-requirement acceptance remain open. No target deployment.
+
 ## 2026-10-19 — Jupiter fetch diagnostic-failure isolation (LOCAL)
 
 - Implementation: `apps/web/src/JupiterObservability.tsx`, specifically
@@ -1462,29 +1509,77 @@ Every requirement remains pending unless actual execution evidence is recorded.
 | --- | --- | --- |
 | A | inventory, ADR, approved specification | initial inventory/DEC-038/source recorded |
 | B | independent packages, registry/auth/contracts/OpenAPI | packages/registry/auth, HTTP operations and real OpenAPI parity implemented; future Goal routes must extend the contract |
-| C | schema/RLS, atomic ingestion, browser/API/worker capture | PostgreSQL and Jupiter Browser/API adapters implemented; product Worker execution coverage pending |
+| C | schema/RLS, atomic ingestion, browser/API/worker capture | PostgreSQL and Jupiter Browser/API/actual QueueWorker and lifecycle-service coverage implemented; complete process/bootstrap/host acceptance pending |
 | D | IndexedDB/replay/backoff/logout/scope isolation | protocol plus actual independent Edge/IndexedDB/network-loss/reload/lost-ACK/tenant/logout/next-actor/storage-denial verified; final host breadth audit remains |
 | E | fingerprint, issues/incidents/rules/alerts | ten rule scenarios, human assignment/notes/transitions, recipient delivery, pacing, important feedback and terminal pipeline warning tests implemented; final host/workflow breadth audit pending |
-| F | feedback/user tracking, Console/live/analytics/export | own Feedback and operational Console/live/filter/CSV implemented; richer analytics and final workflow acceptance pending |
+| F | feedback/user tracking, Console/live/analytics/export | own Feedback, live/filter/CSV, ten scoped analytics and explicit multi-product comparison implemented; final authenticated host workflow acceptance pending |
 | G | evidence-grounded AI, opt-in/budget/schedule/security | implemented; real GapGPT findings/usage, SQL isolation/budget/scheduler and reconciliation UI verified; final breadth QC pending |
 | H | independent second application, C#/Python clients | actual Python/C# and separate Browser/backend reference execution verified with real PostgreSQL; reference AI uses controlled provider, actual GapGPT evidence remains separate |
 | I | retention, self-health/runbook, Help, full QC/cleanup | bounded retention, external probe/runbook, automatic diagnostic sources/shared self-health Console and eleven runtime-published Persian guides/actual Jupiter Help UI verified; scale/performance, actual host/Worker breadth and final A–I QC/cleanup pending |
 
-## Required evidence sections
+## Required evidence sections — implementation/execution/result/limits index
 
-1. Architecture inventory; 2. Product-agnostic architecture; 3. Package
-boundaries; 4. Registry; 5. Event contract; 6. OpenAPI; 7. SDK authentication;
-8. Database model; 9. Migrations; 10. Scope isolation; 11. Browser SDK;
-12. React adapter; 13. Node SDK; 14. Nest adapter; 15. C#/Python examples;
-16. IndexedDB; 17. Retry/idempotency; 18. Privacy; 19. Correlation;
-20. Ingestion reliability; 21. Fingerprinting; 22. Issues; 23. Incidents;
-24. Rules; 25. Console; 26. Feedback; 27. Analytics; 28. Investigator;
-29. AI security; 30. Budget; 31. Alerts; 32. Retention; 33. Self-health;
-34. Reference client; 35. Reusability acceptance; 36. Cross-Application denial;
-37. Real offline browser tests; 38. Security tests; 39. LOCAL performance;
-40. Responsive RTL acceptance; 41. Help publication; 42. Limitations;
-43. Defects found; 44. Defects fixed; 45. Cleanup; 46. Quality gates;
-47. Final verdict.
+This replaces the previous names-only list, not the full requirement audit.
+Each of the 47 required sections has four explicit fields below. Detailed dated
+checkpoints above remain the execution records, including superseded failures.
+An index entry is not a blanket completion verdict for its entire domain.
+
+Path abbreviations: O = `observability/`; A = `apps/api/`; W = `apps/web/`.
+S = `O/server/test/persistence.integration.test.ts` (actual PostgreSQL/HTTP);
+B = `O/server/test/browser-acceptance.ts` plus `offline-browser-acceptance.ts`;
+G = executed full `pnpm verify:release` with Browser/reference/performance flags.
+The latest executed G=421 tests, with the zero-exit React checkpoint above.
+References to G below identify executed coverage, not tests merely present.
+
+| Required section | Implementation path | Tests executed | Actual result | Limitations / remaining proof |
+| --- | --- | --- | --- | --- |
+| 1. Initial Architecture Inventory | Architecture inventory table in this document; `.ai/DECISIONS.md` DEC-038 | Repo/package/worker inventory in Phase A | Existing modular host/pg queue and extraction boundary documented | Inventory alone proves no runtime behavior |
+| 2. Product-Agnostic Architecture | O/packages; O/server; Jupiter adapters in A/src/observability | G builds plus independent Browser/Python/C# execution | Generic consumers run without Jupiter user/ticket imports | Final requirement audit must still inspect every boundary |
+| 3. Package Boundaries | Six O/packages package.json/src trees | G package builds/typechecks/tests | Contracts/core/SDK/adapters build independently | No new public release/package registry publication claimed |
+| 4. Application Registry | O/server/src/registry.ts; W/src/PlatformPro.tsx | S registry/bootstrap/grants/revocation; B registry workflow | Scoped App/environment registration and current grants enforced | Full authenticated Jupiter admin workflow breadth remains |
+| 5. Event Contract | O/packages/contracts/src/index.ts | contracts contract.test.ts; S strict HTTP validation | Schema/version/field/scope constraints and safe reason codes tested | No arbitrary payload extension approved |
+| 6. OpenAPI | O/server/src/openapi.ts, http-api.ts | openapi.test.ts; S every documented operation over HTTP | 48 operations have actual request/response parity checks | Future routes must extend parity; no external SDK generation claim |
+| 7. SDK Authentication Model | O/server/src/registry.ts; A/src/observability/hub-binding.service.ts | S expired/revoked/forged scope; B host session/mint/logout | Separate trusted-server, Browser and operational identities tested | Reference login is not Jupiter password-login acceptance |
+| 8. Database Model | A/migrations/063–072 observability migrations; O/server/src/database.ts | S RLS/FK/runtime immutability | Dedicated schema/roles and composite scopes operate in SQL | Shared logical row size is not physical disk isolation |
+| 9. Migrations | A/migrations, existing forward runner | S full clean-database rehearsal (83 files) | Forward chain runs; disposable DB/role removed | No preview/main or staging migration deployment here |
+| 10. Tenant and Application Isolation | O/server/src/database.ts, registry.ts, http-api.ts | S cross-tenant/App/actor/current-grant SQL/HTTP denials | Scope checks and RLS deny unauthorized access | Final authenticated host roles audit remains |
+| 11. Frontend SDK | O/packages/browser-sdk/src/index.ts | 36 SDK tests; B real browser/network/quota; G | Bounded queue, ACK/replay/context/lifecycle validated | Memory fallback is not durable after page loss |
+| 12. React Adapter | O/packages/react-adapter/src/index.tsx | Five tests in G421 and sixteen mounted Edge cases | Startup/capture/cleanup fault containment and reset pass focused/full QC | Not authenticated whole shell or SQL-event acceptance |
+| 13. Backend SDK | O/packages/node-sdk/src/index.ts | 12 Node tests; actual queued outage integration; G | Bounded async capture, real 10s timer failure/recovery, no business retry | In-memory Node queue is not a durable outbox |
+| 14. NestJS Adapter | O/packages/nestjs-adapter/src/index.ts | Nine adapter tests; A/test/hub-workflow-performance.ts actual controller HTTP | Original response/error and one subscription preserved; scoped trace context | Ephemeral controller wrapper is not full AppModule bootstrap |
+| 15. .NET/Python Integration Examples | O/examples/csharp; O/examples/python | S reference-client flag launches real external processes | Actual JSON/HTTPS-contract clients ingest/replay against fixture | Loopback/local acceptance, not installed customer deployment |
+| 16. Offline IndexedDB | O/packages/browser-sdk/src/storage.ts | B native IndexedDB/real network/reload/QuotaExceededError | Journal persists offline, same IDs replay after reconnect | Offline static HTML/PWA availability not promised |
+| 17. Retry and Idempotency | O/server/src/ingestion.ts, queue.ts; SDK retry code | S parallel/lost ACK/lease tests; B Feedback and event replay | One persistence/receipt, bounded retry and matching ACK cleanup | Failure to delete unavailable physical disk rows is best effort |
+| 18. Privacy and Redaction | O/packages/core/src/index.ts; SDK/browser redaction | core golden/generated redaction; S privacy/export; real queued marker check | Sensitive synthetic markers excluded, technical metadata retained | Cannot promise detection of every possible free-form secret |
+| 19. Distributed Correlation | core trace helpers; A/src/observability/hub.interceptor.ts; W/src/JupiterObservability.tsx | Nest/Node/Web tests; B frontend/backend correlation | Valid trace/request fields cross adapter boundaries | Full Jupiter authenticated write trace journey still unproven |
+| 20. Ingestion Reliability | O/server/src/ingestion.ts, queue.ts, http-api.ts | S concurrent/partial ACK/failed persistence/lease recovery | Atomic receipt/event/outbox and bounded retryable failure work | LOCAL pg fixture, not multi-host outage endurance |
+| 21. Fingerprinting | O/packages/core/src/index.ts; O/server/src/engine.ts | core fingerprint tests; S grouping/recurrence | Stable scope-aware grouping and distinct affected identities | Not a semantic AI deduplication system |
+| 22. Issue Engine | O/server/src/engine.ts | S real aggregation/reopen/atomic job completion | Persisted issue occurrences and histories reflect committed events | No blanket host capture coverage from engine tests |
+| 23. Incident Lifecycle | O/server/src/operations.ts, rules.ts | S authorized notes/assignment/transitions; B workspace | Human transitions and scoped incident operations tested | Final complete authenticated host review remains |
+| 24. Monitoring Rules | O/server/src/rules.ts | S ten actual persisted rule scenarios plus expected-rejection negatives | Rules create deduped scoped incidents/alerts; Browser CRITICAL not trusted | Controlled local event windows, not production incident SLO |
+| 25. Operations Dashboard | O/console/src; W/src/OperationsWorkspace.tsx | B four widths/live/filter/workflow; G Console tests | Shared Console RTL and scoped server projections operate | Full Jupiter role/mutation UI acceptance incomplete |
+| 26. Feedback | O/server/src/feedback.ts; W/src/FeedbackCenter.tsx | S own visibility/replies/triage; B offline/lost ACK; Help browser checkpoint | Own tracking, same-ID dedupe and internal-reply exclusion proven | Server tracking ACK, not local enqueue, is final registration |
+| 27. Analytics | O/server/src/operations.ts; O/console/src | S ten reports/1–10 products/current grants; B cache/late response | Real rates/rankings/history and explicit multi-product comparison | Timing uses one loaded App + empty App, not production SLO |
+| 28. AI Investigator | O/server/src/investigator.ts, ai-provider.ts | S controlled findings/scheduling; dated local GapGPT checkpoint | Schema-valid read-only findings cite authorized evidence | No external provider call in current regression gate |
+| 29. AI Security | O/server/src/investigator.ts, ai-provider.ts | S injection/citation/scope/credential policy; provider tests | Curated context, validation, explicit host policy; no tools/business writes | Model findings remain hypotheses requiring human review |
+| 30. AI Budget | O/server/src/investigator.ts; scoped ai_attempts/ledger | S atomic reserve/unknown/reconciliation/budget; local status check | Approved 100000 combined UTC-month budget enabled; unknown usage held | No fabricated actual usage or commercial allowance coupling |
+| 31. Notifications | O/server/src/alerts.ts; A notification source adapter | S >1000 recipient paging/revocation/inbox/dedupe; Console tests | Durable principal-scoped inbox and bounded delivery operate | External notification deployment not proven by inbox tests |
+| 32. Retention | O/server/src/retention.ts | S bounded parent/child protection, retries/locks/failure; B maintenance | Scope-safe bounded purges, receipts/audit/active history protected | Not a backup/restore or physical disk reclamation proof |
+| 33. Telemetry Self-Health | O/server/src/self-monitoring.ts, diagnostics.ts | S report provenance/storage timeout/fairness; B health/counters | Automatic SDK/server reports and logical storage samples tested | Unknown observations stay unknown; not physical/whole-service health |
+| 34. Independent Reference Application | O/examples/browser/backend.ts, src/main.tsx | B authenticated independent frontend/backend/SQL | Second App integrates without Jupiter sessions/domain imports | Controlled reference auth, not production IdP deployment |
+| 35. Reusability Acceptance | O/examples and generic HTTP packages | Real Browser reference + actual Python/C# via S/G | Multiple independent clients use the generic public contract | No package-registry publishing or all ecosystems claimed |
+| 36. Cross-Application Isolation | Registry/database/ingestion/operations/Investigator | S App A/B same opaque identities; forged credentials/export/AI denial | App identity never joins private data across Apps | Final contract audit remains separate from case count |
+| 37. Offline Browser Tests | B and twenty-case section-57 map above | Actual Edge network/IndexedDB/quota/expiry/Feedback/foreign partition | All twenty mapped cases have concrete observed assertions | Fixture-age expiry, not a 48h wall-clock soak |
+| 38. Security Tests | Contracts/RLS/API/SDK/AI/security suites | S/G plus real Browser hostile actor/foreign identity | Auth/scope/redaction/injection/export/retention controls exercised | Full requirement-by-requirement and Jupiter host audit remains |
+| 39. Performance Measurements | O/server/test/performance-acceptance.ts, concurrent-performance.ts, browser-performance.ts; A/test/hub-workflow-performance.ts | G performance flag; actual 1000/200-event SQL/HTTP, 120 scopes, Browser caps | Bounded throughput/latency/overhead samples recorded in checkpoints | LOCAL only; sampled heap not peak RSS; full host load still unproven |
+| 40. Browser Responsive Acceptance | B shared Console; scripts/accept-observability-help.mjs | Four widths 375/768/1024/1440; native fetch and React fault fixtures | RTL/no document overflow in tested shared Console/Help; recovery fixture at 375/1440 | Not all authenticated Jupiter business workflows |
+| 41. Help Publication | docs/help/observability-*.md; A/scripts/publish-help-catalog.ts | Runtime slug-only publication; real Jupiter Help browser checkpoint | Eleven guides runtime-published with version history; later Console/offline revisions preserved | Revised offline wording not re-read in authenticated host after latest revision |
+| 42. Known Limitations | Explicit dated limits in this document; .ai/NEXT_TASK.md | Source/evidence audit and actual gate inspections | No staging/promoted host/full-shell/PWA/physical-disk claims substituted | Full AppModule/process and final all-requirement audit remain |
+| 43. Defects Found | Dated red tests in Evidence: storage, sampler, analytics, fetch, React | Red regressions and real mounted startup failure | Concrete defects distinguished from incorrect fixture assumptions | No count of hypothetical defects presented as acceptance |
+| 44. Defects Fixed | SDK/server/adapters and their paired regression paths above | Subsequent focused/full gates plus actual Browser checks | Earlier defects and React remediation pass bounded focused/full QC | This does not establish all remaining host workflows |
+| 45. Cleanup | Disposable S/A integration teardown; fresh Browser contexts; owned listeners | DB/role absence assertions, local status and listener checks | G421 leaves zero temporary DBs/reservations; shared tenant/profile untouched | Do not delete unrelated output/tmp or pretend fixture teardown is backup proof |
+| 46. Quality Gates | package.json verify:release; exact logs/exit markers | G421 zero, both real Browser fault scripts pass; git diff --check | Builds/lint/typechecks/tests and actual optional scenarios executed when flags set | No-test reference package is not counted as extra unit tests |
+| 47. Final Verdict | This Evidence; .ai/CURRENT_STATE.md and NEXT_TASK.md | Full-scope completion audit remains incomplete | IN PROGRESS; no next Goal, promotion or blanket acceptance | Must close actual host/process and explicit remaining audit before COMPLETE |
 
 ## Owner decisions
 

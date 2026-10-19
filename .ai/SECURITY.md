@@ -2,6 +2,12 @@
 
 ## GOAL-069 Observability Hub
 
+React diagnostic-failure containment introduces no new fallback log or data
+channel; sanitization and safe component identification stay unchanged. Mounted
+Browser fixtures use fresh contexts, synthetic form input and controlled SDK
+ports without sessions/tenant data. React's expected caught fixture error is
+counted safely; no raw component stack, input or diagnostic error is exported.
+
 Jupiter fetch observation failure never authorizes retry of a business request.
 Preparation failure forwards the original arguments once; diagnostic completion
 cannot replace response/error. Failed or changed identity suppresses capture.

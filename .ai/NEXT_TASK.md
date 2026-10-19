@@ -20,7 +20,7 @@ This is not a blanket completion claim for all product workflows or the live
 Jupiter shell. Section-63 Help is runtime-published with actual Jupiter operations,
 Platform-panel and Feedback acceptance. The measured local performance checkpoint
 and Node hot-path remediation plus full-limit Browser/batch/redaction QC bring
-the full release gate to 418 tests with Jupiter fetch failure isolation, data-write isolation/real quota, explicit product comparison, scoped analytics, real queued provider failure/metering and concurrent/product-read boundary
+the full release gate to 421 tests with React/fetch failure isolation, data-write isolation/real quota, explicit product comparison, scoped analytics, real queued provider failure/metering and concurrent/product-read boundary
 measurements and the performance flag enabled. Inspect
 latest Evidence for gates/runtime/remote commit.
 
@@ -77,12 +77,14 @@ latest Evidence for gates/runtime/remote commit.
    eleven passing Web tests and actual native Edge/HTTP one-write/error proof.
    Preserve isolated preparation/completion, exact-once dispatch, unchanged
    response/error and identity suppression. Its full 418-test release gate passes.
-   Next concrete adapter QC: React Provider start/route effect/ErrorBoundary
-   still directly call the observer; existing two React tests do not prove
-   diagnostic failure cannot break fallback or provider mounting. Inspect and
-   reproduce before changes; a direct compiled-method probe already confirms
-   componentDidCatch lets a synchronous diagnostic exception escape. It is not
-   mounted React acceptance. Do not conflate it with authenticated shell proof.
+   React Provider/route effect/ErrorBoundary diagnostic isolation now has red
+   method/unhandled-rejection tests and actual mounted Edge startup failure,
+   then five focused tests plus sixteen mounted fault/recovery cases passing at
+   375/1440. Preserve lifecycle cleanup, stable form on route change and reset.
+   Its full 421-test gate and both real Browser fault scripts pass; mounted adversarial SDK ports are not authenticated
+   whole-shell or actual SQL-event acceptance. Next prioritize the actual
+   AppModule/process/authenticated Jupiter workflow and final requirement audit,
+   using disposable supported fixtures rather than modifying business tenants.
 3. Preserve the completed section-63 Help checkpoint: eleven registry-validated
    RUNTIME guides, explicit slug-only publication and unchanged unrelated Help.
    The original revision-2 checkpoint is historical; Console now has subsequent

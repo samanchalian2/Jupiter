@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-10-19 — GOAL-069 React diagnostic isolation (IN PROGRESS)
+
+- Reproduced capture throw/unhandled rejection and mounted startup UI loss.
+  Provider, route effect and ErrorBoundary now isolate diagnostics/cleanup.
+- Five focused tests and sixteen native Edge mounted recovery/lifecycle cases
+  pass at 375/1440, RTL/no overflow and preserved route-change form input.
+- Replaced names-only required Evidence list with 47 path/test/result/limits
+  entries; broader acceptance remains explicit. Full LOCAL release gate passes
+  421 tests/builds/lint/typechecks, actual Browser/client/performance/migrations
+  and both fetch/React fault scripts; cleanup and listener continuity confirmed.
+
 ## 2026-10-19 — GOAL-069 Jupiter fetch failure isolation (IN PROGRESS)
 
 - Five red regressions verify observer faults could alter business requests.

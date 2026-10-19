@@ -1,5 +1,10 @@
 # System Architecture
 
+The existing generic React adapter isolates SDK startup/cleanup, route effects
+and boundary reporting from consumer rendering. It keeps the same Browser SDK
+dependency and synchronous start/returned-cleanup contract, adds no Jupiter
+business import, and never awaits diagnostic reporting or recurses on its faults.
+
 Jupiter's host fetch adapter separates diagnostic preparation/completion from
 the sole business dispatch. Preparation failure forwards original arguments;
 completion never retries or replaces a business outcome. Diagnostic promises
