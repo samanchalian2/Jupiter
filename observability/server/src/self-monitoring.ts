@@ -13,6 +13,8 @@ const storageTables=['events','ingestion_receipts','jobs','issues','issue_events
 export class SelfMonitoringService {
  private readonly buffer=new Map<string,Report>();private retry:Report[]=[];private flushing?:Promise<void>;private retryAfter=0;
  private readonly diagnostics:HubDiagnosticReporter;
+ private sampling?:Promise<{sampled:number;failed:number;deferred:number}>;
+ private sampleCursor?:{applicationId:string;environmentId:string};
  constructor(private readonly database:HubDatabase,private readonly registry?:RegistryService,sink:(entry:unknown)=>void=entry=>console.warn(JSON.stringify(entry))){this.diagnostics=new HubDiagnosticReporter(sink);}
  record(scope:{applicationId:string;environmentId:string},ack?:BatchAcknowledgement){
   const key=`${scope.applicationId}:${scope.environmentId}`;let report=this.buffer.get(key);
@@ -41,15 +43,29 @@ export class SelfMonitoringService {
   const value=validateSdkMetricReport(raw),counters=empty();counters.dropped_events=value.counters.dropped;counters.recovered_events=value.counters.retryDelivered;counters.recovery_failed_events=value.counters.retryDropped;
   return this.insert({applicationId:scope.applicationId,environmentId:scope.environmentId,reportId:value.reportId,observedAt:value.observedAt,counters},scope.tenantReference,scope.source==='BROWSER'?'CLIENT_REPORTED':'SERVER_SDK_REPORTED',scope.actorReference);
  }
- async sampleStorage(limit=10){
-  const rows=await this.database.worker(async c=>(await c.query<{application_id:string;id:string}>(`SELECT e.application_id,e.id FROM observability.environments e JOIN observability.applications a ON a.id=e.application_id WHERE a.enabled AND e.enabled AND NOT EXISTS(SELECT 1 FROM observability.storage_samples s WHERE s.application_id=e.application_id AND s.environment_id=e.id AND s.bucket_start=date_trunc('hour',now())) ORDER BY e.application_id,e.id LIMIT $1`,[Math.max(1,Math.min(100,Math.trunc(limit)))])).rows);
-  let sampled=0;for(const row of rows)sampled+=await this.database.worker(async c=>{
-   await c.query('SELECT pg_advisory_xact_lock(hashtext($1))',[`obs-storage:${row.application_id}:${row.id}`]);
+ sampleStorage(limit=10){
+  if(this.sampling)return this.sampling;
+  const pass=this.sampleStoragePass(limit);this.sampling=pass;
+  void pass.finally(()=>{if(this.sampling===pass)this.sampling=undefined;}).catch(()=>undefined);
+  return pass;
+ }
+ private async sampleStoragePass(limit:number){
+  const started=performance.now(),cursor=this.sampleCursor;
+  const rows=await this.database.worker(async c=>{await c.query("SET LOCAL statement_timeout='1s'");return(await c.query<{application_id:string;id:string}>(`SELECT e.application_id,e.id FROM observability.environments e JOIN observability.applications a ON a.id=e.application_id WHERE a.enabled AND e.enabled AND NOT EXISTS(SELECT 1 FROM observability.storage_samples s WHERE s.application_id=e.application_id AND s.environment_id=e.id AND s.bucket_start=date_trunc('hour',now())) ORDER BY CASE WHEN $2::uuid IS NULL OR (e.application_id,e.id)>($2::uuid,$3::uuid) THEN 0 ELSE 1 END,e.application_id,e.id LIMIT $1`,[Math.max(1,Math.min(100,Math.trunc(limit))),cursor?.applicationId??null,cursor?.environmentId??null])).rows;});
+  let sampled=0,failed=0,deferred=0;
+  for(let index=0;index<rows.length;index++){
+   if(performance.now()-started>=5000){deferred+=rows.length-index;break;}
+   const row=rows[index];this.sampleCursor={applicationId:row.application_id,environmentId:row.id};
+   try{const result=await this.database.worker(async c=>{
+   await c.query("SET LOCAL statement_timeout='1s'");
+   const lock=await c.query<{locked:boolean}>('SELECT pg_try_advisory_xact_lock(hashtext($1)) locked',[`obs-storage:${row.application_id}:${row.id}`]);if(!lock.rows[0].locked)return -1;
    const exists=await c.query("SELECT 1 FROM observability.storage_samples WHERE application_id=$1 AND environment_id=$2 AND bucket_start=date_trunc('hour',now())",[row.application_id,row.id]);if(exists.rowCount)return 0;
    // Table identifiers are a fixed source-code allowlist, never request input.
    const bytes=(await c.query<{total:string}>(`SELECT sum(bytes)::text total FROM (${storageTables.map(table=>`SELECT COALESCE(sum(pg_column_size(t)),0) bytes FROM observability.${table} t WHERE application_id=$1 AND environment_id=$2`).join(' UNION ALL ')}) measured`,[row.application_id,row.id])).rows[0].total;
    await c.query("INSERT INTO observability.storage_samples(application_id,environment_id,bucket_start,logical_bytes) VALUES($1,$2,date_trunc('hour',now()),$3) ON CONFLICT DO NOTHING",[row.application_id,row.id,bytes]);return 1;
-  });return{sampled};
+   });if(result===-1)deferred++;else sampled+=result;
+   }catch{failed++;this.diagnostics.report('METRICS_STORAGE_UNAVAILABLE');}
+  }return{sampled,failed,deferred};
  }
  async status(principalId:string,applicationId:string,environmentId:string){
   if(!this.registry)throw new ContractError('REGISTRY_REQUIRED');const registry=this.registry,scope=await registry.dataScope(principalId,{applicationId,environmentId},['ADMIN']);

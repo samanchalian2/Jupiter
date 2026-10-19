@@ -2,6 +2,13 @@
 
 ## GOAL-069 Observability Hub
 
+DEC-045 sampling retains the fixed table allowlist, worker role and scoped
+predicates. Cursor values are internal UUIDs, parameterized, constant-size and
+not exposed as tenant data. Timed-out/locked scopes have no fabricated snapshot;
+only fixed METRICS_STORAGE_UNAVAILABLE diagnostics are logged. Nonblocking
+advisory locks and local SQL deadline bound shared-pool lock/scan pressure.
+No dropped role, weakened RLS or privileged runtime API is introduced.
+
 Queued Worker operations attribute only stored job organization IDs and null
 automation actors. Controlled outcomes use fixed failureCode/retryExhausted
 metadata, never request IDs as credentials, prompts, transcripts or raw provider

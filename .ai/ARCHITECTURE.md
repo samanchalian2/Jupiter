@@ -2,6 +2,12 @@
 
 ## GOAL-069 Observability Hub (implementation in progress)
 
+DEC-045 keeps logical sampling within the existing service/pool, but separates
+its in-flight lifecycle from shared leased-job draining. A constant-size rotating
+cursor and per-scope failure handling avoid first-scope starvation. No new worker,
+queue, timer, tables or service is introduced; shutdown awaits pending sampling.
+Cooperative work and statement budgets do not claim hard wall-time cancellation.
+
 QueueWorker uses HubBinding's existing background-observation port for bounded
 enumeration and per-job processing. Product services remain the authorities for
 persisted retry/commercial outcomes; no new Hub dependency is added inside the

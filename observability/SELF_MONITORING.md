@@ -6,6 +6,16 @@ URLs or arbitrary labels. It is not an Audit ledger.
 
 ## Contracts and units
 
+DEC-045 storage sampling is single-flight and best effort. A rotating last-
+attempted scope cursor wraps bounded selections, including when an earlier scope
+fails. Each scope has a nonblocking advisory lock and 1s SQL deadline; a pass
+starts no more work after its cooperative 5s budget. Configured pool acquisition
+timeout is separate, so this is not a hard wall-clock cancellation guarantee.
+Failures leave that scope unobserved, never a false zero; later passes retry.
+The host does not await sampling within its shared job drain, but awaits it
+during shutdown before closing the pool. Existing hourly uniqueness, exact
+logical-row basis, table allowlist, RLS and public health contracts are unchanged.
+
 `POST {base}/sdk-metrics` uses an existing `events:write` credential and Browser
 Origin/actor policy. The body contains only `reportId`, ISO UTC `observedAt` and
 `counters: { dropped, retryDelivered, retryDropped }`. Each count is 0–1,000,000,

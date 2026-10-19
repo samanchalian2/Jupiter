@@ -2,6 +2,10 @@
 
 ## GOAL-069 — Observability Hub continuation (IN PROGRESS)
 
+DEC-045 closes the concrete sampling scope-failure starvation/shared-drain wait
+gap with real SQL timeout/recovery and coordination tests. It does not replace
+full host load/security/provider-outcome/specification acceptance or staging.
+
 The queued AI/voice/intake drain is connected to existing scoped observation,
 including caught outcome projection and real SQL-enumeration/HTTP acceptance.
 Actual-service terminal-provider/metering tests, sampling outage fairness,

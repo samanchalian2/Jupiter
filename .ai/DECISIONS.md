@@ -1,5 +1,24 @@
 # Architecture Decisions
 
+## DEC-045 — Failure-isolated logical storage sampling
+
+GOAL-069 keeps hourly exact logical-row snapshots, existing storage/RLS and API.
+Sampling is best effort, not a physical disk monitor or a reason to stop leased
+work. A single in-flight sampler per service rotates a constant-size last-attempted
+App/environment cursor. Failed/locked scopes do not prevent later healthy scopes;
+the next bounded selection wraps so a repeatedly failing first scope cannot
+starve the remainder. Restart loses the cursor, not persisted hourly samples.
+
+Each pass starts no further scope after a five-second work budget, uses a one-
+second local SQL deadline and nonblocking advisory lock, and records only a fixed
+failure diagnostic. Pool acquisition retains its separately bounded configured
+timeout; five seconds is a cooperative work budget, not a hard process-level
+timeout or query cancellation guarantee. No orphaned Promise.race DB work.
+Host drain dispatches sampling without awaiting it; in-flight guard prevents
+overlap and shutdown awaits outstanding sampling before closing its pool.
+Timed-out scopes have no invented zero snapshot; a later pass may retry. No
+commercial model, migration, identity, tenant boundary or API contract changes.
+
 ## DEC-044 — Automatic diagnostic reporting and durable Browser report replay
 
 GOAL-069 SDK diagnostics reuse the existing authenticated metrics API. Browser

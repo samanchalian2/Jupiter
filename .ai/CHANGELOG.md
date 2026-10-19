@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-10-19 — GOAL-069 failure-isolated logical sampling (IN PROGRESS)
+
+- Recorded DEC-045 and isolated failures per scope with rotating bounded cursor,
+  nonblocking lock and local SQL/work budgets; hourly snapshots/schema unchanged.
+- Removed sampling wait from the shared host drain; coalesced passes and awaited
+  completion during shutdown instead of abandoning DB work after a Promise race.
+- Real PostgreSQL timeout/recovery and healthy progress plus unit lock/budget/
+  cursor/coalescing/shutdown tests pass. No fake zero values or raw failure logs.
+- Final full Goal/provider/host/security audit remains; no external deployment.
+- Complete release gate passes 399 tests, builds/lint/typechecks, real Edge/
+  Python/C#/offline/performance acceptance and 83-migration rehearsal.
+
 ## 2026-10-19 — GOAL-069 queued AI/voice/intake Worker observation (IN PROGRESS)
 
 - Connected the actual drain's scoped operations and caught failure outcomes to

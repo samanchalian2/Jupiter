@@ -4,7 +4,7 @@
 
 The entire approved objective remains active. Source of truth:
 `docs/GOAL_069_SPECIFICATION.md` (all sections and A–I Definition of Done),
-`docs/GOAL_069_EVIDENCE.md`, current state and DEC-038 through DEC-044.
+`docs/GOAL_069_EVIDENCE.md`, current state and DEC-038 through DEC-045.
 Historical GOAL-060 Personal Service is not renamed. Do not start another Goal.
 
 ### Latest implementation boundary
@@ -20,7 +20,7 @@ This is not a blanket completion claim for all product workflows or the live
 Jupiter shell. Section-63 Help is runtime-published with actual Jupiter operations,
 Platform-panel and Feedback acceptance. The measured local performance checkpoint
 and Node hot-path remediation plus full-limit Browser/batch/redaction QC bring
-the full release gate to 394 tests with queued Worker outcome and concurrent/product-read boundary
+the full release gate to 399 tests with failure-isolated sampling, queued Worker outcome and concurrent/product-read boundary
 measurements and the performance flag enabled. Inspect
 latest Evidence for gates/runtime/remote commit.
 
@@ -68,9 +68,11 @@ latest Evidence for gates/runtime/remote commit.
    also commits exactly once under saturated telemetry. Finish remaining real
    Browser/automatic-flush host breadth and do not turn local measurements into
    an SLO.
-   Review the sampler's failing/slow-scope path separately: 100/20/0 successful
-   continuation does not prove outage fairness or a whole-cycle deadline. The
-   current sequential loop lets a scope error escape before later scopes run.
+   Preserve DEC-045 failure-isolated sampling: actual PostgreSQL snapshot timeout/
+   recovery, healthy progress, nonblocking locks, rotating cursor, single pass,
+   cooperative work budget and host non-await/shutdown coordination. This is
+   bounded best effort with separate pool timeout, not a hard 5s process SLO or
+   physical disk metric. Final audit must still assess representative host load.
 5. Finish security/failure-isolation acceptance (sections 55–58 and 65), full
    responsive RTL host coverage, cleanup and final requirement-level QC.
    Run complete API/Web/Hub tests, lint/typechecks/builds, migration rehearsal

@@ -5,6 +5,33 @@ import {IngestionService} from '../src/ingestion.js';
 const scope=()=>({applicationId:crypto.randomUUID(),environmentId:crypto.randomUUID()});
 const ack={schemaVersion:'1.1' as const,acknowledgements:[{eventId:crypto.randomUUID(),status:'ACCEPTED' as const}]};
 describe('bounded out-of-band self-metric buffer',()=>{
+ it('rotates past a failed scope, shares concurrent passes and retries without inventing snapshots',async()=>{
+  const a=scope(),b=scope(),rows=[{application_id:a.applicationId,id:a.environmentId},{application_id:b.applicationId,id:b.environmentId}],stored:string[]=[],cursors:unknown[]=[],logs:unknown[]=[];
+  const database={worker:async(work:(c:unknown)=>Promise<unknown>)=>work({query:async(sql:string,args:unknown[]=[])=>{
+   if(sql.includes('SELECT e.application_id')){cursors.push(args);const start=args[2]===a.environmentId?1:0;return{rows:[rows[start]]};}
+   if(sql.includes('pg_try_advisory'))return{rows:[{locked:true}]};
+   if(sql.startsWith('SELECT 1 FROM observability.storage_samples'))return{rowCount:0,rows:[]};
+   if(sql.includes('sum(bytes)')){if(args[1]===a.environmentId)throw Error('private sampler outage');return{rows:[{total:'100'}]};}
+   if(sql.startsWith('INSERT INTO observability.storage_samples'))stored.push(String(args[1]));return{rows:[],rowCount:1};
+  }})} as unknown as HubDatabase;
+  const metrics=new SelfMonitoringService(database,undefined,entry=>logs.push(entry));const first=metrics.sampleStorage(1),same=metrics.sampleStorage(1);expect(first).toBe(same);expect(await first).toEqual({sampled:0,failed:1,deferred:0});expect(await metrics.sampleStorage(1)).toEqual({sampled:1,failed:0,deferred:0});expect(stored).toEqual([b.environmentId]);expect(cursors[1]).toEqual([1,a.applicationId,a.environmentId]);expect(JSON.stringify(logs)).not.toContain('private');
+ });
+ it('skips contended scope locks without scanning and keeps successful scopes measurable',async()=>{
+  const a=scope(),b=scope(),scanned:string[]=[];const database={worker:async(work:(c:unknown)=>Promise<unknown>)=>work({query:async(sql:string,args:unknown[]=[])=>{
+   if(sql.includes('SELECT e.application_id'))return{rows:[{application_id:a.applicationId,id:a.environmentId},{application_id:b.applicationId,id:b.environmentId}]};
+   if(sql.includes('pg_try_advisory'))return{rows:[{locked:!String(args[0]).includes(a.environmentId)}]};
+   if(sql.startsWith('SELECT 1 FROM'))return{rowCount:0};if(sql.includes('sum(bytes)')){scanned.push(String(args[1]));return{rows:[{total:'12'}]};}return{rowCount:1,rows:[]};
+  }})} as unknown as HubDatabase;
+  expect(await new SelfMonitoringService(database).sampleStorage()).toEqual({sampled:1,failed:0,deferred:1});expect(scanned).toEqual([b.environmentId]);
+ });
+ it('starts no more scopes after the cooperative work budget and advances its cursor',async()=>{
+  let elapsed=0;const clock=vi.spyOn(performance,'now').mockImplementation(()=>elapsed),a=scope(),b=scope();let scans=0;
+  const database={worker:async(work:(c:unknown)=>Promise<unknown>)=>work({query:async(sql:string)=>{
+   if(sql.includes('SELECT e.application_id'))return{rows:[{application_id:a.applicationId,id:a.environmentId},{application_id:b.applicationId,id:b.environmentId}]};
+   if(sql.includes('pg_try_advisory'))return{rows:[{locked:true}]};if(sql.startsWith('SELECT 1 FROM'))return{rowCount:0};if(sql.includes('sum(bytes)')){scans++;elapsed=5001;return{rows:[{total:'10'}]};}return{rowCount:1,rows:[]};
+  }})} as unknown as HubDatabase;
+  try{expect(await new SelfMonitoringService(database).sampleStorage()).toEqual({sampled:1,failed:0,deferred:1});expect(scans).toBe(1);}finally{clock.mockRestore();}
+ });
  it('does not multiply a storage outage timeout by every event in a batch',async()=>{
   let attempts=0;const database={scoped:async()=>{attempts++;throw Error('Controlled storage failure');}} as unknown as HubDatabase,metrics={record:()=>{}} as unknown as SelfMonitoringService,service=new IngestionService(database,metrics),s={...scope(),tenantReference:null,actorReference:null,source:'SERVER' as const};
   const events=Array.from({length:50},()=>({eventId:crypto.randomUUID(),schemaVersion:'1.1',applicationId:s.applicationId,environmentId:s.environmentId,occurredAt:new Date().toISOString(),source:'SERVER',category:'BACKEND',severity:'ERROR',eventCode:'controlled.failure',normalizedMessage:'Controlled event'}));

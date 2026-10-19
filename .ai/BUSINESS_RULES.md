@@ -1,5 +1,14 @@
 # Business Rules
 
+## Diagnostic sampling failure isolation (DEC-045)
+
+- One failed/locked scope must not prevent healthy later scopes from being
+  sampled; subsequent bounded passes rotate past the last attempted scope.
+- Hourly exact snapshots stay idempotent; timeout means unobserved, never zero.
+- Sampling is not awaited by the shared job drain, cannot overlap itself and
+  is awaited before pool shutdown. A 5s cooperative work budget is not a hard
+  response SLO; pool/SQL deadlines and best-effort limits remain explicit.
+
 ## Queued Worker failure observation (GOAL-069)
 
 - Queued AI, transcription and intake work keeps its existing processing order,

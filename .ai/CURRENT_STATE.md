@@ -1,5 +1,20 @@
 # Current State
 
+**2026-10-19 failure-isolated sampling (GOAL-069 IN PROGRESS, DEC-045):**
+Storage sampling has one in-flight pass, rotating constant-size App/environment
+cursor, nonblocking scope lock, per-statement 1s limit and cooperative 5s work
+budget. Failed/locked scopes do not stop later healthy ones; cursor wraps on
+later passes. Failures emit fixed diagnostics and never insert fake zero samples.
+Host drain dispatches sampling out-of-band and shutdown awaits it before pool
+close. Pool acquisition has its separate configured timeout; this is not a hard
+5s process deadline. Real PostgreSQL trigger-induced snapshot timeout/recovery,
+healthy-scope progress, lock skipping, cursor rotation, coalescing and shutdown
+coordination pass focused tests. No migration, global role, API or tenant change.
+Full release gate exits zero: 399 tests (172 API, 30 Web, 197 Hub: 79 SDK/core/
+adapters, 107 server, 11 Console), builds/lint/typechecks, real Edge/Python/C#,
+offline/performance and 83-migration rehearsal. Broader host/provider/security/
+A–I audit remains; no promotion or whole-Goal completion.
+
 **2026-10-19 queued Worker observation (GOAL-069 IN PROGRESS):** QueueWorker now
 observes provider initialization, bounded job enumeration, AI/voice/intake
 processing and expiry cleanup through the existing host boundary. Tenant IDs

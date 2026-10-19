@@ -60,16 +60,65 @@ GOAL-059 remains BLOCKED; LOCAL evidence is not staging acceptance.
   Help and the encrypted 100,000-token provider configuration remain unchanged;
   no Preview/main host, co-hosted app, real AD or external provider was changed.
 
-## Remaining sampling failure-isolation review — not covered by happy-path scale
+## Historical sampling failure-isolation finding — remediated by DEC-045 below
 
-The 120-environment 100/20/0 measurement proves successful bounded continuation,
-not per-scope outage/slow-query fairness. Current `server/src/self-monitoring.ts`
-awaits each scope sequentially; an exception escapes that loop before later
-scopes run. HubBinding awaits sampling within the shared periodic drain, so its
-worker progress can be delayed even though ordinary API handling is separate.
-Per-statement timeout alone is not a bounded whole-cycle deadline. This remains
-a concrete final-review item; do not mark full sampling failure isolation or
-whole GOAL-069 complete from the successful empty-scope scale fixture.
+The 120-environment 100/20/0 measurement proved successful bounded continuation,
+not per-scope outage/slow-query fairness. The prior `server/src/self-monitoring.ts`
+awaited each scope sequentially; an exception escaped that loop before later
+scopes ran. HubBinding awaited sampling within the shared periodic drain, so its
+worker progress could be delayed even though ordinary API handling was separate.
+Per-statement timeout alone is not a bounded whole-cycle deadline. The dedicated
+remediation evidence below supersedes this concrete historical finding.
+Do not infer whole GOAL-069 completion from the successful empty-scope fixture.
+
+## 2026-10-19 — Failure-isolated sampling and host coordination (LOCAL, DEC-045)
+
+- Implementation: independent server self-monitoring service and Jupiter host
+  binding, without migration/API/RLS/table changes. One in-flight pass coalesces
+  callers. A constant-size last-attempted App/environment UUID cursor rotates
+  bounded ordered selection and wraps on subsequent passes. Failed/contended
+  scopes cannot permanently occupy the first selection slot. Cursor is local
+  best effort across process restart; persisted hourly samples stay authoritative.
+- Each scope catches its own failure, emits fixed METRICS_STORAGE_UNAVAILABLE
+  diagnostics and continues if budget remains. It uses try-advisory-lock rather
+  than waiting for another sampler; contended scopes are deferred, not recorded
+  as zero. SQL statements have a local 1s timeout. A pass starts no further
+  scopes after a 5s cooperative work budget. Configured pool acquisition remains
+  separately bounded; this is NOT a hard process wall-time/cancellation promise.
+- Host's periodic shared drain starts sampling without awaiting it, prevents a
+  second pass, and awaits pending work during shutdown before pool close. No
+  orphaned Promise.race query, extra background scheduler or new service appears.
+- Executed real PostgreSQL acceptance adds two environments to a disposable Hub
+  App. A fixture-only BEFORE INSERT trigger sleeps two seconds for exactly one
+  generated environment. The real 1s SQL deadline rolls back that snapshot; the
+  healthy environment is still sampled in the same pass, broken scope remains
+  null/unobserved, and elapsed is asserted below the explicit 6s test guard.
+  Trigger/function are dropped in finally; the next pass measures the recovered
+  scope. Focused actual run: 1,178ms for that scenario. No business DB trigger,
+  global role or real tenant setting was changed.
+- Unit tests prove same-Promise coalescing, cursor advancement after an actual
+  controlled scope failure, no raw failure logs, nonblocking-lock deferral and
+  cooperative budget stop. Host unit test proves immediate scheduling, one call
+  while pending and pool-close-after-completion. Focused execution passes four
+  server cases and one API case; filtered-out tests are not counted as executed.
+- This remediates the concrete identified diagnostic starvation/coupling issue,
+  not every possible host saturation or infrastructure failure. Exact logical
+  scanning may still be unavailable for very large scopes within 1s; their state
+  correctly remains unobserved and needs operational policy/scale assessment.
+  Provider terminal outcomes, broader host/analytics/security and full A–I/
+  47-section completion audit remain active. No Preview/main host promotion.
+- Final `pnpm verify:release` exits zero with 399 tests: 172 API, 30 Web and
+  197 Hub (79 SDK/core/adapters, 107 server, 11 Console). Builds, lint and
+  typechecks pass. Real Edge four-width/reference/offline acceptance, Python/C#,
+  measured performance and 83-migration rehearsal pass; temporary databases
+  are absent after the gate. `git diff --check` passes. Existing Vite chunk
+  advisory is unchanged. This is a LOCAL checkpoint, not complete Goal acceptance.
+- Post-gate preflight confirms 83 migrations, zero reserved AI attempts, zero
+  temporary databases and the existing enabled 100,000-token/month configuration.
+  Only the identity-verified local API on port 3000 was restarted with this build;
+  Hub drain is enabled, normal product Worker is not. External health/readiness
+  probe passes and local Web /operations returns HTTP 200. No new provider call,
+  credential change, Help republish, real AD or other-app/host change was needed.
 
 ## 2026-10-19 — HTTP adapter isolation and cross-domain classification (LOCAL)
 

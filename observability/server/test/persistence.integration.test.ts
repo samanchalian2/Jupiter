@@ -69,6 +69,14 @@ describe('real independent Browser acceptance',()=>{
 });
 
 describe('scoped self-monitoring measurements',()=>{
+ it('times out one real snapshot scope without starving a healthy scope or inserting a false zero',async()=>{
+  const app=(await registry.createApplication(root,{slug:`sampling-fault-${randomUUID()}`,name:'Sampling timeout acceptance'})).id;
+  const broken=(await registry.createEnvironment(root,app,{key:'slow',kind:'TEST'})).id,healthy=(await registry.createEnvironment(root,app,{key:'healthy',kind:'TEST'})).id,logs:unknown[]=[],metrics=new SelfMonitoringService(database,registry,entry=>logs.push(entry));
+  await database.pool.query(`CREATE FUNCTION observability.fixture_slow_sample() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF NEW.environment_id='${broken}'::uuid THEN PERFORM pg_sleep(2); END IF; RETURN NEW; END $$; CREATE TRIGGER fixture_slow_sample BEFORE INSERT ON observability.storage_samples FOR EACH ROW EXECUTE FUNCTION observability.fixture_slow_sample()`);
+  try{const started=performance.now(),result=await metrics.sampleStorage(100);expect(performance.now()-started).toBeLessThan(6000);expect(result.failed).toBe(1);expect((await metrics.status(root,app,broken)).storage.logical_bytes).toBeNull();expect((await metrics.status(root,app,healthy)).storage.logical_bytes).not.toBeNull();expect(JSON.stringify(logs)).not.toContain('pg_sleep');}
+  finally{await database.pool.query('DROP TRIGGER fixture_slow_sample ON observability.storage_samples; DROP FUNCTION observability.fixture_slow_sample()');}
+  await metrics.sampleStorage(100);expect((await metrics.status(root,app,broken)).storage.logical_bytes).not.toBeNull();
+ });
  it('automatically records backend SDK loss and deduplicates a real HTTP commit-then-lost-ACK replay',async()=>{
   const app=(await registry.createApplication(root,{slug:`metric-node-${randomUUID()}`,name:'Automatic Node metric'})).id,env=(await registry.createEnvironment(root,app,{key:'test',kind:'TEST'})).id,token=(await registry.issueServerCredential(root,app,env,'Controlled Node metric acceptance')).token,reports:unknown[]=[];let lost=true;
   const sdk=new NodeSdk({applicationId:app,environmentId:env,endpoint,credentialProvider:async()=>token,maxQueueCount:1,fallback:()=>{},transport:async(input,init)=>{const response=await fetch(input,init);if(String(input).endsWith('/sdk-metrics')){reports.push(JSON.parse(String(init?.body)));if(lost){lost=false;await response.json();throw Error('Controlled lost metric response after commit');}}return response;}});

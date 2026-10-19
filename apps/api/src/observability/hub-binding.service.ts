@@ -28,6 +28,7 @@ export class HubBindingService implements OnModuleInit,OnModuleDestroy {
  private sdk?:NodeSdk;private timer?:NodeJS.Timeout;private working=false;private lastRules=0;private unsubscribe?:()=>void;
  private investigator?:InvestigatorService;
  private selfMonitoring?:SelfMonitoringService;
+ private storageSampling?:Promise<unknown>;
  private unregisterNotifications?:()=>void;
  constructor(private readonly auth:AuthService,private readonly productDatabase:DatabaseService,private readonly notifications:NotificationService){}
  async onModuleInit(){
@@ -65,7 +66,7 @@ export class HubBindingService implements OnModuleInit,OnModuleDestroy {
    });
    if(process.env.JUPITER_WORKER_ENABLED==='true'||process.env.OBSERVABILITY_WORKER_ENABLED==='true'){
     const engine=new IssueEngine(this.hub,this.registry),rules=new MonitoringEngine(this.hub,this.registry),workerId=crypto.randomUUID();
-    const drain=async()=>{if(this.working)return;this.working=true;try{const jobs=await engine.queue.claim(workerId,25,['AGGREGATE']);for(const job of jobs){try{await engine.aggregate(job);}catch{await engine.queue.fail(job,'AGGREGATION_FAILED');}}if(Date.now()-this.lastRules>=60_000){await alerts.detectPipelineFailures();await alerts.enqueue();await rules.evaluate();await retention.enqueue();await this.selfMonitoring?.flush();await this.selfMonitoring?.sampleStorage().catch(()=>this.diagnostics.report('METRICS_STORAGE_UNAVAILABLE'));await this.investigator?.schedule();this.lastRules=Date.now();}for(const job of await engine.queue.claim(workerId,5,['ALERT_DELIVERY'])){try{await alerts.deliver(job);}catch{await engine.queue.fail(job,'ALERT_DELIVERY_FAILED');}}for(const job of await engine.queue.claim(workerId,1,['RETENTION'])){try{await retention.execute(job);}catch{await engine.queue.fail(job,'RETENTION_FAILED');}}if(this.investigator){for(const job of await engine.queue.claim(workerId,1,['INVESTIGATE'])){try{await this.investigator.execute(job);}catch{await engine.queue.fail(job,'INVESTIGATION_FAILED');}}}}catch{this.diagnostics.report('WORKER_DRAIN_FAILED');}finally{this.working=false;}};
+    const drain=async()=>{if(this.working)return;this.working=true;try{const jobs=await engine.queue.claim(workerId,25,['AGGREGATE']);for(const job of jobs){try{await engine.aggregate(job);}catch{await engine.queue.fail(job,'AGGREGATION_FAILED');}}if(Date.now()-this.lastRules>=60_000){await alerts.detectPipelineFailures();await alerts.enqueue();await rules.evaluate();await retention.enqueue();await this.selfMonitoring?.flush();this.scheduleStorageSampling();await this.investigator?.schedule();this.lastRules=Date.now();}for(const job of await engine.queue.claim(workerId,5,['ALERT_DELIVERY'])){try{await alerts.deliver(job);}catch{await engine.queue.fail(job,'ALERT_DELIVERY_FAILED');}}for(const job of await engine.queue.claim(workerId,1,['RETENTION'])){try{await retention.execute(job);}catch{await engine.queue.fail(job,'RETENTION_FAILED');}}if(this.investigator){for(const job of await engine.queue.claim(workerId,1,['INVESTIGATE'])){try{await this.investigator.execute(job);}catch{await engine.queue.fail(job,'INVESTIGATION_FAILED');}}}}catch{this.diagnostics.report('WORKER_DRAIN_FAILED');}finally{this.working=false;}};
     this.timer=setInterval(()=>void drain(),2_000);this.timer.unref();void drain();
    }
   }catch{this.api=undefined;this.diagnostics.report('HUB_NOT_READY');}
@@ -87,6 +88,11 @@ export class HubBindingService implements OnModuleInit,OnModuleDestroy {
   return{applicationId:this.configuration.applicationId,environmentId:this.configuration.environmentId,actorReference,tenantReference};
  }
  instrumentation(){return this.sdk;}
+ private scheduleStorageSampling(){
+  if(this.storageSampling||!this.selfMonitoring)return;
+  const work=this.selfMonitoring.sampleStorage().catch(()=>this.diagnostics.report('METRICS_STORAGE_UNAVAILABLE'));
+  this.storageSampling=work;void work.finally(()=>{if(this.storageSampling===work)this.storageSampling=undefined;});
+ }
  async observeBackgroundOperation<T>(operation:ProductWorkerOperation,organizationId:string|null,work:()=>Promise<T>):Promise<T>{
   try{
    const config=this.configuration,sdk=this.sdk;
@@ -101,5 +107,5 @@ export class HubBindingService implements OnModuleInit,OnModuleDestroy {
    sdk.run({applicationId:config.applicationId,environmentId:config.environmentId,actorReference:null,tenantReference:organizationId},()=>sdk.capture({category:'WORKER',source:'WORKER',severity:outcome==='RETRY'?'WARNING':'ERROR',eventCode:'worker.job_failed',normalizedMessage:'Background job reported a controlled failure outcome',operationName:operation,safeMetadata:{failureCode:outcome,retryExhausted:outcome!=='RETRY'}}));
   }catch{this.diagnostics.report('PRODUCT_WORKER_FAILED');}
  }
- async onModuleDestroy(){if(this.timer)clearInterval(this.timer);this.unsubscribe?.();this.unregisterNotifications?.();await this.sdk?.shutdown();await this.selfMonitoring?.flush();await this.hub?.close();}
+ async onModuleDestroy(){if(this.timer)clearInterval(this.timer);this.unsubscribe?.();this.unregisterNotifications?.();await this.sdk?.shutdown();await this.selfMonitoring?.flush();await this.storageSampling;await this.hub?.close();}
 }
