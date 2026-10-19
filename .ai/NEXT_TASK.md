@@ -20,7 +20,7 @@ This is not a blanket completion claim for all product workflows or the live
 Jupiter shell. Section-63 Help is runtime-published with actual Jupiter operations,
 Platform-panel and Feedback acceptance. The measured local performance checkpoint
 and Node hot-path remediation plus full-limit Browser/batch/redaction QC bring
-the full release gate to 369 tests with concurrent/product-read boundary
+the full release gate to 394 tests with queued Worker outcome and concurrent/product-read boundary
 measurements and the performance flag enabled. Inspect
 latest Evidence for gates/runtime/remote commit.
 
@@ -41,10 +41,12 @@ latest Evidence for gates/runtime/remote commit.
    remaining cross-domain/final acceptance; do not substitute its focused tests
    for the full host/workflow audit. Real product-service SQL→SDK/HTTP→event/
    Issue→recovery now has disposable-83-migration integration coverage too.
-   The separate `apps/api/src/jobs/queue.worker.ts` AI/voice/intake drain still
-   logs raw stack on thrown failures and lacks this adapter. Integrate it without
-   changing commercial metering, provider results or retry states, and audit
-   internally caught terminal outcomes and bootstrap/process failure isolation.
+   The separate QueueWorker now observes thrown operations plus persisted
+   AI/intake failures and transcription retry/dead-letter outcomes. Preserve
+   seven focused queue tests and the real SQL enumeration/HTTP integration.
+   Explicit outcome port calls prove transport, not real provider-failure
+   settlement: complete actual-service terminal-path/metering acceptance and
+   bootstrap/process failure isolation without changing commercial/provider rules.
 3. Preserve the completed section-63 Help checkpoint: eleven registry-validated
    guides, RUNTIME revision 2, explicit slug-only publication and unchanged
    unrelated Help. Actual Jupiter login/Edge covers operations, Platform panel
@@ -66,6 +68,9 @@ latest Evidence for gates/runtime/remote commit.
    also commits exactly once under saturated telemetry. Finish remaining real
    Browser/automatic-flush host breadth and do not turn local measurements into
    an SLO.
+   Review the sampler's failing/slow-scope path separately: 100/20/0 successful
+   continuation does not prove outage fairness or a whole-cycle deadline. The
+   current sequential loop lets a scope error escape before later scopes run.
 5. Finish security/failure-isolation acceptance (sections 55–58 and 65), full
    responsive RTL host coverage, cleanup and final requirement-level QC.
    Run complete API/Web/Hub tests, lint/typechecks/builds, migration rehearsal

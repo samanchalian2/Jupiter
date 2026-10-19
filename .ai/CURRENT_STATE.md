@@ -1,5 +1,22 @@
 # Current State
 
+**2026-10-19 queued Worker observation (GOAL-069 IN PROGRESS):** QueueWorker now
+observes provider initialization, bounded job enumeration, AI/voice/intake
+processing and expiry cleanup through the existing host boundary. Tenant IDs
+come from persisted jobs; automation actor is null. Thrown failures use sanitized
+capture, and service-caught RETRY/FAILED/DEAD_LETTER outcomes use fixed metadata
+without transcripts, prompts, job payload or provider errors. Existing AI service
+return contract, settlement/release and retry state are unchanged. Additional
+diagnostics-only persisted-state reads cannot stop later work when unavailable.
+Focused seven queue tests and disposable SQL/HTTP integration pass: actual drain
+enumeration fault persists WORKER event; outcome port sends three valid rows.
+Those explicit port calls do not prove real provider-failure settlement. Full
+gate, remaining internal terminal-outcome/provider paths, sampler failure
+fairness and final host/security/A–I audit remain; no production promotion.
+Full release gate now passes 394 tests (171 API, 30 Web, 193 Hub), all builds/
+lint/typechecks, real Edge/Python/C#/offline/performance and 83-migration rehearsal.
+Vite chunk advisory remains. This checkpoint is not complete Goal acceptance.
+
 **2026-10-19 HTTP isolation/cross-domain adapter checkpoint (GOAL-069 IN
 PROGRESS):** NestJS observation can no longer replace a successful response or
 original HTTP exception when context entry or capture fails. Subscription is

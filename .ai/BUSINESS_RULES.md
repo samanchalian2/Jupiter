@@ -1,5 +1,15 @@
 # Business Rules
 
+## Queued Worker failure observation (GOAL-069)
+
+- Queued AI, transcription and intake work keeps its existing processing order,
+  retry states, metering and manual-ticket continuity. Capturing an outcome does
+  not perform settlement, release or any second provider call.
+- RETRY is WARNING with retryExhausted=false; FAILED and DEAD_LETTER are ERROR
+  with retryExhausted=true. Only fixed safe metadata reaches monitoring.
+- A diagnostics-only state lookup must not prevent subsequent work if it fails.
+  Successful or skipped service results are not fabricated as failure events.
+
 ## SDK byte-bound batching (GOAL-069 QC)
 
 - Both SDKs retain the established 50-event AND 524,288-byte request ceilings.

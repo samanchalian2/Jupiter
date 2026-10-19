@@ -11,6 +11,7 @@ import { CommercialService } from '../src/commercial/commercial.service.js';
 import { DirectoryConnectorService } from '../src/directory/directory-connector.service.js';
 import { HubBindingService } from '../src/observability/hub-binding.service.js';
 import { runLifecycleWorkerCycle } from '../src/lifecycle-worker.js';
+import { QueueWorker } from '../src/jobs/queue.worker.js';
 import { NodeSdk } from '@observability/node-sdk';
 import { HubDatabase, RegistryService, IngestionService, HubHttpApi, createHubServer, IssueEngine } from '@observability/server';
 
@@ -48,6 +49,21 @@ afterAll(async()=>{
  await admin.end();vi.restoreAllMocks();
 },30000);
 describe('actual lifecycle worker with real product services and PostgreSQL/HTTP Hub',()=>{
+ it('captures the actual queued-worker SQL boundary and outcome events over HTTP without provider calls',async()=>{
+  const binding=new HubBindingService(undefined as never,database,undefined as never);Object.assign(binding,{configuration:{applicationId:appId,environmentId,enabled:true},sdk});const worker=new QueueWorker(database,undefined as never,undefined as never,undefined as never,binding);
+  const warning=vi.spyOn(Logger.prototype,'warn').mockImplementation(()=>undefined);
+  await database.query('ALTER TABLE ai_requests RENAME TO worker_fixture_ai_requests');
+  try{await (worker as unknown as {drain():Promise<void>}).drain();}finally{await database.query('ALTER TABLE worker_fixture_ai_requests RENAME TO ai_requests');}
+  await sdk.flush();
+  const events=await hub.worker(async c=>(await c.query("SELECT operation_name,source,actor_reference,tenant_reference FROM observability.events WHERE application_id=$1 AND operation_name='queue.ai.enumerate'",[appId])).rows);
+  expect(events).toEqual([{operation_name:'queue.ai.enumerate',source:'WORKER',actor_reference:null,tenant_reference:null}]);
+  for(const outcome of ['RETRY','FAILED','DEAD_LETTER'] as const)binding.reportBackgroundOutcome('queue.ai.process',organizationId,outcome);
+  await sdk.flush();const outcomes=await hub.worker(async c=>(await c.query("SELECT safe_metadata,actor_reference,tenant_reference FROM observability.events WHERE application_id=$1 AND operation_name='queue.ai.process' ORDER BY received_at",[appId])).rows);
+  expect(outcomes).toHaveLength(3);expect(outcomes.map(row=>row.safe_metadata.failureCode)).toEqual(['RETRY','FAILED','DEAD_LETTER']);expect(outcomes.every(row=>row.actor_reference===null&&row.tenant_reference===organizationId)).toBe(true);
+  // This verifies the actual drain's thrown SQL path plus outcome transport;
+  // outcomes here are explicit port calls, not proof of real provider failures.
+  warning.mockRestore();
+ });
  it('runs the cycle, persists a real SQL failure with safe automation scope, and recovers',async()=>{
   const warnings:unknown[]=[];vi.spyOn(Logger.prototype,'warn').mockImplementation(value=>{warnings.push(value);});
   expect(await runLifecycleWorkerCycle(services)).toBe(true);expect(sdk.stats().queued).toBe(0);
@@ -56,10 +72,10 @@ describe('actual lifecycle worker with real product services and PostgreSQL/HTTP
   try{expect(await runLifecycleWorkerCycle(services)).toBe(false);}finally{await database.query('ALTER TABLE worker_fixture_connectors RENAME TO directory_connectors');}
   expect(sdk.stats().queued).toBe(1);await sdk.flush();expect(sdk.stats().queued).toBe(0);
   const events=await hub.worker(async c=>(await c.query("SELECT event_id,source,category,event_code,operation_name,actor_reference,tenant_reference,normalized_message FROM observability.events WHERE application_id=$1 AND environment_id=$2",[appId,environmentId])).rows);
-  expect(events).toHaveLength(1);expect(events[0]).toMatchObject({source:'WORKER',category:'WORKER',event_code:'worker.job_failed',operation_name:'directory.schedule_due',actor_reference:null,tenant_reference:null});
+  const lifecycleEvents=events.filter(event=>event.operation_name==='directory.schedule_due');expect(lifecycleEvents).toHaveLength(1);expect(lifecycleEvents[0]).toMatchObject({source:'WORKER',category:'WORKER',event_code:'worker.job_failed',operation_name:'directory.schedule_due',actor_reference:null,tenant_reference:null});
   expect(JSON.stringify(warnings)).not.toContain('directory_connectors');expect(JSON.stringify(warnings)).toContain('PRODUCT_WORKER_FAILED');
   const engine=new IssueEngine(hub,registry);for(const job of await engine.queue.claim(randomUUID(),10,['AGGREGATE']))expect(await engine.aggregate(job)).toBe(true);
-  expect(await hub.worker(async c=>(await c.query('SELECT count(*)::int total FROM observability.issues WHERE application_id=$1',[appId])).rows[0].total)).toBe(1);
+  expect(await hub.worker(async c=>(await c.query("SELECT count(*)::int total FROM observability.issues i JOIN observability.issue_events link ON link.issue_id=i.id AND link.application_id=i.application_id JOIN observability.events e ON e.event_id=link.event_id AND e.application_id=link.application_id AND e.environment_id=link.environment_id WHERE i.application_id=$1 AND e.operation_name='directory.schedule_due'",[appId])).rows[0].total)).toBe(1);
   expect(await runLifecycleWorkerCycle(services)).toBe(true);expect(sdk.stats().queued).toBe(0);
   expect((await database.query<{id:string}>('SELECT id FROM organizations WHERE id=$1',[organizationId])).rows).toHaveLength(1);
  });

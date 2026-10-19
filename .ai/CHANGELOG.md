@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-10-19 — GOAL-069 queued AI/voice/intake Worker observation (IN PROGRESS)
+
+- Connected the actual drain's scoped operations and caught failure outcomes to
+  existing background observation; replaced raw-stack catch with fixed logging.
+- Preserved original AI service result contract/metering/retry behavior; read
+  persisted AI/intake state only for diagnostics with failure-isolated queries.
+- QC corrected unsupported metadata key that would reject outcome events.
+  Seven focused queue tests and real SQL/HTTP integration verify accepted scope,
+  retry/dead-letter metadata, continuation and no provider call in that fixture.
+- Real provider-failure settlement, sampler outage fairness and final audit remain.
+
 ## 2026-10-19 — GOAL-069 HTTP adapter failure-isolation checkpoint
 
 - Made NestJS observation best-effort across context setup and completion/error

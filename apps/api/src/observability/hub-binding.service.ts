@@ -11,7 +11,7 @@ import { databaseUrl, loadLocalEnvironment, aiCredentialEncryptionKey } from '..
 import { observeSessionRevocation } from './security-events.js';
 import { NotificationService } from '../notifications/notification.service.js';
 export interface HubBindingConfiguration {applicationId:string;environmentId:string;enabled:boolean;}
-export type ProductWorkerOperation='subscription.expire_due'|'commercial.enumerate_organizations'|'commercial.provision_current'|'directory.schedule_due'|'directory.evaluate_health';
+export type ProductWorkerOperation='subscription.expire_due'|'commercial.enumerate_organizations'|'commercial.provision_current'|'directory.schedule_due'|'directory.evaluate_health'|'queue.providers.initialize'|'queue.ai.enumerate'|'queue.ai.process'|'queue.transcription.enumerate'|'queue.transcription.process'|'queue.intake.enumerate'|'queue.intake.process'|'queue.intake.cleanup';
 export function hubBindingConfiguration():HubBindingConfiguration|undefined{
  loadLocalEnvironment();if(process.env.OBSERVABILITY_ENABLED==='false')return;
  let config:Partial<HubBindingConfiguration>={applicationId:process.env.OBSERVABILITY_APPLICATION_ID,environmentId:process.env.OBSERVABILITY_ENVIRONMENT_ID};
@@ -94,6 +94,12 @@ export class HubBindingService implements OnModuleInit,OnModuleDestroy {
    // Attribution comes only from the trusted worker's database enumeration.
    return await observeJob(sdk,{applicationId:config.applicationId,environmentId:config.environmentId,actorReference:null,tenantReference:organizationId},operation,work);
   }catch(error){this.diagnostics.report('PRODUCT_WORKER_FAILED');throw error;}
+ }
+ reportBackgroundOutcome(operation:ProductWorkerOperation,organizationId:string|null,outcome:'RETRY'|'FAILED'|'DEAD_LETTER'){
+  try{
+   const config=this.configuration,sdk=this.sdk;if(!config||!sdk||organizationId!==null&&!isUuid(organizationId))return;
+   sdk.run({applicationId:config.applicationId,environmentId:config.environmentId,actorReference:null,tenantReference:organizationId},()=>sdk.capture({category:'WORKER',source:'WORKER',severity:outcome==='RETRY'?'WARNING':'ERROR',eventCode:'worker.job_failed',normalizedMessage:'Background job reported a controlled failure outcome',operationName:operation,safeMetadata:{failureCode:outcome,retryExhausted:outcome!=='RETRY'}}));
+  }catch{this.diagnostics.report('PRODUCT_WORKER_FAILED');}
  }
  async onModuleDestroy(){if(this.timer)clearInterval(this.timer);this.unsubscribe?.();this.unregisterNotifications?.();await this.sdk?.shutdown();await this.selfMonitoring?.flush();await this.hub?.close();}
 }

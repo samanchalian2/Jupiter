@@ -2,6 +2,15 @@
 
 ## GOAL-069 Observability Hub
 
+Queued Worker operations attribute only stored job organization IDs and null
+automation actors. Controlled outcomes use fixed failureCode/retryExhausted
+metadata, never request IDs as credentials, prompts, transcripts or raw provider
+errors. Additional AI/intake persisted-state reads filter both ID and tenant;
+their failure only logs a fixed observation warning and cannot stop business
+processing. No exception/result change was made to AiGatewayService.process.
+The normal SDK contract validates outcome events before HTTP; tests must assert
+that rows actually persist, not merely that a report method was called.
+
 Large-frame QC optimized email masking implementation, not secret policy:
 domain-first matching plus backwards local-part scanning keeps the original
 ASCII regex semantics and masking-rule order, checked against golden cases and

@@ -2,6 +2,13 @@
 
 ## GOAL-069 Observability Hub (implementation in progress)
 
+QueueWorker uses HubBinding's existing background-observation port for bounded
+enumeration and per-job processing. Product services remain the authorities for
+persisted retry/commercial outcomes; no new Hub dependency is added inside the
+AI service. Persisted state can be read for diagnostics without changing its
+return contract; failed diagnostic reads do not alter processing. The generic
+Hub core still imports no product-domain model or service.
+
 Observability is a reusable package boundary inside the initial modular host.
 Contracts/core/SDKs depend on generic identity and telemetry only. Server
 adapters own an independent `observability` PostgreSQL schema, Registry,

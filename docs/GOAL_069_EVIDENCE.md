@@ -4,6 +4,73 @@ Status: IN PROGRESS. Owner-approved plan supersedes the stale GOAL-060 identifie
 in the supplied specification. GOAL-060 Personal Service history is preserved.
 GOAL-059 remains BLOCKED; LOCAL evidence is not staging acceptance.
 
+## 2026-10-19 — Queued AI/voice/intake observation and outcome QC (LOCAL)
+
+- `apps/api/src/jobs/queue.worker.ts` now calls the existing host observation
+  boundary for provider construction, job enumeration, AI/transcription/intake
+  processing and cleanup. Persisted job rows provide organization IDs; the host
+  supplies null automation actor and fixed operation names. The prior raw-stack
+  logger is replaced by fixed-message logging. No migration, new provider, API
+  route, commercial quota or retry-state changes are introduced.
+- AI and intake services catch some terminal errors internally. The worker reads
+  their persisted status with both job/session ID and organization predicate;
+  it does NOT change AiGatewayService.process's existing return contract. Voice
+  already returns persisted status. RETRY projects WARNING/retryExhausted=false;
+  FAILED/DEAD_LETTER project ERROR/true. No prompt/transcript/file, provider error,
+  raw job payload or secret is supplied to the monitoring outcome port.
+- QC found an unsupported safeMetadata outcomeCode key, which would cause SDK
+  rejection. It is replaced by existing allowed failureCode; actual SDK and
+  HTTP/PostgreSQL tests require three persisted valid outcomes, not just a mocked
+  method invocation. Diagnostic-only state read errors are caught locally with
+  fixed warnings; subsequent jobs/cleanup still run and business outcome is not
+  converted to failure because observation failed.
+- Seven focused QueueWorker tests cover actual method stage order/tenant ports,
+  non-overlap, thrown-stage continuation on next cycle, cleanup failure cadence,
+  caught terminal outcomes, failed diagnostic read continuity and actual host/
+  SDK metadata validation. Controlled service ports in these unit tests do not
+  stand in for real provider/settlement acceptance.
+- Extended disposable lifecycle-worker.integration.spec.ts instantiates the
+  ACTUAL QueueWorker with real DatabaseService and HubBinding/Node SDK/HTTP Hub.
+  Temporarily renaming ai_requests ONLY in the fully migrated generated DB
+  triggers a genuine enumeration SQL failure. SQL proves a stored WORKER event
+  for queue.ai.enumerate with null actor/tenant. The table is restored in finally.
+  Later explicit outcome port calls persist three tenant-scoped RETRY/FAILED/
+  DEAD_LETTER rows; these calls prove transport/contract, NOT real provider failure.
+  The fail-fast path never reaches provider/service calls. Generated DB/role
+  cleanup still asserts their absence. Distinct host reporter instances prevent
+  legitimate one-minute warning dedupe from making unrelated test expectations
+  order-dependent; throttling itself is unchanged.
+- Existing lifecycle SQL→event→Issue→recovery and the original commercial/API
+  suites remain required. Actual provider-failure outcomes/metering, process
+  startup, remaining host/analytics/security and the complete specification/
+  A–I/47-section audit are still outstanding. Sampling outage/fairness is a
+  separate concrete open item below. No external host or provider call occurred.
+- Full release gate exits zero with 394 tests: 171 API, 30 Web and 193 Hub
+  (79 SDK/core/adapters, 103 server, 11 Console), all builds/lint/typechecks,
+  real Edge/Python/C#, performance/offline acceptance and 83-migration rehearsal.
+  Existing Vite chunk-size advisory remains. The earlier 167-API gate predates
+  final outcome/read-isolation fixes and is not the acceptance result for them.
+  No Goal completion follows from this checkpoint; requirements still pending
+  above must be independently proved.
+- Zero-active-AI preflight and zero temporary databases were verified after the
+  gate. Only the previously verified owned local API was restarted with the
+  rebuilt code; normal product queued Worker was NOT enabled against business
+  data just to create evidence. Hub local drain remains as previously configured.
+  External health/readiness passes and Web /operations returns HTTP 200. Normal
+  Help and the encrypted 100,000-token provider configuration remain unchanged;
+  no Preview/main host, co-hosted app, real AD or external provider was changed.
+
+## Remaining sampling failure-isolation review — not covered by happy-path scale
+
+The 120-environment 100/20/0 measurement proves successful bounded continuation,
+not per-scope outage/slow-query fairness. Current `server/src/self-monitoring.ts`
+awaits each scope sequentially; an exception escapes that loop before later
+scopes run. HubBinding awaits sampling within the shared periodic drain, so its
+worker progress can be delayed even though ordinary API handling is separate.
+Per-statement timeout alone is not a bounded whole-cycle deadline. This remains
+a concrete final-review item; do not mark full sampling failure isolation or
+whole GOAL-069 complete from the successful empty-scope scale fixture.
+
 ## 2026-10-19 — HTTP adapter isolation and cross-domain classification (LOCAL)
 
 - The reusable NestJS interceptor now treats context/capture failure as an

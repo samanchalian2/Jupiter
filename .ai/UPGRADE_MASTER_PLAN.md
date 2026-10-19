@@ -2,6 +2,11 @@
 
 ## GOAL-069 — Observability Hub continuation (IN PROGRESS)
 
+The queued AI/voice/intake drain is connected to existing scoped observation,
+including caught outcome projection and real SQL-enumeration/HTTP acceptance.
+Actual-service terminal-provider/metering tests, sampling outage fairness,
+host/process breadth and final A–I/47-section audit remain; no promotion follows.
+
 Performance acceptance adds real concurrent dispatch-to-aggregate timing and
 actual authorized ticket queue boundary overhead/capacity-continuity fixtures.
 Full host/workflow impact, scale/sampling fairness and final audit remain active;
