@@ -1,5 +1,23 @@
 # Current State
 
+**2026-10-19 full-limit offline Browser/batch checkpoint (GOAL-069 IN PROGRESS):**
+Real Edge/IndexedDB fills 500 count-limited events and 169 large UTF-8 events
+near 2MiB, survives actual offline flush/reload/renewal and proves distinct SQL
+delivery. QC found both SDKs batched by count only: requests now honor exact
+UTF-8 wrapper/payload/comma bytes as well as 50 events. All outgoing requests,
+not just successful responses, are observed. Empty metric deltas skip pointless
+journal scans. Large-frame tests exposed quadratic email-local-part scanning;
+implementation preserves masking semantics with a domain-first scan and golden/
+1,000-case parity tests, without raising test deadlines. No secret-policy, wire,
+scope, schema or migration change. Actual measurements/limits live in Evidence.
+Main workflow overhead, concurrent aggregation latency, larger-scale sampling
+fairness/deadlines, actual Worker/host breadth and final A–I audit remain active.
+Local only; no live provider or Preview/main promotion.
+Full release gate passes 368 tests (152 API, 30 Web, 186 Hub), builds/lint/
+typechecks, real Edge/Python/C#, performance and 83-migration rehearsal. Full-load
+fixture now drains all real aggregation jobs; one-claim leftovers had caused a
+failed earlier full run, not a production queue defect. Vite advisory remains.
+
 **2026-10-19 measured-performance checkpoint (GOAL-069 IN PROGRESS):**
 Disposable PostgreSQL performance acceptance measures 1,000 actual HTTP events,
 leased aggregation, 20 dashboard queries, logical sampling, deletion of 100 aged

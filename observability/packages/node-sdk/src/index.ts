@@ -1,5 +1,5 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
-import { SCHEMA_VERSION, isRecord, encodedBytes, type IdentityScope, type TelemetryEvent } from '@observability/contracts';
+import { SCHEMA_VERSION, LIMITS, isRecord, encodedBytes, type IdentityScope, type TelemetryEvent } from '@observability/contracts';
 import { sanitizeEvent, sanitizeStack, redactText, enforceScope, newTrace, retryDelay, SdkMetricBuffer } from '@observability/core';
 export interface NodeContext extends IdentityScope {requestId?:string;traceId?:string;spanId?:string;}
 export interface NodeSdkConfiguration {
@@ -78,7 +78,7 @@ export class NodeSdk {
     return this.capture({category:input.category??'BACKEND',source:input.source??'SERVER',severity:'ERROR',eventCode:input.eventCode??'server.exception',normalizedMessage:error instanceof Error?redactText(error.message).slice(0,2000):'Unexpected operation failure',exceptionType:error instanceof Error?error.name:'UnknownError',sanitizedStack:error instanceof Error?sanitizeStack(error.stack??''):undefined,operationName:input.operationName});
   }
   async flush(){
-    if(this.busy||this.stopped||Date.now()<this.nextFlush)return;const batch=this.pending.filter(p=>p.nextRetryAt<=Date.now()).slice(0,50);if(!batch.length){await this.flushMetrics();return;}this.busy=true;
+    if(this.busy||this.stopped||Date.now()<this.nextFlush)return;const batch:Pending[]=[];let bytes=encodedBytes({events:[]});for(const item of this.pending.filter(p=>p.nextRetryAt<=Date.now())){const size=item.bytes+(batch.length?1:0);if(batch.length>=LIMITS.batch||bytes+size>LIMITS.batchBytes)break;batch.push(item);bytes+=size;}if(!batch.length){await this.flushMetrics();return;}this.busy=true;
     try{
       const credential=await this.config.credentialProvider();if(!credential){this.nextFlush=Date.now()+30_000;return;}
       this.abort=new AbortController();const timeout=setTimeout(()=>this.abort?.abort(),15_000);

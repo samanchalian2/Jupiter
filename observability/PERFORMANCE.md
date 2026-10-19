@@ -46,5 +46,35 @@ Measured worker CPU/memory belongs to the shared test Node process, not a separa
 worker or PostgreSQL. Ingestion and aggregation are separate phases; aggregation
 wall time is not concurrent arrival-to-Issue latency. Logical byte scanning is
 not physical disk/index measurement. Larger-scale scan cost/fairness/deadlines,
-Browser full-limit persistence/memory and main Jupiter workflow overhead remain
-required before complete section-64 acceptance. Keep these limits in reports.
+main Jupiter workflow overhead remain required before complete section-64
+acceptance. Keep these limits in reports.
+
+## Full-limit offline Browser fixture
+
+Enable both flags for the actual installed Browser flow:
+
+```powershell
+$env:OBSERVABILITY_PERFORMANCE_ACCEPTANCE='true'
+$env:OBSERVABILITY_BROWSER_ACCEPTANCE='true'
+$env:OBSERVABILITY_BROWSER_CHANNEL='msedge'
+pnpm --filter @observability/server exec vitest run test/persistence.integration.test.ts -t 'real independent Browser acceptance'
+```
+
+The opt-in flow serves development-only `examples/browser/performance.html` on
+the random authenticated reference origin. It uses the normal default count and
+byte caps, real IndexedDB and actual browser offline mode; no `.start()` hooks
+or automated background flush are included in the microbenchmark. Explicit
+capture/manual flush isolates that SDK path. Both a 500-event small-payload
+queue and a byte-limited large UTF-8 payload queue survive reload/renewal and
+must deliver every original ID exactly once to the disposable database.
+
+All outbound batch attempts are inspected for the existing count AND UTF-8 byte
+limits, including failures. Observing only successful responses can conceal an
+oversized batch that eventually splits by retry timing. Exact data-envelope and
+separate diagnostic-journal caps are checked before/after replay.
+
+Reported capture times include asynchronous IndexedDB waits. CDP heap is a point
+sample, not peak/retained memory or browser process RSS. CDP task/script duration
+differences include the fixture UI during fill, not isolated SDK CPU. This adds
+bounded full-limit Browser evidence, not Jupiter workflow latency, automatic
+handler overhead or proof of larger-scale storage sampling safety.

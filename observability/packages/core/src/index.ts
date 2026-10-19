@@ -1,15 +1,27 @@
 import { ContractError, LIMITS, validateEvent, type IdentityScope, type TelemetryEvent, type IncidentStatus, type InvestigationOutput, type EvidenceReference } from '@observability/contracts';
 
 /** Targeted masking preserves ordinary diagnostics and reproduction steps. */
+function redactEmails(text:string):string {
+  // Start at @ instead of retrying a greedy local-part at every character.
+  // Preserve the original ASCII email-match policy without quadratic scans.
+  if(!text.includes('@'))return text;
+  const domains=/@[\w.-]+\.[A-Za-z]{2,}/g,local=/[\w.+-]/;let result='',cursor=0;
+  for(const match of text.matchAll(domains)){
+    const at=match.index!;let start=at;while(start>cursor&&local.test(text[start-1]))start--;
+    if(start===at)continue;
+    result+=text.slice(cursor,start)+'[email redacted]';cursor=at+match[0].length;
+  }
+  return cursor?result+text.slice(cursor):text;
+}
 export function redactText(text: string): string {
-  return text
+  const masked=text
     .replace(/-----BEGIN [A-Z ]*PRIVATE KEY-----[\s\S]*?-----END [A-Z ]*PRIVATE KEY-----/g,'[private key redacted]')
     .replace(/\b(?:postgres(?:ql)?|mysql|mongodb(?:\+srv)?):\/\/[^\s"'<>]+/gi,'[connection string redacted]')
     .replace(/\b(?:Bearer|Basic)\s+[a-zA-Z0-9+/_=.-]+/g,'[authorization redacted]')
     .replace(/\beyJ[a-zA-Z0-9_-]{5,}\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+\b/g,'[token redacted]')
     .replace(/\b(?:sk-(?:proj-)?[a-zA-Z0-9_-]{12,}|AKIA[A-Z0-9]{16})\b/g,'[api key redacted]')
     .replace(/((?:password|passwd|pwd|secret|(?:api[_ -]?|access[_ -]?|refresh[_ -]?)?(?:key|token)|authorization|cookie|رمز(?:\s*عبور)?|کلید\s*(?:API|ای‌پی‌آی))\s*["']?\s*[:=]\s*)(?:"[^"\r\n]*"|'[^'\r\n]*'|[^\s,;}]+)/gi,'$1[redacted]')
-    .replace(/[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}/g,'[email redacted]')
+  return redactEmails(masked)
     .replace(/\b(?:\d[ -]?){13,19}\b/g,'[sensitive number redacted]')
     .replace(/https?:\/\/[^\s<>"')]+/gi, match => { try { const url = new URL(match); url.username='';url.password='';url.search='';url.hash='';return url.toString(); } catch { return '[url redacted]'; } })
     .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g,'');

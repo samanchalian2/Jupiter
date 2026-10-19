@@ -2,6 +2,15 @@
 
 ## GOAL-069 Observability Hub
 
+Large-frame QC optimized email masking implementation, not secret policy:
+domain-first matching plus backwards local-part scanning keeps the original
+ASCII regex semantics and masking-rule order, checked against golden cases and
+1,000 deterministic generated strings. Long invalid/no-email words no longer
+force repeated greedy prefix scans. Other redaction rules are unchanged. Both
+SDKs bound exact UTF-8 batch bytes as well as event count before transport; the
+server limit remains independent and unchanged. Tests include failed outbound
+attempts, not only successful responses, with no raw payload/credential logging.
+
 The eleven Hub Help articles are public educational ALL content, never scoped
 operational records or credentials. They do not confer Hub grants or expose
 private existing Help. Jupiter's adapter uses normal authenticated Help lookup,

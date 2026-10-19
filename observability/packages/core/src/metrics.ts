@@ -12,4 +12,5 @@ export class SdkMetricBuffer {
  acknowledge(id:string){if(this.pending?.reportId===id)this.pending=undefined;}
  reset(){this.pending=undefined;this.counts=zero();this.overflow=false;}
  hasMeasurementLoss(){return this.overflow;}
+ hasPending(){return Boolean(this.pending)||Object.values(this.counts).some(value=>value>0);}
 }

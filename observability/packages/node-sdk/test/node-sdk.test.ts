@@ -3,6 +3,11 @@ import { NodeSdk } from '../src/index.js';
 const app=crypto.randomUUID(),env=crypto.randomUUID();
 const setup=(extra:Partial<ConstructorParameters<typeof NodeSdk>[0]>={})=>new NodeSdk({reportMetrics:false,applicationId:app,environmentId:env,endpoint:'https://hub.example.test/api/v1/observability',credentialProvider:async()=> 'placeholder',fallback:()=>{},...extra});
 describe('Node capture/correlation/failure isolation',()=>{
+  it('bounds every UTF-8 batch by bytes as well as event count without losing queued events',async()=>{
+    const sizes:number[]=[],ids=new Set<string>(),sdk=setup({transport:async(_url,init)=>{const body=String(init?.body),batch=JSON.parse(body);sizes.push(new TextEncoder().encode(body).length);expect(sizes.at(-1)).toBeLessThanOrEqual(524288);expect(batch.events.length).toBeLessThanOrEqual(50);batch.events.forEach((event:{eventId:string})=>ids.add(event.eventId));return Response.json({schemaVersion:'1.1',acknowledgements:batch.events.map((event:{eventId:string})=>({eventId:event.eventId,status:'ACCEPTED'}))});}});
+    for(let index=0;index<60;index++)expect(sdk.capture({category:'BACKEND',severity:'ERROR',eventCode:'large.batch',normalizedMessage:'آ'.repeat(1900),sanitizedStack:'f'.repeat(8000)})).not.toBeNull();
+    for(let index=0;sdk.stats().queued&&index<5;index++)await sdk.flush();expect(sdk.stats().queued).toBe(0);expect(ids.size).toBe(60);expect(sizes.length).toBeGreaterThan(1);
+  });
   it('reclaims the byte budget after retry exhaustion and undelivered shutdown',async()=>{
     const time=vi.spyOn(Date,'now').mockReturnValue(Date.now());
     const capture=(sdk:NodeSdk)=>sdk.capture({category:'BACKEND',severity:'ERROR',eventCode:'bytes.retry',normalizedMessage:'Controlled byte budget'});

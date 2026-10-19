@@ -6,6 +6,16 @@ const event={category:'FRONTEND' as const,severity:'ERROR' as const,eventCode:'t
 const setup=(overrides:Partial<ConstructorParameters<typeof BrowserSdk>[0]>={})=>new BrowserSdk({reportMetrics:false,applicationId:scope.applicationId,environmentId:scope.environmentId,endpoint:'https://hub.example.test/api/v1/observability',contextProvider:()=>scope,authProvider:async s=>({scope:s,token:'unit-test-placeholder',expiresAt:Date.now()+60_000}),storage:new MemoryQueue(),...overrides});
 const ackTransport:typeof fetch=async(_url,init)=>{const batch=JSON.parse(String(init?.body));return Response.json({schemaVersion:'1.1',acknowledgements:batch.events.map((e:{eventId:string})=>({eventId:e.eventId,status:'ACCEPTED'}))});};
 describe('browser queue protocol and isolation',()=>{
+  it('does not rescan the journal for an empty diagnostic delta',async()=>{
+    class CountedQueue extends MemoryQueue{reads=0;override async list(){this.reads++;return super.list();}}
+    const reads:number[]=[];for(const enabled of [false,true]){const store=new CountedQueue(),sdk=setup({storage:store,reportMetrics:enabled});await sdk.capture(event);reads.push(store.reads);}
+    expect(reads[0]).toBeGreaterThan(0);expect(reads[1]).toBe(reads[0]);
+  });
+  it('bounds UTF-8 request batches by bytes and count while preserving all large events',async()=>{
+    const bodies:number[]=[],ids=new Set<string>(),sdk=setup({transport:async(_url,init)=>{const body=String(init?.body),batch=JSON.parse(body);bodies.push(new TextEncoder().encode(body).length);expect(bodies.at(-1)).toBeLessThanOrEqual(524288);expect(batch.events.length).toBeLessThanOrEqual(50);batch.events.forEach((item:{eventId:string})=>ids.add(item.eventId));return Response.json({schemaVersion:'1.1',acknowledgements:batch.events.map((item:{eventId:string})=>({eventId:item.eventId,status:'ACCEPTED'}))});}});
+    for(let index=0;index<60;index++)expect(await sdk.capture({...event,normalizedMessage:'آ'.repeat(1900),sanitizedStack:'f'.repeat(8000)})).not.toBeNull();
+    for(let index=0;(await sdk.getStatus()).queued&&index<5;index++)await sdk.flush();expect((await sdk.getStatus()).queued).toBe(0);expect(ids.size).toBe(60);expect(bodies.length).toBeGreaterThan(1);
+  });
   it('rejects invalid or oversized identity references before journaling diagnostics',async()=>{const store=new MemoryQueue();for(const actorReference of ['', 'x'.repeat(161)])expect(()=>setup({reportMetrics:true,storage:store,contextProvider:()=>({...scope,actorReference})})).toThrow('INVALID_SDK_CONTEXT');expect(await store.list()).toEqual([]);});
   it('does not call a signed-out context provider or expose old counters after shutdown',async()=>{let signedOut=false;const sdk=setup({contextProvider:()=>{if(signedOut)throw Error('Context gone');return scope;}});await sdk.capture(event);await sdk.shutdown();signedOut=true;expect(await sdk.getStatus()).toMatchObject({queued:0,metricQueued:0,dropped:0});});
   it('does not publish the previous actor feedback tracking ACK after a delayed body and account switch',async()=>{

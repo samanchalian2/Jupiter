@@ -2,6 +2,11 @@
 
 ## GOAL-069 — Observability Hub continuation (IN PROGRESS)
 
+Real Browser performance now exercises default count/byte saturation and
+offline/reload/exact-once delivery. Both SDKs honor byte/count batch ceilings;
+email-masking complexity is reduced without policy change. Main workflow impact,
+concurrent aggregation latency, sampling scale/fairness and final audit remain.
+
 Section 64 has a measured local 1,000-event real HTTP/service checkpoint and a
 remediated Node capture queue-byte hot path. Browser offline scale, main workflow
 impact and storage sampling fairness/deadlines remain; measurements do not prove

@@ -19,8 +19,9 @@ works at four widths. Late-response/context/logout handling has explicit tests.
 This is not a blanket completion claim for all product workflows or the live
 Jupiter shell. Section-63 Help is runtime-published with actual Jupiter operations,
 Platform-panel and Feedback acceptance. The measured local performance checkpoint
-and Node hot-path remediation bring the full release gate to 363 tests with the
-performance flag enabled. Inspect latest Evidence for gates/runtime/remote commit.
+and Node hot-path remediation plus full-limit Browser/batch/redaction QC bring
+the full release gate to 368 tests with the performance flag enabled. Inspect
+latest Evidence for gates/runtime/remote commit.
 
 ### Remaining work — preserve the full original scope
 
@@ -42,8 +43,10 @@ performance flag enabled. Inspect latest Evidence for gates/runtime/remote commi
 4. Finish full performance acceptance in specification section 64. Preserve the
    measured disposable-DB 1,000-event HTTP/aggregation/dashboard/retention/AI
    scheduling checkpoint and Node incremental-byte microbenchmark/regressions.
-   Still measure Browser SDK/full-limit IndexedDB memory/offline behavior,
-   main Jupiter API/workflow overhead and concurrent aggregation latency.
+   Preserve real Browser default-capacity count/byte saturation, offline/reload/
+   renewal and exact SQL delivery; CDP metrics are samples, not peak/retained RSS.
+   Both SDK byte-bounded batches and shared email-matcher policy parity are
+   covered. Still measure main Jupiter API/workflow overhead and concurrent aggregation latency.
    Review representative larger-scale bounded logical
    storage-sampling fairness/deadlines/scan cost at scale; small fixtures alone
    do not prove performance. Keep source provenance and unobserved states honest.

@@ -3,6 +3,14 @@ import { SCHEMA_VERSION, type TelemetryEvent } from '@observability/contracts';
 import { redactText, sanitizeEvent, enforceScope, fingerprint, canonicalJson, parseTraceparent, newTrace, retryDelay, canTransitionIncident, validateInvestigation, scopeKey } from '../src/index.js';
 const fixture=():TelemetryEvent=>({eventId:crypto.randomUUID(),applicationId:crypto.randomUUID(),environmentId:crypto.randomUUID(),schemaVersion:SCHEMA_VERSION,occurredAt:new Date().toISOString(),source:'SERVER',category:'BACKEND',severity:'ERROR',eventCode:'db.failed',normalizedMessage:'Query failed',exceptionType:'DatabaseError',operationName:'ticket.create',routeTemplate:'/tickets/:id',sanitizedStack:'Error\n at create (https://example.test/app.js:10:12)'});
 describe('independent privacy/correlation/issue core',()=>{
+  it('preserves email masking semantics without rescanning long non-email words',()=>{
+    const old=(text:string)=>text.replace(/[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}/g,'[email redacted]');
+    const corpus=['a@b.com@c.com','@b.com@c.com','a@b.c@d.com','name+tag@sub-domain.example','δοκιμή@domain.test','@host.test','a@b.example.c','one@host.test two@other.test'];
+    let seed=17;const alphabet='abCDxy.@+-_!? ';
+    for(let index=0;index<1000;index++){let value='';for(let character=0;character<128;character++){seed=(seed*1664525+1013904223)>>>0;value+=alphabet[seed%alphabet.length];}corpus.push(value);}
+    for(const value of corpus)expect(redactText(value)).toBe(old(value));
+    expect(redactText('f'.repeat(8000))).toBe('f'.repeat(8000));expect(redactText('f'.repeat(8000)+'@invalid')).toBe('f'.repeat(8000)+'@invalid');expect(redactText('f'.repeat(8000)+'@host.test')).toBe('[email redacted]');
+  });
   it('masks targeted secrets but preserves error messages and steps',()=>{const input='خطا در ثبت: password=fake-test-value token="dummy-test-token" Bearer dummy.authorization.value\nSteps: open settings; HTTP 502';const out=redactText(input);expect(out).not.toContain('fake-test-value');expect(out).not.toContain('dummy-test-token');expect(out).not.toContain('dummy.authorization.value');expect(out).toContain('Steps: open settings; HTTP 502');});
   it('removes credentials, query strings, JWT and private keys',()=>{for(const text of ['postgresql://dummy:dummy@local.invalid/database','https://dummy:dummy@example.test/path?secret=dummy#private','-----BEGIN PRIVATE KEY-----\ndummy\n-----END PRIVATE KEY-----'])expect(redactText(text)).not.toContain('dummy:dummy');expect(redactText('-----BEGIN PRIVATE KEY-----\ndummy\n-----END PRIVATE KEY-----')).not.toContain('\ndummy\n');});
   it('sanitizes before transmission and bounds text',()=>{const event=sanitizeEvent({...fixture(),normalizedMessage:'password=testing',safeMetadata:{failureCode:'token=testing'}});expect(event.normalizedMessage).toBe('password=[redacted]');expect(event.safeMetadata?.failureCode).toBe('token=[redacted]');});

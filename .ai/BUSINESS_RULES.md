@@ -1,5 +1,14 @@
 # Business Rules
 
+## SDK byte-bound batching (GOAL-069 QC)
+
+- Both SDKs retain the established 50-event AND 524,288-byte request ceilings.
+  Byte accounting includes UTF-8 payloads, JSON wrapper and commas. Eligible
+  pending order and per-event IDs/ACK handling are unchanged; individually valid
+  large events must not trigger an oversized request merely from batching.
+- Empty diagnostic deltas do not scan the offline journal; already journaled
+  reports still follow the same bounded replay/identity rules.
+
 ## Hub educational Help (GOAL-069)
 
 - The eleven guides are public documentation, not an operations grant. Existing

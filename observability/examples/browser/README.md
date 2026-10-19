@@ -97,3 +97,14 @@ for the same UUID/body. The shared self-health Console is checked at 375/768/
 1024/1440 RTL with unknown-source labels, no list pagination/CSV and Viewer
 denial after App switch. Native backend SDK replay is independently tested over
 real HTTP/PostgreSQL. No real customer tenant or external AI key is used here.
+
+## Full-limit offline performance
+
+The separate development-only `performance.html` fixture uses normal 500-event/
+2MiB caps rather than this sample UI's small 20-event demonstration queue. With
+both Browser/performance acceptance flags enabled, real Edge exercises small and
+large UTF-8 event queues, actual offline flush, page reload/credential renewal,
+all outgoing batch sizes and exact SQL delivery. CDP heap/task samples and actual
+capture/replay times have explicit non-peak/non-production limitations. See
+`../../PERFORMANCE.md`; this fixture is not a new Jupiter product page or a
+production-distribution build entry.

@@ -4,6 +4,93 @@ Status: IN PROGRESS. Owner-approved plan supersedes the stale GOAL-060 identifie
 in the supplied specification. GOAL-060 Personal Service history is preserved.
 GOAL-059 remains BLOCKED; LOCAL evidence is not staging acceptance.
 
+## 2026-10-19 — Full-limit real Browser offline measurement and batching QC (LOCAL)
+
+The independent reference now has a development-only `performance.html` fixture.
+It authenticates through the existing reference host, uses the real Browser SDK
+and IndexedDB without reducing the default 500-item/2,097,152-byte limits, then
+uses actual browser network-offline, renewal/reload and manual flush over HTTP.
+It is not a new Jupiter page/navigation or a production build entry. No consumer
+business module, user credential or live AI provider is involved.
+
+- Two separate real Browser storage namespaces exercise count and byte saturation.
+  Count case accepts 500 and rejects attempt 501; stored data envelopes total
+  436,000 bytes. Large UTF-8/stack case accepts 169 and rejects attempt 170;
+  stored data envelopes total 2,085,798 bytes. Metrics have their separate bounded
+  journal. Exact data-byte accounting includes envelope metadata, not just payload.
+- Actual offline flush retains every queued event. The same sorted event IDs are
+  read from IndexedDB before/after a real page reload and credential renewal.
+  Subsequent SQL proves 500/169 distinct persisted rows respectively, with no
+  duplicate or missing event. Checks inspect every outbound batch request, not
+  only successful responses; count, UTF-8 body bytes, HTTP result and network
+  failure flags must all satisfy the contract. Metric journal bounds are checked
+  after fill and replay too. Context/process/listener and disposable DB cleanup
+  remain in finally; nothing is loaded into Jupiter's business tenant.
+- QC found the SDKs selected batches by count only. Fifty individually valid
+  large events can exceed the existing 524,288-byte request limit. Browser retry
+  timing could accidentally split them into smaller successful cohorts, masking
+  the flaw: one baseline run retained 57 queued events after its bounded replay,
+  another eventually delivered all 169 through variable-size retry cohorts.
+  This is not evidence of guaranteed data loss, nor was the flaky baseline marked
+  successful acceptance. New tests observe all attempts, including failed ones.
+- Browser and Node now greedily preserve pending order while limiting BOTH 50
+  events and exact UTF-8 JSON wrapper/comma/payload bytes per request. Node uses
+  its existing cached payload byte sizes. No server/request contract, tenant
+  scope, ACK semantics, retry budget, queue schema or migration changes.
+- Empty diagnostic deltas no longer rescan the full Browser journal on every
+  capture. The fixed metric buffer exposes a non-consuming pending check;
+  persisted reports still replay normally. Unit tests compare actual journal
+  read counts with diagnostics enabled/disabled for an empty delta and preserve
+  all existing metric retry/context cases.
+- Large-event regression fixtures also exposed repeated greedy email-local-part
+  scanning in redaction: 60 contiguous 8,000-character frames exceeded the old
+  five-second unit deadline. The matcher now starts at domain markers and scans
+  the local part backwards, preserving the existing ASCII masking policy and
+  its position between the same other masking rules. The normal deadline was
+  NOT raised. Golden overlapping/invalid/Unicode cases and 1,000 deterministic
+  generated strings compare exactly to the prior matcher; long no-email, invalid
+  suffix and valid-email frames are covered. Both SDK suites now complete normally.
+- Fixed standalone Browser measurement before the final shared-redactor update:
+  count fill 7,438.70ms, capture p50/p95/max 13.40/30.90/52.30ms, offline flush
+  292.30ms, ten replay requests/4,446.20ms. Large fill 6,593.40ms, capture
+  p50/p95/max 37.60/75.60/95.60ms, offline flush 228.40ms, four replay requests/
+  2,066ms. Large requests contain 43/43/43/40 events (518,119/518,119/518,119/
+  481,972 bytes), all HTTP 200. These are async capture wall times including
+  IndexedDB waits, not main-thread blocking time. Full-gate measurements below
+  cover the final shared-redactor version; microbench timings are machine-local.
+- CDP samples measure JS heap before/after fill; they are NOT retained memory,
+  peak memory or browser-process RSS. CDP TaskDuration/ScriptDuration deltas cover
+  the fill interval including fixture UI, not isolated SDK CPU. Heap/GC noise and
+  initial-load effects remain explicit. Metrics are numeric/structural only;
+  tokens, raw events, stacks, actor IDs and payload text are not printed.
+- This adds real full-limit offline evidence, not whole section-64 completion:
+  main Jupiter workflow/API overhead, concurrent arrival-to-Issue latency,
+  representative larger-scale queries and logical sampling fairness/deadlines
+  remain. Real Worker/host breadth, final security/cleanup and full A–I/47-section
+  audit remain active. No Preview/main promotion and no next Goal.
+- Final shared-redactor Browser run: count fill 8,079.80ms (p50/p95/max capture
+  15.40/34.20/50ms), replay 4,582.80ms/ten batches; large fill 6,751.90ms
+  (37.70/82.70/98.60ms), replay 2,114.30ms/four byte-bounded batches. CDP heap
+  samples before/after are 2,654,812/19,525,816 bytes (count) and
+  2,654,300/12,617,976 bytes (large). Fill-interval task/script deltas are
+  4.180627/1.310675 seconds and 3.398741/0.303928 seconds respectively. These
+  measurements were captured by the real Browser flow in the first full gate;
+  that gate later failed due to unprocessed fixture aggregation contaminating
+  subsequent tests, so it was NOT reported as a passing full release.
+- QC fixed that fixture contamination by fully draining its real AGGREGATE jobs
+  rather than processing only one claim of 50; an explicit SQL assertion proves
+  no performance-source aggregation job remains pending/running before later
+  suites. No production queue/lease policy or assertions were weakened. Repeated
+  complete release gate then passes 368 tests (152 API, 30 Web, 186 Hub: 72
+  SDK/core/adapters, 103 server, 11 Console), all builds/lint/typechecks, real
+  Edge/Python/C#, performance flags and 83-migration rehearsal. Existing Vite
+  chunk-size advisory remains; no next Goal or production promotion follows.
+- Owned local API was restarted after zero-active-attempt preflight to load both
+  SDK fixes/shared redactor. Initial probe during startup returned UNKNOWN; the
+  same live process/session was re-polled, not restarted on observation timeout.
+  Nest subsequently confirmed startup and the external probe passed. Local Web
+  remains available on 5174. No other host/service was changed.
+
 ## 2026-10-19 — LOCAL measured load and Node capture remediation (IN PROGRESS)
 
 This is a measured section-64 checkpoint, not complete performance or production

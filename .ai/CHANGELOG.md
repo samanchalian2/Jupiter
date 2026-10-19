@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-10-19 — GOAL-069 full-limit Browser offline and batch remediation (IN PROGRESS)
+
+- Added real authenticated reference/Edge default-capacity IndexedDB measurement,
+  actual offline/reload/renewal and distinct SQL delivery for count/byte limits.
+- Fixed both SDKs' byte-unbounded batches; exact UTF-8 request size and count
+  are now bounded together. Tests observe failed requests as well as responses.
+- Avoided empty diagnostic-journal rescans and optimized email masking without
+  weakening policy, proved by golden/generated parity and long-frame regressions.
+- No architecture/migration/provider changes. Full workflow/scale/host audit remains.
+
 ## 2026-10-19 — GOAL-069 LOCAL performance measurements (IN PROGRESS)
 
 - Added disposable PostgreSQL/real HTTP load acceptance for ingestion, leased

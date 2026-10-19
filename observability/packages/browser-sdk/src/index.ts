@@ -48,7 +48,7 @@ export class BrowserSdk {
   acknowledgeMetricReport(id:string){this.metrics.acknowledge(id);}
   private countDropped(entries:OfflineEnvelope[]){this.status.dropped+=entries.filter(e=>e.kind!=='METRICS').length;const events=entries.filter(e=>e.kind==='EVENT');this.metrics.add('dropped',events.length);this.metrics.add('retryDropped',events.filter(e=>e.attempts>0).length);}
   private async checkpointMetrics(){
-    if(this.config.reportMetrics===false||this.stopped)return;
+    if(this.config.reportMetrics===false||this.stopped||!this.metrics.hasPending())return;
     const generation=this.generation,partition=this.partition;
     try{await this.serialize(async()=>{
       if(generation!==this.generation||scopeKey(this.context())!==partition)return;
@@ -154,7 +154,8 @@ export class BrowserSdk {
       if(!credential||credential.expiresAt<=this.clock()||scopeKey(credential.scope)!==partition||startedGeneration!==this.generation)return;
       this.abort=new AbortController();const timeout=setTimeout(()=>this.abort?.abort(),15_000);
       try{
-        const events=pending.filter(e=>e.kind==='EVENT').slice(0,LIMITS.batch);
+        const events:OfflineEnvelope[]=[];let batchBytes=encodedBytes({events:[]});
+        for(const item of pending.filter(e=>e.kind==='EVENT')){const size=encodedBytes(item.payload)+(events.length?1:0);if(events.length>=LIMITS.batch||batchBytes+size>LIMITS.batchBytes)break;events.push(item);batchBytes+=size;}
         if(events.length){
           const response=await this.transport(`${this.config.endpoint}/events/batch`,{method:'POST',headers:{authorization:`Bearer ${credential.token}`,'content-type':'application/json'},body:JSON.stringify({events:events.map(e=>e.payload)}),signal:this.abort.signal,credentials:'omit'});
           if(startedGeneration!==this.generation)return;
