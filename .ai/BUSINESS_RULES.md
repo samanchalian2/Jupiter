@@ -1,5 +1,13 @@
 # Business Rules
 
+## Jupiter fetch observation isolation (GOAL-069)
+
+- Observer trace/identity/preparation failure dispatches original request once.
+- Diagnostic failure after dispatch never retries a potentially committed write,
+  replaces its response/error, or creates a false business network-failure event.
+- A changed/failed identity check drops attribution. Diagnostic rejection/stall
+  cannot reject or delay the original business result; no recursive logging.
+
 ## Offline data-write failure isolation (DEC-048)
 
 - Retry metadata and ACK/expiry/context removal failures must not reject consumer

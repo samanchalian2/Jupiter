@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-10-19 — GOAL-069 Jupiter fetch failure isolation (IN PROGRESS)
+
+- Five red regressions verify observer faults could alter business requests.
+  Isolated preparation/callbacks now preserve one dispatch and exact outcomes;
+  failed identity lookup suppresses telemetry, async errors are contained.
+- Eleven focused Web tests/typecheck and actual native Edge/loopback HTTP pass;
+  six writes commit once, native abort preserved, no unhandled/page errors.
+- Full LOCAL gate passes 418 tests/builds/lint/typechecks and real Browser/
+  reference-client/performance/migration acceptance; cleanup/listeners unchanged.
+  No auth/API/provider/schema or target-host change; full
+  authenticated host/process and final requirement audit remain open.
+
 ## 2026-10-19 — GOAL-069 queued intake recovery / timer outage (IN PROGRESS)
 
 - Added four real queued HTTP intake recovery paths with invalid-output retry,

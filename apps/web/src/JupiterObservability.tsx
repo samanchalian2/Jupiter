@@ -27,15 +27,24 @@ async function credential(scope:Scope):Promise<Credential|null>{
  cachedCredential={token:value.token,scope:value.scope,expiresAt:Date.parse(value.expiresAt)};return cachedCredential;
 }
 export function instrumentJupiterFetch(transport:typeof fetch,observer:Pick<BrowserSdk,'capture'|'trace'|'reportApiFailure'>,base:string,identityKey?:()=>string):typeof fetch{
+ const observe=(work:()=>unknown)=>{try{void Promise.resolve(work()).catch(()=>undefined);}catch{/* Diagnostics never replace business outcomes or recursively report themselves. */}};
  return async(input,init)=>{
-  let url:URL;try{url=new URL(typeof input==='string'?input:input instanceof URL?input.href:input.url,location.origin);}catch{return transport(input,init);}
-  const apiBase=new URL(base,location.origin);
-  if(url.origin!==apiBase.origin||!url.pathname.startsWith(apiBase.pathname+'/')||url.pathname.includes('/observability/'))return transport(input,init);
-  const trace=observer.trace(),requestId=crypto.randomUUID(),method=init?.method??(input instanceof Request?input.method:'GET'),headers=new Headers(input instanceof Request?input.headers:undefined);
-  new Headers(init?.headers).forEach((value,key)=>headers.set(key,value));headers.set('traceparent',trace.traceparent);headers.set('x-request-id',requestId);
-  const started=performance.now(),operationName=`${method} ${routeTemplate(url.pathname)}`,identity=identityKey?.();
-  try{const response=await transport(input,{...init,headers});if(identity===identityKey?.())void observer.capture({category:'PERFORMANCE',severity:response.status>=500?'ERROR':'INFO',eventCode:'api.operation',normalizedMessage:'API operation completed',operationName,routeTemplate:routeTemplate(url.pathname),httpStatus:response.status,durationMs:Math.round(performance.now()-started),requestId,traceId:trace.traceId,spanId:trace.spanId,safeMetadata:{outcome:response.ok?'SUCCESS':response.status<500?'REJECTED':'FAILURE'}});return response;}
-  catch(error){if(identity===identityKey?.())void observer.reportApiFailure({operationName,url:url.href,durationMs:Math.round(performance.now()-started),requestId,traceId:trace.traceId});throw error;}
+  const prepared=(()=>{try{
+   const url=new URL(typeof input==='string'?input:input instanceof URL?input.href:input.url,location.origin),apiBase=new URL(base,location.origin);
+   if(url.origin!==apiBase.origin||!url.pathname.startsWith(apiBase.pathname+'/')||url.pathname.includes('/observability/'))return null;
+   const identity=identityKey?.(),trace=observer.trace(),requestId=crypto.randomUUID(),method=init?.method??(input instanceof Request?input.method:'GET'),headers=new Headers(input instanceof Request?input.headers:undefined);
+   new Headers(init?.headers).forEach((value,key)=>headers.set(key,value));headers.set('traceparent',trace.traceparent);headers.set('x-request-id',requestId);
+   return {url,identity,trace,requestId,headers,started:performance.now(),operationName:`${method} ${routeTemplate(url.pathname)}`};
+  }catch{return null;}})();
+  // Prepare diagnostics before dispatch; fallback forwards the original arguments
+  // exactly once. Never retry a possibly committed request because capture failed.
+  if(!prepared)return transport(input,init);
+  const {url,identity,trace,requestId,headers,started,operationName}=prepared;
+  let response:Response;
+  try{response=await transport(input,{...init,headers});}
+  catch(error){observe(()=>identity===identityKey?.()?observer.reportApiFailure({operationName,url:url.href,durationMs:Math.round(performance.now()-started),requestId,traceId:trace.traceId}):undefined);throw error;}
+  observe(()=>identity===identityKey?.()?observer.capture({category:'PERFORMANCE',severity:response.status>=500?'ERROR':'INFO',eventCode:'api.operation',normalizedMessage:'API operation completed',operationName,routeTemplate:routeTemplate(url.pathname),httpStatus:response.status,durationMs:Math.round(performance.now()-started),requestId,traceId:trace.traceId,spanId:trace.spanId,safeMetadata:{outcome:response.ok?'SUCCESS':response.status<500?'REJECTED':'FAILURE'}}):undefined);
+  return response;
  };
 }
 export async function ensureJupiterObservability():Promise<BrowserSdk|null>{

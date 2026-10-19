@@ -2,6 +2,13 @@
 
 ## GOAL-069 Observability Hub
 
+Jupiter fetch observation failure never authorizes retry of a business request.
+Preparation failure forwards the original arguments once; diagnostic completion
+cannot replace response/error. Failed or changed identity suppresses capture.
+Callback failures are consumed without raw logging or recursively using Hub.
+Native Browser acceptance uses a fresh local-only context and ephemeral HTTP
+fixture, not a signed-in user profile or weakened production network policy.
+
 DEC-048 does not promise physical erasure when browser storage rejects writes.
 Unavailable old durable rows retain their original partition; fresh context
 synchronization purges foreign rows before replay. Credentials are never stored,

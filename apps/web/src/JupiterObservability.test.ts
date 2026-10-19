@@ -12,6 +12,52 @@ function fixture() {
   return observer;
 }
 describe('Jupiter fetch observation', () => {
+  it('dispatches once with original arguments when trace preparation fails', async () => {
+    const observer=fixture(),response=new Response('business response',{status:201});
+    observer.trace=()=>{throw Error('private observer failure');};
+    const transport=vi.fn<typeof fetch>(async()=>response),init={method:'POST',body:'private input'};
+    await expect(instrumentJupiterFetch(transport,observer,'/api/v1')('/api/v1/tickets',init)).resolves.toBe(response);
+    expect(transport).toHaveBeenCalledExactlyOnceWith('/api/v1/tickets',init);
+    expect(observer.capture).not.toHaveBeenCalled();expect(observer.reportApiFailure).not.toHaveBeenCalled();
+  });
+  it('does not block dispatch or attribute telemetry when the identity snapshot fails', async () => {
+    const observer=fixture(),response=new Response('ok'),transport=vi.fn<typeof fetch>(async()=>response);
+    await expect(instrumentJupiterFetch(transport,observer,'/api/v1',()=>{throw Error('identity unavailable');})('/api/v1/tickets')).resolves.toBe(response);
+    expect(transport).toHaveBeenCalledTimes(1);expect(observer.capture).not.toHaveBeenCalled();
+  });
+  it('keeps the response and original network error when the final identity check fails', async () => {
+    const observer=fixture(),response=new Response('ok'),failure=new TypeError('original network failure');
+    const identity=()=>{if(++calls%2===0)throw Error('identity unavailable');return 'old';};let calls=0;
+    const transport=vi.fn<typeof fetch>(async()=>response);
+    await expect(instrumentJupiterFetch(transport,observer,'/api/v1',identity)('/api/v1/tickets')).resolves.toBe(response);
+    expect(transport).toHaveBeenCalledTimes(1);
+    await expect(instrumentJupiterFetch(async()=>{throw failure;},observer,'/api/v1',identity)('/api/v1/tickets')).rejects.toBe(failure);
+    expect(observer.capture).not.toHaveBeenCalled();expect(observer.reportApiFailure).not.toHaveBeenCalled();
+  });
+  it('does not replace a committed response or report a false network failure when capture throws', async () => {
+    const observer=fixture(),response=new Response('committed',{status:201}),transport=vi.fn<typeof fetch>(async()=>response);
+    observer.capture.mockImplementation(()=>{throw Error('private capture failure');});
+    await expect(instrumentJupiterFetch(transport,observer,'/api/v1')('/api/v1/tickets',{method:'POST'})).resolves.toBe(response);
+    expect(await response.text()).toBe('committed');expect(transport).toHaveBeenCalledTimes(1);expect(observer.reportApiFailure).not.toHaveBeenCalled();
+  });
+  it('keeps the exact business rejection if failure reporting throws', async () => {
+    const observer=fixture(),failure=new TypeError('business failure'),transport=vi.fn<typeof fetch>(async()=>{throw failure;});
+    observer.reportApiFailure.mockImplementation(()=>{throw Error('private reporter failure');});
+    await expect(instrumentJupiterFetch(transport,observer,'/api/v1')('/api/v1/tickets')).rejects.toBe(failure);
+    expect(transport).toHaveBeenCalledTimes(1);expect(observer.reportApiFailure).toHaveBeenCalledTimes(1);
+  });
+  it('consumes rejected diagnostic promises without replacing business outcomes', async () => {
+    const observer=fixture(),response=new Response('ok'),failure=new TypeError('business failure');
+    observer.capture.mockRejectedValue(Error('private asynchronous capture'));
+    observer.reportApiFailure.mockRejectedValue(Error('private asynchronous reporter'));
+    await expect(instrumentJupiterFetch(async()=>response,observer,'/api/v1')('/api/v1/tickets')).resolves.toBe(response);
+    await expect(instrumentJupiterFetch(async()=>{throw failure;},observer,'/api/v1')('/api/v1/tickets')).rejects.toBe(failure);
+    await new Promise(resolve=>setTimeout(resolve,10)); // Vitest must see no unhandled rejection.
+  });
+  it('does not await stalled diagnostic promises', async () => {
+    const observer=fixture(),response=new Response('ok');observer.capture.mockImplementation(()=>new Promise(()=>undefined));
+    await expect(instrumentJupiterFetch(async()=>response,observer,'/api/v1')('/api/v1/tickets')).resolves.toBe(response);
+  },1000);
   it('preserves response/body and forwards correlation without recording content', async () => {
     const observer = fixture(), response = new Response('{"secret":"private ticket"}', { status: 201 });
     const transport = vi.fn<typeof fetch>(async () => response);

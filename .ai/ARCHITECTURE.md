@@ -1,5 +1,11 @@
 # System Architecture
 
+Jupiter's host fetch adapter separates diagnostic preparation/completion from
+the sole business dispatch. Preparation failure forwards original arguments;
+completion never retries or replaces a business outcome. Diagnostic promises
+are not awaited and failures are consumed without recursive reporting. This
+restores section-55 failure isolation within the existing adapter boundary.
+
 DEC-048 isolates data-queue storage failures during retry, ACK, expiry and
 identity cleanup using the existing bounded MemoryQueue. Generation/partition
 guards prevent copying an obsolete envelope into a new identity. Diagnostic

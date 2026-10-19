@@ -2,6 +2,14 @@
 
 ## GOAL-069 — Observability Hub continuation (IN PROGRESS)
 
+Jupiter fetch callback/preparation failure isolation restores section-55 behavior:
+five red regressions, eleven passing Web cases and actual native Edge/HTTP proof
+of one commit per request and preserved abort. Full LOCAL 418-test release gate
+passes with builds/lint/typechecks, actual Browser/clients/performance/migrations.
+React adapter
+diagnostic-fault containment, authenticated full host/process and final audit
+remain open; this does not complete the Goal or promote a target deployment.
+
 Queued intake acceptance now includes four real HTTP success-after-validation-
 failure paths, single settlement, no automatic ticket, explicit submit and real
 10-second Node SDK outage/recovery while product work continues. Full LOCAL

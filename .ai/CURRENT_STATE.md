@@ -1,5 +1,20 @@
 # Current State
 
+**2026-10-19 Jupiter fetch isolation (GOAL-069 IN PROGRESS):** Five red tests
+prove observer trace/identity/capture/report failures could block dispatch or
+replace business outcomes. Host fetch preparation and diagnostic completion are
+now isolated: one dispatch, exact response/original error, no waiting for stalled
+capture, consumed rejected promises and no attribution on identity failure.
+Eleven focused Web tests/typecheck pass. Actual Edge loads the production module
+and six native HTTP fixture writes commit once; native aborted fetch preserves
+its exact error, with zero page errors/unhandled rejections. Full LOCAL release
+gate passes 418 tests (173 API, 37 Web, 208 Hub), builds/lint/typechecks, real
+four-width Browser/offline/quota, reference clients/performance/migrations.
+Cleanup leaves zero temporary DBs/active AI reservations; owned listeners and
+the enabled 100000 monthly budget remain unchanged. This is not authenticated
+full-shell/AppModule acceptance; remaining
+host/process/React-boundary failure QC and A–I/47-section audit remain open.
+
 **2026-10-19 queued intake recovery/automatic flush (GOAL-069 IN PROGRESS):**
 Actual QueueWorker plus loopback HTTP v6 analysis/multipart voice now exercise
 text, conversation, legacy voice and conversation voice through invalid-output

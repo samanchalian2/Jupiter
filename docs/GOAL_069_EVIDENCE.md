@@ -4,6 +4,58 @@ Status: IN PROGRESS. Owner-approved plan supersedes the stale GOAL-060 identifie
 in the supplied specification. GOAL-060 Personal Service history is preserved.
 GOAL-059 remains BLOCKED; LOCAL evidence is not staging acceptance.
 
+## 2026-10-19 — Jupiter fetch diagnostic-failure isolation (LOCAL)
+
+- Implementation: `apps/web/src/JupiterObservability.tsx`, specifically
+  `instrumentJupiterFetch`; regressions in `JupiterObservability.test.ts`.
+  Five newly executed tests first fail against the old adapter: trace failure,
+  initial/final identity lookup failure, capture throw after a committed response,
+  and reporter throw replacing the original network failure. This is a verified
+  section-55 defect, not a claim inferred from a green normal-path suite.
+- Diagnostic preparation is now isolated before one business dispatch. If it
+  fails, original request arguments are forwarded unchanged exactly once.
+  After dispatch, diagnostic callbacks cannot enter the transport error path;
+  synchronous throws and rejected promises are contained without awaiting a
+  stalled callback, recursive reporting or raw error logs. Response/body and
+  the exact original transport exception remain unchanged. A failed/changed
+  identity check suppresses capture, never relabels it under a newer account.
+  Normal trace headers, request ID, safe operation metadata and Hub/external URL
+  exclusion remain intact. No auth/provider/metering/API/schema change or new
+  architecture is introduced; this restores the approved isolation invariant.
+- Focused Web test execution passes 11/11: the previous four cases plus seven
+  failure/stall regressions. Web typecheck passes. A stalled diagnostic promise
+  does not delay resolution; asynchronous rejections produce no unhandled error.
+- `scripts/accept-observability-fetch-isolation.mjs` loads the ACTUAL Jupiter
+  module through local Vite in fresh Edge, then uses native fetch against an
+  ephemeral loopback HTTP fixture. Six modes (trace throw, identity before/after,
+  capture throw/reject/stall) each receive HTTP 201 and commit exactly once.
+  A pre-cancelled native fetch preserves the exact AbortError despite a throwing
+  reporter and produces zero server commits. Zero page errors and zero unhandled
+  rejections; the fixture UI remains usable. It uses no credentials/tenant rows.
+- Harness setup initially lacked the actual Vite React-refresh preamble; a
+  subsequent attempt was blocked by Edge's local-network permission. Both were
+  failed setup attempts, not acceptance passes. The final fixture initializes
+  Vite's normal development preamble and grants local-network-access only in its
+  isolated Browser context. No browser/server production policy is weakened,
+  no launch-wide disabled-security flag or authenticated profile is used.
+- Full LOCAL release gate exits zero: 418 tests (173 API, 37 Web, 208 Hub), all
+  builds/lint/typechecks, actual four-width Edge/offline/quota, reference Python/
+  C# clients, measured performance and 83-migration rehearsal. Real Browser
+  integration takes 82.515s. The existing Vite >500-KiB advisory is unchanged.
+  Zero temporary acceptance DBs/RESERVED AI attempts remain after cleanup;
+  the enabled monthly budget remains 100000 and owned API/Web listeners remain
+  PIDs 19440/49740 on 3000/5174. Public local health/readiness are healthy.
+  This actual Browser proof covers the production
+  fetch adapter with controlled observer faults, not authenticated AppModule,
+  full shell or real ticket-service acceptance. Those remaining acceptance and
+  the complete A–I/47-section audit stay open; preview/main remain untouched.
+- Follow-up audit probe invokes the actual compiled React ErrorBoundary method
+  with a throwing diagnostic port: the diagnostic exception escapes. Existing
+  two React tests cover normal redaction/fallback return only; they do not mount
+  the component or inject this failure. This is a verified method-level gap,
+  not a claim that a full mounted fallback scenario was executed or fixed here.
+  Provider start and route-effect fault behavior also remain to be tested.
+
 ## 2026-10-19 — Queued intake recovery and automatic-flush outage (LOCAL)
 
 - Implementation/test paths: `apps/api/test/lifecycle-worker.integration.spec.ts`,
