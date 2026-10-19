@@ -59,7 +59,9 @@ export class BrowserSdk {
       if(Date.parse(report.observedAt)<this.clock()-48*3_600_000){this.metrics.acknowledge(report.reportId);this.status.metricFailure='METRIC_REPORT_EXPIRED';return;}
       const envelope:OfflineEnvelope={id:report.reportId,partition,kind:'METRICS',payload:report,createdAt:this.clock(),expiresAt:Date.parse(report.observedAt)+48*3_600_000,attempts:0,nextRetryAt:this.clock()};
       if(reports.reduce((n,e)=>n+encodedBytes(e),0)+encodedBytes(envelope)>16_384){this.status.metricFailure='METRICS_QUEUE_FULL';return;}
-      try{await this.storage.put(envelope);}catch{await this.degrade();await this.storage.put(envelope);}
+      // A diagnostic-only journal write cannot discard/switch the data queue.
+      // Leave the immutable metric snapshot unacknowledged for a later attempt.
+      await this.storage.put(envelope);
       this.metrics.acknowledge(report.reportId);
     });}catch{this.status.metricFailure='METRICS_STORAGE_UNAVAILABLE';}
   }

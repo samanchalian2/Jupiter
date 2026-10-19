@@ -2,6 +2,13 @@
 
 ## GOAL-069 — Observability Hub continuation (IN PROGRESS)
 
+Requirement-level audit A01–A06 now identifies concrete missing Registry, SDK,
+host cadence and Overview features. Preserve the original scope and implement
+these with compatible recorded decisions; current baseline is not completion.
+Metric-checkpoint isolation violation is remediated, focused SDK 37/typecheck
+pass; full LOCAL 424-test release gate/both fault scripts and cleanup pass.
+Audit remains unfinished, not an external blocker.
+
 Actual authenticated Web requester/manual ticket/detail and Browser→API trace
 now have disposable full-entrypoint execution, real Hub network abort, same-ID
 IndexedDB recovery/ACK cleanup and four-width RTL/no overflow. Full LOCAL 423-test

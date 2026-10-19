@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-10-19 — GOAL-069 actual requirement audit (IN PROGRESS)
+
+- Recorded concrete incomplete Registry/SDK/cadence/Overview requirements;
+  green subset tests and the evidence index are not accepted as full delivery.
+- Reproduced and fixed metrics-only checkpoint failure switching the data queue;
+  immutable diagnostic retry and original event persist without closing storage.
+- New red→green regression; full LOCAL 424-test/build/lint/typecheck gate and
+  both fault scripts pass; cleanup/readiness/owned listeners unchanged.
+  No new public contract, schema, architecture or target deployment.
+
 ## 2026-10-19 — GOAL-069 actual authenticated Web acceptance (IN PROGRESS)
 
 - Real Web/Vite and compiled API now verify normal requester login/manual ticket,

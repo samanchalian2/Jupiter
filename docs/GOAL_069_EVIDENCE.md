@@ -4,6 +4,36 @@ Status: IN PROGRESS. Owner-approved plan supersedes the stale GOAL-060 identifie
 in the supplied specification. GOAL-060 Personal Service history is preserved.
 GOAL-059 remains BLOCKED; LOCAL evidence is not staging acceptance.
 
+## 2026-10-19 — Requirement audit findings and metric-journal isolation (LOCAL)
+
+- `docs/GOAL_069_REQUIREMENTS_AUDIT.md` records the first requirement-level
+  findings against the actual full specification rather than treating the
+  47-section index or passing suite as acceptance. Registry management, Browser
+  retention options, named recovery triggers, host scheduler configurability and
+  required Overview projections have concrete incomplete/unverified items. No
+  public API/architecture change is made merely by declaring those gaps.
+- A06 contradicts the existing DEC-044/048 invariant: a metrics-only checkpoint
+  write failure called data degrade(), changing DURABLE/queued=1 to MEMORY/0
+  despite intact event storage. One new SDK test fails against the previous code.
+  Removing this diagnostic-only fallback preserves the existing data store and
+  last data failure, leaves the immutable metric snapshot unacknowledged and
+  reports METRICS_STORAGE_UNAVAILABLE. Real data-store failure fallback remains.
+- After recovery the regression verifies original event ID sent exactly once,
+  unchanged diagnostic report delivered once, both queues cleaned, no store close
+  and no extra drop counter. Focused Browser SDK suite passes 37/37 and typecheck
+  passes. This is a controlled storage-port fault, not a claim that native quota
+  selectively rejects METRICS while accepting other writes. Existing real
+  Browser quota/lifecycle acceptance remains independently relevant.
+- Full release gate exits zero (`output/goal069-audit-release.log`,
+  GOAL069_AUDIT_RELEASE_EXIT=0): 424 tests = 175 API + 37 Web + 212 Hub
+  (88 SDK/core/adapters, 111 server, 13 Console). Builds/lint/typecheck,
+  actual Browser/client/performance/migration acceptance and both Browser
+  diagnostic-isolation scripts pass. Post-gate: 83 migrations, zero temporary
+  databases/active AI attempts, healthy readiness, unchanged owned listeners
+  19440/3000 and 49740/5174 and enabled 100000 monthly budget.
+  Goal remains IN PROGRESS because audit findings are actual required work,
+  not outside-scope blockers or a reason to drop the original plan.
+
 ## 2026-10-19 — Authenticated actual Jupiter Web and automatic offline trace (LOCAL)
 
 - Paths: `apps/api/test/support/actual-host-browser.ts`, invoked by the existing

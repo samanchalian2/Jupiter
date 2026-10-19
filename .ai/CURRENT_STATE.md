@@ -1,5 +1,20 @@
 # Current State
 
+**2026-10-19 requirement audit / metric checkpoint (GOAL-069 IN PROGRESS):**
+New REQUIREMENTS_AUDIT maps concrete gaps in Registry management, Browser
+retention/named retry triggers, host cadence configuration and full Overview;
+the 47-section index/test count is not a completion proof. A metrics-only journal
+write failure was reproduced as a real DEC-044/048 violation: it switched active
+data queue from DURABLE/1 to MEMORY/0. Checkpoint no longer degrades data storage;
+it retains the immutable metric snapshot and fixed metric error for later retry.
+Original event/report recovery and unchanged data counters pass a new regression;
+37 SDK tests/typecheck pass. Full LOCAL gate exits zero: 424 tests (175 API,
+37 Web, 212 Hub), builds/lint/typechecks, Browser/client/performance/migration
+acceptance and both fault-isolation scripts. No temporary DBs/active attempts
+remain; owned listeners/readiness and enabled 100000 budget are unchanged.
+No new API/schema/architecture
+or host promotion. Complete the actual required gaps and remaining audit.
+
 **2026-10-19 actual authenticated Jupiter Web (GOAL-069 IN PROGRESS):** Isolated
 real Vite→compiled AppModule fixture now executes unchanged Web entrypoint,
 normal login, REQUESTER organization route, manual draft/submit and actual detail.

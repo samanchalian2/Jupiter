@@ -20,11 +20,22 @@ This is not a blanket completion claim for all product workflows or the live
 Jupiter shell. Section-63 Help is runtime-published with actual Jupiter operations,
 Platform-panel and Feedback acceptance. The measured local performance checkpoint
 and Node hot-path remediation plus full-limit Browser/batch/redaction QC bring
-the full release gate to 423 tests with actual authenticated Web/AppModule, React/fetch failure isolation, data-write isolation/real quota, explicit product comparison, scoped analytics, real queued provider failure/metering and concurrent/product-read boundary
+the full release gate to 424 tests with actual authenticated Web/AppModule, React/fetch failure isolation, data-write/diagnostic-checkpoint isolation/real quota, explicit product comparison, scoped analytics, real queued provider failure/metering and concurrent/product-read boundary
 measurements and the performance flag enabled. Inspect
 latest Evidence for gates/runtime/remote commit.
 
 ### Remaining work — preserve the full original scope
+
+**Concrete audited work:** `docs/GOAL_069_REQUIREMENTS_AUDIT.md` A01–A06.
+Registry mutable metadata/enabled/policy workflows (section 8), Browser retention
+options (14), named activity/probe recovery triggers (19), configurable bounded
+host rule cadence (34) and full required Overview (39) are incomplete/unverified.
+Select and record backward-compatible decisions before public API/config changes.
+Do not replace them with SQL edits or claim separate pages satisfy Overview.
+A06 metric-checkpoint/data-queue violation is fixed with a red→green regression;
+37 SDK tests/typecheck and full 424-test LOCAL gate pass. Cleanup/readiness pass.
+Preserve real data fallback and
+DEC-044 metric isolation. No active-App mutation or next Goal.
 
 1. Finish the requirement-by-requirement audit, not just a test-count check.
    Reconcile every explicit specification requirement, A–I item and all 47

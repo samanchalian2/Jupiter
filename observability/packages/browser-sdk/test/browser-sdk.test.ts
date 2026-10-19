@@ -6,6 +6,16 @@ const event={category:'FRONTEND' as const,severity:'ERROR' as const,eventCode:'t
 const setup=(overrides:Partial<ConstructorParameters<typeof BrowserSdk>[0]>={})=>new BrowserSdk({reportMetrics:false,applicationId:scope.applicationId,environmentId:scope.environmentId,endpoint:'https://hub.example.test/api/v1/observability',contextProvider:()=>scope,authProvider:async s=>({scope:s,token:'unit-test-placeholder',expiresAt:Date.now()+60_000}),storage:new MemoryQueue(),...overrides});
 const ackTransport:typeof fetch=async(_url,init)=>{const batch=JSON.parse(String(init?.body));return Response.json({schemaVersion:'1.1',acknowledgements:batch.events.map((e:{eventId:string})=>({eventId:e.eventId,status:'ACCEPTED'}))});};
 describe('browser queue protocol and isolation',()=>{
+  it('isolates diagnostic checkpoint write failure from the durable data queue and retains the report for later recovery',async()=>{
+    const disk=new MemoryQueue();let failMetrics=true,closed=0;const sent:string[]=[],reports:any[]=[];
+    const store={list:()=>disk.list(),put:async(row:Parameters<MemoryQueue['put']>[0])=>{if(row.kind==='METRICS'&&failMetrics)throw Error('Controlled metrics-only write denial');await disk.put(row);},remove:(ids:string[])=>disk.remove(ids),close:()=>{closed++;}};
+    const sdk=setup({reportMetrics:true,storage:store,maxQueueCount:1,transport:async(url,init)=>{if(String(url).endsWith('/sdk-metrics')){reports.push(JSON.parse(String(init?.body)));return Response.json({accepted:true,duplicate:false});}sent.push(...JSON.parse(String(init?.body)).events.map((item:{eventId:string})=>item.eventId));return ackTransport(url,init);}});
+    const id=await sdk.capture(event);expect(await sdk.capture(event)).toBeNull();
+    expect(await sdk.getStatus()).toMatchObject({storage:'DURABLE',queued:1,dropped:1,lastFailure:'OFFLINE_QUEUE_FULL',metricFailure:'METRICS_STORAGE_UNAVAILABLE'});expect(closed).toBe(0);
+    const held=sdk.getMetricReport();expect(held?.counters.dropped).toBe(1);expect((await disk.list()).filter(row=>row.kind==='EVENT').map(row=>row.id)).toEqual([id]);
+    failMetrics=false;await sdk.flush();expect(sent).toEqual([id]);expect(reports).toHaveLength(1);expect(reports[0]).toEqual(held);expect(await disk.list()).toEqual([]);expect(closed).toBe(0);
+    expect(await sdk.getStatus()).toMatchObject({storage:'DURABLE',queued:0,dropped:1,metricFailure:null});
+  });
   it('isolates failed retry bookkeeping without rejecting the consumer flush or changing the event identity',async()=>{
     const disk=new MemoryQueue();let fail=false,now=Date.now();const store={list:()=>disk.list(),put:async(row:Parameters<MemoryQueue['put']>[0])=>{if(fail)throw Error('Controlled quota write failure');await disk.put(row);},remove:(ids:string[])=>disk.remove(ids),close:()=>{}};
     let offline=true;const sdk=setup({storage:store,clock:()=>now,transport:async(...args)=>{if(offline)throw Error('Controlled network failure');return ackTransport(...args);}}),id=await sdk.capture(event);fail=true;await expect(sdk.flush()).resolves.toBeUndefined();expect((await sdk.getStatus()).storage).toBe('MEMORY');expect((await disk.list()).some(row=>row.id===id)).toBe(true);offline=false;now+=5000;await sdk.flush();expect((await sdk.getStatus()).queued).toBe(0);
