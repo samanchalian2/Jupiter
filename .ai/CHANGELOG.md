@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-10-19 — GOAL-069 scoped automatic recovery notifications (IN PROGRESS)
+
+- DEC-051 adds probe-success/authenticated-activity hints with current scope,
+  coalescing, two-second throttle, backoff preservation and lifecycle cancellation.
+- Jupiter fetch notifies without awaiting or retrying business work; stale/self
+  calls excluded. SDK 46/Web fetch 14 focused tests/typechecks pass.
+- Native no-start/no-manual-flush recovery passes for both triggers. Full LOCAL
+  440-test/build/lint/typecheck/Browser/client/performance/migration gate and
+  both fault scripts pass; cleanup/readiness/owned listeners/budget unchanged.
+  No schema/provider/commercial/deployment change. A01/A05/full audit remain.
+
 ## 2026-10-19 — GOAL-069 configurable monitoring cadence (IN PROGRESS)
 
 - DEC-050 adds bounded deployment-owned rule evaluation interval with one-minute

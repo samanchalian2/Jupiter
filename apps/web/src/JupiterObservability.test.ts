@@ -7,11 +7,31 @@ function fixture() {
   const observer = {
     capture: vi.fn(async () => null),
     reportApiFailure: vi.fn(async () => null),
+    notifyApiConnectivity: vi.fn(),
+    notifyAuthenticatedActivity: vi.fn(),
     trace: () => ({ traceId: 'a'.repeat(32), spanId: 'b'.repeat(16), traceparent: `00-${'a'.repeat(32)}-${'b'.repeat(16)}-01` }),
   };
   return observer;
 }
 describe('Jupiter fetch observation', () => {
+  it('notifies same-scope activity before dispatch and API connectivity only after a successful response',async()=>{
+    const observer=fixture(),scope={applicationId:crypto.randomUUID(),environmentId:crypto.randomUUID(),actorReference:'current-actor',tenantReference:'current-tenant'},response=new Response('committed',{status:201});
+    const transport=vi.fn<typeof fetch>(async()=>{expect(observer.notifyAuthenticatedActivity).toHaveBeenCalledExactlyOnceWith(scope);expect(observer.notifyApiConnectivity).not.toHaveBeenCalled();return response;});
+    const request=instrumentJupiterFetch(transport,observer,'/api/v1',()=>JSON.stringify(scope),()=>scope);
+    expect(await request('/api/v1/tickets',{method:'POST'})).toBe(response);expect(transport).toHaveBeenCalledTimes(1);expect(observer.notifyApiConnectivity).toHaveBeenCalledExactlyOnceWith(scope,true);
+    observer.notifyApiConnectivity.mockClear();await instrumentJupiterFetch(async()=>new Response(null,{status:503}),observer,'/api/v1',()=>JSON.stringify(scope),()=>scope)('/api/v1/tickets');expect(observer.notifyApiConnectivity).not.toHaveBeenCalled();
+  });
+  it('does not notify connectivity from a late old-identity response or from Hub/self calls',async()=>{
+    const observer=fixture(),scope={applicationId:crypto.randomUUID(),environmentId:crypto.randomUUID(),actorReference:'old-actor',tenantReference:'tenant'};let identity='old',complete!:(response:Response)=>void;
+    const request=instrumentJupiterFetch(async()=>new Promise<Response>(done=>complete=done),observer,'/api/v1',()=>identity,()=>scope),pending=request('/api/v1/tickets');identity='new';complete(new Response('ok'));await pending;expect(observer.notifyApiConnectivity).not.toHaveBeenCalled();expect(observer.capture).not.toHaveBeenCalled();
+    observer.notifyAuthenticatedActivity.mockClear();await instrumentJupiterFetch(async()=>new Response('ok'),observer,'/api/v1',()=>identity,()=>scope)('/api/v1/observability/events/batch');expect(observer.notifyAuthenticatedActivity).not.toHaveBeenCalled();expect(observer.notifyApiConnectivity).not.toHaveBeenCalled();
+  });
+  it('contains throwing and rejecting recovery observers without replacing business success or failure',async()=>{
+    const observer=fixture(),scope={applicationId:crypto.randomUUID(),environmentId:crypto.randomUUID(),actorReference:'actor',tenantReference:null},response=new Response('committed',{status:201}),failure=new TypeError('original failure');
+    observer.notifyAuthenticatedActivity.mockImplementation(()=>{throw Error('Controlled notification failure');});observer.notifyApiConnectivity.mockImplementation(()=>Promise.reject(Error('Controlled asynchronous failure')));
+    const transport=vi.fn<typeof fetch>(async()=>response);expect(await instrumentJupiterFetch(transport,observer,'/api/v1',()=>JSON.stringify(scope),()=>scope)('/api/v1/tickets')).toBe(response);expect(transport).toHaveBeenCalledTimes(1);
+    await expect(instrumentJupiterFetch(async()=>{throw failure;},observer,'/api/v1',()=>JSON.stringify(scope),()=>scope)('/api/v1/tickets')).rejects.toBe(failure);await new Promise(done=>setTimeout(done,10));expect(observer.notifyApiConnectivity).toHaveBeenCalledTimes(1);
+  });
   it('dispatches once with original arguments when trace preparation fails', async () => {
     const observer=fixture(),response=new Response('business response',{status:201});
     observer.trace=()=>{throw Error('private observer failure');};

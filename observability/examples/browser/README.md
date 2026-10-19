@@ -22,6 +22,21 @@ logout. Backend and Browser failures share W3C trace/request IDs. Browser queues
 store no credentials. The generic Console demonstrates cross-Application
 selection and maintenance; its authenticated transport is supplied by the host.
 
+## Recovery hints from the trusted host
+
+After an actual successful API response/probe, call
+`sdk.notifyApiConnectivity(expectedScope, true)`; a failed probe may pass false
+and does not trigger recovery. On authenticated activity call
+`sdk.notifyAuthenticatedActivity(expectedScope)`. Use a snapshot of the verified
+current Application/environment/actor/tenant; anonymous activity and stale scope
+are ignored. These calls return immediately and never authorize ingestion.
+They coalesce into one task, at most every two seconds, and call the existing
+flush path without clearing backoff/expiry or accepting data before valid ACK.
+A hint arriving before the persisted retry deadline does not force delivery;
+later activity or the normal SDK timer can retry once due. Keep `sdk.start()`
+for startup/online/visibility/timer behavior. Do not infer API health from
+navigator.onLine, and do not add a network probe per captured event.
+
 ## Offline retention configuration
 
 BrowserSdk accepts `retentionMs: { events: 6 * 3600000, feedback: 3600000 }`.
@@ -75,6 +90,11 @@ or Jupiter identity is imported into the fixture.
 
 Actual acceptance covers:
 
+- Both named recovery hints with verified session/native IndexedDB/HTTP/SQL,
+  while SDK.start is deliberately not called: no timer/startup/visibility/online
+  or manual flush can account for delivery. Real failed probe does not trigger;
+  after failed ingestion and preserved backoff, a later due-time hint replays
+  the same ID exactly once and valid ACK removes it.
 - Configured 1000ms event/feedback retention in native IndexedDB, real-time
   expiry and a fresh default-policy page removing both before auth/transport;
   SQL verifies neither expired ID was ingested. This is a fixture consumer,

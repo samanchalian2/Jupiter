@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { BrowserSdk, MemoryQueue } from '../src/index.js';
 import type { IdentityScope } from '@observability/contracts';
 const scope:IdentityScope={applicationId:crypto.randomUUID(),environmentId:crypto.randomUUID(),actorReference:'user-A',tenantReference:'tenant-A'};
@@ -6,6 +6,48 @@ const event={category:'FRONTEND' as const,severity:'ERROR' as const,eventCode:'t
 const setup=(overrides:Partial<ConstructorParameters<typeof BrowserSdk>[0]>={})=>new BrowserSdk({reportMetrics:false,applicationId:scope.applicationId,environmentId:scope.environmentId,endpoint:'https://hub.example.test/api/v1/observability',contextProvider:()=>scope,authProvider:async s=>({scope:s,token:'unit-test-placeholder',expiresAt:Date.now()+60_000}),storage:new MemoryQueue(),...overrides});
 const ackTransport:typeof fetch=async(_url,init)=>{const batch=JSON.parse(String(init?.body));return Response.json({schemaVersion:'1.1',acknowledgements:batch.events.map((e:{eventId:string})=>({eventId:e.eventId,status:'ACCEPTED'}))});};
 describe('browser queue protocol and isolation',()=>{
+  it('coalesces successful probe notifications and preserves retry backoff and event identity',async()=>{
+    vi.useFakeTimers();try{
+      const store=new MemoryQueue(),sent:string[]=[];let failing=true;
+      const sdk=setup({storage:store,transport:async(...args)=>{sent.push(JSON.parse(String(args[1]?.body)).events[0].eventId);if(failing)throw Error('Controlled outage');return ackTransport(...args);}}),id=await sdk.capture(event);
+      sdk.notifyApiConnectivity(scope,false);await vi.advanceTimersByTimeAsync(0);expect(sent).toEqual([]);
+      for(let i=0;i<100;i++)sdk.notifyApiConnectivity(scope,true);expect(sent).toEqual([]);await vi.advanceTimersByTimeAsync(0);expect(sent).toEqual([id]);const retry=(await store.list())[0];expect(retry.attempts).toBe(1);
+      failing=false;for(let i=0;i<100;i++)sdk.notifyApiConnectivity(scope,true);await vi.advanceTimersByTimeAsync(999);expect(sent).toEqual([id]);expect((await store.list())[0].nextRetryAt).toBe(retry.nextRetryAt);
+      await vi.advanceTimersByTimeAsync(1001);expect(sent).toEqual([id,id]);expect(await store.list()).toEqual([]);expect(sdk.getMetricReport()?.counters.retryDelivered).toBe(1);
+    }finally{vi.useRealTimers();}
+  });
+  it('uses authenticated activity without allowing anonymous, stale actor or foreign tenant recovery',async()=>{
+    vi.useFakeTimers();try{
+      let current=scope;const sent:string[]=[],sdk=setup({contextProvider:()=>current,transport:async(...args)=>{sent.push(JSON.parse(String(args[1]?.body)).events[0].eventId);return ackTransport(...args);}}),id=await sdk.capture(event);
+      sdk.notifyAuthenticatedActivity({...scope,actorReference:null});sdk.notifyAuthenticatedActivity({...scope,tenantReference:'foreign'});await vi.advanceTimersByTimeAsync(0);expect(sent).toEqual([]);
+      sdk.notifyAuthenticatedActivity(scope);current={...scope,actorReference:'next-activity-actor'};await sdk.setContext();await vi.advanceTimersByTimeAsync(0);expect(sent).toEqual([]);
+      sdk.notifyAuthenticatedActivity(scope);await vi.advanceTimersByTimeAsync(0);expect(sent).toEqual([]);
+      const next=await sdk.capture(event);sdk.notifyAuthenticatedActivity(current);await vi.advanceTimersByTimeAsync(0);expect(sent).toEqual([next]);expect(sent).not.toContain(id);
+      current={...scope,actorReference:null};await sdk.setContext();await sdk.capture(event);sdk.notifyAuthenticatedActivity(current);await vi.advanceTimersByTimeAsync(0);expect(sent).toEqual([next]);
+    }finally{vi.useRealTimers();}
+  });
+  it('cancels pending recovery on logout/shutdown and contains context failures',async()=>{
+    vi.useFakeTimers();try{
+      let unavailable=false,calls=0;const sdk=setup({contextProvider:()=>{if(unavailable)throw Error('Controlled context failure');return scope;},transport:async()=>{calls++;throw Error('Unexpected send');}});
+      await sdk.capture(event);sdk.notifyApiConnectivity(scope,true);await sdk.logout();await vi.advanceTimersByTimeAsync(0);expect(calls).toBe(0);
+      await sdk.capture(event);sdk.notifyAuthenticatedActivity(scope);await sdk.shutdown();sdk.notifyApiConnectivity(scope,true);sdk.notifyAuthenticatedActivity(scope);await vi.advanceTimersByTimeAsync(3000);expect(calls).toBe(0);
+      const other=setup({contextProvider:()=>{if(unavailable)throw Error('Controlled context failure');return scope;}});unavailable=true;expect(()=>other.notifyAuthenticatedActivity(scope)).not.toThrow();expect(()=>other.notifyApiConnectivity(scope,true)).not.toThrow();await vi.advanceTimersByTimeAsync(0);
+    }finally{vi.useRealTimers();}
+  });
+  it('never lets a connectivity notification override a later persisted retry deadline',async()=>{
+    vi.useFakeTimers();try{
+      const store=new MemoryQueue(),transport=vi.fn(ackTransport),authProvider=vi.fn(async(s:IdentityScope)=>({scope:s,token:'controlled-placeholder',expiresAt:Date.now()+60000})),sdk=setup({storage:store,transport,authProvider});await sdk.capture(event);
+      const row=(await store.list())[0];await store.put({...row,attempts:5,nextRetryAt:Date.now()+30000});
+      sdk.notifyApiConnectivity(scope,true);await vi.advanceTimersByTimeAsync(0);sdk.notifyAuthenticatedActivity(scope);await vi.advanceTimersByTimeAsync(2000);expect(transport).not.toHaveBeenCalled();expect(authProvider).not.toHaveBeenCalled();
+      await vi.advanceTimersByTimeAsync(28000);sdk.notifyAuthenticatedActivity(scope);await vi.advanceTimersByTimeAsync(0);expect(transport).toHaveBeenCalledTimes(1);expect((await store.list())).toEqual([]);
+    }finally{vi.useRealTimers();}
+  });
+  it('consumes a rejected scheduled flush without an unhandled rejection or recursive event',async()=>{
+    vi.useFakeTimers();try{
+      const sdk=setup(),flush=vi.spyOn(sdk,'flush').mockRejectedValue(Error('Controlled flush failure')),capture=vi.spyOn(sdk,'capture');
+      sdk.notifyAuthenticatedActivity(scope);await vi.advanceTimersByTimeAsync(0);expect(flush).toHaveBeenCalledTimes(1);expect(capture).not.toHaveBeenCalled();
+    }finally{vi.useRealTimers();}
+  });
   it('assigns configurable bounded event and feedback retention while preserving defaults',async()=>{
     const now=Date.now(),defaults=new MemoryQueue(),custom=new MemoryQueue();
     const feedback={feedbackId:crypto.randomUUID(),category:'BUG' as const,subject:'Controlled feedback',description:'Controlled description'};

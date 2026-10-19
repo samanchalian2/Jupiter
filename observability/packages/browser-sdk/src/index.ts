@@ -39,6 +39,9 @@ export class BrowserSdk {
   private queueChain:Promise<void>=Promise.resolve();
   private abort?:AbortController;
   private timer?:ReturnType<typeof setInterval>;
+  private recoveryTimer?:ReturnType<typeof setTimeout>;
+  private nextRecoveryAt=0;
+  private recoveryStopped=false;
   private cleanups:(()=>void)[]=[];
   private status:SdkStatus={queued:0,storage:'DURABLE',lastFailure:null,dropped:0};
   private readonly sessionId=crypto.randomUUID();
@@ -113,11 +116,11 @@ export class BrowserSdk {
   private metricWrite(generation:number,work:()=>Promise<void>){return this.serialize(async()=>{if(generation===this.generation)await work();});}
   async setContext():Promise<void>{
     const next=scopeKey(this.context());if(next===this.partition&&this.contextInitialized)return;this.contextInitialized=true;
-    if(next!==this.partition){this.generation++;this.abort?.abort();this.metricAbort?.abort();this.partition=next;this.metrics.reset();this.nextMetricAt=0;this.status.dropped=0;this.status.metricFailure=null;}
+    if(next!==this.partition){this.cancelRecovery();this.generation++;this.abort?.abort();this.metricAbort?.abort();this.partition=next;this.metrics.reset();this.nextMetricAt=0;this.status.dropped=0;this.status.metricFailure=null;}
     await this.serialize(async()=>{const old=await this.entries();await this.removeData(old.filter(e=>e.partition!==next).map(e=>e.id));});
     await this.updateStatus();
   }
-  async logout():Promise<void>{this.generation++;this.abort?.abort();this.metricAbort?.abort();this.metrics.reset();this.nextMetricAt=0;this.status.metricFailure=null;this.status.dropped=0;await this.serialize(async()=>{const old=await this.entries();await this.removeData(old.map(e=>e.id));});await this.updateStatus();}
+  async logout():Promise<void>{this.cancelRecovery();this.generation++;this.abort?.abort();this.metricAbort?.abort();this.metrics.reset();this.nextMetricAt=0;this.status.metricFailure=null;this.status.dropped=0;await this.serialize(async()=>{const old=await this.entries();await this.removeData(old.map(e=>e.id));});await this.updateStatus();}
   private async enqueue(envelope:OfflineEnvelope):Promise<boolean>{
     return this.serialize(async()=>{
       if(this.stopped||envelope.partition!==this.partition)return false;
@@ -197,6 +200,25 @@ export class BrowserSdk {
       if(generation===this.generation){const entries=await this.entries();await this.postpone(entries.filter(e=>e.kind!=='METRICS'&&e.partition===this.partition&&e.nextRetryAt<=this.clock()));}
     }finally{await this.flushMetrics();this.flushing=false;await this.updateStatus();}
   }
+  private cancelRecovery(){if(this.recoveryTimer!==undefined)clearTimeout(this.recoveryTimer);this.recoveryTimer=undefined;this.nextRecoveryAt=0;}
+  private requestRecovery(expected:IdentityScope,authenticated:boolean){
+    try{
+      if(this.stopped||this.recoveryStopped)return;
+      const current=this.context(),partition=scopeKey(current);
+      if(scopeKey(expected)!==partition||authenticated&&!current.actorReference||this.recoveryTimer!==undefined)return;
+      const generation=this.generation;
+      this.recoveryTimer=setTimeout(()=>{
+        this.recoveryTimer=undefined;
+        try{
+          if(this.stopped||this.recoveryStopped||generation!==this.generation||scopeKey(this.context())!==partition)return;
+          this.nextRecoveryAt=this.clock()+2000;
+          void this.flush().catch(()=>undefined);
+        }catch{/* Recovery notification never propagates into consuming work. */}
+      },Math.max(0,this.nextRecoveryAt-this.clock()));
+    }catch{/* Unknown identity is not permission to replay old data. */}
+  }
+  notifyApiConnectivity(expected:IdentityScope,successful:boolean):void{if(successful===true)this.requestRecovery(expected,false);}
+  notifyAuthenticatedActivity(expected:IdentityScope):void{this.requestRecovery(expected,true);}
   trace(){return newTrace();}
   async reportApiFailure(input:{operationName:string;url:string;httpStatus?:number;durationMs?:number;requestId?:string;traceId?:string;error?:unknown}){
     if(input.url.startsWith(this.config.endpoint))return null;
@@ -205,7 +227,7 @@ export class BrowserSdk {
   }
   start():()=>void{
     if(this.cleanups.length||typeof window==='undefined')return()=>void this.shutdown();
-    this.stopped=false;
+    this.stopped=false;this.recoveryStopped=false;
     const listener=<K extends keyof WindowEventMap>(name:K,fn:(event:WindowEventMap[K])=>void,capture=false)=>{window.addEventListener(name,fn,capture);this.cleanups.push(()=>window.removeEventListener(name,fn,capture));};
     // Resource errors do not bubble; capture phase is necessary and we never
     // inspect DOM text, form values, resource URLs or uploaded content.
@@ -219,5 +241,5 @@ export class BrowserSdk {
     }
     this.timer=setInterval(()=>void this.flush(),10_000);void this.flush();return()=>void this.shutdown();
   }
-  async shutdown(){await this.checkpointMetrics();this.stopped=true;this.generation++;this.abort?.abort();this.metricAbort?.abort();if(this.timer)clearInterval(this.timer);for(const cleanup of this.cleanups.splice(0))cleanup();await this.queueChain;this.storage.close();}
+  async shutdown(){this.recoveryStopped=true;this.cancelRecovery();await this.checkpointMetrics();this.stopped=true;this.generation++;this.abort?.abort();this.metricAbort?.abort();if(this.timer)clearInterval(this.timer);for(const cleanup of this.cleanups.splice(0))cleanup();await this.queueChain;this.storage.close();}
 }

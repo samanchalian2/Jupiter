@@ -2,6 +2,11 @@
 
 ## GOAL-069 — Observability Hub continuation (IN PROGRESS)
 
+DEC-051 implements A03 named scoped/coalesced recovery notifications and Jupiter
+fetch integration; both native no-start/no-manual-flush cases and full LOCAL
+440-test release gate/both fault scripts pass; cleanup/readiness verified.
+A01/A05 and complete requirement audit remain open; no deployment.
+
 DEC-050 implements A04 bounded deployment-owned rule cadence independently of
 AI/maintenance; unit/typecheck and actual compiled worker two-cohort acceptance
 pass. Full LOCAL 432-test release gate, both isolation scripts and post-gate

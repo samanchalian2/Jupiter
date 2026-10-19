@@ -4,6 +4,54 @@ Status: IN PROGRESS. Owner-approved plan supersedes the stale GOAL-060 identifie
 in the supplied specification. GOAL-060 Personal Service history is preserved.
 GOAL-059 remains BLOCKED; LOCAL evidence is not staging acceptance.
 
+## 2026-10-19 — Named scoped Browser recovery triggers / A03 (LOCAL)
+
+- DEC-051 adds immediate-return notifyApiConnectivity(expectedScope, successful)
+  and notifyAuthenticatedActivity(expectedScope) ports. Unknown/stale scope,
+  anonymous activity and failed probe do not schedule replay. One pending task
+  coalesces bursts, with two-second start throttling and a trailing task. The
+  normal flush still checks due time/current credentials/generation/expiry/ACK.
+  A notification before backoff is due does not clear or force that deadline;
+  subsequent hints/normal timer provide further opportunities. No ONLINE/healthy
+  state or successful delivery is inferred from these hints.
+- Context change/logout cancels pending tasks; shutdown immediately suppresses
+  new notifications. Scheduled context/flush failures are consumed, never sent
+  recursively as new telemetry. SDK tests initially fail for absent ports; final
+  46/46 suite passes, including five new tests for false probe, burst coalescing,
+  same-ID retry/ACK, 30-second persisted backoff, anonymous/foreign/stale identity,
+  cancellation, throwing context and rejected scheduled flush.
+- Jupiter's existing fetch wrapper receives optional current scope separately
+  from its identity key. Activity is notified before sole business dispatch;
+  connectivity only after a successful same-identity API response. Hub/self and
+  late old-identity responses are excluded. Separate best-effort observation
+  means a broken hint/capture cannot suppress the other or replace the response.
+  Session refresh synchronizes context before notifying. Two new host-wiring
+  tests fail on old code; all 14 fetch tests/typecheck now pass, including
+  throwing/rejecting recovery observers and original network-error identity.
+- Native fixture recovery.html uses a verified reference session, real origin
+  IndexedDB and normal short-lived credential endpoint. SDK.start is deliberately
+  NOT called: no startup/timer/online/visibility/manual flush can explain replay.
+  Per trigger, first HTTP ingestion is aborted, original retry deadline/ID is
+  retained and no early attempt occurs. After due time another named hint must
+  persist the same ID once in real SQL and valid ACK removes it from IndexedDB.
+  Probe mode additionally checks actual 503 session probe causes no attempt,
+  then a real successful API response/scope enables the hint. Both native cases
+  execute and log PASS: sdkStarted=false, manualFlushCalls=0, initial failed
+  attempt=1, sameIdPersisted=1, validAckRemoved=true, backoffPreserved=true.
+- Full LOCAL gate exits zero (`output/goal069-recovery-release.log`,
+  GOAL069_RECOVERY_RELEASE_EXIT=0): 440 tests = 179 API + 40 Web + 221 Hub
+  (97 SDK/core/adapters + 111 server + 13 Console). Builds/lint/typechecks,
+  Browser/client/performance/migration gates and both fetch/React isolation
+  scripts pass. Actual authenticated Jupiter Web/manual ticket/detail and
+  actual compiled worker cadence regressions also pass. Post-gate: 83 migrations,
+  zero temporary DBs/active AI attempts, healthy readiness, unchanged owned
+  19440/3000 and 49740/5174 listeners and enabled 100000 monthly budget.
+- Existing actual Jupiter Web comment no longer attributes automatic recovery
+  exclusively to a timer now that multiple normal triggers are wired. The
+  independent Node timer acceptance remains separate and unchanged.
+- README documents host usage, backoff and no per-event probe. No secret, schema,
+  provider/commercial API or deployment change. A01/A05 and full audit remain open.
+
 ## 2026-10-19 — Configurable bounded host rule cadence / A04 (LOCAL)
 
 - DEC-050 adds OBSERVABILITY_RULE_EVALUATION_INTERVAL_MS, bounded integer

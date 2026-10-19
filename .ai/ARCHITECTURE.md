@@ -1,5 +1,12 @@
 # System Architecture
 
+DEC-051 adds scoped, coalesced recovery notifications to the Browser SDK and
+optional current-scope wiring in Jupiter's existing fetch adapter. Notifications
+schedule only the existing authenticated/due-time/ACK flush path; no probe
+service, queue, network dependency or product import enters reusable packages.
+Fetch observation never awaits recovery, retries a business request or turns
+an observer error into a business error. Existing automatic triggers remain.
+
 The existing generic React adapter isolates SDK startup/cleanup, route effects
 and boundary reporting from consumer rendering. It keeps the same Browser SDK
 dependency and synchronous start/returned-cleanup contract, adds no Jupiter

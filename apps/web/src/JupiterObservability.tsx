@@ -26,23 +26,25 @@ async function credential(scope:Scope):Promise<Credential|null>{
  if(!response.ok)return null;const value=await response.json();if(typeof value.token!=='string'||value.token.length<32||!Number.isFinite(Date.parse(value.expiresAt))||JSON.stringify(value.scope)!==JSON.stringify(scope))return null;
  cachedCredential={token:value.token,scope:value.scope,expiresAt:Date.parse(value.expiresAt)};return cachedCredential;
 }
-export function instrumentJupiterFetch(transport:typeof fetch,observer:Pick<BrowserSdk,'capture'|'trace'|'reportApiFailure'>,base:string,identityKey?:()=>string):typeof fetch{
+export function instrumentJupiterFetch(transport:typeof fetch,observer:Pick<BrowserSdk,'capture'|'trace'|'reportApiFailure'>&Partial<Pick<BrowserSdk,'notifyAuthenticatedActivity'|'notifyApiConnectivity'>>,base:string,identityKey?:()=>string,scopeProvider?:()=>Scope):typeof fetch{
  const observe=(work:()=>unknown)=>{try{void Promise.resolve(work()).catch(()=>undefined);}catch{/* Diagnostics never replace business outcomes or recursively report themselves. */}};
  return async(input,init)=>{
   const prepared=(()=>{try{
    const url=new URL(typeof input==='string'?input:input instanceof URL?input.href:input.url,location.origin),apiBase=new URL(base,location.origin);
    if(url.origin!==apiBase.origin||!url.pathname.startsWith(apiBase.pathname+'/')||url.pathname.includes('/observability/'))return null;
-   const identity=identityKey?.(),trace=observer.trace(),requestId=crypto.randomUUID(),method=init?.method??(input instanceof Request?input.method:'GET'),headers=new Headers(input instanceof Request?input.headers:undefined);
+   const identity=identityKey?.(),scope=scopeProvider?.(),trace=observer.trace(),requestId=crypto.randomUUID(),method=init?.method??(input instanceof Request?input.method:'GET'),headers=new Headers(input instanceof Request?input.headers:undefined);
    new Headers(init?.headers).forEach((value,key)=>headers.set(key,value));headers.set('traceparent',trace.traceparent);headers.set('x-request-id',requestId);
-   return {url,identity,trace,requestId,headers,started:performance.now(),operationName:`${method} ${routeTemplate(url.pathname)}`};
+   return {url,identity,scope,trace,requestId,headers,started:performance.now(),operationName:`${method} ${routeTemplate(url.pathname)}`};
   }catch{return null;}})();
   // Prepare diagnostics before dispatch; fallback forwards the original arguments
   // exactly once. Never retry a possibly committed request because capture failed.
   if(!prepared)return transport(input,init);
-  const {url,identity,trace,requestId,headers,started,operationName}=prepared;
+  const {url,identity,scope,trace,requestId,headers,started,operationName}=prepared;
+  if(scope)observe(()=>identity===identityKey?.()?observer.notifyAuthenticatedActivity?.(scope):undefined);
   let response:Response;
   try{response=await transport(input,{...init,headers});}
   catch(error){observe(()=>identity===identityKey?.()?observer.reportApiFailure({operationName,url:url.href,durationMs:Math.round(performance.now()-started),requestId,traceId:trace.traceId}):undefined);throw error;}
+  if(scope&&response.ok)observe(()=>identity===identityKey?.()?observer.notifyApiConnectivity?.(scope,true):undefined);
   observe(()=>identity===identityKey?.()?observer.capture({category:'PERFORMANCE',severity:response.status>=500?'ERROR':'INFO',eventCode:'api.operation',normalizedMessage:'API operation completed',operationName,routeTemplate:routeTemplate(url.pathname),httpStatus:response.status,durationMs:Math.round(performance.now()-started),requestId,traceId:trace.traceId,spanId:trace.spanId,safeMetadata:{outcome:response.ok?'SUCCESS':response.status<500?'REJECTED':'FAILURE'}}):undefined);
   return response;
  };
@@ -54,10 +56,10 @@ export async function ensureJupiterObservability():Promise<BrowserSdk|null>{
   try{const response=await originalFetch(`${api}/observability/jupiter/config`,{signal:AbortSignal.timeout(2000)});if(response.ok){const next=await response.json();if(!next.enabled){localStorage.removeItem('jupiter.observability.public');return null;}if(validId(next.applicationId)&&validId(next.environmentId)){value=next;localStorage.setItem('jupiter.observability.public',JSON.stringify(next));}}}catch{try{value=JSON.parse(localStorage.getItem('jupiter.observability.public')??'null');}catch{}}
   if(!value?.enabled||!validId(value.applicationId)||!validId(value.environmentId))return null;configuration=value;
   sdk=new BrowserSdk({applicationId:value.applicationId,environmentId:value.environmentId,endpoint:new URL(`${api}/observability`,location.origin).href,contextProvider:currentScope,authProvider:credential,transport:originalFetch,release:value.releaseVersion??'development',sampling:{PERFORMANCE:1},onFeedbackAcknowledged:(feedbackId,trackingId)=>window.dispatchEvent(new CustomEvent('jupiter:feedback-acknowledged',{detail:{feedbackId,trackingId}}))});
-  globalThis.fetch=instrumentJupiterFetch(originalFetch,sdk,api,()=>JSON.stringify(currentScope()));
+  globalThis.fetch=instrumentJupiterFetch(originalFetch,sdk,api,()=>JSON.stringify(currentScope()),currentScope);
   window.addEventListener('jupiter:session-ended',()=>{cachedCredential=undefined;void sdk?.logout();});
   window.addEventListener('jupiter:session-expired',()=>{cachedCredential=undefined;void sdk?.logout();});
-  window.addEventListener('jupiter:session-refreshed',()=>{cachedCredential=undefined;void sdk?.setContext();});
+  window.addEventListener('jupiter:session-refreshed',()=>{cachedCredential=undefined;void sdk?.setContext().then(()=>sdk?.notifyAuthenticatedActivity(currentScope())).catch(()=>undefined);});
   return sdk;
  })().catch(()=>null);return initialization;
 }

@@ -1,5 +1,33 @@
 # Architecture Decisions
 
+## DEC-051 — Scoped, coalesced Browser recovery notifications
+
+GOAL-069 section 19 adds non-awaitable Browser SDK notifications
+`notifyApiConnectivity(expectedScope, successful)` and
+`notifyAuthenticatedActivity(expectedScope)`. A trusted host calls the former
+only after an actual successful API response/probe; a failed probe or
+navigator.onLine is not API health. Activity requires a non-null current actor.
+Both require the exact expected current Application/environment/actor/tenant
+and only schedule the existing flush path. They do not authorize ingestion,
+mint credentials, renew TTL, clear backoff or claim successful delivery.
+
+Notifications coalesce into one pending task and at most one scheduled attempt
+per two seconds per current context. Repeated activity during the cooldown
+schedules one trailing attempt, never a request per business operation. The
+callback rechecks identity/generation; context switch, logout and shutdown cancel
+pending work. Shutdown suppresses new notifications immediately. Flush still
+enforces due times, current credentials, generation guards and valid ACKs.
+Notification/context/storage failures are best-effort and never propagate to
+business work. Existing startup/visibility/online/ten-second timer remain.
+
+Jupiter's fetch adapter supplies a current scope snapshot separately from the
+existing identity guard. It notifies activity before dispatch and connectivity
+only on a successful same-identity response, excluding Hub/self calls. It never
+awaits recovery or retries a business request; session refresh synchronizes
+context before activity notification. No new background probe service, schema,
+wire/provider/commercial contract, credential persistence or business dependency
+is introduced in reusable packages.
+
 ## DEC-050 — Bounded host monitoring-rule cadence
 
 GOAL-069 section 34 uses deployment-owned

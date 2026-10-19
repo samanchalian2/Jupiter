@@ -2,6 +2,13 @@
 
 ## GOAL-069 Observability Hub
 
+DEC-051 recovery notifications carry only an expected scope, never a token,
+URL/body or provider error. Current scope/generation are rechecked at scheduled
+execution, with cancellation on context switch/logout/shutdown. Anonymous
+activity and stale scope cannot authorize replay. A successful API response is
+only a retry hint: existing credential/tenant checks, expiry, backoff and ACK
+validation remain authoritative. No online/healthy status is fabricated.
+
 DEC-050 rule cadence is deployment-owned, bounded and read once at boot. Invalid
 values use a fixed safe default without logging their contents or disabling the
 product. Rules cannot increase AI/maintenance frequency. Failure diagnostics

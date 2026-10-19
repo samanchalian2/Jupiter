@@ -1,5 +1,21 @@
 # Current State
 
+**2026-10-19 named recovery triggers (GOAL-069 IN PROGRESS):** DEC-051 adds
+scoped probe-success/authenticated-activity notifications. They coalesce with
+two-second throttling, preserve retry deadlines and cancel on identity/logout/
+shutdown; no current-actor permission is inferred from network state. Jupiter
+fetch supplies scope and notifies without awaiting/retrying business dispatch;
+Hub/self and stale responses are excluded. SDK 46 tests, Web fetch 14 tests and
+affected typechecks pass. Native verified-session/IndexedDB/HTTP/SQL acceptance
+fixture passes for both triggers without SDK.start/timer/online/visibility/manual
+flush: same-ID SQL persistence/ACK cleanup and backoff hold. Full LOCAL release
+gate exits zero: 440 tests (179 API, 40 Web, 221 Hub), builds/lint/typechecks,
+Browser/client/performance/migration gates and both fault-isolation scripts.
+Post-gate: zero temporary DBs/active AI attempts, healthy readiness, unchanged
+owned listeners (19440/3000, 49740/5174) and enabled 100000 monthly budget.
+A01/A05 and full requirement reconciliation remain open.
+No live host deployment or provider/budget change.
+
 **2026-10-19 bounded rule cadence (GOAL-069 IN PROGRESS):** DEC-050 adds
 deployment-only OBSERVABILITY_RULE_EVALUATION_INTERVAL_MS, default 60000 and
 10000–300000 range; invalid values safely default. Rules use a separate

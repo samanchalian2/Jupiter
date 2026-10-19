@@ -50,7 +50,9 @@ export async function acceptActualHostBrowser(input:{pool:Pool;base:string;webOr
   }),writes[0].requestId);
   expect(queued?.id).toMatch(/^[0-9a-f-]{36}$/);
   await page.unroute(telemetryRoute);
-  // Do not invoke SDK.flush: both Browser and Node use actual normal timers.
+  // Do not invoke SDK.flush: Browser uses its normal automatic recovery
+  // triggers; Node retains its normal timer. Do not attribute this whole-shell
+  // scenario to one exclusive trigger.
   await vi.waitFor(async()=>{
    const events=(await input.pool.query('SELECT source,actor_reference,tenant_reference,trace_id FROM observability.events WHERE application_id=$1 AND request_id=$2',[input.applicationId,writes[0].requestId])).rows;
    expect(new Set(events.map(row=>row.source))).toEqual(new Set(['BROWSER','SERVER']));

@@ -36,6 +36,7 @@ async function offlineLifecycle(browser:Browser,database:HubDatabase,origin:stri
 }
 /** Real CDP quota, real IndexedDB failure, real SDK fallback and actual HTTP/SQL. */
 export async function offlineBrowserAcceptance(browser:Browser,database:HubDatabase,origin:string,applicationId:string,environmentId:string,sessionToken:string){
+ await namedRecoveryTriggers(browser,database,origin,applicationId,environmentId,sessionToken);
  await configuredRetention(browser,database,origin,applicationId,environmentId,sessionToken);
  await offlineLifecycle(browser,database,origin,applicationId,environmentId,sessionToken);
  const context=await browser.newContext();await context.addCookies([{name:'reference_session',value:sessionToken,url:origin,httpOnly:true,sameSite:'Strict'}]);const page=await context.newPage(),errors:string[]=[];page.on('pageerror',error=>errors.push(error.name));
@@ -66,4 +67,22 @@ async function configuredRetention(browser:Browser,database:HubDatabase,origin:s
   for(const row of captured.rows){const table=row.kind==='EVENT'?'events':'feedback',column=row.kind==='EVENT'?'event_id':'id';expect(await database.worker(async c=>Number((await c.query(`SELECT count(*)::int total FROM observability.${table} WHERE application_id=$1 AND environment_id=$2 AND ${column}=$3`,[applicationId,environmentId,row.id])).rows[0].total))).toBe(0);}
   console.log(JSON.stringify({event:'observability.browser_configured_retention',result:'PASS',storage:'NATIVE_INDEXEDDB',ttlMs:1000,reload:'DEFAULT_POLICY_DOES_NOT_RENEW_OLD_EXPIRY',removed:2,authCalls:0,transportCalls:0,persistedRows:0}));
  }finally{await context.close();}
+}
+
+async function namedRecoveryTriggers(browser:Browser,database:HubDatabase,origin:string,applicationId:string,environmentId:string,sessionToken:string){
+ for(const mode of ['probe','activity']){
+  const context=await browser.newContext();await context.addCookies([{name:'reference_session',value:sessionToken,url:origin,httpOnly:true,sameSite:'Strict'}]);const page=await context.newPage();let attempts=0;const errors:string[]=[];page.on('pageerror',error=>errors.push(error.name));
+  try{
+   await context.route('**/events/batch',route=>{attempts++;return route.abort('failed');});await page.goto(`${origin}/recovery.html?trigger=${mode}`);await expect.poll(()=>page.locator('#result').innerText()).toContain('READY');
+   const id=JSON.parse(await page.locator('#result').innerText()).eventId;expect((await entries(page)).map(row=>row.id)).toEqual([id]);
+   const count=()=>database.worker(async c=>Number((await c.query('SELECT count(*)::int total FROM observability.events WHERE application_id=$1 AND environment_id=$2 AND event_id=$3',[applicationId,environmentId,id])).rows[0].total));expect(await count()).toBe(0);
+   if(mode==='probe'){
+    await context.route('**/reference/session',route=>route.fulfill({status:503,contentType:'application/json',body:'{}'}));await page.getByRole('button',{name:'Recover pending data',exact:true}).click();await expect.poll(()=>page.locator('#result').innerText()).toContain('PROBE_FAILED');expect(attempts).toBe(0);await context.unroute('**/reference/session');
+   }
+   await page.getByRole('button',{name:'Recover pending data',exact:true}).click();await expect.poll(async()=>(await entries(page)).find(row=>row.id===id)?.attempts).toBe(1);expect(attempts).toBe(1);const retry=(await entries(page)).find(row=>row.id===id)!;expect(retry.nextRetryAt).toBeGreaterThan(Date.now());
+   await page.waitForTimeout(500);expect(attempts).toBe(1);expect((await entries(page)).find(row=>row.id===id)?.nextRetryAt).toBe(retry.nextRetryAt);
+   await page.waitForTimeout(Math.max(0,retry.nextRetryAt-Date.now())+100);await context.unroute('**/events/batch');await page.getByRole('button',{name:'Recover pending data',exact:true}).click();await expect.poll(count,{timeout:7000}).toBe(1);await expect.poll(async()=>(await entries(page)).some(row=>row.id===id)).toBe(false);expect(errors).toEqual([]);
+   console.log(JSON.stringify({event:'observability.browser_named_recovery',result:'PASS',trigger:mode==='probe'?'SUCCESSFUL_REAL_API_PROBE':'AUTHENTICATED_ACTIVITY',sdkStarted:false,manualFlushCalls:0,initialFailureAttempts:attempts,sameIdPersisted:1,validAckRemoved:true,backoffPreserved:true,limits:'Independent verified fixture session/native IndexedDB/HTTP/SQL. No SDK timer/startup/online/visibility or manual flush; not a full Jupiter shell claim.'}));
+  }finally{await context.close();}
+ }
 }
