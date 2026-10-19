@@ -2,6 +2,15 @@
 
 ## GOAL-069 Observability Hub
 
+The eleven Hub Help articles are public educational ALL content, never scoped
+operational records or credentials. They do not confer Hub grants or expose
+private existing Help. Jupiter's adapter uses normal authenticated Help lookup,
+checks the returned slug, renders plain text and aborts/clears on close/session
+change. Runtime publication requires the existing active Platform Admin and
+validates every explicit catalog slug before any write; selection does not bypass
+authoring authority. Actual browser acceptance logs out/rechecks refresh 401,
+persists no credentials/session and verifies anonymous private-guide denial.
+
 DEC-044 automatic reporting asserts expected App/environment against the verified
 credential; headers never override scope. Both HTTP adapters and CORS preserve
 them. Browser journal has no credential, only bounded fixed counters/original

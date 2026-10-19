@@ -23,6 +23,17 @@ export const HELP_CONTEXT_FEATURES = [
   'PERSONAL_CAPACITY',
   'PERSONAL_PAYMENT',
   'PERSONAL_SUPPORT',
+  'OBSERVABILITY_FEEDBACK',
+  'OBSERVABILITY_OFFLINE',
+  'OBSERVABILITY_CONSOLE',
+  'OBSERVABILITY_CONCEPTS',
+  'OBSERVABILITY_SEVERITY',
+  'OBSERVABILITY_INCIDENTS',
+  'OBSERVABILITY_APPLICATIONS',
+  'OBSERVABILITY_AI',
+  'OBSERVABILITY_AI_LIMITS',
+  'OBSERVABILITY_PRIVACY',
+  'OBSERVABILITY_INTEGRATION',
 ] as const;
 
 export type HelpContextFeature = (typeof HELP_CONTEXT_FEATURES)[number];
@@ -32,6 +43,7 @@ export const HELP_RELATED_ROUTES = [
   '/admin/members', '/admin/catalog', '/admin/teams', '/admin/automation',
   '/admin/directory', '/admin/settings', '/admin/commercial', '/admin/setup-wizard',
   '/platform', '/platform/applications', '/platform/commercial', '/platform/appearance', '/platform/help',
+  '/operations', '/feedback',
 ] as const;
 
 export function isHelpContextFeature(value: string) : value is HelpContextFeature {

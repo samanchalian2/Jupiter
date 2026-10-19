@@ -40,6 +40,17 @@ afterAll(async () => {
 });
 
 describe('Product Help publication and audience isolation', () => {
+  it('resolves all eleven public Hub guides without exposing operational data or private authoring', async () => {
+    const topics = ['feedback','offline','console','concepts','severity','incidents','applications','ai','ai-limits','privacy','integration'];
+    for (const topic of topics) {
+      const feature = `OBSERVABILITY_${topic.replaceAll('-', '_').toUpperCase()}`;
+      const matches = await help.list(undefined, { relatedFeature: feature });
+      expect(matches).toHaveLength(1);
+      expect(matches[0].slug).toBe(`observability-${topic}`);
+      await expect(help.detail(ownerId, `observability-${topic}`)).resolves.toMatchObject({ content: expect.any(String), audience: ['ALL'] });
+    }
+    await expect(help.adminList(ownerId)).rejects.toBeDefined();
+  });
   it('seeds exactly once and exposes ALL articles to an anonymous viewer', async () => {
     const articles = await help.list();
     expect(articles.some((article) => article.slug === 'getting-started')).toBe(true);
@@ -89,7 +100,7 @@ describe('Product Help publication and audience isolation', () => {
   });
 
   it('ranks Persian domain matches and exposes a published article for every contextual feature', async () => {
-    const expectations: Array<[string,string[]]> = [['دایرکتوری',['organization-directory']],['جفت‌سازی',['organization-directory']],['تیکت',['ticket-lifecycle']],['SLA',['sla-business-calendar']],['هوش مصنوعی',['ai-ticket-review','personal-capacity']],['Assist',['jupiter-assist']],['اشتراک',['commercial-allowances']],['سهمیه',['commercial-allowances']],['راه‌اندازی سازمان',['organization-setup-wizard']]];
+    const expectations: Array<[string,string[]]> = [['دایرکتوری',['organization-directory']],['جفت‌سازی',['organization-directory']],['تیکت',['ticket-lifecycle']],['SLA',['sla-business-calendar']],['هوش مصنوعی',['ai-ticket-review','personal-capacity','observability-ai']],['Assist',['jupiter-assist']],['اشتراک',['commercial-allowances']],['سهمیه',['commercial-allowances']],['راه‌اندازی سازمان',['organization-setup-wizard']]];
     for (const [query,slugs] of expectations) expect(slugs).toContain((await help.list(ownerId, { q:query }))[0]?.slug);
     for (const feature of ['TICKET_LIFECYCLE','AI_TICKET_REVIEW','ORGANIZATION_MEMBERSHIP','TICKET_CONFIGURATION','SLA_ADMINISTRATION','DIRECTORY_CONNECTOR','COMMERCIAL_DASHBOARD','JUPITER_ASSIST','PLATFORM_APPEARANCE','PERSONAL_WORKSPACE','PERSONAL_CAPACITY','PERSONAL_PAYMENT','PERSONAL_SUPPORT']) await expect(help.list(ownerId, { relatedFeature:feature })).resolves.toHaveLength(1);
   });

@@ -55,6 +55,16 @@ export async function loadHelpSeeds(directory: string) {
   return Promise.all(files.map(async file => ({ file, article: parseHelpSeed(await readFile(join(directory, file), 'utf8')) })));
 }
 
+/** Explicit publication selection; validate every slug before any runtime write. */
+export function selectHelpSeeds<T extends { article: HelpSeedArticle }>(seeds: T[], slugs: string[]) {
+  if (!slugs.length) return seeds;
+  const selected = new Set(slugs);
+  if ([...selected].some(slug => !seeds.some(seed => seed.article.slug === slug))) {
+    throw new Error('Requested Help publication slug is not present in the repository catalog.');
+  }
+  return seeds.filter(seed => selected.has(seed.article.slug));
+}
+
 type HelpClient = Pick<PoolClient, 'query'>;
 export async function seedHelpArticle(client: HelpClient, seed: HelpSeedArticle, sourceKey: string) {
   // A slug is a stable article identity. Never modify it from repository input:

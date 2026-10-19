@@ -1,5 +1,12 @@
 # Domain Model
 
+## Hub Product Help metadata (GOAL-069)
+
+Eleven OBSERVABILITY_* feature codes and canonical /operations and /feedback
+routes extend the existing Help registry. They map one-to-one to eleven stable
+observability-* article slugs. Existing revision/publication entities and audience
+model remain unchanged; no Hub entity or tenant record is embedded in Help.
+
 ## Automatic SDK diagnostic reports (GOAL-069, DEC-044)
 
 Browser OfflineEnvelope adds METRICS in the existing IndexedDB object store.

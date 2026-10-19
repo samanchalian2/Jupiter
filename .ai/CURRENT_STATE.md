@@ -1,5 +1,20 @@
 # Current State
 
+**2026-10-19 Product Help checkpoint (GOAL-069 IN PROGRESS):**
+Section 63's eleven Persian guides are runtime-published revision 2 using the
+existing active local Platform Admin; catalog grows 19→30. Explicit slug-scoped
+publication validates selection before writes, leaves non-Hub revisions unchanged
+and is idempotent. Existing version history remains. Jupiter-only compact Help
+adapter covers /operations, /platform monitoring and /feedback without coupling
+the reusable Hub to Jupiter. Actual local form login/Edge proves eleven articles
+at four widths, real shell/Feedback triggers, RTL, no overflow/clipping, 44px
+target and logout→refresh 401; private Help stays denied anonymously. Visual QC
+caught/fixed desktop clipping. Full release gate: 360 tests (152 API, 30 Web,
+178 Hub), builds/lint/typechecks, real Edge/Python/C# and 83 migrations; final CSS
+Web rebuild passes. Vite advisory remains. Performance/scale, actual Worker/host
+breadth, security/cleanup and full specification/A–I audit remain. Local only;
+no Preview/main promotion or next Goal.
+
 **2026-10-19 automatic diagnostics/shared self-health Console (GOAL-069 IN PROGRESS):**
 DEC-044 completes automatic Browser/Node diagnostic transport on the existing
 46-operation API. Browser journal has bounded fixed reports, stable replay ID/

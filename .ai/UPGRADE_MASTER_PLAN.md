@@ -2,6 +2,11 @@
 
 ## GOAL-069 — Observability Hub continuation (IN PROGRESS)
 
+Section 63 Help is now runtime-published: eleven Persian guides, validated context
+registry, explicit selection, preserved revision history and actual local Jupiter
+Help/RTL acceptance at four widths. Whole-Goal performance/scale, actual Worker/
+host breadth and final A–I audit remain; no target-host promotion follows.
+
 DEC-044 automatic diagnostic transport and shared self-health Console now have
 real Browser/reload/lost-ACK/source and backend SDK HTTP acceptance. Scope assertions,
 unknown states and late-response/logout guards are implemented. Continue full

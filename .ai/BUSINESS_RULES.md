@@ -1,5 +1,15 @@
 # Business Rules
 
+## Hub educational Help (GOAL-069)
+
+- The eleven guides are public documentation, not an operations grant. Existing
+  private guides retain their audiences. Operational authorization remains scoped.
+- Explicit publication selection validates all requested slugs before writes;
+  unchanged articles do not gain revisions and unrelated selected-out articles
+  remain untouched. Existing full-catalog invocation stays compatible.
+- Device-queued feedback is not finally registered until server tracking ACK;
+  guide wording must preserve this distinction and scope/logout queue limitations.
+
 ## Automatic diagnostic transport (DEC-044)
 
 - SDKs send fixed reports automatically, at most six/minute, retrying original

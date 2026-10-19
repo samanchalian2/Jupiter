@@ -2,7 +2,7 @@ import { join } from 'node:path';
 import { loadLocalEnvironment } from '../src/config.js';
 import { DatabaseService } from '../src/database/database.service.js';
 import { ProductHelpService } from '../src/help/help.service.js';
-import { loadHelpSeeds, type HelpSeedArticle } from '../src/help/help-seed.js';
+import { loadHelpSeeds, selectHelpSeeds, type HelpSeedArticle } from '../src/help/help-seed.js';
 
 function actorId() {
   const value = process.argv.find(item => item.startsWith('--actor-id='))?.slice('--actor-id='.length)?.trim();
@@ -33,7 +33,8 @@ async function main() {
   const database = new DatabaseService();
   const help = new ProductHelpService(database);
   try {
-    const seeds = await loadHelpSeeds(join(import.meta.dirname, '../../../docs/help'));
+    const seeds = selectHelpSeeds(await loadHelpSeeds(join(import.meta.dirname, '../../../docs/help')),
+      process.argv.filter(item => item.startsWith('--slug=')).map(item => item.slice('--slug='.length).trim()));
     const existing = new Map((await help.adminList(actor)).map(article => [article.slug, article]));
     let created = 0; let revised = 0; let unchanged = 0;
     for (const { article: seed } of seeds) {

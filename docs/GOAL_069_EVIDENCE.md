@@ -4,6 +4,75 @@ Status: IN PROGRESS. Owner-approved plan supersedes the stale GOAL-060 identifie
 in the supplied specification. GOAL-060 Personal Service history is preserved.
 GOAL-059 remains BLOCKED; LOCAL evidence is not staging acceptance.
 
+## 2026-10-19 — Persian Product Help publication and real Jupiter UI (LOCAL)
+
+Section 63's eleven guides now use the existing versioned Help engine. They are
+public educational (`ALL`) content without tenant/App records, identities or
+credentials; reading a guide never grants operations access. Existing private
+guides retain their audiences. No Help architecture or SQL migration changed.
+
+| Published slug | Validated contextual feature | Canonical route |
+| --- | --- | --- |
+| observability-feedback | OBSERVABILITY_FEEDBACK | /feedback |
+| observability-offline | OBSERVABILITY_OFFLINE | /feedback |
+| observability-console | OBSERVABILITY_CONSOLE | /operations |
+| observability-concepts | OBSERVABILITY_CONCEPTS | /operations |
+| observability-severity | OBSERVABILITY_SEVERITY | /operations |
+| observability-incidents | OBSERVABILITY_INCIDENTS | /operations |
+| observability-applications | OBSERVABILITY_APPLICATIONS | /operations |
+| observability-ai | OBSERVABILITY_AI | /operations |
+| observability-ai-limits | OBSERVABILITY_AI_LIMITS | /operations |
+| observability-privacy | OBSERVABILITY_PRIVACY | /operations |
+| observability-integration | OBSERVABILITY_INTEGRATION | /operations |
+
+- Initial catalog: 19 articles. Existing bootstrap produced seed revision 1 for
+  the eleven new guides; supported actor-bearing publication then revised and
+  published all eleven as RUNTIME revision 2. Final inventory: 30 articles, all
+  published. A repeated explicit publication returns eleven unchanged, zero new
+  drafts/revisions. Existing non-Hub article identities, published pointers and
+  revision counts were compared before/after and unchanged. History is preserved.
+- `publish:help-catalog --actor-id=<authorized actor> --slug=<catalog slug>` now
+  supports repeatable explicit selection. Every requested slug must exist before
+  any write; duplicate selections dedupe. Omitting selection retains the existing
+  full-catalog behavior. This acceptance selected only the eleven Hub articles,
+  using the existing active local Platform Admin, not a fabricated actor.
+- Jupiter-only Help adapter is available in /operations, the /platform monitoring
+  panel and /feedback. It uses normal authenticated Help requests and published
+  slug resolution, renders plain text (no injected HTML), rejects mismatched or
+  unavailable responses, aborts replaced/closed requests and clears on session
+  events. Feedback offers only its three relevant topics; Console offers all 11.
+  Independent Console/server packages do not import Jupiter Help or domain code.
+- `scripts/accept-observability-help.mjs` uses the actual local login form and
+  existing authorized account. Installed Edge opened all eleven guides at 375,
+  768, 1024 and 1440 in /operations, exercised /feedback's three-topic selector,
+  and opened the guide within the real /platform shell at all four widths.
+  Actual article response slug/title/content, RTL, 44px trigger, Escape close,
+  document width AND full reader bounding-box visibility were checked. Anonymous
+  lookup of a private pre-existing Platform guide still returned 404.
+- Visual review caught desktop popover clipping that document-scrollWidth alone
+  missed. The scoped reader now stays within the viewport with bounded scrolling;
+  the new bounding-box assertion and rerun passed. Updated local screenshots in
+  ignored `output/goal069-help` were visually reviewed at 375/1440. Existing brand
+  tokens and Shabnam remain unchanged; no new product navigation is introduced.
+- Credentials are supplied only through ephemeral process environment; no test
+  credential/session/trace is saved. Finally the supported logout endpoint is
+  called and refresh is verified 401 before the browser context is destroyed.
+  No temporary user, membership or organization was created for this acceptance.
+- Full release gate passes 360 tests: 152 API, 30 Web and 178 Hub, including real
+  independent Edge/Python/C# reference execution and 83-migration rehearsal.
+  Builds, lint and typechecks pass; Web was rebuilt after the final reader CSS
+  correction. Existing Vite chunk-size advisory remains. The new Help integration
+  tests validate all contextual lookups and publication selection; broad Persian
+  AI search now accepts the genuinely relevant new monitoring AI guide too.
+- This completes this Product Help checkpoint, not GOAL-069. Performance/scale,
+  real product Worker and remaining host workflows, full security/cleanup and
+  requirement-by-requirement specification/A–I/47-section audit remain active.
+  No Preview/main host changed and no next Goal started.
+- The owned local API was restarted with the rebuilt Help registry after a
+  zero-active-AI preflight; the external readiness probe and the complete real
+  Jupiter Help acceptance were rerun successfully against that runtime. No
+  service on 5173 or another host/database was changed.
+
 ## 2026-10-19 — Automatic diagnostics and shared self-health Console (LOCAL)
 
 - DEC-044 adds automatic report transport on the existing API. Browser journals
@@ -477,7 +546,7 @@ Every requirement remains pending unless actual execution evidence is recorded.
 | F | feedback/user tracking, Console/live/analytics/export | own Feedback and operational Console/live/filter/CSV implemented; richer analytics and final workflow acceptance pending |
 | G | evidence-grounded AI, opt-in/budget/schedule/security | implemented; real GapGPT findings/usage, SQL isolation/budget/scheduler and reconciliation UI verified; final breadth QC pending |
 | H | independent second application, C#/Python clients | actual Python/C# and separate Browser/backend reference execution verified with real PostgreSQL; reference AI uses controlled provider, actual GapGPT evidence remains separate |
-| I | retention, self-health/runbook, Help, full QC/cleanup | bounded retention, external probe/runbook and automatic diagnostic sources/shared self-health Console verified; scale/performance, actual host/Worker breadth, Help/publication and final A–I QC/cleanup pending |
+| I | retention, self-health/runbook, Help, full QC/cleanup | bounded retention, external probe/runbook, automatic diagnostic sources/shared self-health Console and eleven runtime-published Persian guides/actual Jupiter Help UI verified; scale/performance, actual host/Worker breadth and final A–I QC/cleanup pending |
 
 ## Required evidence sections
 

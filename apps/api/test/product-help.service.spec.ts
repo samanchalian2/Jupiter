@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ProductHelpService } from '../src/help/help.service.js';
-import { parseHelpSeed, seedHelpArticle } from '../src/help/help-seed.js';
+import { loadHelpSeeds, parseHelpSeed, seedHelpArticle, selectHelpSeeds } from '../src/help/help-seed.js';
+import { join } from 'node:path';
 
 function serviceWith(results: Array<{ rows?: unknown[]; rowCount?: number }> = []) {
   const calls: Array<{ sql:string; values?:unknown[] }> = [];
@@ -36,6 +37,22 @@ describe('Product Help audience boundary', () => {
 });
 
 describe('Product Help repository seed', () => {
+  it('validates eleven independent Hub topics and limits explicit publication selection', async () => {
+    const catalog = await loadHelpSeeds(join(process.cwd(), '../../docs/help'));
+    const hub = catalog.filter(seed => seed.article.relatedFeature?.startsWith('OBSERVABILITY_'));
+    expect(hub).toHaveLength(11);
+    expect(new Set(hub.map(seed => seed.article.relatedFeature)).size).toBe(11);
+    for (const { article } of hub) {
+      expect(article.audience).toEqual(['ALL']);
+      expect(article.relatedRoute).toMatch(/^\/(operations|feedback)$/);
+      expect(article.content).not.toMatch(/sk-[A-Za-z0-9_-]{20,}|-----BEGIN .*PRIVATE KEY-----|Bearer [A-Za-z0-9._-]{20,}/);
+    }
+    expect(selectHelpSeeds(catalog, hub.map(seed => seed.article.slug))).toEqual(hub);
+    expect(selectHelpSeeds(catalog, [hub[0].article.slug, hub[0].article.slug])).toHaveLength(1);
+    expect(() => selectHelpSeeds(catalog, [hub[0].article.slug, 'not-a-catalog-slug'])).toThrow();
+    expect(() => selectHelpSeeds(catalog, [''])).toThrow();
+    expect(selectHelpSeeds(catalog, [])).toEqual(catalog);
+  });
   const valid = `---\nslug: first-guide\ntitle: راهنمای اول\nsummary: یک خلاصه معتبر\ncategory: شروع کار\naudience: ["ALL"]\ntags: ["شروع"]\nproductArea: راهنما\nrelatedFeature: ACCOUNT_HELP_CENTER\nrelatedRoute: /help\n---\n# راهنما\nمتن`;
 
   it('parses explicit Persian metadata and rejects unsafe audience values', () => {

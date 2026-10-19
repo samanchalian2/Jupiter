@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-10-19 — GOAL-069 Persian Help and local host acceptance (IN PROGRESS)
+
+- Added eleven registry-validated Persian monitoring guides, runtime publication
+  with the existing authorized actor, preserved history and unchanged non-Hub
+  articles. Explicit repeatable slug selection prevents unrelated publication.
+- Added Jupiter-only Help adapter to operations, Platform monitoring and Feedback;
+  session-safe requests, plain-text rendering, bounded reader and 44px targets.
+- Actual Edge/login verifies all guides at four widths, real shell/Feedback,
+  private-guide denial, viewport bounds and logout/refresh cleanup. Visual QC
+  fixed clipping missed by document overflow alone. Full gate passes 360 tests.
+- Continue performance, Worker/host breadth and full A–I audit; no host promotion.
+
 ## 2026-10-19 — GOAL-069 automatic diagnostics and self-health Console (IN PROGRESS)
 
 - Added bounded automatic Browser IndexedDB report replay and process-scoped Node

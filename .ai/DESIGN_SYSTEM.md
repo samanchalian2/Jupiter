@@ -237,6 +237,13 @@ remain in the release gate.
 
 ## Do / don't
 
+The Hub Help adapter uses existing compact HelpTrigger/neutral surface tokens,
+44px minimum targets and a bounded plaintext reader. Position the reader within
+the viewport at desktop and mobile widths; document scrollWidth alone cannot
+detect RTL clipping, so acceptance also checks the complete bounding rectangle.
+No additional product navigation or palette is introduced. Its reusable Console
+remains independent of Jupiter's Help engine.
+
 Do use neutral surfaces, compact headings, meaningful grouping, controlled
 brand emphasis and reusable primitives. Don't add a new component library,
 change the React/Vite stack, create arbitrary tenant themes, make AI look like

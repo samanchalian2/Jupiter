@@ -17,7 +17,9 @@ Node process-level reporting, expected-scope assertions and a Persian self-healt
 Console. Real lost-ACK/reload proves one persisted report; shared Console RTL
 works at four widths. Late-response/context/logout handling has explicit tests.
 This is not a blanket completion claim for all product workflows or the live
-Jupiter shell. Inspect latest Evidence for final gates/runtime/remote commit.
+Jupiter shell. Section-63 Help is runtime-published with actual Jupiter operations,
+Platform-panel and Feedback acceptance; the full release gate now passes 360
+tests. Inspect latest Evidence for gates/runtime/remote commit.
 
 ### Remaining work — preserve the full original scope
 
@@ -30,10 +32,12 @@ Jupiter shell. Inspect latest Evidence for final gates/runtime/remote commit.
    host/shell/role workflows. Independent reference/shared Console acceptance
    is not a substitute. Maintain tenant/App/environment/actor isolation,
    denial/manual-workflow continuity and genuine authorization.
-3. Complete Persian Product Help, contextual registry/route coverage and runtime
-   publication through the supported actor-bearing local publication utility.
-   Preserve version history and normal Help data. Do not put credentials in
-   publication metadata, evidence, screenshots or repository.
+3. Preserve the completed section-63 Help checkpoint: eleven registry-validated
+   guides, RUNTIME revision 2, explicit slug-only publication and unchanged
+   unrelated Help. Actual Jupiter login/Edge covers operations, Platform panel
+   and Feedback at four widths with full reader bounds. Include this evidence in
+   the final audit, recheck content if subsequent functionality changes, and
+   retain version history. Do not put credentials in metadata/evidence/screenshots.
 4. Execute the full performance acceptance in specification section 64:
    SDK overhead, bounded memory/offline volume, batch behavior, aggregation
    latency, dashboard latency and user-workflow impact. Review bounded logical
