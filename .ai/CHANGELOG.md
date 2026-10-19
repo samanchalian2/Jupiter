@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-10-19 — GOAL-069 HTTP adapter failure-isolation checkpoint
+
+- Made NestJS observation best-effort across context setup and completion/error
+  capture so it cannot replace or duplicate a business HTTP execution.
+- Added expected-rejection and controlled cross-domain operation classification
+  coverage. Expected 403 responses stay non-critical; unexpected failures retain
+  operation identity without changing the original exception.
+
+## 2026-10-19 — GOAL-069 real lifecycle Worker service integration (IN PROGRESS)
+
+- Added disposable fully migrated product DB acceptance with actual lifecycle,
+  commercial and directory services, rather than controlled service ports.
+- Proved real SQL failure → Node SDK/authenticated HTTP → stored WORKER event/
+  Issue and successful next-cycle recovery, plus precise generated DB/role cleanup.
+- No shared business role/data, real AD/provider or target host changes. Separate
+  AI/voice/intake Worker/process breadth and final specification audit remain.
+
 ## 2026-10-19 — GOAL-069 actual write failure-isolation checkpoint
 
 - Extended the actual Ticket controller/actor/service host measurement with an

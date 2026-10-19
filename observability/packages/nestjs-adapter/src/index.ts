@@ -1,5 +1,5 @@
 import { Injectable, HttpException, type CallHandler, type ExecutionContext, type NestInterceptor } from '@nestjs/common';
-import { Observable } from 'rxjs';
+import { Observable, type Subscription } from 'rxjs';
 import { NodeSdk, type NodeContext } from '@observability/node-sdk';
 import { routeTemplate } from '@observability/core';
 export interface ScopeResolver {resolve(request:unknown):Promise<NodeContext>;}
@@ -18,12 +18,15 @@ export class ObservabilityInterceptor implements NestInterceptor {
     response.setHeader?.('X-Request-Id',completeScope.requestId);response.setHeader?.('traceparent',trace.traceparent);
     const operation=`${request.method??'HTTP'} ${routeTemplate(request.route?.path??request.url??'/')}`,started=performance.now();
     return new Observable(subscriber=>{
-      const subscription=this.sdk.run(completeScope,()=>next.handle().subscribe({
+      const observe=(work:()=>void)=>{try{this.sdk.run(completeScope,work);}catch{/* Telemetry cannot replace the HTTP result. */}};
+      let subscription:Subscription|undefined;
+      const start=()=>subscription??=next.handle().subscribe({
         next:value=>subscriber.next(value),
-        error:error=>{this.sdk.run(completeScope,()=>{const status=error instanceof HttpException?error.getStatus():500;if(status>=500)this.sdk.captureException(error,{operationName:operation});this.sdk.capture({category:'PERFORMANCE',severity:status>=500?'ERROR':'INFO',eventCode:'http.operation',normalizedMessage:'HTTP operation completed',operationName:operation,routeTemplate:routeTemplate(request.route?.path??request.url??'/'),httpStatus:status,durationMs:Math.round(performance.now()-started),safeMetadata:{outcome:status>=500?'FAILURE':'REJECTED'}});});subscriber.error(error);},
-        complete:()=>{this.sdk.run(completeScope,()=>this.sdk.capture({category:'PERFORMANCE',severity:'INFO',eventCode:'http.operation',normalizedMessage:'HTTP operation completed',operationName:operation,routeTemplate:routeTemplate(request.route?.path??request.url??'/'),httpStatus:response.statusCode??200,durationMs:Math.round(performance.now()-started),safeMetadata:{outcome:'SUCCESS'}}));subscriber.complete();}
-      }));
-      return()=>subscription.unsubscribe();
+        error:error=>{observe(()=>{const status=error instanceof HttpException?error.getStatus():500;if(status>=500)this.sdk.captureException(error,{operationName:operation});this.sdk.capture({category:'PERFORMANCE',severity:status>=500?'ERROR':'INFO',eventCode:'http.operation',normalizedMessage:'HTTP operation completed',operationName:operation,routeTemplate:routeTemplate(request.route?.path??request.url??'/'),httpStatus:status,durationMs:Math.round(performance.now()-started),safeMetadata:{outcome:status>=500?'FAILURE':'REJECTED'}});});subscriber.error(error);},
+        complete:()=>{observe(()=>{this.sdk.capture({category:'PERFORMANCE',severity:'INFO',eventCode:'http.operation',normalizedMessage:'HTTP operation completed',operationName:operation,routeTemplate:routeTemplate(request.route?.path??request.url??'/'),httpStatus:response.statusCode??200,durationMs:Math.round(performance.now()-started),safeMetadata:{outcome:'SUCCESS'}});});subscriber.complete();}
+      });
+      try{this.sdk.run(completeScope,start);}catch{start();}
+      return()=>subscription?.unsubscribe();
     });
   }
 }

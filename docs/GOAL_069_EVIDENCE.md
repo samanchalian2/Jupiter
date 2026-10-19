@@ -4,6 +4,65 @@ Status: IN PROGRESS. Owner-approved plan supersedes the stale GOAL-060 identifie
 in the supplied specification. GOAL-060 Personal Service history is preserved.
 GOAL-059 remains BLOCKED; LOCAL evidence is not staging acceptance.
 
+## 2026-10-19 — HTTP adapter isolation and cross-domain classification (LOCAL)
+
+- The reusable NestJS interceptor now treats context/capture failure as an
+  observation failure only. Business Observables are subscribed exactly once
+  even when context entry throws before or after invoking the subscription;
+  successful results and the original expected/unexpected exceptions always
+  reach the caller unchanged.
+- Nine adapter tests cover successful capture failure, 403 and 500 capture
+  failure, before/after-entry context failure, expected-rejection classification
+  and controlled ticket/authentication/organization-configuration/AI/Assist/
+  external-dependency operation routes. A 403 records a non-critical
+  `REJECTED` performance outcome and no exception; unexpected failures retain
+  their sanitized operation identity for server-side grouping.
+- Browser React/render and connectivity paths are exercised by the independent
+  real Browser acceptance; actual Jupiter Worker directory/lifecycle paths are
+  covered separately by the product-cycle tests. Existing AI, Assist and
+  Directory integration suites prove their business denial/failure semantics.
+  This adapter fixture verifies observation classification and isolation; it
+  does not claim that every domain provider was deliberately failed in a live
+  tenant or that an expected business rejection becomes an Incident.
+
+## 2026-10-19 — Real product-service Worker SQL/HTTP integration acceptance (LOCAL)
+
+`apps/api/test/lifecycle-worker.integration.spec.ts` strengthens the already
+implemented lifecycle-cycle boundary with real services and storage, rather than
+posting a controlled WORKER Event or replacing the services with test doubles.
+
+- A uniquely generated obs069_worker_* database receives all 83 real forward
+  migrations. As in migration rehearsal, only the legacy application role name
+  is replaced with a generated temporary NOLOGIN role. Product pool connections
+  substitute the same fixed SET LOCAL ROLE statement, retaining DatabaseService's
+  actual tenant transactions/config/RLS. Shared business roles are never changed
+  or removed. The normal configured business DB is never migrated or loaded.
+- One active ownerless fixture organization exists only inside that DB. The test
+  invokes the ACTUAL SubscriptionLifecycleService, CommercialService and
+  DirectoryConnectorService through `runLifecycleWorkerCycle`, the function wired
+  into worker.ts. The initial full cycle succeeds. There are no real paired AD
+  devices, subscribers, external provider credentials or customer allowance use.
+- Renaming directory_connectors inside the disposable DB causes a REAL SQL error
+  in directory.scheduleDue. The host binding observes it through its actual
+  Node SDK and an authenticated real HTTP Hub listener. Atomic PostgreSQL storage
+  proves one source/category WORKER event, worker.job_failed code, the correct
+  operation and null automation actor/global tenant. Actual leased aggregation
+  creates exactly one Issue. Only fixed PRODUCT_WORKER_FAILED diagnostic content
+  reaches host warnings, not the raw SQL Error.
+- Restoring the table allows the next actual service cycle to succeed, without
+  queuing another failure. The fixture organization remains operational. Finally
+  closes SDK/listener/Hub/product pools, removes exactly the generated database
+  and its generated role. No connection URL, token, key or raw exception is put
+  in evidence or output. Focused integration and API typecheck were rerun after
+  correcting the initial CJS-compatible migration-path fixture error.
+- This proves the actual extracted product cycle, real service failure, capture,
+  persistence, aggregation and recovery. It does NOT prove process bootstrap
+  faults or the separate QueueWorker AI/voice/intake drain. That drain still has a
+  raw-stack failure catch and needs observation without changing commercial
+  settlement/retry/provider behavior; internally caught terminal failures also
+  need audit. Remaining broader host/security/analytics and final A–I/47-section
+  acceptance are not waived. No target-host promotion or next Goal.
+
 ## 2026-10-19 — Actual Jupiter saturated-telemetry write isolation (LOCAL)
 
 - The existing actual `TicketController` / `TicketActorService` /

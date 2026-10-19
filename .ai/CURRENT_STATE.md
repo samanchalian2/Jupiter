@@ -1,5 +1,24 @@
 # Current State
 
+**2026-10-19 HTTP isolation/cross-domain adapter checkpoint (GOAL-069 IN
+PROGRESS):** NestJS observation can no longer replace a successful response or
+original HTTP exception when context entry or capture fails. Subscription is
+exactly once even for before/after-entry observer failure. Nine adapter tests
+cover non-critical expected 403 rejection and controlled ticket/auth/config/
+AI/Assist/external-dependency operation failures; Browser React/connectivity
+and actual product Worker paths remain covered by their real acceptance suites.
+This closes the generic HTTP failure-isolation defect, while final end-to-end
+host/security/browser/A–I reconciliation remains active.
+
+**2026-10-19 lifecycle Worker real-service integration (GOAL-069 IN PROGRESS):**
+New disposable-83-migration acceptance uses actual lifecycle/commercial/directory
+services and the worker.ts cycle, with a real SQL fault, actual Node SDK/HTTP,
+PostgreSQL event and Issue, then successful recovery. Generated DB/role/pools
+are removed; shared roles/business data/provider/AD are untouched. This adds
+integration evidence beyond unit stage ports. Separate queued AI/voice/intake
+Worker capture, internally caught terminal outcomes and full process/host/final
+audit remain; no whole-Goal completion or promotion is claimed.
+
 **2026-10-19 actual saturated-telemetry write isolation (GOAL-069 IN PROGRESS):**
 The real Ticket controller/actor/service loopback boundary now commits one
 authorized saved-view write under a full 500-item SDK queue. PostgreSQL proves
