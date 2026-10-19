@@ -3,6 +3,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { HubDatabase, RegistryService, IngestionService, HubHttpApi, IssueEngine, MonitoringEngine, AlertService, RetentionService, InvestigatorService, AesCredentialVault, JsonInvestigationProvider, HubDiagnosticReporter, SelfMonitoringService, type HubHttpRequest } from '@observability/server';
 import { NodeSdk, type NodeContext } from '@observability/node-sdk';
+import { observeJob } from '@observability/nestjs-adapter';
 import { ContractError, isUuid, type IdentityScope } from '@observability/contracts';
 import { AuthService } from '../auth/auth.service.js';
 import { DatabaseService } from '../database/database.service.js';
@@ -10,6 +11,7 @@ import { databaseUrl, loadLocalEnvironment, aiCredentialEncryptionKey } from '..
 import { observeSessionRevocation } from './security-events.js';
 import { NotificationService } from '../notifications/notification.service.js';
 export interface HubBindingConfiguration {applicationId:string;environmentId:string;enabled:boolean;}
+export type ProductWorkerOperation='subscription.expire_due'|'commercial.enumerate_organizations'|'commercial.provision_current'|'directory.schedule_due'|'directory.evaluate_health';
 export function hubBindingConfiguration():HubBindingConfiguration|undefined{
  loadLocalEnvironment();if(process.env.OBSERVABILITY_ENABLED==='false')return;
  let config:Partial<HubBindingConfiguration>={applicationId:process.env.OBSERVABILITY_APPLICATION_ID,environmentId:process.env.OBSERVABILITY_ENVIRONMENT_ID};
@@ -85,5 +87,13 @@ export class HubBindingService implements OnModuleInit,OnModuleDestroy {
   return{applicationId:this.configuration.applicationId,environmentId:this.configuration.environmentId,actorReference,tenantReference};
  }
  instrumentation(){return this.sdk;}
+ async observeBackgroundOperation<T>(operation:ProductWorkerOperation,organizationId:string|null,work:()=>Promise<T>):Promise<T>{
+  try{
+   const config=this.configuration,sdk=this.sdk;
+   if(!config||!sdk||organizationId!==null&&!isUuid(organizationId))return await work();
+   // Attribution comes only from the trusted worker's database enumeration.
+   return await observeJob(sdk,{applicationId:config.applicationId,environmentId:config.environmentId,actorReference:null,tenantReference:organizationId},operation,work);
+  }catch(error){this.diagnostics.report('PRODUCT_WORKER_FAILED');throw error;}
+ }
  async onModuleDestroy(){if(this.timer)clearInterval(this.timer);this.unsubscribe?.();this.unregisterNotifications?.();await this.sdk?.shutdown();await this.selfMonitoring?.flush();await this.hub?.close();}
 }

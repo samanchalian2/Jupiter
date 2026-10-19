@@ -1,5 +1,16 @@
 # Current State
 
+**2026-10-19 actual product Worker capture (GOAL-069 IN PROGRESS):** The real
+Jupiter lifecycle Worker now observes subscription, commercial-provisioning and
+directory stages through the reusable NestJS adapter with trusted automation /
+enumerated-tenant attribution. Failure produces one sanitized bounded event;
+Hub/context/capture failure cannot rerun or replace business work, and the
+fixed-field fallback contains no raw exception. The original stage order and
+next-cycle retry remain. Focused adapter/API tests pass (5 adapter; 161 API with
+one existing explicit skip) with both typechecks. Larger-scale sampling,
+remaining security/host/browser breadth and the final requirement/A–I audit are
+still active. No Preview/main promotion has occurred.
+
 **2026-10-19 concurrent/product-read performance checkpoint (GOAL-069 IN PROGRESS):**
 Disposable real HTTP/leased-worker phase verifies 200 events, concurrent overlap,
 exactly 200 successful jobs and five Issues/200 occurrences. Focused dispatch-

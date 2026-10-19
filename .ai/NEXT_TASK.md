@@ -35,11 +35,11 @@ latest Evidence for gates/runtime/remote commit.
    host/shell/role workflows. Independent reference/shared Console acceptance
    is not a substitute. Maintain tenant/App/environment/actor isolation,
    denial/manual-workflow continuity and genuine authorization.
-   Concrete remaining implementation gap: `apps/api/src/worker.ts` lifecycle/
-   provisioning/directory loop currently catches to console.error without the
-   Hub SDK/observeJob adapter. Wire that actual path with safe system/tenant
-   context and sanitized fallback, then exercise the real host path; controlled
-   reference WORKER events alone do not satisfy the product Worker requirement.
+   The concrete `apps/api/src/worker.ts` capture gap is now closed locally with
+   safe automation/enumerated-tenant context, sanitized fallback and actual
+   lifecycle-cycle tests. Preserve it and include its real-host behavior in the
+   remaining cross-domain/final acceptance; do not substitute its focused tests
+   for the full host/workflow audit.
 3. Preserve the completed section-63 Help checkpoint: eleven registry-validated
    guides, RUNTIME revision 2, explicit slug-only publication and unchanged
    unrelated Help. Actual Jupiter login/Edge covers operations, Platform panel

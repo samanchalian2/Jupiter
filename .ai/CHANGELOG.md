@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-10-19 — GOAL-069 actual lifecycle Worker capture checkpoint
+
+- Routed Jupiter's real subscription, commercial-provisioning and directory
+  Worker stages through the reusable observation adapter without changing their
+  order, fail-fast behavior or next-cycle retry.
+- Added trusted automation/tenant attribution, sanitized fixed-field fallback
+  and exactly-once business execution when instrumentation fails before or
+  after context entry.
+- Added stage-by-stage product tests plus generic adapter failure-isolation
+  coverage. Focused adapter/API suites and typechecks pass. GOAL-069 remains in
+  progress pending its broader security/performance/browser/final audit.
+
 ## 2026-10-19 — GOAL-069 concurrent and product-boundary measurements (IN PROGRESS)
 
 - Added actual overlapping HTTP ingestion/leased aggregation with per-event

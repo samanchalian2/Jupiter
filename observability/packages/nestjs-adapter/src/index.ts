@@ -28,5 +28,7 @@ export class ObservabilityInterceptor implements NestInterceptor {
   }
 }
 export async function observeJob<T>(sdk:NodeSdk,context:NodeContext,jobType:string,work:()=>Promise<T>):Promise<T>{
-  return sdk.run(context,async()=>{try{return await work();}catch(error){sdk.captureException(error,{category:'WORKER',source:'WORKER',operationName:jobType,eventCode:'worker.job_failed'});throw error;}});
+  let result:Promise<T>|undefined;
+  const run=()=>result??=(async()=>{try{return await work();}catch(error){try{const current=sdk.context();if(current?.applicationId===context.applicationId&&current.environmentId===context.environmentId&&current.actorReference===context.actorReference&&current.tenantReference===context.tenantReference)sdk.captureException(error,{category:'WORKER',source:'WORKER',operationName:jobType,eventCode:'worker.job_failed'});}catch{/* Telemetry failure cannot replace the consumer exception or borrow another scope. */}throw error;}})();
+  try{return await sdk.run(context,run);}catch{return result??run();}
 }

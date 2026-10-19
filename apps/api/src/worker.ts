@@ -5,6 +5,8 @@ import { SubscriptionLifecycleService } from './commercial/subscription-lifecycl
 import { CommercialService } from './commercial/commercial.service.js';
 import { DatabaseService } from './database/database.service.js';
 import { DirectoryConnectorService } from './directory/directory-connector.service.js';
+import { HubBindingService } from './observability/hub-binding.service.js';
+import { runLifecycleWorkerCycle } from './lifecycle-worker.js';
 
 async function bootstrap() {
   const app=await NestFactory.createApplicationContext(AppModule);
@@ -12,7 +14,8 @@ async function bootstrap() {
   const commercial=app.get(CommercialService);
   const database=app.get(DatabaseService);
   const directory=app.get(DirectoryConnectorService);
-  const run=async()=>{try{await lifecycle.expireDue();const organizations=(await database.query<{id:string}>("SELECT id FROM organizations WHERE status='active'")).rows;for(const organization of organizations)await commercial.provisionCurrent(organization.id);await directory.scheduleDue();await directory.evaluateHealth();}catch(error){console.error('subscription lifecycle worker failed',error);}};
+  const observation=app.get(HubBindingService);
+  const run=()=>runLifecycleWorkerCycle({lifecycle,commercial,database,directory,observation});
   await run();
   setInterval(()=>void run(),60_000).unref();
 }

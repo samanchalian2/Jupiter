@@ -4,6 +4,32 @@ Status: IN PROGRESS. Owner-approved plan supersedes the stale GOAL-060 identifie
 in the supplied specification. GOAL-060 Personal Service history is preserved.
 GOAL-059 remains BLOCKED; LOCAL evidence is not staging acceptance.
 
+## 2026-10-19 — Actual Jupiter lifecycle Worker capture (LOCAL)
+
+- `apps/api/src/worker.ts` now routes the existing subscription-expiry,
+  active-organization enumeration, commercial provisioning, directory schedule
+  and directory-health stages through the generic NestJS `observeJob` boundary.
+  The business order and fail-fast/next-minute retry behavior are unchanged.
+- Worker attribution is derived only from trusted database enumeration. Global
+  stages use no tenant or human actor; per-organization provisioning uses the
+  enumerated organization UUID and an explicit null automation actor. An
+  enclosing request context cannot leak a human identity into Worker telemetry.
+- A failed stage produces one bounded `WORKER`/`worker.job_failed` event. The
+  event excludes the exception message and test secret. If Hub context setup,
+  capture, or the Hub itself fails, business work still runs exactly once and
+  preserves its original result/exception. The fixed-field throttled fallback
+  emits only `PRODUCT_WORKER_FAILED`, preventing recursive/raw-error logging.
+- The real product cycle is extracted only as a testable orchestration boundary;
+  it continues to call the existing lifecycle, commercial and directory
+  services. Nine API tests cover every stage, order, trusted tenant attribution,
+  enclosing-human isolation, disabled Hub, retry-next-cycle and observer
+  failure. Five generic adapter tests cover before/after-entry failure and
+  original exception preservation.
+- Focused result: NestJS adapter 5/5, complete API 161 passed with one existing
+  explicitly skipped test, and both adapter/API typechecks passed. This closes
+  the concrete product Worker capture gap; it does not by itself complete the
+  remaining scale/security/responsive/final A–I audit.
+
 ## 2026-10-19 — Concurrent aggregation and actual ticket read-path boundary (LOCAL)
 
 - The opt-in disposable PostgreSQL performance case now includes an independent
