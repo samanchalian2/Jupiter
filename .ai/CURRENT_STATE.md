@@ -1,5 +1,31 @@
 # Current State
 
+**2026-10-19 scoped analytics checkpoint (GOAL-069 IN PROGRESS, DEC-046):**
+Ten bounded real analytics reports now replace shared Console overview reuse,
+with current grants/RLS and a strict read-only endpoint (47 OpenAPI operations).
+Real SQL/HTTP tests cover rates, recurrence, resolution, unknowns, bounds and
+tenant/App denial. Independent authenticated Edge exercises ten reports at
+375/768/1024/1440, RTL/no document overflow. Visual QC fixes mobile table wrapping
+with inner keyboard-scroll. Final full release gate exits zero with 402 tests
+(173 API, 30 Web, 199 Hub: 79 SDK/core/adapters, 109 server, 11 Console), builds/
+lint/typechecks, actual Edge/offline/performance/Python/C# and migration rehearsal.
+Persian Console Help
+has a new supported local runtime revision. Multi-product ranking, representative
+analytics load and actual Jupiter host/process/security/A–I audit remain open.
+
+**2026-10-19 real queued-provider acceptance (GOAL-069 IN PROGRESS):** Actual
+Worker + AI/intake/transcription/commercial/ticket services use a disposable
+83-migration DB, authorized fixture requester and loopback HTTP provider.
+Seven real 503 calls (review/text/multipart voice) release three failed actions
+without settlement; legacy attachment retry/dead-letter adds no action. Manual
+submit remains OPEN; valid review recovery/duplicate retry settles exactly once.
+Real SDK/HTTP/SQL events and Issue aggregation verify scoped safe outcomes and
+no private provider body. Focused integration and API typecheck pass; full gate
+is running. Section-43 analytics audit confirms overview/CSV is insufficient for
+explicit rankings, distributions, incidents/feedback/time-to-resolution reports.
+Full host/process/security/performance/A–I acceptance remains; no promotion.
+The newer 402-test gate below/above supersedes that checkpoint's in-flight gate.
+
 **2026-10-19 failure-isolated sampling (GOAL-069 IN PROGRESS, DEC-045):**
 Storage sampling has one in-flight pass, rotating constant-size App/environment
 cursor, nonblocking scope lock, per-statement 1s limit and cooperative 5s work

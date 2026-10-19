@@ -1,5 +1,11 @@
 # Jupiter Design System V2
 
+GOAL-069 analytics uses one compact report selector and existing semantic colors,
+not a new navigation pattern. Ranked tables retain readable minimum column widths
+and a named keyboard-focusable inner scroll region on small screens; never let
+document overflow or letter-by-letter header wrapping substitute for readable
+data. Selector touch target remains at least 44px. Unknown values display «—».
+
 ## Purpose and principles
 
 Jupiter is a Persian-first, RTL enterprise service-management product. The UI

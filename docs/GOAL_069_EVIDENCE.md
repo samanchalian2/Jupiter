@@ -4,6 +4,132 @@ Status: IN PROGRESS. Owner-approved plan supersedes the stale GOAL-060 identifie
 in the supplied specification. GOAL-060 Personal Service history is preserved.
 GOAL-059 remains BLOCKED; LOCAL evidence is not staging acceptance.
 
+## 2026-10-19 — Real queued provider failure, metering and recovery (LOCAL)
+
+- Implementation under test: actual QueueWorker, AiGatewayService,
+  TicketIntakeService, TranscriptionService, CommercialService, TicketService,
+  AttachmentService, HubBindingService and Node SDK/HTTP ingestion/IssueEngine.
+  No production contract, retry, provider, lifecycle or commercial code changed.
+- `apps/api/test/lifecycle-worker.integration.spec.ts` uses its generated,
+  fully 83-migration PostgreSQL database and substituted generated product role.
+  Fixture requester has a real membership/REQUESTER role, both capability gates
+  and encrypted random fixture credential. The supported service enqueue paths
+  create requests/reservations. A loopback HTTP server returns actual 503s;
+  there is no external provider call or real key. Test storage is an explicit
+  in-memory AttachmentStorage port, not an S3/filesystem acceptance claim.
+- One review failure, three text-intake attempts and three voice-intake attempts
+  make seven actual provider HTTP calls. The three voice requests are asserted
+  as multipart /audio/transcriptions. Only fixture next-attempt timestamps are
+  advanced to exercise real claim/retry logic without sleeping. After retries,
+  SQL proves all three commercial actions RELEASED, zero settlements. During
+  earlier retries the intake reservations remain held rather than recreated.
+- A separately enqueued attachment transcription reaches RETRY then DEAD_LETTER
+  through the actual legacy HttpTranscriptionProvider rejection path (no remote
+  call for legacy attachments); it creates no commercial action. This does not
+  claim an implemented independent attachment audio provider integration.
+- With the same worker/services, manual ticket submission reaches OPEN. Switching
+  the loopback provider to a valid review response recovers: one successful
+  review and duplicate enqueue/drains yield exactly one settlement (-1 unit),
+  one SETTLED action and just one further HTTP call. Failed intakes do not create
+  tickets; automatic ticket submit is not introduced.
+- SQL over actual ingested events proves AI FAILED, intake RETRY/FAILED and voice
+  RETRY/DEAD_LETTER operations with real organization, null automation actor,
+  WORKER source/category, WARNING versus ERROR and retryExhausted flags. A unique
+  private provider-response marker is absent from events/warnings. The real
+  aggregation engine produces an Issue. No manually injected outcome port calls
+  substitute for these service outcomes. The older explicit-port test now uses
+  a before-ID cohort so it cannot count another test's legitimate real events.
+- Focused execution: three integration tests pass (new scenario 931ms); API
+  typecheck passes. Temporary listener is closed, prior encryption environment
+  restored, generated DB/role cleanup assertions remain mandatory. The later
+  402-test full release gate below covers this scenario. No business tenant,
+  pre-existing Help or approved 100,000-token
+  monitoring configuration changed; Preview/main are untouched.
+- Limits: this is real services/Worker/HTTP/SQL with loopback provider and an
+  explicit drain call, not a full Browser/AppModule or cloud outage test. Intake
+  success/retry-then-success breadth, process startup and final host/security/
+  performance/A–I audit remain. Whole Goal is still IN PROGRESS.
+
+## Historical analytics audit finding — section 43 (partially remediated below)
+
+Current `observability/server/src/operations.ts` overview implements filtered
+hourly event/error/operation trends, current state counts and affected users/
+tenants; the shared Console analytics view reuses that overview plus safe CSV.
+That does not yet satisfy all explicit section-43 reports: incidents over time,
+issue recurrence, affected product/operation rankings, browser/device breakdown,
+release regression, feedback trends, resolution time and recurring causes need
+distinct bounded queries/projections and real UI/security acceptance. Green
+overview/CSV tests are not proof of those missing reports. Preserve the full
+requirement and implement it rather than treating overview as complete analytics.
+
+## 2026-10-19 — Bounded analytical reports (LOCAL, DEC-046)
+
+- `observability/server/src/operations.ts` adds the read-only analytics projection;
+  `http-api.ts` exposes GET /operations/applications/{applicationId}/analytics.
+  Executable `openapi.ts` documents strict request/response bounds and semantics;
+  parity now requires all 47 operations to execute over actual HTTP/PostgreSQL.
+  No migration, role relaxation, domain/provider/commercial change was made.
+- Current operational grant revalidation and RLS guard every report. A single
+  fixed SQL statement materializes only required safe columns from the validated
+  received-at event cohort (max 31 days). Output is bounded at 50 ranked groups/
+  750 hourly buckets; existing database statement timeout remains. This is not
+  a claim that every large production dataset finishes within the timeout.
+- Ten report projections cover Incident created/resolved trends, Feedback
+  trends, matching Issue occurrences plus explicitly lifetime reopen count,
+  affected operations, browser/OS/device, release measured-HTTP failure rates/
+  observed deltas, Issue/Incident resolution mean/median/p95 seconds, recurring
+  event fingerprint/type patterns, user impact and tenant impact. Missing
+  dimensions remain null; unresolved resolution statistics remain unknown, not
+  zero durations. Release comparison is not causal regression proof. Feedback
+  with no linked event is excluded only by technical severity/category/release
+  filters; its text search is on subject. UTC buckets do not depend on DB zone.
+- Two real PostgreSQL scenarios prove exact rates (v1 0%, v2 50%, delta .5),
+  known 120-second resolved Incident, recurrence, linked/unlinked Feedback,
+  per-tenant/app denial, absent-version empty reports, 51 groups capped to 50,
+  all-unknown device fields, public HTTP 401/403/400 and strict filters. Separate
+  connection explicitly configured Asia/Tehran proves UTC-hour alignment. The
+  same OpenAPI parity acceptance validates the real analytics JSON response.
+- The Console replaces overview reuse with a named compact report selector,
+  Persian column labels and honest filter/limit guidance. All ten selectors are
+  exercised in actual authenticated independent Edge at 375/768/1024/1440, RTL
+  and document width <= viewport. Screenshots are local output artifacts, not
+  repository assets. Initial label lookup exposed an ambiguous implicit label;
+  an explicit accessible name fixed it. Visual review then found narrow headers
+  wrapping letter-by-letter: readable minimum table widths and a named,
+  keyboard-focusable INNER scroll region fix that without document overflow.
+- QC also found fixture cross-test queue backlog; the test drains bounded claim
+  pages rather than assuming one claim covers every new event. A non-UTC fixture
+  initially copied pg Pool.options, whose password is intentionally nonenumerable;
+  it now reuses the original protected connection configuration and generated
+  database name without printing credentials. Failed runs are not counted as
+  passes. Subsequent focused analytics tests and the final full gate pass.
+- Persian observability-console Help is revised through the supported local
+  publication utility with the existing active Platform Admin and slug-only
+  selection: 0 created/1 revised. Runtime history and unrelated articles remain.
+  It explains reports, rates, unknowns, scope, limits, scrolling and CSV's actual
+  event-export meaning. Public local API lookup confirms the slug and revised
+  analytics/limits/cross-product limitation content after local startup.
+- Remaining: cross-product ranking is NOT implemented by this single-App report;
+  richer representative analytics performance and actual Jupiter host breadth,
+  full security/process/A–I/47-section acceptance still require execution. This
+  checkpoint cannot close the whole Analytics or GOAL-069 requirement.
+- Final `pnpm verify:release` exits zero (durable local log records exit 0):
+  402 tests = 173 API + 30 Web + 199 Hub (79 SDK/core/adapters, 109 server,
+  11 Console). Build/lint/typechecks, real Edge/offline/default capacity,
+  Python/C#, performance and 83-migration rehearsal all run. The three amended
+  source/test SHA256 hashes match the pre-gate snapshot. Vite chunk advisory is
+  unchanged; it is not a new failure. No filtered/skipped cases inflate totals.
+- Post-gate local preflight: zero temporary databases, zero reserved AI attempts,
+  unchanged 83 migrations and enabled 100,000-token monitoring configuration.
+  The former API/Web listeners were absent. Verified free ports were started
+  hidden with owned API/Web processes; product Worker explicitly false, only
+  Hub drain enabled. Health/readiness passes and Web /operations returns 200.
+- During tests a listener on 5174 belonged to the reference Vitest worker, not
+  an assumed product process. Ownership guard prevented any replacement; it
+  closed normally. Vite's port=0 fallback to a product preview port is now a
+  concrete test-isolation follow-up: reserve a real OS ephemeral port and
+  strictPort before the next Browser/full-suite run. No other app was stopped.
+
 ## 2026-10-19 — Queued AI/voice/intake observation and outcome QC (LOCAL)
 
 - `apps/api/src/jobs/queue.worker.ts` now calls the existing host observation

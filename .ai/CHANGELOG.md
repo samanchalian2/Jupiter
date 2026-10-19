@@ -1,5 +1,28 @@
 # Changelog
 
+## 2026-10-19 — GOAL-069 scoped analytics projection (IN PROGRESS)
+
+- Added DEC-046, read-only scoped aggregate endpoint and strict 47-operation
+  executable OpenAPI; ten real report types replace overview reuse in Console.
+- Real SQL/HTTP isolation/rate/resolution/cap/unknown/UTC tests plus four-width
+  authenticated independent Edge pass focused checks. Fixed accessible label,
+  mobile column wrapping and test backlog/nonenumerable-connection-copy defects.
+- Revised and locally published only observability-console Help, preserving
+  history. Multi-product ranking/representative analytics load/full host audit
+  remain. Final full release gate passes 402 tests plus all build/lint/typechecks,
+  real Edge/Python/C#/offline/performance and 83-migration rehearsal. Not whole
+  Goal acceptance; no Preview/main deployment.
+
+## 2026-10-19 — GOAL-069 real provider-failure/metering acceptance (IN PROGRESS)
+
+- Real queued review/text/voice services execute loopback HTTP 503s in the
+  disposable 83-migration DB: failed actions release, retry holds one action,
+  legacy audio stays noncommercial, manual submit and review recovery work.
+- Actual SDK/HTTP/SQL outcomes aggregate to Issues; private provider body absent.
+  Explicit-port fixture is cohort-isolated rather than assuming an empty table.
+- Identified concrete section-43 analytics breadth gap; do not equate overview/
+  CSV with required rankings/distributions/resolution reports. Goal stays active.
+
 ## 2026-10-19 — GOAL-069 failure-isolated logical sampling (IN PROGRESS)
 
 - Recorded DEC-045 and isolated failures per scope with rotating bounded cursor,

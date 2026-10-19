@@ -1,5 +1,17 @@
 # Business Rules
 
+## Scoped analytical reports (DEC-046)
+
+- Current operational grant and explicit App/environment/tenant guard aggregates;
+  filters never grant access. Maximum 31 days, 50 ranks, 750 UTC-hour buckets.
+- One event cohort defines technical rankings/linked history; Feedback without
+  a technical link appears only without severity/category/release filters.
+- Unknown dimensions/rates/durations remain null, not fabricated zeros. Resolution
+  excludes unresolved/negative intervals; lifetime reopen count is not window count.
+- Observed release HTTP-rate delta is not a causal diagnosis or rule-engine verdict.
+- One-App report is not a multi-product comparison. CSV remains separately
+  authorized event export; it must not be labeled selected-statistics export.
+
 ## Diagnostic sampling failure isolation (DEC-045)
 
 - One failed/locked scope must not prevent healthy later scopes from being

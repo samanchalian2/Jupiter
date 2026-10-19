@@ -4,7 +4,7 @@
 
 The entire approved objective remains active. Source of truth:
 `docs/GOAL_069_SPECIFICATION.md` (all sections and A–I Definition of Done),
-`docs/GOAL_069_EVIDENCE.md`, current state and DEC-038 through DEC-045.
+`docs/GOAL_069_EVIDENCE.md`, current state and DEC-038 through DEC-046.
 Historical GOAL-060 Personal Service is not renamed. Do not start another Goal.
 
 ### Latest implementation boundary
@@ -20,7 +20,7 @@ This is not a blanket completion claim for all product workflows or the live
 Jupiter shell. Section-63 Help is runtime-published with actual Jupiter operations,
 Platform-panel and Feedback acceptance. The measured local performance checkpoint
 and Node hot-path remediation plus full-limit Browser/batch/redaction QC bring
-the full release gate to 399 tests with failure-isolated sampling, queued Worker outcome and concurrent/product-read boundary
+the full release gate to 402 tests with scoped analytics, real queued provider failure/metering and concurrent/product-read boundary
 measurements and the performance flag enabled. Inspect
 latest Evidence for gates/runtime/remote commit.
 
@@ -31,6 +31,15 @@ latest Evidence for gates/runtime/remote commit.
    required Evidence sections with actual authoritative execution. Identify and
    implement missing analytics/operational workflows and cross-domain scenarios.
    Do not mark broad phases complete from narrow service tests.
+   Section-43 single-App analytics now has ten bounded reports/DEC-046, actual
+   HTTP/SQL/OpenAPI isolation/rates/limits tests and independent four-width Edge
+   acceptance. Preserve them; finish separately authorized multi-product ranking,
+   representative analytics performance and actual Jupiter host acceptance.
+   Do not equate the selected-App projection with a cross-product comparison.
+   Before another reference Browser run with local Web active, harden its Vite
+   test listener: port 0 was observed falling back to 5174. Reserve a true OS
+   ephemeral port and use strictPort so the fixture cannot occupy the product
+   preview port. An ownership guard prevented restarting/replacing that listener.
 2. Verify real product Worker capture and the remaining authenticated Jupiter
    host/shell/role workflows. Independent reference/shared Console acceptance
    is not a substitute. Maintain tenant/App/environment/actor isolation,
@@ -44,9 +53,11 @@ latest Evidence for gates/runtime/remote commit.
    The separate QueueWorker now observes thrown operations plus persisted
    AI/intake failures and transcription retry/dead-letter outcomes. Preserve
    seven focused queue tests and the real SQL enumeration/HTTP integration.
-   Explicit outcome port calls prove transport, not real provider-failure
-   settlement: complete actual-service terminal-path/metering acceptance and
-   bootstrap/process failure isolation without changing commercial/provider rules.
+   Actual loopback HTTP review/text/multipart-voice failure now verifies real
+   service retries/release, unchanged manual submit, review recovery/idempotent
+   settlement and SDK/HTTP event→Issue. Preserve that disposable integration;
+   finish intake-success breadth and bootstrap/process failure isolation without
+   changing commercial/provider rules.
 3. Preserve the completed section-63 Help checkpoint: eleven registry-validated
    guides, RUNTIME revision 2, explicit slug-only publication and unchanged
    unrelated Help. Actual Jupiter login/Edge covers operations, Platform panel

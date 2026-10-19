@@ -2,6 +2,19 @@
 
 ## GOAL-069 Observability Hub
 
+DEC-046 analytics uses current operational authorization and runtime RLS, never
+worker/admin bypass. Fixed SQL reads only needed safe columns and returns bounded
+projections. Unknown filters/status/pagination are rejected for this aggregate
+endpoint; no arbitrary SQL/identifier, raw stack, provider body or credential is
+exported. Real HTTP 401/403/400, tenant/App denial and missing-data tests cover it.
+
+Real queued-service acceptance uses generated disposable DB/role, valid fixture
+membership and encrypted random fixture key with a loopback-only provider.
+Actual HTTP error-body marker is absent from stored operational events/warnings;
+real failed review/text/voice reservations release without settlement. Normal
+manual submit and review recovery remain functional. This supplements, not
+replaces, authentication/tenant/provider secrecy and full host security tests.
+
 DEC-045 sampling retains the fixed table allowlist, worker role and scoped
 predicates. Cursor values are internal UUIDs, parameterized, constant-size and
 not exposed as tenant data. Timed-out/locked scopes have no fabricated snapshot;

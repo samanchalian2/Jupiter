@@ -2,6 +2,19 @@
 
 ## GOAL-069 — Observability Hub continuation (IN PROGRESS)
 
+DEC-046 adds ten scoped analytical projections, strict 47-operation OpenAPI,
+real PostgreSQL/HTTP report/security tests and independent four-width Console
+acceptance, plus revised local Persian Help. Cross-product ranking, representative
+analytics load and actual Jupiter host/process/security/final audit remain open.
+
+Actual queued AI/text/voice provider-failure acceptance now runs real services,
+loopback HTTP and disposable PostgreSQL: release/no failed charge, retained
+retry reservation, legacy voice noncommercial, manual submit and exactly-one
+review recovery settlement; real SDK→HTTP→event→Issue persists safe outcomes.
+Intake-success breadth, bootstrap/full host/security/performance and full audit
+remain. Section-43 overview/CSV is not complete Analytics: explicit rankings,
+distribution, incident/feedback and resolution/cause reports still need delivery.
+
 DEC-045 closes the concrete sampling scope-failure starvation/shared-drain wait
 gap with real SQL timeout/recovery and coordination tests. It does not replace
 full host load/security/provider-outcome/specification acceptance or staging.

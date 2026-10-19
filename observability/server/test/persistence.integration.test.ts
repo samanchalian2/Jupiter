@@ -60,6 +60,46 @@ afterAll(async()=>{if(httpServer){httpServer.closeAllConnections();await new Pro
 const event=(extra:Partial<TelemetryEvent>={}):TelemetryEvent=>({eventId:randomUUID(),schemaVersion:'1.1',applicationId:appA,environmentId:envA,occurredAt:new Date().toISOString(),source:'BROWSER',category:'FRONTEND',severity:'ERROR',eventCode:'ui.render_failed',normalizedMessage:'Controlled error',actorReference:'userA',tenantReference:'shared-tenant-id',...extra});
 const scope=()=>({applicationId:appA,environmentId:envA,actorReference:'userA',tenantReference:'shared-tenant-id',source:'BROWSER' as const});
 
+describe('bounded scoped analytics reports',()=>{
+ it('bounds rankings, preserves unknown dimensions and enforces the public HTTP identity/filter boundary',async()=>{
+  const app=(await registry.createApplication(root,{slug:`analytics-cap-${randomUUID()}`,name:'Analytics cap'})).id,env=(await registry.createEnvironment(root,app,{key:'test',kind:'TEST'})).id,s={applicationId:app,environmentId:env,tenantReference:null,actorReference:null,source:'SERVER' as const};
+  const messages=Array.from({length:51},(_,index)=>event({...s,source:'SERVER',operationName:`operation-${String(index).padStart(2,'0')}`,releaseVersion:`release-${index}`}));for(const batch of [messages.slice(0,50),messages.slice(50)])expect((await ingestion.ingest({events:batch},s)).acknowledgements.every(row=>row.status==='ACCEPTED')).toBe(true);
+  const url=`${endpoint}/operations/applications/${app}/analytics?environmentId=${env}`,headers={authorization:'Bearer root-identity-placeholder'};
+  const response=await fetch(url,{headers});expect(response.status).toBe(200);const report=await response.json();expect(report.operationImpact).toHaveLength(50);expect(report.releases).toHaveLength(50);expect(report.recurringCauses).toHaveLength(50);expect(report.limits).toEqual({rankedGroups:50,hourlyBuckets:750});
+  expect(report.browserDevices).toEqual([{browserFamily:null,operatingSystem:null,deviceClass:null,events:51,errors:51}]);expect(report.resolution.every((row:any)=>row.resolvedCount===0&&row.p95Seconds===null)).toBe(true);
+  expect((await fetch(url)).status).toBe(401);expect((await fetch(url,{headers:{authorization:'Bearer scoped-identity-placeholder'}})).status).toBe(403);
+  for(const invalid of ['&page=1','&status=OPEN','&category=invalid','&release=one&release=two'])expect((await fetch(url+invalid,{headers})).status).toBe(400);
+ });
+ it('reports actual event/Issue/Incident/Feedback cohorts with truthful release rates and tenant isolation',async()=>{
+  const app=(await registry.createApplication(root,{slug:`analytics-${randomUUID()}`,name:'Analytics fixture'})).id,env=(await registry.createEnvironment(root,app,{key:'test',kind:'TEST'})).id;
+  const s={applicationId:app,environmentId:env,tenantReference:'analytics-a',actorReference:'actor-a',source:'SERVER' as const},ops=new OperationsService(database,registry);
+  const messages=[event({...s,source:'SERVER',category:'BACKEND',eventCode:'http.operation',severity:'INFO',operationName:'ticket.read',httpStatus:200,releaseVersion:'v1'}),event({...s,source:'SERVER',category:'BACKEND',eventCode:'http.operation',severity:'INFO',operationName:'ticket.read',httpStatus:200,releaseVersion:'v2'}),event({...s,source:'SERVER',category:'BACKEND',eventCode:'http.operation',severity:'ERROR',operationName:'ticket.read',httpStatus:503,releaseVersion:'v2'}),...Array.from({length:2},()=>event({...s,source:'SERVER',eventCode:'fixture.render',operationName:'page.render',releaseVersion:'v2',browserFamily:'FixtureBrowser',operatingSystem:'FixtureOS',deviceClass:'desktop'}))];
+  expect((await ingestion.ingest({events:messages},s)).acknowledgements.every(row=>row.status==='ACCEPTED')).toBe(true);
+  const hidden=event({...s,source:'SERVER',tenantReference:'analytics-b',actorReference:'hidden-actor',operationName:'hidden.operation'});await ingestion.ingest({events:[hidden]},{...s,tenantReference:'analytics-b',actorReference:'hidden-actor'});
+  await database.worker(async c=>{await c.query("UPDATE observability.events SET received_at=now()-interval '20 minutes' WHERE application_id=$1",[app]);await c.query("UPDATE observability.events SET received_at=now()-interval '40 minutes' WHERE application_id=$1 AND release_version='v1'",[app]);});
+  const engine=new IssueEngine(database,registry);for(let pass=0;pass<10;pass++){const jobs=await engine.queue.claim(randomUUID(),50,['AGGREGATE']);if(!jobs.length)break;for(const job of jobs)await engine.aggregate(job);}
+  const issue=(await ops.list(root,s,'issues')).items.find(row=>row.title==='Controlled error');expect(issue).toBeDefined();
+  await database.worker(async c=>{await c.query("UPDATE observability.issues SET status='RESOLVED',first_seen=now()-interval '10 minutes',resolved_at=now()-interval '8 minutes',regression_count=2 WHERE id=$1",[issue!.id]);await c.query("INSERT INTO observability.incidents(application_id,environment_id,tenant_reference,issue_id,title,status,severity,rule_code,created_at,resolved_at) VALUES($1,$2,$3,$4,'Fixture incident','RESOLVED','ERROR','ERROR_BURST',now()-interval '5 minutes',now()-interval '3 minutes')",[app,env,s.tenantReference,issue!.id]);});
+  const feedback=new FeedbackService(database,registry);await feedback.submit(s,{feedbackId:randomUUID(),subject:'Linked feedback',description:'Synthetic report',category:'BUG',relatedEventId:messages[3].eventId});await feedback.submit(s,{feedbackId:randomUUID(),subject:'Unlinked feedback',description:'Synthetic report',category:'BUG'});await feedback.submit({...s,tenantReference:'analytics-b',actorReference:'hidden-actor'},{feedbackId:randomUUID(),subject:'Hidden feedback',description:'Other tenant report',category:'BUG'});
+  const viewer=await registry.principal({issuer:'analytics',subject:randomUUID(),displayName:'Scoped reader'});await registry.grant(root,{...s,targetPrincipalId:viewer,role:'VIEWER',reason:'Explicit analytics tenant scope'});
+  const report=await ops.analytics(viewer,s);
+  expect(report.operationImpact).toEqual(expect.arrayContaining([{operationName:'ticket.read',errors:1,affectedUsers:1,affectedTenants:1},{operationName:'page.render',errors:2,affectedUsers:1,affectedTenants:1}]));
+  expect(report.browserDevices).toContainEqual({browserFamily:'FixtureBrowser',operatingSystem:'FixtureOS',deviceClass:'desktop',events:2,errors:2});
+  expect(report.releases.map((row:any)=>[row.releaseVersion,row.operations,row.failures,row.errorRate,row.deltaFromPrevious])).toEqual([['v1',1,0,0,null],['v2',2,1,.5,.5]]);
+  expect(report.issueRecurrence.some((row:any)=>row.occurrences===2)).toBe(true);expect(report.recurringCauses.some((row:any)=>row.occurrences===2)).toBe(true);
+  expect(report.incidentTrend.reduce((n:number,row:any)=>n+row.incidents,0)).toBe(1);expect(report.incidentTrend.reduce((n:number,row:any)=>n+row.resolved,0)).toBe(1);
+  expect(report.feedbackTrend.reduce((n:number,row:any)=>n+row.reports,0)).toBe(2);expect(report.resolution.find((row:any)=>row.kind==='INCIDENT')).toMatchObject({resolvedCount:1,averageSeconds:120,p50Seconds:120,p95Seconds:120});
+  expect(report.userImpact).toEqual([{actorReference:'actor-a',errors:3}]);expect(report.tenantImpact).toEqual([{tenantReference:'analytics-a',errors:3,affectedUsers:1}]);expect(JSON.stringify(report)).not.toContain('hidden');
+  const filtered=await ops.analytics(viewer,s,{release:'v2'});expect(filtered.feedbackScope).toBe('MATCHING_LINKED_EVENTS');expect(filtered.feedbackTrend.reduce((n:number,row:any)=>n+row.reports,0)).toBe(1);
+  expect((await ops.analytics(viewer,s,{q:'Unlinked'})).feedbackTrend.reduce((n:number,row:any)=>n+row.reports,0)).toBe(1);
+  const timezoneConnection=connectionString?(()=>{const url=new URL(connectionString);url.pathname=`/${databaseName}`;return{connectionString:url.toString()};})():{...connection,database:databaseName};
+  const nonUtc=new HubDatabase({...timezoneConnection,options:'-c timezone=Asia/Tehran',max:1});try{const timezoneReport=await new OperationsService(nonUtc,registry).analytics(viewer,s);expect([...timezoneReport.incidentTrend,...timezoneReport.feedbackTrend].every((row:any)=>new Date(row.bucketStart).getUTCMinutes()===0)).toBe(true);}finally{await nonUtc.close();}
+  await expect(ops.analytics(viewer,{...s,tenantReference:'analytics-b'})).rejects.toThrow('OPERATIONAL_ACCESS_DENIED');await expect(ops.analytics(viewer,{applicationId:appB,environmentId:envB})).rejects.toThrow('OPERATIONAL_ACCESS_DENIED');
+  await expect(ops.analytics(viewer,s,{from:'2020-01-01',to:'2020-03-01'})).rejects.toThrow('INVALID_TIME_RANGE');await expect(ops.analytics(viewer,s,{page:1})).rejects.toThrow('INVALID_ANALYTICS_FILTER');
+  const empty=await ops.analytics(viewer,s,{release:'absent-version'});expect(empty.releases).toEqual([]);expect(empty.resolution.every((row:any)=>row.resolvedCount===0&&row.averageSeconds===null)).toBe(true);
+ });
+});
+
 describe('LOCAL measured performance in disposable PostgreSQL',()=>{
  it.skipIf(process.env.OBSERVABILITY_PERFORMANCE_ACCEPTANCE!=='true')('measures actual HTTP batch ingestion, aggregation, dashboard, retention and AI scheduling',async()=>{await performanceAcceptance(database,registry,root,endpoint);},120000);
 });
@@ -235,7 +275,7 @@ describe('complete public OpenAPI over actual HTTP and PostgreSQL',()=>{
    await call(base+`/incidents/${incident.id}`,'POST',{...commandScope,assignedPrincipalId:root,note:'Human incident review',reason:'Authorized assignment'});
    await call(base+`/incidents/${incident.id}/transition`,'POST',{...commandScope,status:'TRIAGED',reason:'Explicit human triage'});
    await call(base+`/feedback/${feedback.feedbackId}/replies`,'POST',{...commandScope,body:'Public reply',internal:false,status:'TRIAGED'});
-   await call(base+'/overview'+query);for(const resource of ['events','issues','incidents','feedback','alerts']){const page=await call(`${base}/${resource}${query}`);expect(page.items.length).toBeGreaterThan(0);await call(`${base}/${resource}/${page.items[0].id}${query}`);}await call(base+'/export'+query+'&resource=events');
+   await call(base+'/overview'+query);const analyticsQuery=new URLSearchParams(query.slice(1));analyticsQuery.delete('page');analyticsQuery.delete('pageSize');await call(base+'/analytics?'+analyticsQuery);for(const resource of ['events','issues','incidents','feedback','alerts']){const page=await call(`${base}/${resource}${query}`);expect(page.items.length).toBeGreaterThan(0);await call(`${base}/${resource}/${page.items[0].id}${query}`);}await call(base+'/export'+query+'&resource=events');
    const alerts=new AlertService(database,registry);await alerts.enqueue();
    // Advance only the disposable fixture's due times. Python/C# scenarios can
    // create earlier tenant-free alerts; parity must not assume delivery order

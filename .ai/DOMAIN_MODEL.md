@@ -1,5 +1,11 @@
 # Domain Model
 
+GOAL-069 analytics (DEC-046) is a read projection, not a new aggregate/entity.
+It derives scoped window occurrences, release operation rates, impact, resolved
+durations and linked histories from existing Events/Issues/Incidents/Feedback.
+Lifetime reopen counters and in-window occurrences are explicitly distinct;
+no raw provider/customer payload or new commercial state is part of the report.
+
 ## Hub Product Help metadata (GOAL-069)
 
 Eleven OBSERVABILITY_* feature codes and canonical /operations and /feedback

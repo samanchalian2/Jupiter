@@ -1,5 +1,31 @@
 # Architecture Decisions
 
+## DEC-046 — Bounded operational analytics projection
+
+GOAL-069 section 43 requires reports beyond overview/CSV. Add a read-only
+`GET /operations/applications/{applicationId}/analytics`, using the existing
+operational identity, current grants, explicit environment/tenant and RLS.
+Existing endpoints and ingestion/provider/commercial contracts are unchanged.
+Reuse validated event filters and the 31-day maximum. Reject status/pagination
+for this aggregate projection rather than silently ignoring them. Report tables
+return at most 50 ranked groups or 750 hourly buckets and label that boundary.
+Existing received-at/scope indexes and database statement timeout remain in use;
+no warehouse, materialized migration or unbounded cross-tenant query is added.
+
+Event-derived reports use one filtered event cohort. Issue recurrence counts
+matching occurrences, not lifetime totals; reopen count is explicitly lifetime.
+Incident reports use linked matching Issues, created/resolved dates in the window.
+Unlinked Feedback is included only without severity/category/release filters;
+its text search is on subject, not a fabricated technical link. Resolution
+statistics exclude unresolved rows and negative intervals. Release deltas compare
+measured HTTP operation failure rates in observed first-seen order, not causal
+regression proof or the independent rule engine verdict. Unknown dimensions
+remain null, never invented browser/device/version values.
+
+This endpoint is one Application/environment. A one-row selected product report
+must not be presented as the required multi-product ranking; cross-Application
+comparison still needs separately authorized concrete scopes and acceptance.
+
 ## DEC-045 — Failure-isolated logical storage sampling
 
 GOAL-069 keeps hourly exact logical-row snapshots, existing storage/RLS and API.

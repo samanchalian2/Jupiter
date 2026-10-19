@@ -1,5 +1,11 @@
 # System Architecture
 
+GOAL-069 DEC-046 adds a bounded read-only analytics projection to the existing
+OperationsService/public HTTP contract and shared Console. It uses the same
+current operational grants/RLS, parameterized 31-day event cohort and fixed SQL;
+no business imports, warehouse, schema/provider/commercial changes. Ten report
+tables are one Application/environment; cross-product comparison is still open.
+
 ## GOAL-069 Observability Hub (implementation in progress)
 
 DEC-045 keeps logical sampling within the existing service/pool, but separates
