@@ -12,7 +12,7 @@ export function createHubNodeHandler(api:HubHttpApi,basePath='/api/v1/observabil
       let size=0;const chunks:Buffer[]=[];
       try{for await(const chunk of request){const buffer=Buffer.from(chunk);size+=buffer.length;if(size>LIMITS.batchBytes){response.writeHead(413);response.end(JSON.stringify({reasonCode:'PAYLOAD_TOO_LARGE'}));return;}chunks.push(buffer);}body=JSON.parse(Buffer.concat(chunks).toString('utf8'));}catch{if(!response.writableEnded){response.writeHead(400);response.end(JSON.stringify({reasonCode:'INVALID_JSON'}));}return;}
     }
-    const input:HubHttpRequest={method:request.method??'GET',path:(request.url??'/').slice(basePath.length),authorization:request.headers.authorization,origin:typeof request.headers.origin==='string'?request.headers.origin:undefined,body,clientKey:request.socket.remoteAddress??'unknown'};
+    const input:HubHttpRequest={method:request.method??'GET',path:(request.url??'/').slice(basePath.length),expectedApplicationId:typeof request.headers['x-observability-application-id']==='string'?request.headers['x-observability-application-id']:undefined,expectedEnvironmentId:typeof request.headers['x-observability-environment-id']==='string'?request.headers['x-observability-environment-id']:undefined,authorization:request.headers.authorization,origin:typeof request.headers.origin==='string'?request.headers.origin:undefined,body,clientKey:request.socket.remoteAddress??'unknown'};
     const result=await api.dispatch(input);response.writeHead(result.status,result.headers);response.end(result.status===204?undefined:result.headers?.['Content-Type']?.startsWith('text/csv')?String(result.body):JSON.stringify(result.body));
   };
 }

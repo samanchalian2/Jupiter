@@ -1,5 +1,32 @@
 # Architecture Decisions
 
+## DEC-044 — Automatic diagnostic reporting and durable Browser report replay
+
+GOAL-069 SDK diagnostics reuse the existing authenticated metrics API. Browser
+reports are journaled as a new METRICS envelope kind in the existing IndexedDB
+object store (no schema/credential store migration). At most ten reports/16 KiB
+are retained, separate from the 500-event/2-MiB budget. A journaled report has an
+immutable UUID/body until ACK or bounded expiry/exhaustion; subsequent deltas
+use another UUID. Counter increments before journaling and memory fallback are
+best effort, explicitly not an exactly-once loss ledger. Metadata failures never
+become event failures or recursively increase event-drop counters.
+
+Reports inherit original App/environment/actor/tenant partition, never contain
+credentials, expire at 48 hours and retry at most twelve times. Credential
+refresh can replay the same report. Initial session synchronization removes
+foreign partitions; context/logout cancels report requests and clears old data.
+Node reports are bounded process-level memory deltas, not attributed to the last
+async request. Both SDKs send at most six reports per minute and tolerate old
+servers lacking the endpoint without changing customer execution.
+
+Optional expected-App/environment headers are assertions only, compared with
+the credential's authoritative scope; they cannot select/override scope. SDKs
+always send both, preventing misconfigured opaque Node credentials from placing
+metrics in another App. Existing manual clients without assertions remain bound
+to their credential. The public contract/CORS and both host adapters preserve
+these assertions. The Persian self-health panel keeps measured/reported and
+unobserved/null states distinct; it adds no new product shell or brand palette.
+
 ## DEC-043 — Scoped self-metrics with explicit measurement provenance
 
 GOAL-069 adds bounded health reports and environment storage snapshots inside

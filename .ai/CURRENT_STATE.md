@@ -1,5 +1,28 @@
 # Current State
 
+**2026-10-19 automatic diagnostics/shared self-health Console (GOAL-069 IN PROGRESS):**
+DEC-044 completes automatic Browser/Node diagnostic transport on the existing
+46-operation API. Browser journal has bounded fixed reports, stable replay ID/
+body, fresh-credential/reload recovery and no credentials. Node reports remain
+process-scoped outside request actor context. Expected scope assertions are
+checked by both HTTP hosts/CORS without overriding credential authority. Shared
+Persian self-health has explicit measured/reported/unobserved states and no stray
+list pagination/CSV. Real Edge proves queue overflow, actual commit/lost ACK,
+IndexedDB/reload with one report, four-width RTL and unauthorized App denial.
+Actual backend SDK HTTP replay independently proves one report. Late event/
+feedback/metric body parsing and retry-write races are guarded against context/
+logout; tests include status after account switch and shutdown. Diagnostic
+coverage now says SCOPED_DIAGNOSTIC_METRICS, not overall host health or Goal
+completion. Help/publication, scale/performance, real product Worker/host breadth
+and final requirement-by-requirement A–I audit remain. Full release gate passes
+356 tests (150 API, 28 Web, 178 Hub), builds/lint/typechecks, real Edge/Python/C#
+and 83-migration rehearsal. Owned local API/Web were restarted after zero-active-
+AI preflight; external readiness passes and Web /operations returns 200. Existing
+authorized service check has a storage/growth observation, unobserved server
+counters and queue depth zero; this is not live-host Browser acceptance. Approved
+100,000-token monthly configuration is retained. No temporary DB/cleanup target
+remains; no Preview/main promotion is authorized.
+
 **2026-10-18 self-metric foundation (GOAL-069 IN PROGRESS):**
 DEC-043/migration 072 add immutable fixed-counter reports and hourly logical-row
 storage snapshots, tenant-safe RLS/FKs and bounded retention. Ingestion records

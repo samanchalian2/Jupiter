@@ -169,6 +169,18 @@ not introduce a new palette, dense card decoration, chart library or alternate
 shell. Navigation active state uses the existing soft surface, border and
 narrow inline accent, with medium—not heavy—label weight.
 
+## Observability self-health workspace
+
+The shared Console health view uses quiet sections and source-separated field
+groups, not new cards/charts/shell. It distinguishes measured server counters,
+reported Browser SDK and reported Node SDK. Unknown/null is “هنوز اندازه‌گیری
+نشده”, never a fabricated zero/green health signal. Environment-wide scope and
+logical-row storage basis are explicit; tenant filters do not pretend to apply.
+Refresh has a 44px target; unrelated list pagination/CSV is absent. App/environment
+switch unmounts old health state immediately. Use inherited semantic brand/font
+tokens with no palette change. Shared authenticated RTL checks cover 375/768/
+1024/1440; they do not replace final live-Jupiter host-shell acceptance.
+
 ## Persian terminology
 
 | Concept | Standard term |

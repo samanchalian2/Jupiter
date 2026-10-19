@@ -63,13 +63,40 @@ emits `METRICS_STORAGE_UNAVAILABLE`. Metric failure never changes an event ACK.
 Unpersisted metrics can be lost if the process dies; external logs/probes are
 complementary. A null last-report timestamp means unobserved, not healthy zero.
 
-Browser/Node currently expose `getMetricReport()` / `acknowledgeMetricReport(id)`
-over a fixed idempotent delta buffer. Browser clears it on tenant/actor switch and
-logout; Node deltas are process/App/environment level, not attributed to whichever
-async request happens to execute last. **Automatic authenticated SDK reporting,
-report persistence/reload semantics, Console and real source acceptance are not
-yet complete.** The API explicitly returns `SOURCE_COLLECTION_IN_PROGRESS`.
-Do not interpret manual report fixtures as completed automatic collection.
+Browser/Node report automatically by default (`reportMetrics:false` is an explicit
+consumer opt-out). Browser journals at most ten fixed reports/16 KiB as METRICS
+envelopes in the existing IndexedDB store, separate from the event count/byte
+budget. Report ID/body survives a lost ACK, credential refresh and reload; no
+credential is persisted. New deltas use another report ID. At most six reports
+per minute, twelve attempts and 48-hour expiry; metadata failures do not remove
+user events, create new event loss, or recursively report their own failure.
+Counter increments before journaling, queue saturation and memory fallback are
+best effort: this is not an exactly-once record of every possible diagnostic loss.
+
+Initial Browser context synchronization removes foreign partitions. Context/
+logout cancels report requests, clears old counters/rows and serializes retry
+writes with purges. Generation is checked after body parsing too, so late event,
+feedback or metric responses cannot update the next actor. Node reports are
+process/App/environment level; the diagnostic credential callback runs outside
+the last request's actor/tenant context. Its memory report is not restart-durable.
+`getMetricReport()` / `acknowledgeMetricReport(id)` remain available as ports;
+automatic transport owns the journal once a report is persisted.
+
+SDKs assert expected App/environment in `x-observability-application-id` and
+`x-observability-environment-id`. The server compares, never adopts, these claims;
+a wrong opaque credential cannot silently place SDK metrics in another App.
+Manual clients omitting both assertions remain credential-bound. Old servers
+returning 404 are tolerated without changing telemetry/customer workflows.
+
+The Persian Console exposes “سلامت مرکز پایش”, only with environment-wide ADMIN
+authority, source-separated counts, unobserved/null values, logical storage basis
+and refresh. It has no unrelated list pagination/export. Coverage now says
+`SCOPED_DIAGNOSTIC_METRICS`; the old in-progress enum remains contract-compatible.
+This descriptor is not overall host health, complete Goal acceptance or a claim
+that an unobserved/opted-out SDK is healthy. Real Browser acceptance covers queue
+overflow, commit-then-lost metric ACK, IndexedDB/reload/credential renewal with one
+stored report, and four-width RTL Console. Actual backend SDK HTTP retry is
+separately exercised. Whole-platform Help/performance/host breadth audit remains.
 
 See [external monitoring](EXTERNAL_MONITORING_RUNBOOK.md) for independent host/
 storage failure detection. Neither this foundation nor local probes install or

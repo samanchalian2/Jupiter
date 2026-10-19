@@ -15,7 +15,7 @@ import {SelfMonitoringService} from './self-monitoring.js';
 /** Host-supplied verified identity. Implementations can use JWT/OIDC/session
  * exchange; the core never imports a product's user or membership model. */
 export interface OperationalIdentityProvider {verify(bearer:string):Promise<VerifiedPrincipal>;}
-export interface HubHttpRequest {method:string;path:string;authorization?:string;origin?:string;body?:unknown;clientKey:string;}
+export interface HubHttpRequest {method:string;path:string;authorization?:string;origin?:string;expectedApplicationId?:string;expectedEnvironmentId?:string;body?:unknown;clientKey:string;}
 export interface HubHttpResponse {status:number;body:unknown;headers?:Record<string,string>;}
 export interface IngestionPolicy {allow(credential:{applicationId:string;environmentId:string;actorReference:string|null;tenantReference:string|null;source:string}):Promise<boolean>;}
 export class BoundedRateLimiter {
@@ -42,7 +42,7 @@ export class HubHttpApi {
     let headers:Record<string,string>={};
     if(origin){
       let allowed=false;try{allowed=Boolean(await this.database.control(async c=>(await c.query('SELECT 1 FROM observability.applications WHERE enabled=true AND $1=ANY(allowed_origins) LIMIT 1',[origin])).rowCount));}catch{/* Data routes will return their own safe failure. */}
-      if(allowed)headers={'Access-Control-Allow-Origin':origin,Vary:'Origin','Access-Control-Allow-Headers':'authorization,content-type,x-request-id,traceparent,idempotency-key','Access-Control-Allow-Methods':'GET,POST,PUT,OPTIONS','Access-Control-Max-Age':'300'};
+      if(allowed)headers={'Access-Control-Allow-Origin':origin,Vary:'Origin','Access-Control-Allow-Headers':'authorization,content-type,x-request-id,traceparent,idempotency-key,x-observability-application-id,x-observability-environment-id','Access-Control-Allow-Methods':'GET,POST,PUT,OPTIONS','Access-Control-Max-Age':'300'};
       if(request.method==='OPTIONS')return{status:allowed?204:403,body:allowed?null:{reasonCode:'ORIGIN_DENIED'},headers};
     }
     const result=await this.execute(request);return{...result,headers:{...headers,...result.headers}};
@@ -57,6 +57,7 @@ export class HubHttpApi {
       const token=this.bearer(request);
       if(request.method==='POST'&&path==='/sdk-metrics'){
         const credential=await this.registry.credential(token,'events:write');await this.actorAllowed(credential);await this.origin(credential.applicationId,credential.source,request.origin);
+        if((request.expectedApplicationId!==undefined||request.expectedEnvironmentId!==undefined)&&(request.expectedApplicationId!==credential.applicationId||request.expectedEnvironmentId!==credential.environmentId))throw new ContractError('METRIC_SCOPE_MISMATCH');
         if(!this.metricLimiter.allow(credential.credentialId))return{status:429,body:{reasonCode:'METRIC_RATE_LIMIT'},headers:{'Retry-After':'60'}};
         return{status:201,body:await this.ingestion.metrics.reportSdk(credential,request.body)};
       }

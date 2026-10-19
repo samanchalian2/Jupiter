@@ -1,10 +1,10 @@
-import { SCHEMA_VERSION, LIMITS, ContractError, encodedBytes, validateFeedback, isRecord, type IdentityScope, type TelemetryEvent, type BatchAcknowledgement, type FeedbackSubmission } from '@observability/contracts';
+import { SCHEMA_VERSION, LIMITS, ContractError, encodedBytes, validateFeedback, isRecord, isUuid, type IdentityScope, type TelemetryEvent, type BatchAcknowledgement, type FeedbackSubmission, type SdkMetricReport } from '@observability/contracts';
 import { sanitizeEvent, redactText, sanitizeStack, scopeKey, retryDelay, routeTemplate, newTrace, SdkMetricBuffer } from '@observability/core';
 import { IndexedDbQueue, MemoryQueue, type QueueStorage, type OfflineEnvelope } from './storage.js';
 export { IndexedDbQueue, MemoryQueue, type QueueStorage, type OfflineEnvelope } from './storage.js';
 export { redactText, sanitizeStack, routeTemplate } from '@observability/core';
 export type Credential={token:string;scope:IdentityScope;expiresAt:number};
-export type SdkStatus={queued:number;storage:'DURABLE'|'MEMORY';lastFailure:string|null;dropped:number};
+export type SdkStatus={queued:number;storage:'DURABLE'|'MEMORY';lastFailure:string|null;dropped:number;metricQueued?:number;metricFailure?:string|null};
 export interface BrowserSdkConfiguration {
   applicationId:string;
   environmentId:string;
@@ -18,6 +18,7 @@ export interface BrowserSdkConfiguration {
   categories?:TelemetryEvent['category'][];
   maxQueueCount?:number;
   maxQueueBytes?:number;
+  reportMetrics?:boolean;
   onStatus?:(status:SdkStatus)=>void;
   onFeedbackAcknowledged?:(feedbackId:string,trackingId:string)=>void;
   clock?:()=>number;
@@ -39,9 +40,49 @@ export class BrowserSdk {
   private status:SdkStatus={queued:0,storage:'DURABLE',lastFailure:null,dropped:0};
   private readonly sessionId=crypto.randomUUID();
   private readonly metrics=new SdkMetricBuffer();
+  private contextInitialized=false;
+  private metricFlushing=false;
+  private metricAbort?:AbortController;
+  private nextMetricAt=0;
   getMetricReport(){if(scopeKey(this.context())!==this.partition){this.metrics.reset();return;}return this.metrics.snapshot(this.clock());}
   acknowledgeMetricReport(id:string){this.metrics.acknowledge(id);}
-  private countDropped(entries:OfflineEnvelope[]){this.status.dropped+=entries.length;const events=entries.filter(e=>e.kind==='EVENT');this.metrics.add('dropped',events.length);this.metrics.add('retryDropped',events.filter(e=>e.attempts>0).length);}
+  private countDropped(entries:OfflineEnvelope[]){this.status.dropped+=entries.filter(e=>e.kind!=='METRICS').length;const events=entries.filter(e=>e.kind==='EVENT');this.metrics.add('dropped',events.length);this.metrics.add('retryDropped',events.filter(e=>e.attempts>0).length);}
+  private async checkpointMetrics(){
+    if(this.config.reportMetrics===false||this.stopped)return;
+    const generation=this.generation,partition=this.partition;
+    try{await this.serialize(async()=>{
+      if(generation!==this.generation||scopeKey(this.context())!==partition)return;
+      const entries=await this.entries(),reports=entries.filter(e=>e.kind==='METRICS');
+      if(generation!==this.generation)return;
+      if(reports.length>=10||reports.reduce((n,e)=>n+encodedBytes(e),0)>14_000){this.status.metricFailure='METRICS_QUEUE_FULL';return;}
+      const report=this.metrics.snapshot(this.clock());if(!report)return;
+      if(Date.parse(report.observedAt)<this.clock()-48*3_600_000){this.metrics.acknowledge(report.reportId);this.status.metricFailure='METRIC_REPORT_EXPIRED';return;}
+      const envelope:OfflineEnvelope={id:report.reportId,partition,kind:'METRICS',payload:report,createdAt:this.clock(),expiresAt:Date.parse(report.observedAt)+48*3_600_000,attempts:0,nextRetryAt:this.clock()};
+      if(reports.reduce((n,e)=>n+encodedBytes(e),0)+encodedBytes(envelope)>16_384){this.status.metricFailure='METRICS_QUEUE_FULL';return;}
+      try{await this.storage.put(envelope);}catch{await this.degrade();await this.storage.put(envelope);}
+      this.metrics.acknowledge(report.reportId);
+    });}catch{this.status.metricFailure='METRICS_STORAGE_UNAVAILABLE';}
+  }
+  async flushMetrics(){
+    if(this.config.reportMetrics===false||this.stopped||this.metricFlushing)return;this.metricFlushing=true;
+    try{
+      await this.setContext();await this.checkpointMetrics();const generation=this.generation,partition=this.partition,now=this.clock();
+      const report=(await this.entries()).filter(e=>e.kind==='METRICS'&&e.partition===partition&&e.nextRetryAt<=now).sort((a,b)=>a.createdAt-b.createdAt||a.id.localeCompare(b.id))[0];
+      if(!report||now<this.nextMetricAt)return;
+      if(report.expiresAt<=now){await this.storage.remove([report.id]);this.status.metricFailure='METRIC_REPORT_EXPIRED';return;}
+      this.nextMetricAt=now+10_000;const scope=this.context(),credential=await this.config.authProvider(scope);
+      if(!credential||credential.expiresAt<=this.clock()||scopeKey(credential.scope)!==partition||generation!==this.generation)return;
+      this.metricAbort=new AbortController();const timeout=setTimeout(()=>this.metricAbort?.abort(),5000);
+      try{
+        const response=await this.transport(`${this.config.endpoint}/sdk-metrics`,{method:'POST',headers:{authorization:`Bearer ${credential.token}`,'content-type':'application/json','x-observability-application-id':this.config.applicationId,'x-observability-environment-id':this.config.environmentId},body:JSON.stringify(report.payload),signal:this.metricAbort.signal,credentials:'omit'});
+        if(generation!==this.generation)return;
+        if(response.ok){const ack:unknown=await response.json();if(generation!==this.generation)return;if(!isRecord(ack)||ack.accepted!==true||typeof ack.duplicate!=='boolean')throw Error('INVALID_METRIC_ACK');await this.metricWrite(generation,()=>this.storage.remove([report.id]));if(generation===this.generation)this.status.metricFailure=null;}
+        else{if([400,403,404,409,410,422].includes(response.status)){await this.metricWrite(generation,()=>this.storage.remove([report.id]));if(generation===this.generation)this.status.metricFailure='METRIC_REPORT_REJECTED';}else throw Error('METRIC_RETRY');}
+      }catch{
+        if(generation===this.generation){const attempts=report.attempts+1;if(attempts>=12){await this.metricWrite(generation,()=>this.storage.remove([report.id]));if(generation===this.generation)this.status.metricFailure='METRIC_RETRY_EXHAUSTED';}else{await this.metricWrite(generation,()=>this.storage.put({...report,attempts,nextRetryAt:this.clock()+Math.max(10_000,retryDelay(attempts))}));if(generation===this.generation)this.status.metricFailure='METRICS_UNAVAILABLE';}}
+      }finally{clearTimeout(timeout);}
+    }catch{this.status.metricFailure='METRICS_UNAVAILABLE';}finally{this.metricFlushing=false;}
+  }
   constructor(private readonly config:BrowserSdkConfiguration){
     const url=new URL(config.endpoint);
     if(url.protocol!=='https:'&&!(url.protocol==='http:'&&['localhost','127.0.0.1','[::1]'].includes(url.hostname)))throw new ContractError('SDK_ENDPOINT_REQUIRES_HTTPS');
@@ -53,25 +94,26 @@ export class BrowserSdk {
     this.status.storage=this.mode;this.transport=config.transport??((input,init)=>fetch(input,init));this.clock=config.clock??Date.now;
     this.partition=scopeKey(this.context());
   }
-  private context(){const scope=this.config.contextProvider();if(scope.applicationId!==this.config.applicationId||scope.environmentId!==this.config.environmentId)throw new ContractError('SDK_CONTEXT_MISMATCH');return scope;}
+  private context(){const scope=this.config.contextProvider();if(scope.applicationId!==this.config.applicationId||scope.environmentId!==this.config.environmentId)throw new ContractError('SDK_CONTEXT_MISMATCH');if(!isUuid(scope.applicationId)||!isUuid(scope.environmentId)||[scope.actorReference,scope.tenantReference].some(value=>value!==null&&(typeof value!=='string'||!value.trim()||value.length>160)))throw new ContractError('INVALID_SDK_CONTEXT');return scope;}
   private async degrade(){this.storage.close();this.storage=new MemoryQueue();this.mode='MEMORY';this.status.storage='MEMORY';this.status.lastFailure='OFFLINE_STORAGE_UNAVAILABLE';this.emit();}
   private emit(){try{this.config.onStatus?.({...this.status});}catch{/* Consumer callbacks cannot break telemetry. */}}
   private async entries(){try{return await this.storage.list();}catch{await this.degrade();return this.storage.list();}}
   private serialize<T>(work:()=>Promise<T>):Promise<T>{const next=this.queueChain.then(work,work);this.queueChain=next.then(()=>undefined,()=>undefined);return next;}
+  private metricWrite(generation:number,work:()=>Promise<void>){return this.serialize(async()=>{if(generation===this.generation)await work();});}
   async setContext():Promise<void>{
-    const next=scopeKey(this.context());if(next===this.partition)return;
-    this.generation++;this.abort?.abort();this.partition=next;this.metrics.reset();this.status.dropped=0;
+    const next=scopeKey(this.context());if(next===this.partition&&this.contextInitialized)return;this.contextInitialized=true;
+    if(next!==this.partition){this.generation++;this.abort?.abort();this.metricAbort?.abort();this.partition=next;this.metrics.reset();this.nextMetricAt=0;this.status.dropped=0;this.status.metricFailure=null;}
     await this.serialize(async()=>{const old=await this.entries();await this.storage.remove(old.filter(e=>e.partition!==next).map(e=>e.id));});
     await this.updateStatus();
   }
-  async logout():Promise<void>{this.generation++;this.abort?.abort();this.metrics.reset();this.status.dropped=0;await this.serialize(async()=>{const old=await this.entries();await this.storage.remove(old.map(e=>e.id));});await this.updateStatus();}
+  async logout():Promise<void>{this.generation++;this.abort?.abort();this.metricAbort?.abort();this.metrics.reset();this.nextMetricAt=0;this.status.metricFailure=null;this.status.dropped=0;await this.serialize(async()=>{const old=await this.entries();await this.storage.remove(old.map(e=>e.id));});await this.updateStatus();}
   private async enqueue(envelope:OfflineEnvelope):Promise<boolean>{
     return this.serialize(async()=>{
       if(this.stopped||envelope.partition!==this.partition)return false;
-      let items=await this.entries();const expired=items.filter(e=>e.expiresAt<=this.clock());await this.storage.remove(expired.map(e=>e.id));this.countDropped(expired);items=items.filter(e=>e.expiresAt>this.clock());
+      let items=await this.entries();if(envelope.partition!==this.partition)return false;const expired=items.filter(e=>e.expiresAt<=this.clock());await this.storage.remove(expired.map(e=>e.id));if(envelope.partition!==this.partition)return false;this.countDropped(expired);items=items.filter(e=>e.expiresAt>this.clock());
       const maximumCount=Math.min(500,Math.max(1,this.config.maxQueueCount??500)),maximumBytes=Math.min(2_097_152,Math.max(16_384,this.config.maxQueueBytes??2_097_152));
-      const bytes=items.reduce((n,e)=>n+encodedBytes(e),0)+encodedBytes(envelope);
-      if(items.length>=maximumCount||bytes>maximumBytes){this.countDropped([envelope]);this.status.lastFailure='OFFLINE_QUEUE_FULL';this.emit();return false;}
+      const data=items.filter(e=>e.kind!=='METRICS'),bytes=data.reduce((n,e)=>n+encodedBytes(e),0)+encodedBytes(envelope);
+      if(data.length>=maximumCount||bytes>maximumBytes){this.countDropped([envelope]);this.status.lastFailure='OFFLINE_QUEUE_FULL';this.emit();return false;}
       try{await this.storage.put(envelope);}catch{await this.degrade();await this.storage.put(envelope);}
       await this.updateStatus();return true;
     });
@@ -83,6 +125,7 @@ export class BrowserSdk {
       const scope=this.context(),now=this.clock(),eventId=crypto.randomUUID();
       const event=sanitizeEvent({...input,eventId,schemaVersion:SCHEMA_VERSION,applicationId:scope.applicationId,environmentId:scope.environmentId,occurredAt:new Date(now).toISOString(),source:input.source??'BROWSER',releaseVersion:this.config.release,actorReference:scope.actorReference,tenantReference:scope.tenantReference,sessionCorrelationId:this.sessionId,safeMetadata:{...input.safeMetadata,sdkVersion:'0.1.0',sampleRate:sampling,sampleWeight:sampling?1/sampling:1}});
       const stored=await this.enqueue({id:eventId,partition:scopeKey(scope),kind:'EVENT',payload:event,createdAt:now,expiresAt:now+48*3_600_000,attempts:0,nextRetryAt:now});
+      await this.checkpointMetrics();
       return stored?eventId:null;
     }catch{this.metrics.add('dropped');this.status.dropped++;this.status.lastFailure='EVENT_CAPTURE_REJECTED';this.emit();return null;}
   }
@@ -91,19 +134,22 @@ export class BrowserSdk {
     const feedback=validateFeedback(input);feedback.subject=redactText(feedback.subject);feedback.description=redactText(feedback.description);
     const now=this.clock();return this.enqueue({id:feedback.feedbackId,partition:scopeKey(scope),kind:'FEEDBACK',payload:feedback,createdAt:now,expiresAt:now+24*3_600_000,attempts:0,nextRetryAt:now});
   }
-  private async updateStatus(){this.status.queued=(await this.entries()).filter(e=>e.partition===this.partition&&e.expiresAt>this.clock()).length;this.emit();}
-  async getStatus(){await this.updateStatus();return {...this.status};}
+  private async updateStatus(){const entries=(await this.entries()).filter(e=>e.partition===this.partition&&e.expiresAt>this.clock());this.status.queued=entries.filter(e=>e.kind!=='METRICS').length;this.status.metricQueued=entries.filter(e=>e.kind==='METRICS').length;this.emit();}
+  async getStatus(){if(this.stopped)return{...this.status,queued:0,metricQueued:0,dropped:0};try{await this.setContext();}catch{return{...this.status,queued:0,metricQueued:0,dropped:0,metricFailure:null,lastFailure:'SDK_CONTEXT_UNAVAILABLE'};}await this.updateStatus();return {...this.status};}
   private async postpone(entries:OfflineEnvelope[],permanent=false){
-    if(permanent){await this.storage.remove(entries.map(e=>e.id));this.countDropped(entries);return;}
-    for(const item of entries){const attempts=item.attempts+1;if(attempts>=12){await this.storage.remove([item.id]);this.countDropped([{...item,attempts}]);continue;}await this.storage.put({...item,attempts,nextRetryAt:this.clock()+retryDelay(attempts)});}
+    const generation=this.generation;return this.serialize(async()=>{
+      if(generation!==this.generation)return;
+      if(permanent){await this.storage.remove(entries.map(e=>e.id));if(generation===this.generation)this.countDropped(entries);return;}
+      for(const item of entries){if(generation!==this.generation||item.partition!==this.partition)return;const attempts=item.attempts+1;if(attempts>=12){await this.storage.remove([item.id]);if(generation===this.generation)this.countDropped([{...item,attempts}]);continue;}await this.storage.put({...item,attempts,nextRetryAt:this.clock()+retryDelay(attempts)});}
+    });
   }
   async flush():Promise<void>{
     if(this.stopped||this.flushing)return;this.flushing=true;
     const generation=this.generation;
     try{
       await this.setContext();const scope=this.context(),partition=scopeKey(scope),startedGeneration=this.generation;
-      const all=await this.entries(),expired=all.filter(e=>e.expiresAt<=this.clock());await this.storage.remove(expired.map(e=>e.id));this.countDropped(expired);
-      const pending=all.filter(e=>e.partition===partition&&e.expiresAt>this.clock()&&e.nextRetryAt<=this.clock());if(!pending.length)return;
+      const all=await this.entries(),expired=all.filter(e=>e.expiresAt<=this.clock());await this.storage.remove(expired.map(e=>e.id));if(startedGeneration!==this.generation)return;this.countDropped(expired);
+      const pending=all.filter(e=>e.kind!=='METRICS'&&e.partition===partition&&e.expiresAt>this.clock()&&e.nextRetryAt<=this.clock());if(!pending.length)return;
       const credential=await this.config.authProvider(scope);
       if(!credential||credential.expiresAt<=this.clock()||scopeKey(credential.scope)!==partition||startedGeneration!==this.generation)return;
       this.abort=new AbortController();const timeout=setTimeout(()=>this.abort?.abort(),15_000);
@@ -114,11 +160,13 @@ export class BrowserSdk {
           if(startedGeneration!==this.generation)return;
           if(response.ok){
             const value:unknown=await response.json();
+            if(startedGeneration!==this.generation)return;
             if(!isRecord(value)||value.schemaVersion!=='1.1'||!Array.isArray(value.acknowledgements))throw new Error('INVALID_ACK');
             const allowed=new Set(events.map(e=>e.id)),seen=new Set<string>();
             const ack=(value as unknown as BatchAcknowledgement).acknowledgements;
             if(ack.some(a=>!isRecord(a)||!allowed.has(a.eventId as string)||seen.has(a.eventId as string)||(seen.add(a.eventId as string),!['ACCEPTED','DUPLICATE','REJECTED','RETRYABLE'].includes(String(a.status)))))throw new Error('INVALID_ACK');
             await this.storage.remove(ack.filter(a=>a.status==='ACCEPTED'||a.status==='DUPLICATE'||a.status==='REJECTED').map(a=>a.eventId));
+            if(startedGeneration!==this.generation)return;
             this.countDropped(events.filter(e=>ack.some(a=>a.eventId===e.id&&a.status==='REJECTED')));
             this.metrics.add('retryDelivered',events.filter(e=>e.attempts>0&&ack.some(a=>a.eventId===e.id&&(a.status==='ACCEPTED'||a.status==='DUPLICATE'))).length);
             const unfinished=new Set(ack.filter(a=>a.status!=='RETRYABLE').map(a=>a.eventId));await this.postpone(events.filter(e=>!unfinished.has(e.id)));
@@ -128,14 +176,14 @@ export class BrowserSdk {
           if(startedGeneration!==this.generation)return;
           const response=await this.transport(`${this.config.endpoint}/feedback`,{method:'POST',headers:{authorization:`Bearer ${credential.token}`,'content-type':'application/json'},body:JSON.stringify(item.payload),signal:this.abort.signal,credentials:'omit'});
           if(startedGeneration!==this.generation)return;
-          if(response.ok){const value:unknown=await response.json();if(!isRecord(value)||value.feedbackId!==item.id||typeof value.trackingId!=='string'||!/^FB-[A-Z0-9-]{8,64}$/.test(value.trackingId))throw new Error('INVALID_FEEDBACK_ACK');await this.storage.remove([item.id]);try{this.config.onFeedbackAcknowledged?.(item.id,value.trackingId);}catch{}}
+          if(response.ok){const value:unknown=await response.json();if(startedGeneration!==this.generation)return;if(!isRecord(value)||value.feedbackId!==item.id||typeof value.trackingId!=='string'||!/^FB-[A-Z0-9-]{8,64}$/.test(value.trackingId))throw new Error('INVALID_FEEDBACK_ACK');await this.storage.remove([item.id]);if(startedGeneration!==this.generation)return;try{this.config.onFeedbackAcknowledged?.(item.id,value.trackingId);}catch{}}
           else await this.postpone([item],[400,403,404,410,413,422].includes(response.status));
         }
       }finally{clearTimeout(timeout);}
     }catch{
       this.status.lastFailure='INGESTION_UNAVAILABLE';
-      if(generation===this.generation){const entries=await this.entries();await this.postpone(entries.filter(e=>e.partition===this.partition&&e.nextRetryAt<=this.clock()));}
-    }finally{this.flushing=false;await this.updateStatus();}
+      if(generation===this.generation){const entries=await this.entries();await this.postpone(entries.filter(e=>e.kind!=='METRICS'&&e.partition===this.partition&&e.nextRetryAt<=this.clock()));}
+    }finally{await this.flushMetrics();this.flushing=false;await this.updateStatus();}
   }
   trace(){return newTrace();}
   async reportApiFailure(input:{operationName:string;url:string;httpStatus?:number;durationMs?:number;requestId?:string;traceId?:string;error?:unknown}){
@@ -159,5 +207,5 @@ export class BrowserSdk {
     }
     this.timer=setInterval(()=>void this.flush(),10_000);void this.flush();return()=>void this.shutdown();
   }
-  async shutdown(){this.stopped=true;this.generation++;this.abort?.abort();if(this.timer)clearInterval(this.timer);for(const cleanup of this.cleanups.splice(0))cleanup();await this.queueChain;this.storage.close();}
+  async shutdown(){await this.checkpointMetrics();this.stopped=true;this.generation++;this.abort?.abort();this.metricAbort?.abort();if(this.timer)clearInterval(this.timer);for(const cleanup of this.cleanups.splice(0))cleanup();await this.queueChain;this.storage.close();}
 }

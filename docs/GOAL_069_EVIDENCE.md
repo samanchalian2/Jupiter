@@ -4,6 +4,69 @@ Status: IN PROGRESS. Owner-approved plan supersedes the stale GOAL-060 identifie
 in the supplied specification. GOAL-060 Personal Service history is preserved.
 GOAL-059 remains BLOCKED; LOCAL evidence is not staging acceptance.
 
+## 2026-10-19 — Automatic diagnostics and shared self-health Console (LOCAL)
+
+- DEC-044 adds automatic report transport on the existing API. Browser journals
+  METRICS envelopes in the existing IndexedDB object store (no SQL/storage-schema
+  migration), at most ten/16 KiB apart from the event count/byte budget. UUID/body
+  remains stable through lost ACK, renewal and reload. Reports carry fixed
+  counters/original partition, never credentials. Rate, twelve-attempt/48-hour
+  bounds and old-server 404 handling cannot delete user events or recursively
+  create event-loss reports. Node reports are bounded process memory, not durable
+  across process death and not attributed to the last request's ALS actor.
+- SDK expected App/environment headers are equality assertions against the
+  credential, not scope selection. Both hosts/CORS preserve them. Actual HTTP
+  wrong-App assertions deny with safe METRIC_SCOPE_MISMATCH; old manual callers
+  without assertions remain credential-bound. OpenAPI stays at 46 operations.
+- Real installed Edge acceptance over disposable PostgreSQL creates actual queue
+  overflow, intercepts a metric response AFTER commit, inspects its real IndexedDB
+  envelope, reloads/renews credential and observes the same report body/UUID
+  retried. SQL proves exactly one CLIENT_REPORTED row, not a direct fixture claim.
+  Existing real offline event replay, logout/credential revocation, next-actor,
+  tenant-switch, storage-denial, correlation/Feedback/AI-reference checks still run.
+- A separate real backend SDK test over HTTP overflows its queue, discards the
+  committed metric response, waits the actual retry interval and proves one
+  SERVER_SDK_REPORTED row with the same body. No external provider is used.
+- Persian shared Console health is authenticated through its independent host
+  identity port and current explicit grants. Measured Browser/Node source groups,
+  unobserved/null values, logical storage basis and environment-wide scope are
+  readable at 375/768/1024/1440 RTL with no document overflow. A VIEWER App denies
+  the health query and clears prior fields. Unknown Node observations are not
+  presented as healthy zero. This is not blanket live-Jupiter host-shell acceptance.
+- Screenshots at 375/1440 were visually reviewed. QC found unrelated generic
+  list/table/pagination/CSV below health; rendering now positively selects record
+  sections only and Browser asserts those controls are absent. No brand palette,
+  product shell or business API changed; refresh retains a 44px target.
+- Concurrency QC adds generation checks after JSON body parsing and serializes
+  retry writes with scope/logout purge. Deliberately delayed event, feedback and
+  metric bodies cannot update the next actor's counters/tracking/status. Initial
+  sessions purge foreign rows, status reads synchronize scope, and stopped SDKs
+  never call a signed-out context provider. These are explicit regression tests.
+- Diagnostic coverage descriptor is now SCOPED_DIAGNOSTIC_METRICS; legacy
+  SOURCE_COLLECTION_IN_PROGRESS remains schema-compatible. This is not an overall
+  health Boolean or exact loss ledger: pre-journal increments, saturation, memory
+  fallback, missing/opted-out sources and process loss remain explicit limits.
+- No whole-Goal completion is claimed. Product Help/runtime publication,
+  performance/scale (including logical-sampling cost/fairness), real Worker/host
+  breadth and the complete specification/A–I/47-section audit remain required.
+- Final checkpoint release gate passes 356 tests: 150 API, 28 Web and 178 Hub
+  (65 SDK/core/adapters, 102 server, 11 Console). API/Web/Hub builds, lint and
+  typechecks pass with real installed Edge, separate-process Python/C# reference
+  clients and the 83-migration rehearsal enabled. Existing Vite chunk-size
+  advisory remains. The Browser overflow fixture now blocks only event-batch
+  delivery while filling the queue, avoiding the legitimate periodic-drain race;
+  metric delivery and actual lost-ACK/reload acceptance remain real.
+- Local API was restarted only after verifying its owned process and zero active
+  AI attempts; Web runs on 127.0.0.1:5174 (5173 was not touched). The external
+  health/readiness probe passes and /operations returns HTTP 200. An authorized
+  existing-principal service check returns SCOPED_DIAGNOSTIC_METRICS, queue depth
+  zero and a real storage snapshot/growth observation. Server event counters are
+  currently unobserved, not fabricated zero. This service check is not live-host
+  authenticated Browser acceptance. No temporary test database or workspace
+  cleanup target remains; normal tenant data and Help were preserved. The
+  encrypted, enabled provider configuration retains its approved 100,000-token
+  monthly budget. No Preview/main host was changed.
+
 ## 2026-10-18 — Scoped self-metric foundation (LOCAL, IN PROGRESS)
 
 - DEC-043/migration 072 add immutable fixed-counter HealthReport and hourly
@@ -414,7 +477,7 @@ Every requirement remains pending unless actual execution evidence is recorded.
 | F | feedback/user tracking, Console/live/analytics/export | own Feedback and operational Console/live/filter/CSV implemented; richer analytics and final workflow acceptance pending |
 | G | evidence-grounded AI, opt-in/budget/schedule/security | implemented; real GapGPT findings/usage, SQL isolation/budget/scheduler and reconciliation UI verified; final breadth QC pending |
 | H | independent second application, C#/Python clients | actual Python/C# and separate Browser/backend reference execution verified with real PostgreSQL; reference AI uses controlled provider, actual GapGPT evidence remains separate |
-| I | retention, self-health/runbook, Help, full QC/cleanup | bounded retention and external probe/runbook verified; complete self-metrics, Help/publication, performance and final A–I QC/cleanup pending |
+| I | retention, self-health/runbook, Help, full QC/cleanup | bounded retention, external probe/runbook and automatic diagnostic sources/shared self-health Console verified; scale/performance, actual host/Worker breadth, Help/publication and final A–I QC/cleanup pending |
 
 ## Required evidence sections
 

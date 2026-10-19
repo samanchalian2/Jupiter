@@ -1,9 +1,9 @@
-import type { FeedbackSubmission, TelemetryEvent } from '@observability/contracts';
+import type { FeedbackSubmission, TelemetryEvent, SdkMetricReport } from '@observability/contracts';
 export interface OfflineEnvelope {
   id:string;
   partition:string;
-  kind:'EVENT'|'FEEDBACK';
-  payload:TelemetryEvent|FeedbackSubmission;
+  kind:'EVENT'|'FEEDBACK'|'METRICS';
+  payload:TelemetryEvent|FeedbackSubmission|SdkMetricReport;
   createdAt:number;
   expiresAt:number;
   attempts:number;

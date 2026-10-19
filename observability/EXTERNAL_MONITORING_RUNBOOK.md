@@ -45,7 +45,15 @@ does not recursively create new warnings. Watch failed jobs/logs externally
 when this last channel is broken. AI job failures are separate from pipeline
 availability; provider failure must not disable human workflows.
 
-Authenticated full self-metrics (including rejected/drop/recovery/ingestion and
-storage-growth measurement) remain a separate in-progress GOAL-069 deliverable.
-Do not describe the existing queue/retention panel or public readiness as that
-complete metrics set. Never expose tenant metrics through public probes.
+Authenticated scoped self-metrics now include measured ingestion/rejections,
+reported SDK drop/recovery and logical storage growth; see `SELF_MONITORING.md`.
+The ADMIN `/operations/applications/{id}/self-health?environmentId={id}` projection
+is a source for a separately authorized external metrics integration, not a public
+probe. Use a host-verified operational identity with explicit environment-wide
+ADMIN grants, never a public Browser ingestion credential or a bearer in a URL.
+The one-hour server event-attempt failure ratio can use retryable/received counts
+when received is positive; alert on failed batches separately and preserve null/
+unobserved labels. SDK-reported losses are a different provenance, not additions
+to those measured attempts. Auth/provider configuration and actual deployment
+remain host responsibilities. Public readiness/queue-only status cannot replace
+the full scoped projection. Never expose tenant metrics through public probes.

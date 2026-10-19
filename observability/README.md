@@ -3,11 +3,11 @@
 Product-independent packages and PostgreSQL server adapters for GOAL-069.
 Implementation is IN PROGRESS; no complete platform claim is made.
 
-The [self-metric foundation](SELF_MONITORING.md) adds scoped immutable counters,
-hourly logical storage snapshots and a 46-operation OpenAPI contract. Server
-measurement and reported SDK deltas remain separate. Automatic SDK reporting,
-self-health Console and source acceptance remain pending; coverage is explicitly
-SOURCE_COLLECTION_IN_PROGRESS, not a complete monitoring claim.
+The [self-metric subsystem](SELF_MONITORING.md) has scoped immutable counters,
+hourly logical storage snapshots, automatic Browser/Node reporting and a Persian
+ADMIN Console with actual replay/source/RTL acceptance. Server measurement and
+reported SDK deltas remain separate. SCOPED_DIAGNOSTIC_METRICS is not overall
+host health or whole-Goal acceptance; full performance/Help/host audit remains.
 
 Trusted critical-event detection and scoped terminal pipeline warnings use the
 existing rule/inbox engines. Public health/readiness have an executable external

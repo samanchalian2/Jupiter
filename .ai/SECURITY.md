@@ -2,6 +2,17 @@
 
 ## GOAL-069 Observability Hub
 
+DEC-044 automatic reporting asserts expected App/environment against the verified
+credential; headers never override scope. Both HTTP adapters and CORS preserve
+them. Browser journal has no credential, only bounded fixed counters/original
+partition. Initial synchronization purges foreign rows. Context/logout aborts
+RPCs and serializes retry writes with purge; post-body generation guards prevent
+late event/reply/metric results from reaching the next actor. Status reads also
+synchronize scope, and stopped SDKs do not query a signed-out context. Real
+Browser lost-ACK/reload proves one report; Node HTTP replay and wrong-App headers
+are tested separately. ADMIN self-health source separation and Viewer denial are
+verified in shared Console; no blanket host/UI/Staging claim follows.
+
 DEC-043 self-metrics accept no identity/provenance/payload fields from clients.
 Verified credentials bind App/environment/tenant/actor and report provenance;
 hashes prevent same-ID mutation or another actor's replay. SDK reports have

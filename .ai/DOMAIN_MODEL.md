@@ -1,5 +1,15 @@
 # Domain Model
 
+## Automatic SDK diagnostic reports (GOAL-069, DEC-044)
+
+Browser OfflineEnvelope adds METRICS in the existing IndexedDB object store.
+Its fixed report payload is immutable through network retries; journal ACK
+removes only that ID. Ten reports/16 KiB have a separate budget from user events.
+Reports retain original partition and 48-hour expiry. Context/logout clears old
+rows/deltas; Node deltas are process-level memory. No credential/file/raw payload
+is added. The self-health projection describes scoped diagnostic coverage, not
+overall service health or commercial consumption.
+
 ## Self-metric measurements (GOAL-069, DEC-043)
 
 HealthReport is an immutable App/environment/optional-tenant scoped counter

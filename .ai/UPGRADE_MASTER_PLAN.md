@@ -2,6 +2,12 @@
 
 ## GOAL-069 — Observability Hub continuation (IN PROGRESS)
 
+DEC-044 automatic diagnostic transport and shared self-health Console now have
+real Browser/reload/lost-ACK/source and backend SDK HTTP acceptance. Scope assertions,
+unknown states and late-response/logout guards are implemented. Continue full
+Help/publication, performance/scale, actual product Worker/host and A–I audit;
+this checkpoint is not whole-Goal completion or a target-host promotion.
+
 DEC-043/migration 072 add the scoped self-metric backend/API and SDK counter
 ports. Automatic SDK transport, Console/source acceptance still remain; coverage
 is SOURCE_COLLECTION_IN_PROGRESS, not full section-51 delivery. Continue full

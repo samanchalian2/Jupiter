@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-10-19 — GOAL-069 automatic diagnostics and self-health Console (IN PROGRESS)
+
+- Added bounded automatic Browser IndexedDB report replay and process-scoped Node
+  reporting with expected-scope assertions, throttling, expiry/retry limits and
+  old-server compatibility. No credential is journaled and no customer usage
+  is charged. DEC-044 documents persistence and best-effort limitations.
+- Added source-separated Persian health panel, unknown/null display, 44px refresh
+  and scope-state reset. Removed unrelated table/pagination/CSV from this panel.
+- Added actual Browser overflow/lost-ACK/reload/one-report and four-width RTL
+  acceptance, backend SDK real HTTP replay and cross-App header denial.
+- Hardened late body parsing, feedback acknowledgement, retry-write/purge and
+  status-read races across account/context/logout/shutdown with regression tests.
+- Whole-Goal Help/performance/worker/host/final A–I audit remain; no host promotion.
+
 ## 2026-10-18 — GOAL-069 scoped self-metric foundation (IN PROGRESS)
 
 - Added migration 072, fixed immutable health reports, hourly logical storage

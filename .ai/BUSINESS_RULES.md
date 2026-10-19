@@ -1,5 +1,18 @@
 # Business Rules
 
+## Automatic diagnostic transport (DEC-044)
+
+- SDKs send fixed reports automatically, at most six/minute, retrying original
+  ID/body up to twelve attempts and 48 hours. Metadata failure/expiry does not
+  delete user events, charge AI units or recursively increase event-loss counts.
+- Browser journal is bounded independently; context/logout/initial session must
+  never replay or relabel another actor's diagnostic delta. Node reports remain
+  process-level, not attributed to a request actor through async-local context.
+- Expected App/environment headers are equality assertions, not authorization
+  inputs. Current credential scope remains the only attribution authority.
+- A missing source observation/initial growth is unknown, not healthy zero.
+  Scoped health remains environment-wide ADMIN-only regardless of UI filters.
+
 ## Self-monitoring measurements (DEC-043)
 
 - Server ACK counts distinguish accepted, duplicate, rejected and retryable;

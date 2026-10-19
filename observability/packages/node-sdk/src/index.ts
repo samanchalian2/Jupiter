@@ -12,6 +12,7 @@ export interface NodeSdkConfiguration {
   fallback?:(entry:Record<string,unknown>)=>void;
   maxQueueCount?:number;
   maxQueueBytes?:number;
+  reportMetrics?:boolean;
 }
 type Pending={event:TelemetryEvent;attempts:number;nextRetryAt:number};
 export class NodeSdk {
@@ -24,8 +25,30 @@ export class NodeSdk {
   private nextFlush=0;
   private dropped=0;
   private readonly metrics=new SdkMetricBuffer();
+  private metricBusy=false;
+  private nextMetricAt=0;
+  private metricAbort?:AbortController;
+  private metricAttempts=0;
   getMetricReport(){return this.metrics.snapshot();}
   acknowledgeMetricReport(id:string){this.metrics.acknowledge(id);}
+  async flushMetrics(){
+    if(this.config.reportMetrics===false||this.stopped||this.metricBusy||Date.now()<this.nextMetricAt)return;
+    const report=this.metrics.snapshot();if(!report)return;
+    if(Date.parse(report.observedAt)<Date.now()-48*3_600_000){this.metrics.acknowledge(report.reportId);this.metricAttempts=0;return;}
+    this.metricBusy=true;this.nextMetricAt=Date.now()+10_000;
+    try{
+      // Diagnostic deltas belong to the process/App, never the last request's ALS.
+      const credential=await this.contexts.run({applicationId:this.config.applicationId,environmentId:this.config.environmentId,actorReference:null,tenantReference:null},()=>this.config.credentialProvider());if(!credential)return;
+      this.metricAbort=new AbortController();const timeout=setTimeout(()=>this.metricAbort?.abort(),5000);
+      try{
+        const response=await (this.config.transport??fetch)(`${this.config.endpoint}/sdk-metrics`,{method:'POST',headers:{authorization:`Bearer ${credential}`,'content-type':'application/json','x-observability-application-id':this.config.applicationId,'x-observability-environment-id':this.config.environmentId},body:JSON.stringify(report),signal:this.metricAbort.signal});
+        if(response.ok){const ack:unknown=await response.json();if(!isRecord(ack)||ack.accepted!==true||typeof ack.duplicate!=='boolean')throw Error('INVALID_METRIC_ACK');this.metrics.acknowledge(report.reportId);this.metricAttempts=0;}
+        else if([400,403,404,409,410,422].includes(response.status)){this.metrics.acknowledge(report.reportId);this.metricAttempts=0;this.fallback('METRIC_REPORT_REJECTED');}
+        else throw Error('METRIC_RETRY');
+      }finally{clearTimeout(timeout);}
+    }catch{this.metricAttempts++;if(this.metricAttempts>=12){this.metrics.acknowledge(report.reportId);this.metricAttempts=0;this.fallback('METRIC_RETRY_EXHAUSTED');}else{this.nextMetricAt=Date.now()+Math.max(10_000,retryDelay(this.metricAttempts));this.fallback('METRICS_UNAVAILABLE');}}
+    finally{this.metricBusy=false;}
+  }
   constructor(private readonly config:NodeSdkConfiguration){
     const url=new URL(config.endpoint);if(url.protocol!=='https:'&&!(url.protocol==='http:'&&['localhost','127.0.0.1','[::1]'].includes(url.hostname)))throw new Error('SDK_ENDPOINT_REQUIRES_HTTPS');
     if(url.username||url.password||url.search||url.hash)throw new Error('INVALID_SDK_ENDPOINT');
@@ -54,7 +77,7 @@ export class NodeSdk {
     return this.capture({category:input.category??'BACKEND',source:input.source??'SERVER',severity:'ERROR',eventCode:input.eventCode??'server.exception',normalizedMessage:error instanceof Error?redactText(error.message).slice(0,2000):'Unexpected operation failure',exceptionType:error instanceof Error?error.name:'UnknownError',sanitizedStack:error instanceof Error?sanitizeStack(error.stack??''):undefined,operationName:input.operationName});
   }
   async flush(){
-    if(this.busy||this.stopped||Date.now()<this.nextFlush)return;const batch=this.pending.filter(p=>p.nextRetryAt<=Date.now()).slice(0,50);if(!batch.length)return;this.busy=true;
+    if(this.busy||this.stopped||Date.now()<this.nextFlush)return;const batch=this.pending.filter(p=>p.nextRetryAt<=Date.now()).slice(0,50);if(!batch.length){await this.flushMetrics();return;}this.busy=true;
     try{
       const credential=await this.config.credentialProvider();if(!credential){this.nextFlush=Date.now()+30_000;return;}
       this.abort=new AbortController();const timeout=setTimeout(()=>this.abort?.abort(),15_000);
@@ -69,10 +92,10 @@ export class NodeSdk {
       }finally{clearTimeout(timeout);}
     }catch{
       for(const item of batch){this.fallback('INGESTION_UNAVAILABLE',item.event);this.defer(item);}
-    }finally{this.busy=false;}
+    }finally{await this.flushMetrics();this.busy=false;}
   }
   private defer(item:Pending){item.attempts++;if(item.attempts>=12){const index=this.pending.indexOf(item);if(index>=0)this.pending.splice(index,1);this.dropped++;this.metrics.add('dropped');this.metrics.add('retryDropped');}else item.nextRetryAt=Date.now()+retryDelay(item.attempts);}
   stats(){return {queued:this.pending.length,dropped:this.dropped};}
   start(){if(!this.timer){this.stopped=false;this.timer=setInterval(()=>void this.flush(),10_000);this.timer.unref();}return this;}
-  async shutdown(){if(this.timer)clearInterval(this.timer);await this.flush();this.stopped=true;this.abort?.abort();for(const item of this.pending)this.fallback('SHUTDOWN_UNDELIVERED',item.event);this.pending.splice(0);}
+  async shutdown(){if(this.timer)clearInterval(this.timer);await this.flush();this.stopped=true;this.abort?.abort();this.metricAbort?.abort();for(const item of this.pending)this.fallback('SHUTDOWN_UNDELIVERED',item.event);this.pending.splice(0);}
 }

@@ -87,3 +87,13 @@ finally cleanup. The UI is mounted only on a random loopback port. Neither live
 Jupiter tenant data nor Preview/main host is changed. The fixture is intentionally
 not a full deployment, production SDK release, total-host monitoring installation
 or blanket acceptance of every Jupiter screen.
+## Automatic diagnostics acceptance
+
+The sample has a controlled 20-item event queue and “آزمون افت صف” action that
+creates an actual overflow, not a fabricated counter POST. Browser diagnostics
+are automatically journaled/sent by the SDK. The Edge test discards a committed
+metric ACK, reloads real IndexedDB and renews credentials, then proves one row
+for the same UUID/body. The shared self-health Console is checked at 375/768/
+1024/1440 RTL with unknown-source labels, no list pagination/CSV and Viewer
+denial after App switch. Native backend SDK replay is independently tested over
+real HTTP/PostgreSQL. No real customer tenant or external AI key is used here.
