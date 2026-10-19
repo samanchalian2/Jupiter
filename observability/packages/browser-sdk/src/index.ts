@@ -18,6 +18,8 @@ export interface BrowserSdkConfiguration {
   categories?:TelemetryEvent['category'][];
   maxQueueCount?:number;
   maxQueueBytes?:number;
+  /** Enqueue-time offline TTL, 1000ms minimum; maxima/defaults: events 48h, feedback 24h. */
+  retentionMs?:{events?:number;feedback?:number};
   reportMetrics?:boolean;
   onStatus?:(status:SdkStatus)=>void;
   onFeedbackAcknowledged?:(feedbackId:string,trackingId:string)=>void;
@@ -29,6 +31,7 @@ export class BrowserSdk {
   private mode:'DURABLE'|'MEMORY';
   private readonly transport:typeof fetch;
   private readonly clock:()=>number;
+  private readonly retentionMs:{events:number;feedback:number};
   private partition:string;
   private generation=0;
   private stopped=false;
@@ -89,6 +92,10 @@ export class BrowserSdk {
     const url=new URL(config.endpoint);
     if(url.protocol!=='https:'&&!(url.protocol==='http:'&&['localhost','127.0.0.1','[::1]'].includes(url.hostname)))throw new ContractError('SDK_ENDPOINT_REQUIRES_HTTPS');
     if(url.username||url.password||url.search||url.hash)throw new ContractError('INVALID_SDK_ENDPOINT');
+    const retention=config.retentionMs;
+    if(retention!==undefined&&(!isRecord(retention)||Object.keys(retention).some(key=>key!=='events'&&key!=='feedback')))throw new ContractError('INVALID_SDK_RETENTION');
+    const duration=(value:unknown,maximum:number)=>{if(value===undefined)return maximum;if(typeof value!=='number'||!Number.isSafeInteger(value)||value<1000||value>maximum)throw new ContractError('INVALID_SDK_RETENTION');return value;};
+    this.retentionMs={events:duration(retention?.events,48*3_600_000),feedback:duration(retention?.feedback,24*3_600_000)};
     this.storage=config.storage??(typeof indexedDB!=='undefined'?new IndexedDbQueue():new MemoryQueue());
     this.mode=this.storage instanceof MemoryQueue?'MEMORY':'DURABLE';
     // Native Window.fetch must not be invoked with the SDK instance as receiver.
@@ -128,7 +135,7 @@ export class BrowserSdk {
       const sampling=Math.max(0,Math.min(1,this.config.sampling?.[input.category]??1));if(sampling===0||Math.random()>sampling)return null;
       const scope=this.context(),now=this.clock(),eventId=crypto.randomUUID();
       const event=sanitizeEvent({...input,eventId,schemaVersion:SCHEMA_VERSION,applicationId:scope.applicationId,environmentId:scope.environmentId,occurredAt:new Date(now).toISOString(),source:input.source??'BROWSER',releaseVersion:this.config.release,actorReference:scope.actorReference,tenantReference:scope.tenantReference,sessionCorrelationId:this.sessionId,safeMetadata:{...input.safeMetadata,sdkVersion:'0.1.0',sampleRate:sampling,sampleWeight:sampling?1/sampling:1}});
-      const stored=await this.enqueue({id:eventId,partition:scopeKey(scope),kind:'EVENT',payload:event,createdAt:now,expiresAt:now+48*3_600_000,attempts:0,nextRetryAt:now});
+      const stored=await this.enqueue({id:eventId,partition:scopeKey(scope),kind:'EVENT',payload:event,createdAt:now,expiresAt:now+this.retentionMs.events,attempts:0,nextRetryAt:now});
       await this.checkpointMetrics();
       return stored?eventId:null;
     }catch{this.metrics.add('dropped');this.status.dropped++;this.status.lastFailure='EVENT_CAPTURE_REJECTED';this.emit();return null;}
@@ -136,7 +143,7 @@ export class BrowserSdk {
   async submitFeedback(input:FeedbackSubmission):Promise<boolean>{
     await this.setContext();const scope=this.context();if(!scope.actorReference)throw new ContractError('AUTHENTICATED_FEEDBACK_REQUIRED');
     const feedback=validateFeedback(input);feedback.subject=redactText(feedback.subject);feedback.description=redactText(feedback.description);
-    const now=this.clock();return this.enqueue({id:feedback.feedbackId,partition:scopeKey(scope),kind:'FEEDBACK',payload:feedback,createdAt:now,expiresAt:now+24*3_600_000,attempts:0,nextRetryAt:now});
+    const now=this.clock();return this.enqueue({id:feedback.feedbackId,partition:scopeKey(scope),kind:'FEEDBACK',payload:feedback,createdAt:now,expiresAt:now+this.retentionMs.feedback,attempts:0,nextRetryAt:now});
   }
   private async updateStatus(){const entries=(await this.entries()).filter(e=>e.partition===this.partition&&e.expiresAt>this.clock());this.status.queued=entries.filter(e=>e.kind!=='METRICS').length;this.status.metricQueued=entries.filter(e=>e.kind==='METRICS').length;this.emit();}
   async getStatus(){if(this.stopped)return{...this.status,queued:0,metricQueued:0,dropped:0};try{await this.setContext();}catch{return{...this.status,queued:0,metricQueued:0,dropped:0,metricFailure:null,lastFailure:'SDK_CONTEXT_UNAVAILABLE'};}await this.updateStatus();return {...this.status};}

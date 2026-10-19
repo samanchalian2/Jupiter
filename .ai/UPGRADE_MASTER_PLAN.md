@@ -2,6 +2,11 @@
 
 ## GOAL-069 — Observability Hub continuation (IN PROGRESS)
 
+DEC-049 closes implementation of A02 configurable bounded Browser retention;
+41 SDK tests/typecheck and native IndexedDB expiry acceptance pass. Full LOCAL
+428-test release gate/both isolation scripts and cleanup/readiness pass.
+No final acceptance; A01/A03/A04/A05 and full requirement reconciliation remain.
+
 Requirement-level audit A01–A06 now identifies concrete missing Registry, SDK,
 host cadence and Overview features. Preserve the original scope and implement
 these with compatible recorded decisions; current baseline is not completion.

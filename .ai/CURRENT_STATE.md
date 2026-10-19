@@ -1,5 +1,18 @@
 # Current State
 
+**2026-10-19 configurable Browser retention (GOAL-069 IN PROGRESS):** DEC-049
+records additive enqueue-time event/feedback TTL with preserved 48h/24h defaults,
+integer 1000ms minimum and existing maxima. Constructor snapshots values and
+rejects invalid settings; stored expiry is not renewed by retry/reload/config
+changes. Four new tests cover defaults, bounds, snapshot, exact expiry, reload,
+retry and foreign actor purge; SDK 41/typecheck pass. Native IndexedDB expiry
+acceptance passes in the disposable reference Browser harness: real-time expiry,
+fresh default-policy page, two removed rows, zero SDK auth/transport/SQL writes.
+Full LOCAL gate exits zero: 428 tests (175 API, 37 Web, 216 Hub), builds/lint/
+typechecks, Browser/client/performance/migration acceptance and both isolation
+scripts. Zero temporary DBs/active attempts; healthy readiness, same listeners
+and enabled 100000 budget. A01/A03/A04/A05 and full audit remain open. No deployment.
+
 **2026-10-19 requirement audit / metric checkpoint (GOAL-069 IN PROGRESS):**
 New REQUIREMENTS_AUDIT maps concrete gaps in Registry management, Browser
 retention/named retry triggers, host cadence configuration and full Overview;

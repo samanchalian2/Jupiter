@@ -6,6 +6,36 @@ const event={category:'FRONTEND' as const,severity:'ERROR' as const,eventCode:'t
 const setup=(overrides:Partial<ConstructorParameters<typeof BrowserSdk>[0]>={})=>new BrowserSdk({reportMetrics:false,applicationId:scope.applicationId,environmentId:scope.environmentId,endpoint:'https://hub.example.test/api/v1/observability',contextProvider:()=>scope,authProvider:async s=>({scope:s,token:'unit-test-placeholder',expiresAt:Date.now()+60_000}),storage:new MemoryQueue(),...overrides});
 const ackTransport:typeof fetch=async(_url,init)=>{const batch=JSON.parse(String(init?.body));return Response.json({schemaVersion:'1.1',acknowledgements:batch.events.map((e:{eventId:string})=>({eventId:e.eventId,status:'ACCEPTED'}))});};
 describe('browser queue protocol and isolation',()=>{
+  it('assigns configurable bounded event and feedback retention while preserving defaults',async()=>{
+    const now=Date.now(),defaults=new MemoryQueue(),custom=new MemoryQueue();
+    const feedback={feedbackId:crypto.randomUUID(),category:'BUG' as const,subject:'Controlled feedback',description:'Controlled description'};
+    const first=setup({storage:defaults,clock:()=>now});await first.capture(event);await first.submitFeedback(feedback);
+    expect((await defaults.list()).map(row=>row.expiresAt-now)).toEqual([48*3600000,24*3600000]);
+    const retentionMs={events:2000,feedback:3000},sdk=setup({storage:custom,clock:()=>now,retentionMs});retentionMs.events=9000;retentionMs.feedback=9000;
+    await sdk.capture(event);await sdk.submitFeedback({...feedback,feedbackId:crypto.randomUUID()});
+    expect((await custom.list()).map(row=>row.expiresAt-now)).toEqual([2000,3000]);
+  });
+  it('rejects invalid retention rather than allowing unbounded or ambiguous expiry',()=>{
+    for(const value of [0,-1,999,1000.5,NaN,Infinity,'1000',null])for(const kind of ['events','feedback'])expect(()=>setup({retentionMs:{[kind]:value} as any})).toThrow('INVALID_SDK_RETENTION');
+    expect(()=>setup({retentionMs:{events:48*3600000+1}})).toThrow('INVALID_SDK_RETENTION');
+    expect(()=>setup({retentionMs:{feedback:24*3600000+1}})).toThrow('INVALID_SDK_RETENTION');
+    expect(()=>setup({retentionMs:{events:1000,feedback:1000}})).not.toThrow();
+  });
+  it('expires configured data at the exact deadline across reload without extending retry TTL',async()=>{
+    let now=Date.now(),calls=0;const start=now,store=new MemoryQueue();
+    const config={storage:store,clock:()=>now,retentionMs:{events:1000,feedback:2000},authProvider:async(s:IdentityScope)=>({scope:s,token:'controlled-placeholder',expiresAt:now+60000}),transport:async()=>{calls++;throw Error('Controlled outage');}};
+    const sdk=setup(config),id=await sdk.capture(event);await sdk.submitFeedback({feedbackId:crypto.randomUUID(),category:'BUG',subject:'Controlled',description:'Controlled feedback'});
+    await sdk.flush();expect(calls).toBe(1);expect((await store.list()).find(row=>row.id===id)?.expiresAt).toBe(start+1000);
+    now=start+1000;const reloaded=setup({...config,retentionMs:{events:48*3600000,feedback:24*3600000}});await reloaded.flush();
+    expect((await store.list()).map(row=>[row.kind,row.expiresAt])).toEqual([['FEEDBACK',start+2000]]);expect(calls).toBe(1);
+    now=start+2000;await reloaded.flush();expect(await store.list()).toEqual([]);expect(calls).toBe(1);
+    expect((await reloaded.getStatus()).dropped).toBe(2);expect(reloaded.getMetricReport()?.counters.retryDropped).toBe(1); // Diagnostic counters intentionally count events, not feedback.
+  });
+  it('purges configured-retention envelopes from the previous actor before any authenticated replay',async()=>{
+    let current=scope,calls=0;const store=new MemoryQueue(),sdk=setup({storage:store,contextProvider:()=>current,retentionMs:{events:1000,feedback:2000},transport:async()=>{calls++;throw Error('Unexpected replay');}});
+    await sdk.capture(event);await sdk.submitFeedback({feedbackId:crypto.randomUUID(),category:'BUG',subject:'Controlled',description:'Old actor feedback'});
+    current={...scope,actorReference:'next-retention-actor',tenantReference:'next-retention-tenant'};await sdk.setContext();await sdk.flush();expect(await store.list()).toEqual([]);expect(calls).toBe(0);expect((await sdk.getStatus()).queued).toBe(0);
+  });
   it('isolates diagnostic checkpoint write failure from the durable data queue and retains the report for later recovery',async()=>{
     const disk=new MemoryQueue();let failMetrics=true,closed=0;const sent:string[]=[],reports:any[]=[];
     const store={list:()=>disk.list(),put:async(row:Parameters<MemoryQueue['put']>[0])=>{if(row.kind==='METRICS'&&failMetrics)throw Error('Controlled metrics-only write denial');await disk.put(row);},remove:(ids:string[])=>disk.remove(ids),close:()=>{closed++;}};

@@ -20,7 +20,7 @@ This is not a blanket completion claim for all product workflows or the live
 Jupiter shell. Section-63 Help is runtime-published with actual Jupiter operations,
 Platform-panel and Feedback acceptance. The measured local performance checkpoint
 and Node hot-path remediation plus full-limit Browser/batch/redaction QC bring
-the full release gate to 424 tests with actual authenticated Web/AppModule, React/fetch failure isolation, data-write/diagnostic-checkpoint isolation/real quota, explicit product comparison, scoped analytics, real queued provider failure/metering and concurrent/product-read boundary
+the full release gate to 428 tests with configurable retention/native expiry, actual authenticated Web/AppModule, React/fetch failure isolation, data-write/diagnostic-checkpoint isolation/real quota, explicit product comparison, scoped analytics, real queued provider failure/metering and concurrent/product-read boundary
 measurements and the performance flag enabled. Inspect
 latest Evidence for gates/runtime/remote commit.
 
@@ -29,7 +29,12 @@ latest Evidence for gates/runtime/remote commit.
 **Concrete audited work:** `docs/GOAL_069_REQUIREMENTS_AUDIT.md` A01–A06.
 Registry mutable metadata/enabled/policy workflows (section 8), Browser retention
 options (14), named activity/probe recovery triggers (19), configurable bounded
-host rule cadence (34) and full required Overview (39) are incomplete/unverified.
+host rule cadence (34) and full required Overview (39) were audited. A02 now has
+DEC-049/enqueue-time bounded options, four new regressions and native IndexedDB
+acceptance; SDK 41/typecheck and full LOCAL 428-test gate/both fault scripts pass.
+Post-gate cleanup/readiness/owned listeners and 100000 budget are unchanged.
+A01/A03/A04/A05 remain
+incomplete/unverified; do not treat A02 as full-Goal delivery.
 Select and record backward-compatible decisions before public API/config changes.
 Do not replace them with SQL edits or claim separate pages satisfy Overview.
 A06 metric-checkpoint/data-queue violation is fixed with a red→green regression;

@@ -1,5 +1,24 @@
 # Architecture Decisions
 
+## DEC-049 — Bounded Browser offline retention configuration
+
+GOAL-069 section 14 adds optional `retentionMs: { events?, feedback? }` to
+BrowserSdkConfiguration, without changing the envelope/wire schema, IndexedDB
+version, authentication, queue caps or retry protocol. Each supplied duration
+must be a finite integer in milliseconds from 1000 to the existing maximum:
+48 hours for events and 24 hours for feedback. Invalid values fail constructor
+validation with a fixed ContractError; omission preserves existing defaults.
+The constructor snapshots these two primitive settings so later caller mutation
+cannot silently change queued-data policy. Diagnostic METRICS retain their
+separate bounded 48-hour journal policy (DEC-044).
+
+Retention is assigned at enqueue time and persists as the envelope's absolute
+expiresAt. Retry, memory fallback and reload never renew it. A later configuration
+applies to newly enqueued data, not a rewrite/extension of existing envelopes.
+Existing expiry deletion, current-identity partition purge and server credential
+validation remain authoritative; no credential or additional raw content is
+stored. This additive configuration is independent of server retention policy.
+
 ## DEC-048 — Data-queue write failure isolation
 
 GOAL-069 failure isolation also covers retry/ACK/expiry/context cleanup writes,

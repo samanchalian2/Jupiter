@@ -36,6 +36,7 @@ async function offlineLifecycle(browser:Browser,database:HubDatabase,origin:stri
 }
 /** Real CDP quota, real IndexedDB failure, real SDK fallback and actual HTTP/SQL. */
 export async function offlineBrowserAcceptance(browser:Browser,database:HubDatabase,origin:string,applicationId:string,environmentId:string,sessionToken:string){
+ await configuredRetention(browser,database,origin,applicationId,environmentId,sessionToken);
  await offlineLifecycle(browser,database,origin,applicationId,environmentId,sessionToken);
  const context=await browser.newContext();await context.addCookies([{name:'reference_session',value:sessionToken,url:origin,httpOnly:true,sameSite:'Strict'}]);const page=await context.newPage(),errors:string[]=[];page.on('pageerror',error=>errors.push(error.name));
  try{
@@ -50,5 +51,19 @@ export async function offlineBrowserAcceptance(browser:Browser,database:HubDatab
   await expect.poll(()=>count(memoryId),{timeout:15000}).toBe(1);
   await page.reload();await expect.poll(()=>page.getByTestId('storage').innerText()).toBe('DURABLE');const durableId=await capture(page);await flush(page);await expect.poll(()=>count(durableId),{timeout:20000}).toBe(1);expect(errors).toEqual([]);
   console.log(JSON.stringify({event:'observability.browser_storage_quota',result:'PASS',quotaError,fallback:'MEMORY',afterReload:'DURABLE',newDurablePersisted:1,memoryPersisted:1,unhandledErrors:0}));
+ }finally{await context.close();}
+}
+
+async function configuredRetention(browser:Browser,database:HubDatabase,origin:string,applicationId:string,environmentId:string,sessionToken:string){
+ const context=await browser.newContext();await context.addCookies([{name:'reference_session',value:sessionToken,url:origin,httpOnly:true,sameSite:'Strict'}]);const page=await context.newPage();
+ try{
+  await page.goto(origin+'/retention.html');await expect.poll(async()=>page.locator('#result').innerText()).toContain('"phase":"capture"');const captured=JSON.parse(await page.locator('#result').innerText());
+  expect(captured.status.storage).toBe('DURABLE');expect(captured.rows.map((row:any)=>row.kind)).toEqual(expect.arrayContaining(['EVENT','FEEDBACK']));expect(captured.rows).toHaveLength(2);
+  for(const row of captured.rows)expect(row.expiresAt-row.createdAt).toBe(1000);
+  await page.waitForTimeout(Math.max(0,Math.max(...captured.rows.map((row:any)=>row.expiresAt))-Date.now())+100);
+  await page.goto(origin+'/retention.html?phase=check');await expect.poll(async()=>page.locator('#result').innerText()).toContain('"phase":"check"');const checked=JSON.parse(await page.locator('#result').innerText());
+  expect(checked.rows).toEqual([]);expect(checked.status).toMatchObject({storage:'DURABLE',queued:0,dropped:2});expect(checked.authCalls).toBe(0);expect(checked.transportCalls).toBe(0);
+  for(const row of captured.rows){const table=row.kind==='EVENT'?'events':'feedback',column=row.kind==='EVENT'?'event_id':'id';expect(await database.worker(async c=>Number((await c.query(`SELECT count(*)::int total FROM observability.${table} WHERE application_id=$1 AND environment_id=$2 AND ${column}=$3`,[applicationId,environmentId,row.id])).rows[0].total))).toBe(0);}
+  console.log(JSON.stringify({event:'observability.browser_configured_retention',result:'PASS',storage:'NATIVE_INDEXEDDB',ttlMs:1000,reload:'DEFAULT_POLICY_DOES_NOT_RENEW_OLD_EXPIRY',removed:2,authCalls:0,transportCalls:0,persistedRows:0}));
  }finally{await context.close();}
 }

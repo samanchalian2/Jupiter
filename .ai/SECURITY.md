@@ -2,6 +2,14 @@
 
 ## GOAL-069 Observability Hub
 
+DEC-049 Browser offline retention accepts only bounded integer durations; it
+cannot extend the previous 48h event/24h feedback security limits. Absolute
+enqueue-time expiry survives reload/retry without renewal. Constructor options
+apply to new envelopes, not existing journal history; diagnostic TTL remains
+separate. Actor partition purge, credential-free storage and server-side scope
+validation remain unchanged. Native acceptance uses disposable verified sessions
+and synthetic content, never production tenants or credential injection.
+
 Actual Web acceptance checks a generated local DB namespace, rejects shared
 development ports and uses a strict ephemeral Vite listener/proxy. API base is
 explicitly overridden in harness memory to avoid inherited deployment URLs.

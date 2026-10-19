@@ -22,6 +22,21 @@ logout. Backend and Browser failures share W3C trace/request IDs. Browser queues
 store no credentials. The generic Console demonstrates cross-Application
 selection and maintenance; its authenticated transport is supplied by the host.
 
+## Offline retention configuration
+
+BrowserSdk accepts `retentionMs: { events: 6 * 3600000, feedback: 3600000 }`.
+Both optional values are integer milliseconds, minimum 1000; maxima/defaults
+are 48 hours for events and 24 hours for feedback. Invalid values fail SDK
+construction with `INVALID_SDK_RETENTION`; integrations must retain their normal
+business UI if optional observability setup fails. Omit either value to keep
+its default. This is a per-consumer enqueue-time policy, not server retention.
+The SDK copies configuration at construction and stores the absolute expiry
+with each envelope. Retry/reload never renew it; changing configuration affects
+new envelopes, not already journaled data. Identity switch/logout rules still
+purge old partitions. Diagnostic reports retain their separate 48-hour policy.
+No credential is stored. Queue expiry cleanup is best-effort when browser
+storage is unavailable; memory fallback does not survive page loss.
+
 ## Build and real-browser acceptance
 
 ```sh
@@ -60,6 +75,10 @@ or Jupiter identity is imported into the fixture.
 
 Actual acceptance covers:
 
+- Configured 1000ms event/feedback retention in native IndexedDB, real-time
+  expiry and a fresh default-policy page removing both before auth/transport;
+  SQL verifies neither expired ID was ingested. This is a fixture consumer,
+  not a change to Jupiter's current default retention.
 - Frontend/default-native-fetch, backend, React error-boundary and own Feedback
   ingestion into real PostgreSQL; shared trace/request correlation.
 - Full network disconnection via the browser context, a sanitized IndexedDB

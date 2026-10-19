@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-10-19 — GOAL-069 bounded Browser retention (IN PROGRESS)
+
+- DEC-049 records additive event/feedback offline retention configuration,
+  defaults/bounds, enqueue-time immutability and unchanged diagnostic policy.
+- Four new red→green/configuration/isolation tests; SDK 41/typecheck pass.
+  Native IndexedDB real-time expiry/default-policy reload passes with zero SDK
+  credential/transport calls and zero persisted expired rows. Full LOCAL
+  428-test/build/lint/typecheck gate and both fault scripts pass; cleanup healthy.
+- No schema/wire/provider/tenant authorization change or deployment. Remaining
+  requirement findings stay open.
+
 ## 2026-10-19 — GOAL-069 actual requirement audit (IN PROGRESS)
 
 - Recorded concrete incomplete Registry/SDK/cadence/Overview requirements;

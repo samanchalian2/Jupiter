@@ -4,6 +4,38 @@ Status: IN PROGRESS. Owner-approved plan supersedes the stale GOAL-060 identifie
 in the supplied specification. GOAL-060 Personal Service history is preserved.
 GOAL-059 remains BLOCKED; LOCAL evidence is not staging acceptance.
 
+## 2026-10-19 — Configurable Browser offline retention / A02 (LOCAL)
+
+- DEC-049 documents additive `retentionMs.events/feedback` constructor options,
+  milliseconds, safe integer 1000 minimum, 48h/24h maxima/defaults. Both primitive
+  values are copied at construction. Invalid types/NaN/infinity/fraction/outside
+  range fail with INVALID_SDK_RETENTION. Diagnostic TTL remains separately 48h.
+- Three new tests fail against old code; implementation assigns immutable
+  enqueue-time absolute deadlines. Four final tests cover defaults/bounds,
+  caller mutation, exact expiry boundary, retry preserving original deadline,
+  reload under larger defaults not extending expiry and foreign actor purge
+  before replay. Diagnostic retryDropped intentionally counts events only;
+  status.dropped also counts feedback. SDK 41/41 and typecheck pass.
+- Native acceptance fixture `examples/browser/retention.html` uses a verified
+  disposable reference session and actual IndexedDB. It enqueues event+feedback
+  with 1000ms TTL, waits real time, navigates to a fresh page/default policy and
+  asserts both deleted before auth/transport plus zero persisted Hub rows.
+  No manual expiry edits, fake clock, real customer content or stored credential.
+  The existing offline Browser harness executes it before lifecycle/quota checks.
+- Reference typecheck initially saw previous package declarations; rebuilding
+  browser-sdk generated the new additive declaration and typecheck passed.
+  Full release gate/both isolation scripts exit zero:
+  `output/goal069-retention-release.log`, GOAL069_RETENTION_RELEASE_EXIT=0.
+  428 tests = 175 API + 37 Web + 216 Hub (92 SDK/core/adapters + 111 server +
+  13 Console). Builds/lint/typechecks and Browser/client/performance/migration
+  gates pass. Actual native retention log reports PASS: two rows removed on
+  fresh default-policy page, SDK authCalls/transportCalls/persistedRows all zero.
+  Actual authenticated Jupiter Web/detail four-width and timer/worker recovery
+  regressions also pass. Post-gate: 83 migrations, zero temporary DBs/active AI
+  attempts, healthy readiness, same owned 19440/3000 + 49740/5174 listeners and
+  enabled 100000 budget. A01/A03/A04/A05 and broader audit remain open; no
+  Preview/main host promotion.
+
 ## 2026-10-19 — Requirement audit findings and metric-journal isolation (LOCAL)
 
 - `docs/GOAL_069_REQUIREMENTS_AUDIT.md` records the first requirement-level
