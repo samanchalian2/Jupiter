@@ -1,5 +1,22 @@
 # Current State
 
+**2026-10-19 measured-performance checkpoint (GOAL-069 IN PROGRESS):**
+Disposable PostgreSQL performance acceptance measures 1,000 actual HTTP events,
+leased aggregation, 20 dashboard queries, logical sampling, deletion of 100 aged
+fixture events and idempotent AI scheduling without a provider call. Standalone
+run: 319.15 events/s, batch p95 414.03ms, aggregation 5,691.74ms, dashboard p95
+42.65ms. Node capture previously rescanned/serialized its full queue per event;
+incremental byte accounting reduces local saturated-queue p95 from 2.1439ms to
+0.0565ms (rerun 0.0567ms). ACK/exhaustion/shutdown budget reclamation is tested.
+These are scoped LOCAL measurements, not production SLO or whole-product impact.
+Browser/full-limit offline measurements, Jupiter workflow overhead, larger-scale
+sampling fairness/deadlines, real Worker/host breadth and final A–I audit remain.
+No live provider, business-data load, migration or Preview/main promotion.
+Full gate passes 363 tests (152 API, 30 Web, 181 Hub), builds/lint/typechecks,
+actual Edge/Python/C# and 83-migration rehearsal with the performance flag on.
+Repeated load gives 329.47 events/s and dashboard p95 39.34ms. Temporary DB count
+is zero; live provider configuration/budget unchanged. Vite advisory remains.
+
 **2026-10-19 Product Help checkpoint (GOAL-069 IN PROGRESS):**
 Section 63's eleven Persian guides are runtime-published revision 2 using the
 existing active local Platform Admin; catalog grows 19→30. Explicit slug-scoped

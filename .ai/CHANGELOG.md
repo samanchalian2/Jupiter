@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-10-19 — GOAL-069 LOCAL performance measurements (IN PROGRESS)
+
+- Added disposable PostgreSQL/real HTTP load acceptance for ingestion, leased
+  aggregation, dashboard, logical sampling, retention and AI scheduling.
+- Measured and removed O(queue length) repeated serialization in Node capture;
+  incremental exact byte accounting preserves limits and all existing contracts.
+- Added byte-budget reclamation tests and repeatable saturated-queue benchmark.
+  Evidence records actual local timings/resources and explicit scope limitations.
+- Browser offline scale, main workflow overhead, sampling fairness/deadlines and
+  full host/Worker/specification audit remain; no target-host promotion.
+
 ## 2026-10-19 — GOAL-069 Persian Help and local host acceptance (IN PROGRESS)
 
 - Added eleven registry-validated Persian monitoring guides, runtime publication

@@ -2,6 +2,11 @@
 
 ## GOAL-069 — Observability Hub continuation (IN PROGRESS)
 
+Section 64 has a measured local 1,000-event real HTTP/service checkpoint and a
+remediated Node capture queue-byte hot path. Browser offline scale, main workflow
+impact and storage sampling fairness/deadlines remain; measurements do not prove
+production capacity or whole-Goal acceptance.
+
 Section 63 Help is now runtime-published: eleven Persian guides, validated context
 registry, explicit selection, preserved revision history and actual local Jupiter
 Help/RTL acceptance at four widths. Whole-Goal performance/scale, actual Worker/

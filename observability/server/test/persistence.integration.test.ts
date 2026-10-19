@@ -17,6 +17,7 @@ import {fileURLToPath} from 'node:url';
 import {createServer} from 'node:http';
 import {browserAcceptance} from './browser-acceptance.js';
 import {NodeSdk} from '../../packages/node-sdk/src/index.js';
+import {performanceAcceptance} from './performance-acceptance.js';
 
 // Real PostgreSQL, in an isolated temporary database. This test never migrates
 // the configured business database and never imports a Jupiter module.
@@ -58,6 +59,10 @@ beforeAll(async()=>{
 afterAll(async()=>{if(httpServer){httpServer.closeAllConnections();await new Promise<void>((resolve,reject)=>httpServer.close(error=>error?reject(error):resolve()));}await database?.close();if(created){await admin.query('SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname=$1 AND pid<>pg_backend_pid()',[databaseName]);await admin.query(`DROP DATABASE "${databaseName}"`);}await admin.end();},30_000);
 const event=(extra:Partial<TelemetryEvent>={}):TelemetryEvent=>({eventId:randomUUID(),schemaVersion:'1.1',applicationId:appA,environmentId:envA,occurredAt:new Date().toISOString(),source:'BROWSER',category:'FRONTEND',severity:'ERROR',eventCode:'ui.render_failed',normalizedMessage:'Controlled error',actorReference:'userA',tenantReference:'shared-tenant-id',...extra});
 const scope=()=>({applicationId:appA,environmentId:envA,actorReference:'userA',tenantReference:'shared-tenant-id',source:'BROWSER' as const});
+
+describe('LOCAL measured performance in disposable PostgreSQL',()=>{
+ it.skipIf(process.env.OBSERVABILITY_PERFORMANCE_ACCEPTANCE!=='true')('measures actual HTTP batch ingestion, aggregation, dashboard, retention and AI scheduling',async()=>{await performanceAcceptance(database,registry,root,endpoint);},120000);
+});
 
 describe('real independent Browser acceptance',()=>{
  it.skipIf(process.env.OBSERVABILITY_BROWSER_ACCEPTANCE!=='true')('proves IndexedDB/network recovery, independent reference, correlation, scope and maintenance RTL',async()=>{await browserAcceptance(database,registry,root);},120000);

@@ -14,10 +14,11 @@ export interface NodeSdkConfiguration {
   maxQueueBytes?:number;
   reportMetrics?:boolean;
 }
-type Pending={event:TelemetryEvent;attempts:number;nextRetryAt:number};
+type Pending={event:TelemetryEvent;bytes:number;attempts:number;nextRetryAt:number};
 export class NodeSdk {
   private readonly contexts=new AsyncLocalStorage<NodeContext>();
   private readonly pending:Pending[]=[];
+  private pendingBytes=0;
   private busy=false;
   private stopped=false;
   private timer?:ReturnType<typeof setInterval>;
@@ -68,9 +69,9 @@ export class NodeSdk {
     try{
       const context=this.context()??{applicationId:this.config.applicationId,environmentId:this.config.environmentId,actorReference:null,tenantReference:null};
       const event=sanitizeEvent(enforceScope({...input,eventId:input.eventId??crypto.randomUUID(),schemaVersion:SCHEMA_VERSION,applicationId:context.applicationId,environmentId:context.environmentId,occurredAt:input.occurredAt??new Date().toISOString(),source:input.source??'SERVER',releaseVersion:this.config.release,requestId:context.requestId,traceId:context.traceId,spanId:context.spanId},context));
-      const bytes=this.pending.reduce((n,item)=>n+encodedBytes(item.event),0)+encodedBytes(event);
+      const eventBytes=encodedBytes(event),bytes=this.pendingBytes+eventBytes;
       if(this.pending.length>=Math.min(500,this.config.maxQueueCount??500)||bytes>Math.min(2_097_152,this.config.maxQueueBytes??2_097_152)){this.dropped++;this.metrics.add('dropped');this.fallback('QUEUE_FULL',event);return null;}
-      this.pending.push({event,attempts:0,nextRetryAt:Date.now()});return event.eventId;
+      this.pending.push({event,bytes:eventBytes,attempts:0,nextRetryAt:Date.now()});this.pendingBytes+=eventBytes;return event.eventId;
     }catch{this.dropped++;this.metrics.add('dropped');this.fallback('EVENT_REJECTED');return null;}
   }
   captureException(error:unknown,input:{category?:TelemetryEvent['category'];operationName?:string;eventCode?:string;source?:TelemetryEvent['source']}={}){
@@ -88,14 +89,15 @@ export class NodeSdk {
         const ids=new Set(batch.map(p=>p.event.eventId)),seen=new Set<string>();
         for(const ack of value.acknowledgements){if(!isRecord(ack)||typeof ack.eventId!=='string'||!ids.has(ack.eventId)||seen.has(ack.eventId)||!['ACCEPTED','DUPLICATE','REJECTED','RETRYABLE'].includes(String(ack.status)))throw new Error('INVALID_ACK');seen.add(ack.eventId);}
         const complete=new Set<string>(value.acknowledgements.filter(a=>a.status!=='RETRYABLE').map(a=>a.eventId));
-        for(const item of batch){if(complete.has(item.event.eventId)){const rejected=value.acknowledgements.some(a=>a.eventId===item.event.eventId&&a.status==='REJECTED');if(rejected){this.dropped++;this.metrics.add('dropped');if(item.attempts>0)this.metrics.add('retryDropped');}else if(item.attempts>0)this.metrics.add('retryDelivered');const i=this.pending.indexOf(item);if(i>=0)this.pending.splice(i,1);}else this.defer(item);}
+        for(const item of batch){if(complete.has(item.event.eventId)){const rejected=value.acknowledgements.some(a=>a.eventId===item.event.eventId&&a.status==='REJECTED');if(rejected){this.dropped++;this.metrics.add('dropped');if(item.attempts>0)this.metrics.add('retryDropped');}else if(item.attempts>0)this.metrics.add('retryDelivered');this.remove(item);}else this.defer(item);}
       }finally{clearTimeout(timeout);}
     }catch{
       for(const item of batch){this.fallback('INGESTION_UNAVAILABLE',item.event);this.defer(item);}
     }finally{await this.flushMetrics();this.busy=false;}
   }
-  private defer(item:Pending){item.attempts++;if(item.attempts>=12){const index=this.pending.indexOf(item);if(index>=0)this.pending.splice(index,1);this.dropped++;this.metrics.add('dropped');this.metrics.add('retryDropped');}else item.nextRetryAt=Date.now()+retryDelay(item.attempts);}
+  private remove(item:Pending){const index=this.pending.indexOf(item);if(index>=0){this.pending.splice(index,1);this.pendingBytes-=item.bytes;}}
+  private defer(item:Pending){item.attempts++;if(item.attempts>=12){this.remove(item);this.dropped++;this.metrics.add('dropped');this.metrics.add('retryDropped');}else item.nextRetryAt=Date.now()+retryDelay(item.attempts);}
   stats(){return {queued:this.pending.length,dropped:this.dropped};}
   start(){if(!this.timer){this.stopped=false;this.timer=setInterval(()=>void this.flush(),10_000);this.timer.unref();}return this;}
-  async shutdown(){if(this.timer)clearInterval(this.timer);await this.flush();this.stopped=true;this.abort?.abort();this.metricAbort?.abort();for(const item of this.pending)this.fallback('SHUTDOWN_UNDELIVERED',item.event);this.pending.splice(0);}
+  async shutdown(){if(this.timer)clearInterval(this.timer);await this.flush();this.stopped=true;this.abort?.abort();this.metricAbort?.abort();for(const item of this.pending)this.fallback('SHUTDOWN_UNDELIVERED',item.event);this.pending.splice(0);this.pendingBytes=0;}
 }

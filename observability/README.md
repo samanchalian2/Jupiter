@@ -7,7 +7,11 @@ The [self-metric subsystem](SELF_MONITORING.md) has scoped immutable counters,
 hourly logical storage snapshots, automatic Browser/Node reporting and a Persian
 ADMIN Console with actual replay/source/RTL acceptance. Server measurement and
 reported SDK deltas remain separate. SCOPED_DIAGNOSTIC_METRICS is not overall
-host health or whole-Goal acceptance; full performance/Help/host audit remains.
+host health or whole-Goal acceptance; full performance/host audit remains.
+Jupiter's eleven public educational Help guides are runtime-published through
+its own Help engine; the reusable packages have no dependency on that engine.
+See [LOCAL performance methodology](PERFORMANCE.md) for executed service/SDK
+measurements and explicit remaining scale/workflow coverage.
 
 Trusted critical-event detection and scoped terminal pipeline warnings use the
 existing rule/inbox engines. Public health/readiness have an executable external
@@ -34,8 +38,8 @@ Operational AI now has a host-injected provider/vault, Application-bound AES-GCM
 credential storage, combined monthly token reservation/settlement, curated
 evidence validation, deduplicated scheduler and independent Console panel.
 Unknown provider usage remains held. Human reconciliation and independent
-real-Browser reference/offline acceptance are implemented. Full self-monitoring,
-remaining alert breadth, final host acceptance and Help are unfinished; inspect Evidence, not this inventory,
+real-Browser reference/offline acceptance are implemented. Full scale/performance,
+remaining host/Worker breadth and the final specification audit are unfinished; inspect Evidence, not this inventory,
 before claiming complete platform delivery.
 
 - `packages/contracts`: versioned JSON event/feedback/AI contracts and limits.

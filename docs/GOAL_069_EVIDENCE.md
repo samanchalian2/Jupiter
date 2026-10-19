@@ -4,6 +4,79 @@ Status: IN PROGRESS. Owner-approved plan supersedes the stale GOAL-060 identifie
 in the supplied specification. GOAL-060 Personal Service history is preserved.
 GOAL-059 remains BLOCKED; LOCAL evidence is not staging acceptance.
 
+## 2026-10-19 — LOCAL measured load and Node capture remediation (IN PROGRESS)
+
+This is a measured section-64 checkpoint, not complete performance or production
+capacity acceptance. The new opt-in `OBSERVABILITY_PERFORMANCE_ACCEPTANCE=true`
+case runs FIRST inside the existing disposable PostgreSQL fixture, using normal
+HTTP credential verification, RLS/atomic ingestion and real leased job services.
+It does not migrate or load the configured business DB. Fixture cleanup drops the
+temporary DB; its synthetic App is disabled before other acceptance cases run.
+
+Standalone measured run (1,000 events, 20 actual HTTP batches of 50, concurrency
+two, five synthetic tenant scopes/50 actors, 100 failed operations):
+
+| Measurement | Actual LOCAL result |
+| --- | --- |
+| HTTP ingestion wall time / throughput | 3,133.36 ms / 319.15 events/s |
+| HTTP batch p50 / p95 / max (20 samples) | 293.00 / 414.03 / 447.00 ms |
+| Sequential real worker aggregation (1,000 jobs, claims of 25) | 5,691.74 ms |
+| Aggregation shared Node-process CPU | 1,626 ms user+system |
+| Aggregation RSS before / after | 206,053,376 / 253,005,824 bytes |
+| Aggregation heap before / after | 91,124,752 / 118,451,296 bytes |
+| Actual HTTP dashboard p50 / p95 / max (20 samples) | 30.70 / 42.65 / 46.56 ms |
+| Logical storage sampling (three enabled fixture environments) | 55.51 ms; measured App 753,425 logical bytes |
+| Real retention execution / confirmed old raw events deleted | 32.90 ms / 100 |
+| AI scheduling first / repeat | 30.02 / 8.64 ms; 11 then zero new jobs |
+
+- The dashboard asserts the actual cohort: 1,000 operations and 100 failures.
+  Every batch asserts 50 ACCEPTED ACKs; every aggregation lease settles once.
+  Retention verifies persisted deletion counts. Scheduling uses the existing
+  Investigator service with an in-process provider that must never be called;
+  provider call count is zero. No live GapGPT or customer allowance is consumed.
+- Resource numbers belong to the shared test Node process, not PostgreSQL CPU,
+  a separate production worker, peak memory, retained memory or a leak claim.
+  HTTP timings include local auth/serialization/storage and fixture assertions;
+  aggregation is measured after ingestion, not a concurrent end-to-end arrival
+  latency. No production SLO or user-workflow non-regression follows from these
+  small load results. The focused run has one executed performance case and 81
+  filtered-out cases; those 81 are not counted as executed acceptance.
+- Baseline SDK review found `capture()` serializing every queued event to sum
+  bytes, O(queue length) per call even when saturated. Pending envelopes now
+  retain their encoded byte size with an incremental total, decremented on
+  terminal ACK/retry exhaustion and reset on shutdown. Existing count/byte caps,
+  telemetry, identity, fallback, retry and wire contracts are unchanged; no ADR,
+  entity, migration or API change is involved.
+- `observability/packages/node-sdk/test/performance.ts` records 1,000 capture
+  attempts against a full 500-event queue with no network/provider and a no-op
+  fallback. Before: p50 1.4310 ms, p95 2.1439 ms, max 5.8523 ms, CPU 1,843 ms.
+  After: p50 0.0321 ms, p95 0.0565 ms, max 0.7131 ms, CPU 31 ms. Independent
+  rerun: p50 0.0322 ms, p95 0.0567 ms, max 0.9219 ms, CPU 46 ms. All preserve
+  exactly 500 queued/1,000 dropped. This is a local microbenchmark, not a universal
+  speedup or all-operation overhead estimate. Heap/RSS deltas fluctuate with GC.
+- Added regression coverage for exact byte reclamation after ACCEPTED, DUPLICATE
+  and REJECTED ACKs, retry exhaustion and undelivered shutdown. Existing async
+  identity, fallback, partial ACK and diagnostic transport tests remain required.
+- Still required: measured Browser IndexedDB/full-limit memory behavior, main
+  Jupiter workflow/API overhead, concurrent arrival/aggregation latency and
+  representative larger-scale dashboard/storage sampling cost/fairness/deadline
+  review. The current sampler performs scoped logical-row scans; a 1,000-event
+  fixture does not prove safe scan cost at scale. Real Worker/host breadth,
+  security/final cleanup and the full specification/A–I audit remain active.
+- Repeated within the full release gate: 329.47 events/s, batch p95 366.97ms,
+  aggregation 5,652.73ms, dashboard p95 39.34ms; sampling 59.33ms/753,209 logical
+  bytes, retention 41.51ms/100 events, AI scheduling 28.61ms then 8.83ms with
+  eleven then zero new jobs and zero provider calls. Full gate passes 363 tests
+  (152 API, 30 Web, 181 Hub: 67 SDK/core/adapters, 103 server, 11 Console), all
+  builds/lint/typechecks, actual Edge/Python/C# and 83-migration rehearsal. All
+  optional acceptance flags, including the new performance flag, were enabled.
+  Existing Vite chunk-size advisory remains. Temporary database count is zero;
+  configured monthly budget remains 100,000 and no live AI attempt is active.
+- The verified owned local API process was restarted after that zero-active-
+  attempt preflight to load the rebuilt optimized Node SDK. Its independent
+  health/readiness probe passes and local Web /operations returns 200. No other
+  service or target host was restarted, and existing Help publication remains.
+
 ## 2026-10-19 — Persian Product Help publication and real Jupiter UI (LOCAL)
 
 Section 63's eleven guides now use the existing versioned Help engine. They are

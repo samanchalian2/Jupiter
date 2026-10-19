@@ -18,8 +18,9 @@ Console. Real lost-ACK/reload proves one persisted report; shared Console RTL
 works at four widths. Late-response/context/logout handling has explicit tests.
 This is not a blanket completion claim for all product workflows or the live
 Jupiter shell. Section-63 Help is runtime-published with actual Jupiter operations,
-Platform-panel and Feedback acceptance; the full release gate now passes 360
-tests. Inspect latest Evidence for gates/runtime/remote commit.
+Platform-panel and Feedback acceptance. The measured local performance checkpoint
+and Node hot-path remediation bring the full release gate to 363 tests with the
+performance flag enabled. Inspect latest Evidence for gates/runtime/remote commit.
 
 ### Remaining work — preserve the full original scope
 
@@ -38,9 +39,12 @@ tests. Inspect latest Evidence for gates/runtime/remote commit.
    and Feedback at four widths with full reader bounds. Include this evidence in
    the final audit, recheck content if subsequent functionality changes, and
    retain version history. Do not put credentials in metadata/evidence/screenshots.
-4. Execute the full performance acceptance in specification section 64:
-   SDK overhead, bounded memory/offline volume, batch behavior, aggregation
-   latency, dashboard latency and user-workflow impact. Review bounded logical
+4. Finish full performance acceptance in specification section 64. Preserve the
+   measured disposable-DB 1,000-event HTTP/aggregation/dashboard/retention/AI
+   scheduling checkpoint and Node incremental-byte microbenchmark/regressions.
+   Still measure Browser SDK/full-limit IndexedDB memory/offline behavior,
+   main Jupiter API/workflow overhead and concurrent aggregation latency.
+   Review representative larger-scale bounded logical
    storage-sampling fairness/deadlines/scan cost at scale; small fixtures alone
    do not prove performance. Keep source provenance and unobserved states honest.
 5. Finish security/failure-isolation acceptance (sections 55–58 and 65), full

@@ -3,6 +3,24 @@ import { NodeSdk } from '../src/index.js';
 const app=crypto.randomUUID(),env=crypto.randomUUID();
 const setup=(extra:Partial<ConstructorParameters<typeof NodeSdk>[0]>={})=>new NodeSdk({reportMetrics:false,applicationId:app,environmentId:env,endpoint:'https://hub.example.test/api/v1/observability',credentialProvider:async()=> 'placeholder',fallback:()=>{},...extra});
 describe('Node capture/correlation/failure isolation',()=>{
+  it('reclaims the byte budget after retry exhaustion and undelivered shutdown',async()=>{
+    const time=vi.spyOn(Date,'now').mockReturnValue(Date.now());
+    const capture=(sdk:NodeSdk)=>sdk.capture({category:'BACKEND',severity:'ERROR',eventCode:'bytes.retry',normalizedMessage:'Controlled byte budget'});
+    try{
+      const sdk=setup({maxQueueBytes:400,transport:async()=>new Response('',{status:503})});
+      expect(capture(sdk)).not.toBeNull();expect(capture(sdk)).toBeNull();
+      for(let attempt=0;attempt<12;attempt++){await sdk.flush();time.mockReturnValue(Date.now()+300001);}
+      expect(sdk.stats().queued).toBe(0);expect(capture(sdk)).not.toBeNull();await sdk.shutdown();
+      const stopped=setup({maxQueueBytes:400,credentialProvider:async()=>null});expect(capture(stopped)).not.toBeNull();await stopped.shutdown();
+      stopped.start();expect(capture(stopped)).not.toBeNull();expect(capture(stopped)).toBeNull();await stopped.shutdown();
+    }finally{time.mockRestore();}
+  });
+  it('reclaims exact encoded queue bytes after terminal ACK and shutdown',async()=>{
+    let mode='ACCEPTED';const sdk=setup({maxQueueBytes:800,transport:async(_url,init)=>{const batch=JSON.parse(String(init?.body));return Response.json({schemaVersion:'1.1',acknowledgements:batch.events.map((event:{eventId:string})=>({eventId:event.eventId,status:mode}))});}});
+    const capture=()=>sdk.capture({category:'BACKEND',severity:'ERROR',eventCode:'bytes.test',normalizedMessage:'Controlled byte accounting'});
+    for(const status of ['ACCEPTED','DUPLICATE','REJECTED']){mode=status;expect(capture()).not.toBeNull();expect(capture()).not.toBeNull();expect(capture()).toBeNull();await sdk.flush();expect(sdk.stats().queued).toBe(0);}
+    expect(capture()).not.toBeNull();await sdk.shutdown();sdk.start();expect(capture()).not.toBeNull();await sdk.shutdown();
+  });
   it('bounds metadata retry exhaustion without dropping or charging the retained user event',async()=>{
    const time=vi.spyOn(Date,'now').mockReturnValue(Date.now()),reports:unknown[]=[];const sdk=setup({reportMetrics:true,maxQueueCount:1,transport:async(_url,init)=>{reports.push(JSON.parse(String(init?.body)));return new Response('',{status:503});}});try{sdk.captureException(Error('first'));sdk.captureException(Error('full'));for(let i=0;i<12;i++){await sdk.flushMetrics();time.mockReturnValue(Date.now()+300001);}expect(reports).toHaveLength(12);expect(reports.every(row=>JSON.stringify(row)===JSON.stringify(reports[0]))).toBe(true);expect(sdk.getMetricReport()).toBeUndefined();expect(sdk.stats()).toEqual({queued:1,dropped:1});await sdk.flushMetrics();expect(reports).toHaveLength(12);}finally{time.mockRestore();}
   });
