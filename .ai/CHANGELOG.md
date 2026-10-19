@@ -16,6 +16,9 @@
   Issue and successful next-cycle recovery, plus precise generated DB/role cleanup.
 - No shared business role/data, real AD/provider or target host changes. Separate
   AI/voice/intake Worker/process breadth and final specification audit remain.
+- Fixed composed acceptance fixture cleanup: drain actual retention leases over
+  all 120 added scopes and aggregate target continuation counts, rather than
+  assuming the first 50 jobs contain the measured target. Product policy unchanged.
 
 ## 2026-10-19 — GOAL-069 actual write failure-isolation checkpoint
 

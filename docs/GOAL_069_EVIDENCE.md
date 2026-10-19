@@ -62,6 +62,21 @@ posting a controlled WORKER Event or replacing the services with test doubles.
   settlement/retry/provider behavior; internally caught terminal failures also
   need audit. Remaining broader host/security/analytics and final A–I/47-section
   acceptance are not waived. No target-host promotion or next Goal.
+- Composed full-gate QC found a test-fixture interaction with the new 120-scope
+  sampling load: retention intentionally schedules disabled scopes as well, so
+  processing only the first 50 leases could miss the measured target and leave
+  unrelated fixture leases pending. A full rerun also exposed the producer's
+  separate 100-scope enqueue bound: draining existing leases alone is insufficient
+  if the target was not yet scheduled. The fixture now repeats bounded enqueue
+  and actual processing (100 enqueue/50 claim, at most 20 passes), asserts every
+  environment was scheduled, and asserts the queue drained.
+  It accumulates actual target deletion counts across continuation batches rather
+  than assuming the last maintenance snapshot is the only batch. No production
+  scheduler/retention rule or assertion was weakened. Focused composed rerun
+  passes both performance and later metric-retention acceptance: 100 target raw
+  events deleted, two target batches totaling 53.55ms, fixture queue drained;
+  120 sampling scopes progress 100/20/0 in 1,086.50ms. The initially failed full
+  gate is not reported as passing; a fresh complete gate follows.
 
 ## 2026-10-19 — Actual Jupiter saturated-telemetry write isolation (LOCAL)
 

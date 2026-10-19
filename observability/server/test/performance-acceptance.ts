@@ -55,9 +55,16 @@ export async function performanceAcceptance(database: HubDatabase, registry: Reg
     // The scale-only cohort must not expand later retention/AI measurements.
     await database.control(c=>c.query('UPDATE observability.applications SET enabled=false WHERE id=$1',[samplingApp!]));
     await database.worker(c=>c.query("UPDATE observability.events SET received_at=now()-interval '40 days' WHERE application_id=$1 AND environment_id=$2 AND event_id=ANY($3::uuid[])",[app,env,batches.flat().slice(0,100).map(event=>event.eventId)]));
-    const retention=new RetentionService(database,registry);await retention.enqueue();let retentionMs=0;
-    for(const job of await retention.queue.claim(workerId,50,['RETENTION'])){const started=performance.now();expect(await retention.execute(job,100)).toBe(true);if(job.application_id===app)retentionMs=performance.now()-started;}
-    const retained=await retention.status(root,app,env);expect(retained.last_counts.events).toBe(100);
+    const retention=new RetentionService(database,registry);let retentionMs=0,deletedEvents=0,targetRetentionBatches=0,retentionDrained=false;
+    // Retention deliberately includes disabled scopes too. The 120-scope load
+    // must be really processed, not skipped or left leased for subsequent tests.
+    for(let page=0;page<20;page++){
+      await retention.enqueue(100);
+      const jobs=await retention.queue.claim(workerId,50,['RETENTION']);if(!jobs.length){retentionDrained=true;break;}
+      for(const job of jobs){const started=performance.now();expect(await retention.execute(job,100)).toBe(true);if(job.application_id===app){retentionMs+=performance.now()-started;targetRetentionBatches++;deletedEvents+=Number((await retention.status(root,app,env)).last_counts.events??0);}}
+    }
+    expect(retentionDrained).toBe(true);expect(deletedEvents).toBe(100);
+    const retentionCoverage=await database.worker(async c=>(await c.query("SELECT (SELECT count(*)::int FROM observability.environments) environments,(SELECT count(DISTINCT environment_id)::int FROM observability.jobs WHERE kind='RETENTION') scheduled_scopes")).rows[0]);expect(retentionCoverage.scheduled_scopes).toBe(retentionCoverage.environments);
     let providerCalls=0;const provider:InvestigationProvider={analyze:async()=>{providerCalls++;throw Error('Scheduling must not call provider');}};
     const ai=new InvestigatorService(database,registry,new AesCredentialVault(new Uint8Array(32).fill(7)),provider,{allowedHosts:[],allowLoopback:true});
     await ai.configure(root,app,{enabled:true,externalProcessingAllowed:true,endpoint:'http://127.0.0.1:1/v1',model:'controlled-benchmark',credential:randomUUID(),monthlyTokenBudget:100000,reason:'Disposable scheduling performance fixture'});
@@ -65,6 +72,6 @@ export async function performanceAcceptance(database: HubDatabase, registry: Reg
     const repeatedStart=performance.now(),repeated=await ai.schedule(100),repeatedMs=performance.now()-repeatedStart;
     expect(scheduled.scheduled).toBeGreaterThan(0);expect(repeated.scheduled).toBe(0);expect(providerCalls).toBe(0);
     await concurrentPerformance(database,registry,root,endpoint);
-    console.log(JSON.stringify({event:'observability.local_performance',isolation:'DISPOSABLE_DATABASE',count,batchSize,concurrency,ingestion:{wallMs:ingestMs,eventsPerSecond:count/(ingestMs/1000),batch:summary(batchTimes)},aggregation:{events:aggregated,wallMs:aggregationMs,processCpuMs:(cpu.user+cpu.system)/1000,rssBeforeBytes:memoryBefore.rss,rssAfterBytes:memory.rss,heapBeforeBytes:memoryBefore.heapUsed,heapAfterBytes:memory.heapUsed},dashboard:summary(dashboardTimes),logicalSampling:{wallMs:storageMs,bytes:health.storage.logical_bytes,basis:health.storage.basis,scheduler:{environments:120,first:firstSampling.sampled,second:secondSampling.sampled,third:thirdSampling.sampled,wallMs:samplingMs,deadlineMs:30000}},retention:{wallMs:retentionMs,deletedEvents:retained.last_counts.events},aiScheduling:{wallMs:schedulingMs,scheduled:scheduled.scheduled,repeatedMs,repeatScheduled:repeated.scheduled,providerCalls},limits:'In-process HTTP/service measurements, not PostgreSQL CPU, production SLO, Browser offline or whole-product workflow acceptance.'}));
+    console.log(JSON.stringify({event:'observability.local_performance',isolation:'DISPOSABLE_DATABASE',count,batchSize,concurrency,ingestion:{wallMs:ingestMs,eventsPerSecond:count/(ingestMs/1000),batch:summary(batchTimes)},aggregation:{events:aggregated,wallMs:aggregationMs,processCpuMs:(cpu.user+cpu.system)/1000,rssBeforeBytes:memoryBefore.rss,rssAfterBytes:memory.rss,heapBeforeBytes:memoryBefore.heapUsed,heapAfterBytes:memory.heapUsed},dashboard:summary(dashboardTimes),logicalSampling:{wallMs:storageMs,bytes:health.storage.logical_bytes,basis:health.storage.basis,scheduler:{environments:120,first:firstSampling.sampled,second:secondSampling.sampled,third:thirdSampling.sampled,wallMs:samplingMs,deadlineMs:30000}},retention:{wallMs:retentionMs,deletedEvents,targetBatches:targetRetentionBatches,fixtureQueueDrained:retentionDrained},aiScheduling:{wallMs:schedulingMs,scheduled:scheduled.scheduled,repeatedMs,repeatScheduled:repeated.scheduled,providerCalls},limits:'In-process HTTP/service measurements, not PostgreSQL CPU, production SLO, Browser offline or whole-product workflow acceptance.'}));
   }finally{await database.control(async c=>{if(samplingApp)await c.query('UPDATE observability.applications SET enabled=false WHERE id=$1',[samplingApp]);await c.query('UPDATE observability.applications SET enabled=false WHERE id=$1',[app]);});}
 }

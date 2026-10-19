@@ -39,7 +39,12 @@ latest Evidence for gates/runtime/remote commit.
    safe automation/enumerated-tenant context, sanitized fallback and actual
    lifecycle-cycle tests. Preserve it and include its real-host behavior in the
    remaining cross-domain/final acceptance; do not substitute its focused tests
-   for the full host/workflow audit.
+   for the full host/workflow audit. Real product-service SQL→SDK/HTTP→event/
+   Issue→recovery now has disposable-83-migration integration coverage too.
+   The separate `apps/api/src/jobs/queue.worker.ts` AI/voice/intake drain still
+   logs raw stack on thrown failures and lacks this adapter. Integrate it without
+   changing commercial metering, provider results or retry states, and audit
+   internally caught terminal outcomes and bootstrap/process failure isolation.
 3. Preserve the completed section-63 Help checkpoint: eleven registry-validated
    guides, RUNTIME revision 2, explicit slug-only publication and unchanged
    unrelated Help. Actual Jupiter login/Edge covers operations, Platform panel
