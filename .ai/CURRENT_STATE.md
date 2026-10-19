@@ -1,5 +1,14 @@
 # Current State
 
+**2026-10-19 actual saturated-telemetry write isolation (GOAL-069 IN PROGRESS):**
+The real Ticket controller/actor/service loopback boundary now commits one
+authorized saved-view write under a full 500-item SDK queue. PostgreSQL proves
+exactly one row, telemetry drops once instead of blocking/duplicating the write,
+and exact cleanup runs in `finally`. Actual JWT/membership denial and saturated
+reads remain covered with zero Hub/provider calls. Baseline/observed p95 in this
+local 20-pair sample was 19.12/22.81ms; it is not a production SLO. Browser/full
+host breadth and the final requirement/A–I audit remain active.
+
 **2026-10-19 storage-sampling scale/fairness (GOAL-069 IN PROGRESS):** The
 disposable real PostgreSQL performance acceptance now exercises 120 additional
 environments beyond one sampler claim. Actual progress is 100 then 20 then zero,

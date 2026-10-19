@@ -4,6 +4,23 @@ Status: IN PROGRESS. Owner-approved plan supersedes the stale GOAL-060 identifie
 in the supplied specification. GOAL-060 Personal Service history is preserved.
 GOAL-059 remains BLOCKED; LOCAL evidence is not staging acceptance.
 
+## 2026-10-19 — Actual Jupiter saturated-telemetry write isolation (LOCAL)
+
+- The existing actual `TicketController` / `TicketActorService` /
+  `TicketService` loopback host now exercises a real authorized saved-view write
+  through `HubInterceptor` after filling the normal Node SDK queue to 500.
+  The HTTP write returns 201, PostgreSQL contains exactly one scoped row, and
+  the observer records one additional drop rather than blocking or replaying
+  the business mutation. Cleanup removes the exact fixture row in `finally`.
+- The same run retains actual JWT/profile/membership checks, missing/foreign
+  membership denial, three successful reads under saturated telemetry, zero
+  Hub/provider network calls and response equality between observed/unobserved
+  reads. Twenty alternating measured pairs reported baseline p95 19.12ms and
+  observed p95 22.81ms (a 3.69ms local sample difference).
+- This proves failure isolation and exactly-once effect at an actual Jupiter
+  write boundary. It does not claim full AppModule middleware, Browser UI write
+  latency, PostgreSQL CPU, production cadence or a universal overhead SLO.
+
 ## 2026-10-19 — Bounded storage-sampling scale/fairness (LOCAL)
 
 - The disposable performance acceptance now creates 120 enabled environments

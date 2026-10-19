@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { Controller, Get, Headers, Module } from '@nestjs/common';
+import { Body, Controller, Get, Headers, Module, Post } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import { expect } from 'vitest';
@@ -25,10 +25,12 @@ export async function measureTicketWorkflow(database:DatabaseService,tickets:Tic
  const port={instrumentation:()=>enabled?sdk:undefined,requestContext:(request:Parameters<HubBindingService['requestContext']>[0])=>binding.requestContext(request)} as HubBindingService;
  @Controller('tickets') class MeasuredController {
   @Get('queue') queue(@Headers('authorization') authorization?:string,@Headers('x-organization-id') organization?:string){return controller.queue(undefined!,undefined!,undefined!,undefined!,'recent','1','20',authorization,organization);}
+  @Post('views') saveView(@Body() body:{name:string;filters:object},@Headers('authorization') authorization?:string,@Headers('x-organization-id') organization?:string){return controller.saveView(body,authorization,organization);}
  }
  @Module({controllers:[MeasuredController]}) class MeasuredModule {}
  const app=await NestFactory.create(MeasuredModule,{logger:false});app.useGlobalInterceptors(new HubInterceptor(port));await app.listen(0,'127.0.0.1');
  const url=await app.getUrl(),token=await jwt.signAsync({sub:userId}),headers={authorization:`Bearer ${token}`,'x-organization-id':organizationId};
+ const viewName=`observability-write-${randomUUID()}`;
  const baseline:number[]=[],observed:number[]=[];
  const stats=(values:number[])=>{const sorted=[...values].sort((a,b)=>a-b);return{samples:sorted.length,p50Ms:sorted[9],p95Ms:sorted[18],maxMs:sorted[19]};};
  try{
@@ -45,8 +47,12 @@ export async function measureTicketWorkflow(database:DatabaseService,tickets:Tic
   // Saturated/unavailable telemetry cannot stop the same authorized read path.
   while(sdk.stats().queued<500)sdk.capture({category:'BACKEND',severity:'INFO',eventCode:'fixture.fill',normalizedMessage:'Controlled capacity fill'});
   const dropped=sdk.stats().dropped;for(let index=0;index<3;index++)await read(true);expect(sdk.stats().queued).toBe(500);expect(sdk.stats().dropped).toBe(dropped+3);
+  // An actual authorized write still commits exactly once when telemetry is
+  // saturated. Instrumentation is observational and cannot duplicate effects.
+  enabled=true;const write=await fetch(`${url}/tickets/views`,{method:'POST',headers:{...headers,'content-type':'application/json'},body:JSON.stringify({name:viewName,filters:{status:'OPEN'}})});expect(write.status).toBe(201);
+  const stored=await database.withOrganization(organizationId,c=>c.query<{total:number}>("SELECT count(*)::int total FROM saved_ticket_views WHERE organization_id=$1 AND user_id=$2 AND name=$3",[organizationId,userId,viewName]));expect(stored.rows[0].total).toBe(1);expect(sdk.stats().dropped).toBe(dropped+4);
   // The actual ticket actor service still rejects missing/foreign membership.
   for(const invalidHeaders of [{},{...headers,'x-organization-id':randomUUID()}]){const response=await fetch(`${url}/tickets/queue`,{headers:invalidHeaders});expect(response.status).toBe(401);}
-  console.log(JSON.stringify({event:'observability.local_jupiter_ticket_queue_overhead',baseline:stats(baseline),observed:stats(observed),p95DifferenceMs:stats(observed).p95Ms-stats(baseline).p95Ms,alternatingPairs:20,identicalBusinessResponses:true,realJwtAndMembership:true,saturatedTelemetryReads:3,deniedInvalidMembership:true,hubNetworkCalls:networkCalls,limits:'LOCAL ephemeral Nest HTTP wrapper invoking actual TicketController/Actor/Service and HubInterceptor/identity resolver; existing fixture tenant. SDK queue only/no timer or flush/provider. Not full AppModule middleware, production cadence, Browser shell, write lifecycle, PostgreSQL CPU or production SLO.'}));
- }finally{await sdk.shutdown();await app.close();}
+  console.log(JSON.stringify({event:'observability.local_jupiter_ticket_queue_overhead',baseline:stats(baseline),observed:stats(observed),p95DifferenceMs:stats(observed).p95Ms-stats(baseline).p95Ms,alternatingPairs:20,identicalBusinessResponses:true,realJwtAndMembership:true,saturatedTelemetryReads:3,saturatedTelemetryWriteCommittedOnce:true,deniedInvalidMembership:true,hubNetworkCalls:networkCalls,limits:'LOCAL ephemeral Nest HTTP wrapper invoking actual TicketController/Actor/Service and HubInterceptor/identity resolver; existing fixture tenant. SDK queue only/no timer or flush/provider. Not full AppModule middleware, production cadence, Browser shell, PostgreSQL CPU or production SLO.'}));
+ }finally{await database.withOrganization(organizationId,c=>c.query('DELETE FROM saved_ticket_views WHERE organization_id=$1 AND user_id=$2 AND name=$3',[organizationId,userId,viewName]));await sdk.shutdown();await app.close();}
 }

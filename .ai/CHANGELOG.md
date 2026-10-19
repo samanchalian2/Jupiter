@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-10-19 — GOAL-069 actual write failure-isolation checkpoint
+
+- Extended the actual Ticket controller/actor/service host measurement with an
+  authorized saved-view write while the SDK queue is full.
+- Verified HTTP 201, exactly one scoped database effect, one telemetry drop,
+  zero Hub/provider calls and exact fixture cleanup. Instrumentation cannot
+  block or duplicate this tested Jupiter write boundary.
+
 ## 2026-10-19 — GOAL-069 bounded storage-sampling checkpoint
 
 - Extended disposable performance acceptance to 120 additional environments,
