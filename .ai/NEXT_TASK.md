@@ -37,7 +37,10 @@ Failed earlier runs retained; exact old fixture line restored, whole-cohort
 fixtures now explicitly bound by DB-observed24h window plus real500us boundary
 test. Counts unchanged, no product clock change or proven production race claim.
 Cleanup:83 migrations,zero temporary DBs/active attempts,unchanged enabled100000
-budget; shared hosts stopped. Commit/push this scoped checkpoint, then prioritize
+budget; shared hosts stopped. Implementation checkpoint
+95da688e74d79c96f673bb5954f1ddad78477694 pushed and origin/main SHA verified.
+No Goal code remains uncommitted; preserve unrelated gateway LF-only/training
+prompt edits and untracked output/tmp. Next prioritize
 A10 fresh-note boundary/actual embedded Platform reload before declaring A07
 accepted, plus A08/A09 and complete original requirement/Evidence audit.
 
