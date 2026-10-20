@@ -1,5 +1,14 @@
 # Jupiter Design System V2
 
+DEC-055 keeps own identity in compact read-only header details and grant/key
+controls in lazily opened existing Applications details, not new navigation.
+Preserve expanded subforms across metadata refresh while clearing one-time secret
+on dismissal/context/unmount. Fixed localized error messages explain manual
+duplicate/managed/expired cases; uncertain key result never implies rollback.
+Tables have 560px inner-scroll minimum for readable labels on narrow RTL screens;
+document overflow is forbidden. Key field is masked by default, explicit reveal
+and dismiss only, no auto-copy/download. Existing palette/weights remain unchanged.
+
 DEC-054 policy editing stays inside existing Application management with the
 same semantic colors. Source checkboxes have 44px labels; category percentages
 use a responsive grid, no new navigation/card/wizard. Persian impact text names

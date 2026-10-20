@@ -1,5 +1,13 @@
 # Domain Model
 
+DEC-055 exposes the existing Principal/AccessGrant/Credential model, not a new
+identity service. Manual access references an already verified active principal
+and explicit App/optional environment/tenant; null tenant means all tenants,
+not tenant-free-only. managed_by grants remain host-owned. Integration metadata
+selects parentless mint-capable all-tenant SERVER keys only, excluding sessions.
+Rotation creates a new hashed key and revokes the old row atomically with Audit;
+revocation/history remain persistent. Current identity projection adds no grant.
+
 DEC-054 uses Application.policy.ingestion (version 1) for enabled event sources
 and complete per-category integer sampling basis points (0–10000). Absent legacy
 member resolves to all sources/full rates; other policy members are preserved.

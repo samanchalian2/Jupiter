@@ -39,13 +39,13 @@ export class HubHttpApi {
   private body(request:HubHttpRequest){if(!isRecord(request.body))throw new ContractError('INVALID_REQUEST');return request.body;}
   async dispatch(request:HubHttpRequest):Promise<HubHttpResponse>{
     const origin=request.origin;
-    let headers:Record<string,string>={};
+    let headers:Record<string,string>={'Cache-Control':'no-store'};
     if(origin){
       let allowed=false;try{allowed=Boolean(await this.database.control(async c=>(await c.query('SELECT 1 FROM observability.applications WHERE enabled=true AND $1=ANY(allowed_origins) LIMIT 1',[origin])).rowCount));}catch{/* Data routes will return their own safe failure. */}
-      if(allowed)headers={'Access-Control-Allow-Origin':origin,Vary:'Origin','Access-Control-Allow-Headers':'authorization,content-type,x-request-id,traceparent,idempotency-key,x-observability-application-id,x-observability-environment-id','Access-Control-Allow-Methods':'GET,POST,PUT,OPTIONS','Access-Control-Max-Age':'300'};
+      if(allowed)headers={...headers,'Access-Control-Allow-Origin':origin,Vary:'Origin','Access-Control-Allow-Headers':'authorization,content-type,x-request-id,traceparent,idempotency-key,x-observability-application-id,x-observability-environment-id','Access-Control-Allow-Methods':'GET,POST,PUT,OPTIONS','Access-Control-Max-Age':'300'};
       if(request.method==='OPTIONS')return{status:allowed?204:403,body:allowed?null:{reasonCode:'ORIGIN_DENIED'},headers};
     }
-    const result=await this.execute(request);return{...result,headers:{...headers,...result.headers}};
+    const result=await this.execute(request);return{...result,headers:{...headers,...result.headers,'Cache-Control':'no-store'}};
   }
   private async execute(request:HubHttpRequest):Promise<HubHttpResponse>{
     try{
@@ -88,7 +88,8 @@ export class HubHttpApi {
       if(!path.startsWith('/operations/'))return{status:404,body:{reasonCode:'NOT_FOUND'}};
       let verified:VerifiedPrincipal;try{verified=await this.identities.verify(token);}catch{throw new ContractError('AUTHENTICATION_REQUIRED');}
       const principalId=await this.registry.principal(verified);
-      if(!this.operationsLimiter.allow(principalId))return{status:429,body:{reasonCode:'OPERATIONS_RATE_LIMIT'}};
+      if(!this.operationsLimiter.allow(principalId))return{status:429,body:{reasonCode:'OPERATIONS_RATE_LIMIT'},headers:{'Retry-After':'60'}};
+      if(path==='/operations/identity'&&request.method==='GET'){if(url.searchParams.size)throw new ContractError('INVALID_QUERY');return{status:200,body:await this.database.control(async c=>{const current=(await c.query('SELECT id AS "principalId",display_name AS "displayName" FROM observability.principals WHERE id=$1 AND active=true',[principalId])).rows[0];if(!current)throw new ContractError('OPERATIONAL_ACCESS_DENIED');return current;})};}
       if(path==='/operations/analytics/products'&&request.method==='POST'){
         const body=this.body(request);if(url.searchParams.size||Object.keys(body).some(key=>!['targets','from','to','q','severity','category','release'].includes(key)))throw new ContractError('INVALID_QUERY');
         const {targets,...filter}=body;return{status:200,body:await new OperationsService(this.database,this.registry).compareProducts(principalId,targets as OperationScope[],filter as QueryFilter)};
@@ -130,6 +131,10 @@ export class HubHttpApi {
        if(request.method==='POST'&&aiRoute[2]==='investigations'){const body=this.body(request);if(Object.keys(body).some(k=>!['environmentId','tenantReference','kind','targetReference','idempotencyKey'].includes(k))||!isUuid(body.environmentId)||typeof body.idempotencyKey!=='string'||typeof body.kind!=='string')throw new ContractError('INVALID_INVESTIGATION_REQUEST');return{status:201,body:await this.investigator.request(principalId,{applicationId:aiRoute[1],environmentId:body.environmentId,tenantReference:body.tenantReference as string|null|undefined},body.kind as 'ISSUE',body.targetReference as string|null??null,body.idempotencyKey)};}
       }
       const configurationRoute=/^\/operations\/applications\/([0-9a-f-]{36})\/origins$/.exec(path);
+      const accessRoute=/^\/operations\/applications\/([0-9a-f-]{36})\/access-grants(?:\/([0-9a-f-]{36})\/revoke)?$/.exec(path);
+      if(accessRoute){if(request.method==='GET'&&!accessRoute[2]){if([...url.searchParams.keys()].some(key=>key!=='page'||url.searchParams.getAll(key).length!==1))throw new ContractError('INVALID_QUERY');return{status:200,body:await this.registry.accessGrants(principalId,accessRoute[1],url.searchParams.has('page')?Number(url.searchParams.get('page')):1)};}if(request.method==='POST'){if(url.searchParams.size)throw new ContractError('INVALID_QUERY');const body=this.body(request);if(accessRoute[2]){if(Object.keys(body).some(key=>key!=='reason'))throw new ContractError('INVALID_GRANT');return{status:200,body:await this.registry.revokeManagedAccess(principalId,accessRoute[1],accessRoute[2],body.reason as string)};}if(Object.keys(body).some(key=>!['targetPrincipalId','role','environmentId','tenantReference','reason'].includes(key)))throw new ContractError('INVALID_GRANT');return{status:201,body:await this.registry.assignAccess(principalId,accessRoute[1],body as never)};}}
+      const credentialCommand=/^\/operations\/applications\/([0-9a-f-]{36})\/credentials\/([0-9a-f-]{36})\/(rotate|revoke)$/.exec(path);
+      if(credentialCommand&&request.method==='POST'){if(url.searchParams.size)throw new ContractError('INVALID_QUERY');const body=this.body(request);if(Object.keys(body).some(key=>key!=='reason'))throw new ContractError('INVALID_CREDENTIAL_REQUEST');return{status:200,body:await this.registry.manageIntegrationCredential(principalId,credentialCommand[1],credentialCommand[2],credentialCommand[3]==='rotate'?'ROTATE':'REVOKE',body.reason as string)};}
       const ingestionPolicyRoute=/^\/operations\/applications\/([0-9a-f-]{36})\/ingestion-policy$/.exec(path);
       if(ingestionPolicyRoute){if(url.searchParams.size)throw new ContractError('INVALID_QUERY');if(request.method==='GET')return{status:200,body:await this.registry.ingestionPolicy(principalId,ingestionPolicyRoute[1])};if(request.method==='PUT'){const body=this.body(request);if(Object.keys(body).some(key=>!['policy','reason'].includes(key)))throw new ContractError('INVALID_INGESTION_POLICY');return{status:200,body:await this.registry.configureIngestionPolicy(principalId,ingestionPolicyRoute[1],body.policy,body.reason as string)};}}
       const applicationConfiguration=/^\/operations\/applications\/([0-9a-f-]{36})\/configuration$/.exec(path);
@@ -173,6 +178,7 @@ export class HubHttpApi {
       const match=/^\/operations\/applications\/([0-9a-f-]{36})\/(environments|credentials)$/.exec(path);
       if(match&&isUuid(match[1])){
         const appId=match[1];
+        if(request.method==='GET'&&match[2]==='credentials'){if([...url.searchParams.keys()].some(key=>key!=='page'||url.searchParams.getAll(key).length!==1))throw new ContractError('INVALID_QUERY');return{status:200,body:await this.registry.integrationCredentials(principalId,appId,url.searchParams.has('page')?Number(url.searchParams.get('page')):1)};}
         if(request.method==='GET'&&match[2]==='environments')return{status:200,body:await this.database.control(async c=>{const all=await this.registry.isSuperAdmin(c,principalId);return(await c.query(`SELECT e.id,e.key,e.kind,e.enabled FROM observability.environments e WHERE e.application_id=$1 AND ($2::boolean OR EXISTS(SELECT 1 FROM observability.access_grants g JOIN observability.principals p ON p.id=g.principal_id WHERE g.application_id=e.application_id AND g.principal_id=$3 AND p.active=true AND g.revoked_at IS NULL AND (g.environment_id IS NULL OR g.environment_id=e.id))) ORDER BY e.key`,[appId,all,principalId])).rows;})};
         if(request.method==='POST'&&match[2]==='environments'){const body=this.body(request);if(Object.keys(body).some(k=>!['key','kind'].includes(k))||typeof body.key!=='string'||typeof body.kind!=='string')throw new ContractError('INVALID_ENVIRONMENT');return{status:201,body:await this.registry.createEnvironment(principalId,appId,{key:body.key,kind:body.kind as 'DEVELOPMENT'})};}
         if(request.method==='POST'&&match[2]==='credentials'){const body=this.body(request);if(Object.keys(body).some(k=>!['environmentId','reason'].includes(k))||!isUuid(body.environmentId)||typeof body.reason!=='string')throw new ContractError('INVALID_CREDENTIAL_REQUEST');return{status:201,body:await this.registry.issueServerCredential(principalId,appId,body.environmentId,body.reason)};}

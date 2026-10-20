@@ -1,5 +1,19 @@
 # Business Rules
 
+## Supported access and integration key management (DEC-055)
+
+- Whole-App ADMIN/Super Admin manage manual grants and integration keys; scoped
+  ADMIN cannot widen authority through these commands or list other Apps.
+- Current active verified identity can read its own UUID/name without App access.
+  Assignment is explicit; duplicate active manual scope is not a silent role edit.
+- Host-managed grants are read-only here. Manual revocation is append-only in
+  history and repeat-safe; self-revoke may require Super Admin recovery.
+- Rotation requires an active integration key and enabled App/environment;
+  preserves scope/permissions, revokes old parent and invalidates Browser children.
+- Expired/disabled keys remain revocable. Failed Audit rolls back grant/key writes.
+- Only initial issue/rotation returns a secret once; safe lists never return one.
+  Uncertain network results require metadata reconciliation, not automatic retries.
+
 ## Console command context (GOAL-069)
 
 - A committed command belongs to its original authorized target; switching scope

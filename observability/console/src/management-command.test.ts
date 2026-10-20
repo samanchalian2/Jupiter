@@ -1,0 +1,7 @@
+import {describe,it,expect} from 'vitest';
+import {managementCommandResult,ManagementCommandFailure} from './management-command.js';
+describe('safe management command result',()=>{
+ it('maps only fixed safe reasons and never displays provider/SQL/raw body',async()=>{await expect(managementCommandResult(Response.json({reasonCode:'ACTIVE_GRANT_CONFLICT'},{status:400}),false)).rejects.toBeInstanceOf(ManagementCommandFailure);const raw='Synthetic internal detail';try{await managementCommandResult(Response.json({reasonCode:raw,message:raw},{status:503}),true);}catch(error){expect((error as Error).message).toBe('MANAGEMENT_RESULT_UNCONFIRMED');expect((error as Error).message.includes(raw)).toBe(false);}});
+ it('requires a complete bounded fresh-secret response, never an ambiguous success',async()=>{for(const body of [{},{token:1},{token:'x'.repeat(257)},{token:'x'.repeat(64),credentialId:'invalid',expiresAt:'invalid'}])await expect(managementCommandResult(Response.json(body),true)).rejects.toThrow('MANAGEMENT_RESULT_UNCONFIRMED');const value=await managementCommandResult(Response.json({token:'x'.repeat(64),credentialId:'00000000-0000-4000-8000-000000000001',expiresAt:'2026-12-01T00:00:00Z'}),true);expect(Boolean(value&&value.token.length===64)).toBe(true);});
+ it('does not promote unexpected tokens on non-secret commands',async()=>{expect(await managementCommandResult(Response.json({revoked:true,token:'x'.repeat(64)}),false)).toBeNull();});
+});

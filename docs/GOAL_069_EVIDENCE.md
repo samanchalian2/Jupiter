@@ -4,6 +4,94 @@ Status: IN PROGRESS. Owner-approved plan supersedes the stale GOAL-060 identifie
 in the supplied specification. GOAL-060 Personal Service history is preserved.
 GOAL-059 remains BLOCKED; LOCAL evidence is not staging acceptance.
 
+## 2026-10-20 — Supported access and integration credential management / DEC-055
+
+- Existing Registry now exposes six whole-App ADMIN management operations plus
+  safe current-principal identity (60 total executable OpenAPI operations). Exact
+  existing active generic principal reference, explicit App/environment/tenant,
+  role/reason, no implicit Jupiter membership. Self identity returns no issuer/
+  subject/global directory and grants no discovery. Unassigned verified user
+  gets their own reference, empty Apps and management denial; explicit assignment
+  then revoke changes actual discovery without bypassing membership/grants.
+- Manual grants and server integration metadata are paged (50/page, pages 1–400),
+  same-App only, newest-first. No secret/hash, Browser/host short-lived keys,
+  raw identity claims or arbitrary principal search. Managed host grants are
+  read-only in this management path. Active duplicate manual scope is rejected
+  with a fixed safe reason, never overwritten. Revoke preserves history, repeats
+  without second Audit, and current revoked admin cannot continue management.
+- Integration rotation locks the old scoped record, preserves its permissions,
+  issues one 90-day replacement, revokes the old key and Audits the real actor
+  atomically. Expired/revoked/disabled rotation denied; revoke remains possible.
+  Parent validation invalidates old Browser children. Six management paths do
+  not expose bootstrap/global role administration or require migration.
+- Three real SQL/HTTP fixtures pass self-reference/no-authority, whole-App versus
+  environment/tenant ADMIN, cross-App/FK/managed/active/duplicate/current-grant
+  boundaries, safe lists/pages and five actor-bearing access/key operations.
+  Concurrent rotation has one 200/one inactive 400 and one replacement; repeat
+  revoke has one Audit. Temporary Audit-rejection triggers prove grant creation,
+  key rotation AND revoke roll back with old key still valid/no extra key. Test
+  triggers/functions are removed in finally; all data in disposable DBs.
+- Complete actual HTTP/OpenAPI traversal includes all 60 operations; focused
+  traversal/schema/typechecks pass. Three Console result-parser tests whitelist
+  localized safe reasons, reject incomplete/unbounded fresh-secret success and
+  never promote raw SQL/provider bodies or unexpected non-secret-command tokens.
+- Persian RTL controls stay inside existing Applications navigation. Existing
+  verified user can read their own reference in compact header details. Access
+  forms default VIEWER, explain all-environments/all-tenants semantics and require
+  safe reason/impact confirmation. Host-managed grants stay visibly read-only.
+  Key issue/rotate returns a one-time in-memory value, masked by default, explicit
+  reveal/dismiss, no auto-copy/download/storage/retry. Failed/uncertain results
+  prompt safe-list reconciliation rather than promising rollback.
+- Native actual UI assigns a scoped VIEWER, verifies data scope then revokes;
+  issues/rotates/revokes integration keys, proves old parent/child invalidation,
+  five actual actor Audits, no secret readback, explicit dismissal. A held real
+  successful secret response is released after switching App: no stale secret
+  appears. Real issue commits then transport aborts: one request, uncertain notice,
+  safe metadata refresh and explicit UI revoke. Secrets never appear in assertion
+  output/screenshots/logs; screenshots occur only after secret dismissal.
+- QC: refresh initially remounted closed details; controlled expansion now
+  preserves the workflow. Eager repeated environment fetches exhausted the real
+  120/minute operator window in the compressed all-in-one Browser journey. Panel
+  now loads lazily and reuses known parent environments; test waits to the real
+  fixed-window boundary before the next admin journey. Limit/clock/counters are
+  NOT weakened/reset. 429 now includes Retry-After=60. Actual pacing is recorded.
+- Mobile visual review found cramped table labels; scoped 560px inner-table
+  minimum width fixes them without document overflow/new palette/cards. Native
+  four-width expanded-panel RTL/no-overflow and 375 inner-scroll assertions pass;
+  375/1440 safe panel screenshots generated and visually reviewed. Final-source
+  full gate includes the same four-width checks and native workflow passes.
+- QC found generic Node handler sent no-store but Nest adapter did not inherit
+  that header. Generic dispatch now enforces no-store (including safe errors),
+  dedicated Nest Browser mint explicitly does so. Actual compiled host assertions
+  for integration and Browser issuance added; no body/authentication weakening.
+- Applications Help source updated with self-reference, scope, managed grant,
+  one-time key, parent invalidation and uncertain-result reconciliation. Runtime
+  publication now completed through the supported LOCAL utility: 0 created,
+  1 revised. Public-audience ProductHelpService readback resolves v5 and confirms
+  own identity/managed grant/masked key/uncertain-result explanations, no secret
+  or raw article body logged. Shared HTTP host remains stopped; not a live Help
+  Browser claim. Serial final-source repeat completed in exec 39406 with durable
+  output/goal069-management-final-release.log, exit 0. No overlapping package
+  build/native fixture during this final repeat.
+- First broad gate exits 1, not a full pass: all 93 persistence cases including
+  final management/self-reference/late/uncertain/four-width Browser passed, but
+  the old negative OpenAPI test still forbade the substring "grants". Its scope
+  predated DEC-055. Updated it to require the seven implemented management/self
+  identity operations and still forbid bootstrap/global-grants/super-admin/
+  transfer/future self-monitor routes. Actual full HTTP traversal already covers
+  those new operations. Entire five-test OpenAPI suite and full serial gate
+  repeated successfully. No assertions removed to hide an unimplemented endpoint.
+- Final verification: 462 tests = 179 API + 40 Web + 243 Hub (99 SDK/core/adapters,
+  121 server, 23 Console); all build/lint/typechecks, clean migration rehearsal,
+  actual compiled-host/native/reference/performance acceptance and fetch/React
+  standalone isolation scripts pass. Final marker
+  GOAL069_MANAGEMENT_FINAL_RELEASE_EXIT=0. Post-gate safe LOCAL SQL readback:
+  83 migrations, zero temporary DBs and RESERVED AI attempts, enabled monthly
+  combined-token budget 100000. No external provider invocation in this checkpoint.
+- A01 complete inventory acceptance and A07/full original specification audit
+  remain open. No live Jupiter key, customer capacity, provider, external tenant
+  or target host changed. Shared local hosts remain stopped.
+
 ## 2026-10-20 — Console mutation completion context (LOCAL)
 
 - Existing `saveRule` awaited PUT then unconditionally set notice/refresh/error/

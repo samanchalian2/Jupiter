@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-10-20 — GOAL-069 supported App access/integration key controls (IN PROGRESS)
+
+- DEC-055 adds six whole-App ADMIN operations and own identity to Registry (60 total),
+  safe paged projections, explicit scope/active identity, immutable history/Audit,
+  host-managed protection and atomic integration rotation/revocation.
+- Three real SQL/HTTP fixtures/full contract traversal pass; native core grant/key
+  workflow passes but refresh-details and eager request amplification required
+  remediation. Final-source serial LOCAL gate passes 462 tests, build/lint/typecheck,
+  native/reference/performance/migration and both fault scripts. First broad run
+  failed stale negative OpenAPI assertion; corrected explicitly and fully rerun.
+- One-time masked in-memory key; lazy compact Console, no auto-copy/retry/storage.
+  Generic dispatch and dedicated Nest Browser mint now enforce no-store; actual
+  host assertions added. No live credentials or target hosts changed.
+- Help v5 published/read through supported local service. Cleanup: 83 migrations,
+  no temporary DBs/active AI attempts, enabled 100000 budget unchanged; shared
+  hosts stopped. A01 full inventory/A07/full scope audit remain, Goal IN PROGRESS.
+
 ## 2026-10-20 — GOAL-069 Console command completion isolation (IN PROGRESS)
 
 - Actual delayed committed rule PUT reproduced an old-App success notice in the

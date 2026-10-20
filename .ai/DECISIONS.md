@@ -1,5 +1,52 @@
 # Architecture Decisions
 
+## DEC-055 — Supported Application access and integration credential management
+
+GOAL-069 section 8 extends the existing Registry, not a parallel identity/key
+service. New public App-management reads/commands require current whole-App ADMIN
+or Hub Super Admin; scoped ADMIN cannot use them to manage broader scopes.
+Existing issue-server-credential API retains its environment ADMIN compatibility.
+GET `/operations/identity` returns only the current active verified principal UUID
+and display name, so a user can share their own exact reference with an App admin
+without SQL or global principal search. It grants no App/tenant access and returns
+no issuer/subject/email. The Console displays it read-only in a compact details
+control, including when the account has no visible Applications.
+
+GET/POST `/operations/applications/{id}/access-grants` lists bounded paged grants
+and assigns a role to an exact already verified active generic principal UUID;
+no public identity creation, cross-App user enumeration or credential lookup.
+Optional environment must belong to the App; absent environment covers the App.
+Absent/null tenant covers all tenants within that environment/App, as in the
+existing grant model; it does NOT mean tenant-free-only. Existing grant principals
+are displayed with names. New target UUID must come from trusted host identity
+administration, not a Jupiter membership assumption. Duplicate active manual
+scope returns a fixed conflict code, never raw SQL. Role changes are explicit
+revoke/new-grant, not silently overwritten history. POST `access-grants/{id}/revoke`
+preserves the record/Audit, is repeat-safe and cannot alter managed_by grants;
+those remain owned by the trusted host mapping. Self-revocation is explicit and
+may remove the operator's access; Hub Super Admin remains the recovery authority.
+
+GET `credentials` lists only server integration credentials with mint permission,
+parent NULL and no actor/tenant reference, tenant_all=true, with bounded paging;
+no token/hash, Browser/session or host short-lived credential list is exposed.
+POST `credentials/{id}/rotate` and `/revoke` require whole-App ADMIN and exact
+composite integration target. Rotation rejects expired/revoked credentials and
+disabled App/environment, locks the old row and atomically revokes it, issues a
+90-day replacement with the same integration permissions and Audits the real
+actor. Revocation stays possible while disabled/expired, repeats without a second
+Audit, and invalidates old Browser children through existing parent checks.
+Credentials are hashes only in DB. Issuance/rotation responses alone include the
+new token once; never list/readback/log/Audit/Help or browser persistent storage.
+
+The existing Console Applications section hosts compact reason/impact-confirmed
+forms. A new token lives only in component memory until explicit dismissal,
+App change/unmount; no auto-copy/download or automatic retry of a secret command.
+An uncertain network result is NOT proof of rollback: refresh safe metadata and
+reconcile/revoke before issuing another token. Obsolete response secrets are
+discarded, not rendered in another scope. Current-grant validation, FK isolation,
+atomic Audit and existing no-store HTTP boundary remain mandatory. No migration,
+global role/grant management, external user provisioning or commercial changes.
+
 ## DEC-054 — Effective Application ingestion/sampling policy (GOAL-069)
 
 The existing bounded Application policy JSON owns a version-1 `ingestion` member;

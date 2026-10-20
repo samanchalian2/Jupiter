@@ -2,6 +2,21 @@
 
 ## GOAL-069 Observability Hub
 
+DEC-055 public management requires current whole-App ADMIN and exact composite
+targets; tenant/env ADMIN cannot manage broader grants or integration metadata.
+Existing environment-scoped issuance compatibility is unchanged. Active generic
+principal reference is explicit; current-user identity returns only its UUID/name,
+never issuer/subject, directory or implicit App authority. Host-managed grants
+cannot be revoked through manual controls. Safe lists exclude token/hash/session
+credentials. Rotation/revoke and actor Audit commit atomically; concurrency,
+expired/disabled targets and current revocation are covered by real fixtures.
+New token is one-time, masked/in-memory only; context/dismissal clears it, stale
+responses are discarded. Unknown network outcomes must not auto-retry. Generic
+dispatch and dedicated Nest Browser mint enforce no-store, including errors.
+Only fixed reason messages may be displayed; raw response/provider/SQL bodies
+never reach operator text. Test secrets use boolean assertions and no screenshots
+while visible. Live integration credentials/roles are not changed for acceptance.
+
 Console command completion now verifies the current client/App/environment/
 section/filter identity and latest command before UI state/download/selection
 side effects. Detail mutations additionally require the same opened detail.

@@ -4,7 +4,7 @@
 
 The entire approved objective remains active. Source of truth:
 `docs/GOAL_069_SPECIFICATION.md` (all sections and A–I Definition of Done),
-`docs/GOAL_069_EVIDENCE.md`, current state and DEC-038 through DEC-054.
+`docs/GOAL_069_EVIDENCE.md`, current state and DEC-038 through DEC-055.
 Historical GOAL-060 Personal Service is not renamed. Do not start another Goal.
 
 ### Latest implementation boundary
@@ -20,11 +20,25 @@ This is not a blanket completion claim for all product workflows or the live
 Jupiter shell. Section-63 Help is runtime-published with actual Jupiter operations,
 Platform-panel and Feedback acceptance. The measured local performance checkpoint
 and Node hot-path remediation plus full-limit Browser/batch/redaction QC bring
-the full release gate to 456 tests with native command-completion context isolation, enforced ingestion/sampling policy, audited Registry configuration, complete Overview/four-width/keyboard acceptance, named recovery triggers/native no-start acceptance, configurable rule cadence/actual worker, configurable retention/native expiry, actual authenticated Web/AppModule, React/fetch failure isolation, data-write/diagnostic-checkpoint isolation/real quota, explicit product comparison, scoped analytics, real queued provider failure/metering and concurrent/product-read boundary
+the full release gate to 462 tests with supported Registry access/credential management, native command-completion context isolation, enforced ingestion/sampling policy, audited Registry configuration, complete Overview/four-width/keyboard acceptance, named recovery triggers/native no-start acceptance, configurable rule cadence/actual worker, configurable retention/native expiry, actual authenticated Web/AppModule, React/fetch failure isolation, data-write/diagnostic-checkpoint isolation/real quota, explicit product comparison, scoped analytics, real queued provider failure/metering and concurrent/product-read boundary
 measurements and the performance flag enabled. Inspect
 latest Evidence for gates/runtime/remote commit.
 
 ### Remaining work — preserve the full original scope
+
+Active DEC-055: supported Registry access/credential/self-identity APIs (60
+operations) and Persian Console implemented; three SQL/HTTP fixtures + complete
+contract traversal pass. Focused native core/late-secret/uncertain-result/explicit
+revoke/four-width/internal-scroll passes. Safe result parser three unit cases,
+key/grant Audit rollback, expired/managed/scoped/current actor checks pass.
+Generic/Nest no-store assertions pass. Serial final-source full gate completed:
+output/goal069-management-final-release.log ends
+GOAL069_MANAGEMENT_FINAL_RELEASE_EXIT=0; 462 tests, builds/lint/typechecks,
+native/reference/performance/migration and both fault scripts pass.
+Applications Help v5 published/read locally. Cleanup readback: 83 migrations,
+zero temporary DBs/active AI attempts, enabled 100000 budget unchanged. Shared
+3000/5174 stopped. A01 still needs complete inventory acceptance; A07/full audit
+remain. Do not infer whole-Goal completion or deploy to Preview/main.
 
 Console mutation-context audit has a verified real-HTTP red reproduction and
 initial native green fix, four command-ownership unit cases. Expanded native

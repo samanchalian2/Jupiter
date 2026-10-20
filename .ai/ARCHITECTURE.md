@@ -1,5 +1,12 @@
 # System Architecture
 
+DEC-055 adds supported access/integration credential commands and safe own-
+identity projection to the existing generic Registry/HTTP/Console boundaries.
+No migration, external identity creation or business import; host-owned mappings
+remain distinct. Current whole-App grants authorize management; safe lists and
+one-time secret responses are separate. All generic dispatch adapters now inherit
+the no-store header rather than relying solely on Node handler policy.
+
 DEC-054 keeps effective ingestion/sampling in the existing generic Registry and
 IngestionService. The bounded Application policy JSON supplies a versioned source
 allowlist/category basis points; public operations use the same verified generic

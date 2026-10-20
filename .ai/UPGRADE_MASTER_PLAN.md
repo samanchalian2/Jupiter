@@ -2,6 +2,12 @@
 
 ## GOAL-069 — Observability Hub continuation (IN PROGRESS)
 
+DEC-055 access/key/self-reference API/Console implemented (60 operations), real
+SQL/HTTP/focused native workflows pass including late secret/uncertain result.
+Serial final-source LOCAL 462-test gate, builds/lint/typechecks, migration/native/
+reference/performance and both fault scripts pass; Help v5 published/read locally.
+Cleanup verified, shared hosts stopped; A01 inventory/A07/full audit open.
+
 Console old-context mutation notice reproduced with real committed PUT, then
 initial native green/four unit cases after UI-only completion ownership guards.
 Expanded native rule/400/CSV/create/detail-close passes. Serial final-source LOCAL

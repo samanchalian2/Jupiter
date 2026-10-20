@@ -65,7 +65,7 @@ describe('actual compiled Jupiter main/AppModule process',()=>{
   const operator=await login('admin@host.invalid');
   try{
    const configured=await fetch(`${base}/observability/operations/applications/${appId}/rules`,{method:'PUT',headers:{authorization:`Bearer ${operator.token}`,'content-type':'application/json'},body:JSON.stringify({code:'CRITICAL_EVENT',enabled:true,threshold:1,minimum_samples:1,window_seconds:60,cooldown_seconds:60,reason:'Disposable actual worker cadence acceptance'})});expect(configured.status).toBe(200);
-   const credential=await call(`/observability/operations/applications/${appId}/credentials`,operator.token,{environmentId,reason:'Disposable cadence test ingestion'});expect(credential.status).toBe(201);const server=(await credential.json()).token as string;
+   const credential=await call(`/observability/operations/applications/${appId}/credentials`,operator.token,{environmentId,reason:'Disposable cadence test ingestion'});expect(credential.status).toBe(201);expect(credential.headers.get('cache-control')).toBe('no-store');const server=(await credential.json()).token as string;
    const times:number[]=[];
    for(const cohort of ['first','second']){
     const id=randomUUID(),response=await call('/observability/events/batch',server,{events:[{schemaVersion:'1.1',eventId:id,applicationId:appId,environmentId,occurredAt:new Date().toISOString(),category:'WORKER',source:'WORKER',severity:'CRITICAL',eventCode:`fixture.cadence.${cohort}`,normalizedMessage:`Synthetic ${cohort} cadence failure`,tenantReference:org}]});expect(response.status).toBe(200);expect((await response.json()).acknowledgements).toEqual([{eventId:id,status:'ACCEPTED'}]);
@@ -90,7 +90,7 @@ describe('actual compiled Jupiter main/AppModule process',()=>{
   expect((await call('/tickets/queue',operator.token,undefined,org)).status).toBe(401); // Platform authority never invents tenant membership.
   expect((await call('/tickets/queue',user.token,undefined,otherOrg)).status).toBe(401);
   expect((await call('/observability/jupiter/browser-credential',user.token,{},otherOrg)).status).toBe(403);
-  const credential=await call('/observability/jupiter/browser-credential',user.token,{},org);expect(credential.status).toBe(201);expect((await credential.json()).scope).toMatchObject({actorReference:requester,tenantReference:org});
+  const credential=await call('/observability/jupiter/browser-credential',user.token,{},org);expect(credential.status).toBe(201);expect(credential.headers.get('cache-control')).toBe('no-store');expect((await credential.json()).scope).toMatchObject({actorReference:requester,tenantReference:org});
   const marker=`fixture-sensitive-${randomUUID()}`,failedRequest=randomUUID();
   await pool!.query(`CREATE FUNCTION fixture_draft_failure() RETURNS trigger LANGUAGE plpgsql AS $$BEGIN RAISE EXCEPTION 'password=${marker}'; END$$; CREATE TRIGGER fixture_draft_failure BEFORE INSERT ON tickets FOR EACH ROW EXECUTE FUNCTION fixture_draft_failure()`);
   try{expect((await call('/tickets/drafts',user.token,{title:'Synthetic failed draft',description:'Synthetic input'},org,failedRequest)).status).toBe(500);}finally{await pool!.query('DROP TRIGGER fixture_draft_failure ON tickets; DROP FUNCTION fixture_draft_failure()');}

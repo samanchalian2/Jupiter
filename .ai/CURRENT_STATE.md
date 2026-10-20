@@ -1,5 +1,38 @@
 # Current State
 
+**2026-10-20 supported Registry access/credentials (GOAL-069 IN PROGRESS):**
+DEC-055 adds six whole-App ADMIN operations plus safe self identity (60 public operations): safe
+paged manual/host-managed grant listing, explicit verified-principal assignment,
+manual revoke, safe integration-key metadata, rotation/revoke. No schema change.
+Three real SQL/HTTP tests and full contract traversal pass; scope/managed/revoked-
+grant/duplicate/child/parallel-rotation/Audit tests included. Persian Console forms
+implemented, one-time masked in-memory secret and explicit dismissal; no token
+readback/hash/session credential listing. Native grant/issue/rotate/revoke and
+five real actor Audits pass, but first run hit collapsed form on refresh (open
+state retained), next hit operations rate limit from duplicate eager reads.
+Now panel loads lazily and reuses parent environments; production limit unchanged.
+Focused native rerun passes including late-secret discard, real commit/lost-
+response/no automatic retry/explicit UI revoke and four-width no-overflow.
+Own identity works for an unassigned verified account without granting discovery.
+Safe command-result parser has three unit cases; unknown errors never show raw
+body, incomplete secret success is unconfirmed. Tables have internal 560px scroll
+for readable mobile labels. Serial final-source full gate passes: 462 tests
+(179 API, 40 Web, 243 Hub), builds/lint/typechecks, native/reference/performance,
+migration and both standalone fault scripts. Durable log
+output/goal069-management-final-release.log ends
+GOAL069_MANAGEMENT_FINAL_RELEASE_EXIT=0. First broad run failed a stale negative
+OpenAPI assertion, explicitly corrected for DEC-055 and fully rerun. A01 complete
+inventory acceptance and A07/full original scope remain open.
+QC also found Nest did not inherit generic Node no-store: generic dispatch and
+dedicated Browser mint now enforce it, with actual compiled-host assertions added.
+Rate-window pacing respects unchanged 120/minute limit in the compressed test;
+no private counter reset/limit weakening. Applications Help v5 published/read
+through supported LOCAL public-audience service; shared HTTP readiness not claimed.
+No live integration key, tenant, provider/budget or target host change.
+Post-gate LOCAL readback: 83 migrations, zero temporary DBs/RESERVED AI attempts,
+enabled monthly input+output budget 100000. Shared API3000/Web5174 remain stopped;
+fixture acceptance is not shared-host readiness. No Preview/main deployment.
+
 **2026-10-20 Console mutation-context remediation (GOAL-069 IN PROGRESS):**
 Native actual PUT reproduction confirms a rule save committed in App A but its
 late success notice rendered under newly selected App B (red assertion 1 vs 0).

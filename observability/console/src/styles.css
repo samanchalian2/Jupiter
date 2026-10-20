@@ -4,6 +4,7 @@
 .obs-registry summary{min-height:44px;box-sizing:border-box;padding-block:8px;cursor:pointer}
 .obs-registry label:has(input[type=checkbox]){display:flex;align-items:center;gap:8px;min-height:44px}
 .obs-policy-rates{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:12px}.obs-registry fieldset{min-width:0;display:flex;flex-wrap:wrap;gap:8px 20px}
+.obs-management .obs-table table{min-width:560px}
 .obs-console header h1{font-size:1.25rem;font-weight:500}.obs-console h2{font-size:1.05rem}.obs-console h3{font-size:1rem}
 .obs-console nav,.obs-scope,.obs-filters,.obs-pagination{display:flex;flex-wrap:wrap;align-items:end;gap:8px;margin-block:12px}
 .obs-console nav button{font-weight:500}.obs-selected{background:var(--color-brand);color:var(--color-on-primary)}
