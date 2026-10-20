@@ -26,6 +26,23 @@ latest Evidence for gates/runtime/remote commit.
 
 ### Remaining work — preserve the full original scope
 
+Active DEC-056 Issue Explorer: whole-result sort/group/status, actual linked-event
+release/category filtering and <=100 affected-release detail. Focused SQL/HTTP
+and full contract traversal pass; Console25/typechecks pass. First native exact
+group label lookup timed out; explicit accessible selector names added. Rerun
+exec37242 passed. Visual QC fixed compressed mobile columns. Expanded third run
+found old human-status label and fixture only processing one bounded batch;
+corrected, assertions/production limits unchanged. Final focused exec48962/log
+output/goal069-issue-explorer-focused-4.log passes SQL/HTTP/OpenAPI/native including
+late-sort response, human commands/three actual actor Audits and four widths.
+Serial final-source full gate exec78129/log output/goal069-explorer-final-release.log
+completed with GOAL069_EXPLORER_FINAL_RELEASE_EXIT=0:467 tests/build/lint/typecheck,
+migration/native/reference/performance and both fault scripts pass. Console Help
+v6 published/read locally. Cleanup:83 migrations,zero temporary DBs/RESERVED
+attempts,unchanged enabled100000 budget; shared hosts stopped. Scoped commit/push
+required. Continue A07 independent Incident workspace/full original scope audit;
+this checkpoint does not implement/waive it or mark Goal complete.
+
 Active DEC-055: supported Registry access/credential/self-identity APIs (60
 operations) and Persian Console implemented; three SQL/HTTP fixtures + complete
 contract traversal pass. Focused native core/late-secret/uncertain-result/explicit

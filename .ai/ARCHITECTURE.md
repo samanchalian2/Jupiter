@@ -1,5 +1,10 @@
 # System Architecture
 
+DEC-056 adds bounded Issue sort/group projections and retained affected releases
+inside existing OperationsService/HTTP/OpenAPI and Console. No migration/service.
+Grouped counts share the full authorized filtered SQL cohort, separate from
+paginated rows. Release/category predicates correlate to one retained event.
+
 DEC-055 adds supported access/integration credential commands and safe own-
 identity projection to the existing generic Registry/HTTP/Console boundaries.
 No migration, external identity creation or business import; host-owned mappings

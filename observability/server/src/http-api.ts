@@ -148,12 +148,13 @@ export class HubHttpApi {
       if(configurationRoute&&request.method==='PUT'){const body=this.body(request);if(Object.keys(body).some(k=>!['allowedOrigins','reason'].includes(k))||!Array.isArray(body.allowedOrigins)||typeof body.reason!=='string')throw new ContractError('INVALID_ORIGINS');return{status:200,body:await this.registry.configureApplication(principalId,configurationRoute[1],{allowedOrigins:body.allowedOrigins as string[],reason:body.reason})};}
       const dataRoute=/^\/operations\/applications\/([0-9a-f-]{36})\/(overview|analytics|events|issues|incidents|feedback|alerts|export)(?:\/([0-9a-f-]{36}))?(?:\/(transition|replies))?$/.exec(path);
       if(dataRoute&&isUuid(dataRoute[1])){
-        const allowedQuery=['environmentId','tenantReference','from','to','q','severity','category','release','status','page','pageSize','resource'];if([...url.searchParams.keys()].some(k=>!allowedQuery.includes(k)||url.searchParams.getAll(k).length!==1))throw new ContractError('INVALID_QUERY');
+        const issueList=request.method==='GET'&&dataRoute[2]==='issues'&&!dataRoute[3];
+        const allowedQuery=['environmentId','tenantReference','from','to','q','severity','category','release','status','page','pageSize','resource',...(issueList?['sort','groupBy']:[])];if([...url.searchParams.keys()].some(k=>!allowedQuery.includes(k)||url.searchParams.getAll(k).length!==1))throw new ContractError('INVALID_QUERY');
         const body=request.method==='GET'?{}:this.body(request);
         const environmentId=request.method==='GET'?url.searchParams.get('environmentId'):body.environmentId;if(!isUuid(environmentId))throw new ContractError('INVALID_DATA_SCOPE');
         const tenantReference=request.method==='GET'?(url.searchParams.has('tenantReference')?url.searchParams.get('tenantReference')||null:undefined):body.tenantReference as string|null|undefined;
         const scope:OperationScope={applicationId:dataRoute[1],environmentId,tenantReference},ops=new OperationsService(this.database,this.registry);
-        const filter:QueryFilter={};for(const key of ['from','to','q','severity','category','release','status'] as const){const value=url.searchParams.get(key);if(value!==null)filter[key]=value;}for(const key of ['page','pageSize'] as const){const value=url.searchParams.get(key);if(value!==null){if(!/^\d{1,4}$/.test(value))throw new ContractError('INVALID_PAGINATION');filter[key]=Number(value);}}
+        const filter:QueryFilter={};for(const key of ['from','to','q','severity','category','release','status','sort','groupBy'] as const){const value=url.searchParams.get(key);if(value!==null)filter[key]=value;}for(const key of ['page','pageSize'] as const){const value=url.searchParams.get(key);if(value!==null){if(!/^\d{1,4}$/.test(value))throw new ContractError('INVALID_PAGINATION');filter[key]=Number(value);}}
         if(request.method==='GET'){
           if(dataRoute[2]==='overview')return{status:200,body:await ops.overview(principalId,scope,filter)};
           if(dataRoute[2]==='analytics'&&!dataRoute[3])return{status:200,body:await ops.analytics(principalId,scope,filter)};

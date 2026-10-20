@@ -1,5 +1,10 @@
 # Domain Model
 
+DEC-056 adds projections only: Issue page sort/groupBy plus <=5 enum buckets
+(Issue count across the complete authorized filter); Issue detail affected_releases
+has <=100 nullable version/count/first_seen/last_seen groups from retained links.
+No lifecycle state or persisted grouping entity is introduced.
+
 DEC-055 exposes the existing Principal/AccessGrant/Credential model, not a new
 identity service. Manual access references an already verified active principal
 and explicit App/optional environment/tenant; null tenant means all tenants,

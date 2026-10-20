@@ -1,5 +1,11 @@
 # Security and Privacy
 
+DEC-056 Issue ordering uses fixed SQL expressions from strict enum validation;
+no caller-controlled column/operator interpolation. Group totals and correlated
+release/category events run under the same scoped transaction/current grant/RLS
+as paged rows. Issue-only query keys cannot silently decorate other endpoints.
+Affected release projections contain retained sanitized metadata, no payload.
+
 ## GOAL-069 Observability Hub
 
 DEC-055 public management requires current whole-App ADMIN and exact composite

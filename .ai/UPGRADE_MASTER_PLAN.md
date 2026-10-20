@@ -2,6 +2,13 @@
 
 ## GOAL-069 — Observability Hub continuation (IN PROGRESS)
 
+DEC-056 Issue global sorting/grouping/affected-release and same-event filters
+implemented; SQL/HTTP/contract/native four-width/human/late-response acceptance
+passes. Console Help v6 published/read locally, final serial467-test release gate/
+build/lint/typecheck/native/reference/performance/migration/fault scripts pass.
+Cleanup verified; shared hosts stopped, provider/budget unchanged.
+A07 independent Incident workspace and complete original audit remain open.
+
 DEC-055 access/key/self-reference API/Console implemented (60 operations), real
 SQL/HTTP/focused native workflows pass including late secret/uncertain result.
 Serial final-source LOCAL 462-test gate, builds/lint/typechecks, migration/native/

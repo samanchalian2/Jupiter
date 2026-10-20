@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-10-20 — GOAL-069 bounded Issue Explorer remediation (IN PROGRESS)
+
+- DEC-056: enum-only global sort/group, full-result bucket counts, status filter,
+  retained affected-release projection; existing Issue release/category controls
+  now actually match the same scoped event. No migration/new operation.
+- Pure/SQL/HTTP/full OpenAPI and native RTL/four-width/keyboard/human commands/
+  actor Audit/old-sort response acceptance pass. Failed selector/batch-fixture
+  attempts documented; no weakened limits/assertions. Mobile visual QC fixed
+  compressed columns despite earlier no-overflow pass.
+- Console Help v6 published/read locally. Full final467-test release gate,
+  builds/lint/typechecks,migration/native/reference/performance and fault scripts
+  pass. Cleanup verified:83 migrations,no temporary DBs/active AI attempts,
+  unchanged enabled100000 budget; shared hosts stopped.
+  independent Incident workspace and full-spec audit remain. No target deployment.
+
 ## 2026-10-20 — GOAL-069 supported App access/integration key controls (IN PROGRESS)
 
 - DEC-055 adds six whole-App ADMIN operations and own identity to Registry (60 total),

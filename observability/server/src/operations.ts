@@ -3,8 +3,9 @@ import { ContractError, isUuid, isRecord, SEVERITIES, CATEGORIES, type IncidentS
 import { redactText } from '@observability/core';
 import { HubDatabase, type DataScope } from './database.js';
 import { RegistryService } from './registry.js';
+import {issueOrdering} from './issue-explorer.js';
 export interface OperationScope {applicationId:string;environmentId:string;tenantReference?:string|null;}
-export interface QueryFilter {from?:string;to?:string;q?:string;severity?:string;category?:string;release?:string;status?:string;page?:number;pageSize?:number;}
+export interface QueryFilter {from?:string;to?:string;q?:string;severity?:string;category?:string;release?:string;status?:string;sort?:string;groupBy?:string;page?:number;pageSize?:number;}
 const resources={events:{table:'events',time:'received_at',title:'normalized_message',fields:'event_id AS id,received_at,occurred_at,source,category,severity,event_code,normalized_message,exception_type,fingerprint,trace_id,request_id,operation_name,release_version,http_status,duration_ms,tenant_reference'},issues:{table:'issues',time:'last_seen',title:'title',fields:'id,title,status,severity,first_seen,last_seen,occurrence_count,regression_count,assigned_principal_id,tenant_reference'},incidents:{table:'incidents',time:'created_at',title:'title',fields:'id,issue_id,title,status,severity,impact,assigned_principal_id,rule_code,created_at,updated_at,tenant_reference'},feedback:{table:'feedback',time:'created_at',title:'subject',fields:'id,tracking_id,subject,category,status,created_at,updated_at,tenant_reference'},alerts:{table:'alerts',time:'created_at',title:'title',fields:'id,incident_id,title,created_at,tenant_reference'}} as const;
 export type Resource=keyof typeof resources;
 export function csvCell(value:unknown):string{let text=value===null||value===undefined?'':typeof value==='object'?JSON.stringify(value):String(value);if(/^[\s]*[=+\-@]/.test(text)&&typeof value!=='number')text=`'${text}`;return `"${text.replaceAll('"','""')}"`;}
@@ -29,16 +30,32 @@ export class OperationsService {
   if(filter.category&&resource==='events')bind('category',filter.category);
   if(filter.release&&resource==='events')bind('release_version',filter.release);
   if(filter.status&&['issues','incidents','feedback'].includes(resource))bind('status',filter.status);
+  if(resource==='issues'){
+   issueOrdering(filter);
+   if(filter.category||filter.release){
+    const eventClauses=['e.application_id=observability.issues.application_id','e.environment_id=observability.issues.environment_id','e.received_at>=$3','e.received_at<=$4'];
+    for(const [column,value] of [['category',filter.category],['release_version',filter.release]])if(value){values.push(value);eventClauses.push(`e.${column}=$${values.length}`);}
+    clauses.push(`EXISTS(SELECT 1 FROM observability.issue_events l JOIN observability.events e ON e.application_id=l.application_id AND e.environment_id=l.environment_id AND e.event_id=l.event_id WHERE l.issue_id=observability.issues.id AND ${eventClauses.join(' AND ')})`);
+   }
+  }else if(filter.sort!==undefined||filter.groupBy!==undefined)throw new ContractError('INVALID_ISSUE_FILTER');
   return{selected,values,where:clauses.join(' AND '),page,size};
  }
  async list(principalId:string,scope:OperationScope,resource:Resource,filter:QueryFilter={}){
   const query=this.filters(resource,scope,filter);
-  return this.scoped(principalId,scope,async c=>{const total=Number((await c.query<{total:string}>(`SELECT count(*) total FROM observability.${query.selected.table} WHERE ${query.where}`,query.values)).rows[0].total);const rows=(await c.query(`SELECT ${query.selected.fields} FROM observability.${query.selected.table} WHERE ${query.where} ORDER BY ${query.selected.time} DESC,${resource==='events'?'event_id':'id'} DESC LIMIT $${query.values.length+1} OFFSET $${query.values.length+2}`,[...query.values,query.size,(query.page-1)*query.size])).rows;return{items:rows,total,page:query.page,pageSize:query.size};});
+  return this.scoped(principalId,scope,async c=>{
+   const total=Number((await c.query<{total:string}>(`SELECT count(*) total FROM observability.${query.selected.table} WHERE ${query.where}`,query.values)).rows[0].total);
+   const ordering=resource==='issues'?issueOrdering(filter):null;
+   const orderBy=ordering?.orderBy??`${query.selected.time} DESC,${resource==='events'?'event_id':'id'} DESC`;
+   const rows=(await c.query(`SELECT ${query.selected.fields} FROM observability.${query.selected.table} WHERE ${query.where} ORDER BY ${orderBy} LIMIT $${query.values.length+1} OFFSET $${query.values.length+2}`,[...query.values,query.size,(query.page-1)*query.size])).rows;
+   const groups=ordering?.groupColumn?(await c.query(`SELECT ${ordering.groupColumn} AS key,count(*)::int issues FROM observability.issues WHERE ${query.where} GROUP BY ${ordering.groupColumn} ORDER BY ${ordering.groupOrder}`,query.values)).rows:[];
+   return{items:rows,total,page:query.page,pageSize:query.size,...(ordering?{sort:ordering.sort,groupBy:ordering.groupBy,groups}:{})};
+  });
  }
  async detail(principalId:string,scope:OperationScope,resource:Resource,id:string){
   if(!isUuid(id)||!resources[resource])throw new ContractError('INVALID_REFERENCE');
   return this.scoped(principalId,scope,async c=>{const selected=resources[resource],row=(await c.query(`SELECT ${selected.fields}${resource==='events'?',sanitized_stack,safe_metadata':resource==='feedback'?',description':''} FROM observability.${selected.table} WHERE application_id=$1 AND environment_id=$2 AND ${resource==='events'?'event_id':'id'}=$3`,[scope.applicationId,scope.environmentId,id])).rows[0];if(!row)throw new ContractError('RESOURCE_NOT_FOUND');
    if(resource==='issues'){row.events=(await c.query(`SELECT e.event_id,e.occurred_at,e.normalized_message,e.sanitized_stack,e.trace_id,e.request_id,e.release_version FROM observability.issue_events l JOIN observability.events e ON e.application_id=l.application_id AND e.environment_id=l.environment_id AND e.event_id=l.event_id WHERE l.application_id=$1 AND l.environment_id=$2 AND l.issue_id=$3 ORDER BY e.occurred_at DESC LIMIT 100`,[scope.applicationId,scope.environmentId,id])).rows;row.activity=(await c.query('SELECT kind,body,actor_principal_id,created_at FROM observability.issue_activity WHERE application_id=$1 AND environment_id=$2 AND issue_id=$3 ORDER BY created_at DESC LIMIT 100',[scope.applicationId,scope.environmentId,id])).rows;row.feedback=(await c.query('SELECT f.id,f.tracking_id,f.subject,f.status FROM observability.feedback f JOIN observability.issue_events e ON e.event_id=f.related_event_id AND e.application_id=f.application_id AND e.environment_id=f.environment_id WHERE e.issue_id=$1 LIMIT 100',[id])).rows;}
+   if(resource==='issues')row.affected_releases=(await c.query(`SELECT e.release_version,count(*)::text events,min(e.occurred_at) first_seen,max(e.occurred_at) last_seen FROM observability.issue_events l JOIN observability.events e ON e.application_id=l.application_id AND e.environment_id=l.environment_id AND e.event_id=l.event_id WHERE l.application_id=$1 AND l.environment_id=$2 AND l.issue_id=$3 GROUP BY e.release_version ORDER BY count(*) DESC,e.release_version ASC NULLS LAST LIMIT 100`,[scope.applicationId,scope.environmentId,id])).rows;
    if(resource==='incidents'){
     row.activity=(await c.query('SELECT kind,reason,from_status,to_status,actor_principal_id,created_at FROM observability.incident_activity WHERE application_id=$1 AND environment_id=$2 AND incident_id=$3 ORDER BY created_at LIMIT 100',[scope.applicationId,scope.environmentId,id])).rows;
     row.issues=(await c.query('SELECT id,title,status,severity,occurrence_count,first_seen,last_seen FROM observability.issues WHERE application_id=$1 AND environment_id=$2 AND id=$3',[scope.applicationId,scope.environmentId,row.issue_id])).rows;

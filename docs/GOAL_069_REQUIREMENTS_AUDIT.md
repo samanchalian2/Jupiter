@@ -85,10 +85,16 @@ Inspected `OperationsService.filters/list/detail`, public IssueDetail/
 IncidentDetail schemas and Console DataFields/DataTable/detail section. Current
 Issue detail has event timeline, activity and related Feedback; release values
 are carried by individual events, not a dedicated affected-release projection.
-List order is fixed timestamp/ID descending; no supported sort/group selection
-contract/control is present. These facts do not prove requested Explorer
-grouping/sorting/affected-release workflows. Add explicit bounded semantics and
-real current-grant/RLS/HTTP/Browser tests before accepting section 41.
+Original list order was fixed timestamp/ID descending with no supported selection;
+individual event release values did not prove affected-release workflow. DEC-056
+now adds explicit bounded global sort/group and retained affected-release detail,
+and fixes previously inert Issue release/category filters. Real SQL/HTTP scoped
+fixture, 100-release bound, full OpenAPI traversal and native four-width keyboard/
+late-response/human status-assignment-note acceptance pass. Console Help v6
+published/read locally; final serial467-test release gate, all builds/typechecks/
+lint/native/reference/performance/migration/fault scripts and cleanup pass. This addresses those
+concrete gaps, not a blanket section-41/full specification acceptance. Reconcile
+the existing related-feedback/timeline/search/permission evidence at actual scope.
 
 Incident is currently a selected inline detail inside Console, not an independently
 addressable Incident page. Existing projection includes activity, related Issue,

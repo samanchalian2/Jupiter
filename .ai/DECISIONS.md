@@ -1,5 +1,33 @@
 # Architecture Decisions
 
+## DEC-056 — Bounded Issue Explorer query and affected-release projections
+
+GOAL-069 section 41 extends the existing Issue list/detail contract, no migration.
+Optional Issue-only sort is LAST_SEEN (default), FIRST_SEEN, OCCURRENCES or
+SEVERITY, descending with ID descending as stable tie-breaker. Optional groupBy
+is NONE (default), STATUS or SEVERITY. Group totals cover the entire filtered
+authorized cohort, never only the current page; bounded enum buckets return
+Issue counts, not occurrence totals. Rows are ordered by selected group then
+selected sort, with pagination across that complete order. Severity rank is
+CRITICAL, ERROR, WARNING, INFO, DEBUG. Status rank is lexical and documented.
+Group selection is a normal status/severity filter, not implicit scope widening.
+Issue status is validated against OPEN/INVESTIGATING/RESOLVED/IGNORED/REOPENED.
+
+Issue category/release filters require a retained linked event in the requested
+UTC window matching both supplied predicates on the same event. The Issue's
+last_seen window remains the existing selection boundary. RLS/current grants
+apply to both the Issue and event subquery. No raw payload or cross-tenant totals.
+Other resources, Overview/detail/export reject Issue-only sort/groupBy parameters
+instead of silently ignoring them. Existing defaults/response fields remain;
+Issue pages additionally carry sort/groupBy/groups. No new operation or endpoint.
+
+Issue detail adds at most 100 affected releases grouped from all retained linked
+events, with nullable unknown release, event count, first/last occurrence, ordered
+by count then release (NULL last). This is observed evidence, not release causality,
+deployment history or lifetime impact after retention. Console makes that limit
+and grouping/pagination semantics explicit, with keyboard-accessible drill-down.
+No lifecycle, provider, authorization or customer allowance change.
+
 ## DEC-055 — Supported Application access and integration credential management
 
 GOAL-069 section 8 extends the existing Registry, not a parallel identity/key

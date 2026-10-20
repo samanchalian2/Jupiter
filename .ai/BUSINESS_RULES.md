@@ -1,5 +1,16 @@
 # Business Rules
 
+## Issue Explorer (DEC-056)
+
+- Issue ordering applies before pagination; fixed enum selection and ID tie-break.
+- STATUS/SEVERITY buckets count all filtered authorized Issues, not current page
+  or event occurrences. Group drill-down is a normal status/severity filter.
+- Issue release/category must match the same retained linked event in window;
+  Issue last_seen also matches window. Historical occurrence_count is lifetime.
+- Affected releases show at most 100 retained-evidence groups, unknown nullable;
+  observed association is not causality, deployment time or post-retention total.
+- Issue-only sort/group parameters are rejected on other HTTP operations.
+
 ## Supported access and integration key management (DEC-055)
 
 - Whole-App ADMIN/Super Admin manage manual grants and integration keys; scoped

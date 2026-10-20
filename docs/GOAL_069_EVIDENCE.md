@@ -4,6 +4,64 @@ Status: IN PROGRESS. Owner-approved plan supersedes the stale GOAL-060 identifie
 in the supplied specification. GOAL-060 Personal Service history is preserved.
 GOAL-059 remains BLOCKED; LOCAL evidence is not staging acceptance.
 
+## 2026-10-20 — Issue Explorer query/projection remediation / DEC-056 (LOCAL)
+
+- Original section41 required sorting/grouping/affected releases; previous fixed
+  ordering and individual event release values were insufficient. Existing Issue
+  list/detail now support enum-only global sort/group, stable ID tie-break,
+  <=5 full-cohort Issue-count buckets and <=100 retained affected-release groups.
+  No new route/entity/migration, no raw payload or business-state change.
+- Existing Issue category/release controls were inert. Both now require the same
+  retained linked event in requested window, with existing Issue last_seen window.
+  This is observed evidence, not causality/lifetime impact after retention.
+- Real isolated SQL/HTTP fixture creates 30 authorized and 3 other-tenant Issues.
+  Five seven-row pages equal the global SQL order exactly, no duplicate IDs;
+  grouping counts 15/15 or severity10/20 with one-row page, not page-only counts.
+  v1/FRONTEND is empty while v2/FRONTEND resolves one Issue; affected releases
+  have v1/v2/unknown counts. Scoped VIEWER current grant, cross-tenant/App denial,
+  strict/repeated/wrong-resource query keys and revocation tested.
+- Two pure ordering tests reject SQL-like sort/group keys; two Console query
+  tests preserve scope/status and omit list-only keys on detail/CSV. Console25
+  tests/typechecks pass; complete actual 60-operation HTTP/OpenAPI traversal passes.
+- Native journey creates an authorized disposable App with 26 Issues and a
+  25-row page; first attempt timed out locating exact grouping label. Explicit
+  accessible names added for new selectors and existing severity/category;
+  native rerun active in exec37242/log output/goal069-issue-explorer-focused-2.log.
+  Earlier log output/goal069-issue-explorer-focused.log is FAILED, not acceptance.
+- Source Console Help updated with semantics, grouping drill-down, unknown/
+  retained release evidence and CSV ordering. Supported LOCAL publication created
+  0 articles/revised1; public-audience service readback resolves Console Help v6
+  and confirms all four new explanations without logging article bodies. A07
+  independent Incident workspace/full specification audit remain open. No local
+  provider call, live tenant/key, Preview/main deployment or shared host restart.
+- Expanded native second run passed; visual inspection found narrow table still
+  crushed columns despite no document overflow. Added Issue-only readable inner
+  900px width/240px title, 40rem scroll viewport/sticky header, compact long title
+  expansion and 640px detail tables. Screenshots now target readable viewports.
+- Expanded third run found exact human status select label unresolved and the
+  100-release fixture only processed one clamped 50-job claim (53 groups, not
+ 100). Explicit accessible name added; fixture now drains actual bounded batches
+  without raising production claim limits or relaxing the 100-group assertion.
+  Native also exercises a held real old-sort response and explicit human status,
+  assignment and note with real actor Audit; final rerun exec48962/log
+  output/goal069-issue-explorer-focused-4.log passes all three selected cases.
+  Native proves 26 full-result Issues on a 25-row page, 13+13 global severity
+  counts, keyboard group drill-down, lifetime occurrence sort, actual same-event
+  filters, old-sort response discard and human commands/three real actor Audits.
+  Four widths 375/768/1024/1440 RTL/no document overflow; 375 explicitly proves
+  keyboard-focusable inner scroll, >=900px table and >=240px title. Safe viewport
+  images inspected; no field secret. These failed earlier attempts
+  are retained and not counted as full acceptance.
+- Serial final-source full gate completed in exec78129, durable log
+  output/goal069-explorer-final-release.log ends
+  GOAL069_EXPLORER_FINAL_RELEASE_EXIT=0. No overlapping rebuild/native fixture.
+  467 tests =179 API+40 Web+248 Hub (99 SDK/core/adapters,124 server,25 Console).
+  All builds/lint/typechecks,migration rehearsal,actual compiled host/reference/
+  native/performance gates and both standalone fetch/React isolation scripts pass.
+  Post-gate safe LOCAL readback:83 migrations,zero temporary DBs/RESERVED attempts,
+  enabled monthly combined budget100000 unchanged. Shared3000/5174 stopped.
+  No external provider call or deployment; not whole-Goal completion.
+
 ## 2026-10-20 — Supported access and integration credential management / DEC-055
 
 - Existing Registry now exposes six whole-App ADMIN management operations plus

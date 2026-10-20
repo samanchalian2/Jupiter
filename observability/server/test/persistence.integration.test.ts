@@ -62,6 +62,42 @@ const event=(extra:Partial<TelemetryEvent>={}):TelemetryEvent=>({eventId:randomU
 const scope=()=>({applicationId:appA,environmentId:envA,actorReference:'userA',tenantReference:'shared-tenant-id',source:'BROWSER' as const});
 
 describe('bounded scoped analytics reports',()=>{
+ it('sorts and groups the entire authorized Issue cohort and resolves affected releases from retained evidence',async()=>{
+  const applicationId=(await registry.createApplication(root,{slug:`explorer-${randomUUID()}`,name:'Issue Explorer fixture'})).id;
+  const environmentId=(await registry.createEnvironment(root,applicationId,{key:'explorer',kind:'TEST'})).id;
+  const input={...scope(),applicationId,environmentId,source:'SERVER' as const,actorAll:true,tenantAll:true};
+  const samples=Array.from({length:30},(_,i)=>event({applicationId,environmentId,source:'SERVER',category:'BACKEND',severity:i%3===0?'CRITICAL':'ERROR',eventCode:`explorer.item.${i}`,normalizedMessage:`Explorer item ${i}`,releaseVersion:'v1',tenantReference:'explorer-a'}));
+  samples.push(event({...samples[0],eventId:randomUUID(),category:'FRONTEND',releaseVersion:'v2'}),event({...samples[0],eventId:randomUUID(),releaseVersion:undefined}));
+  for(let i=0;i<3;i++)samples.push(event({applicationId,environmentId,source:'SERVER',category:'BACKEND',severity:'CRITICAL',eventCode:`explorer.foreign.${i}`,normalizedMessage:'Foreign Explorer evidence',releaseVersion:'foreign-release',tenantReference:'explorer-b'}));
+  expect((await ingestion.ingest({events:samples},input)).acknowledgements.every(row=>row.status==='ACCEPTED')).toBe(true);
+  const engine=new IssueEngine(database,registry);for(const job of await engine.queue.claim(randomUUID(),500,['AGGREGATE']))await engine.aggregate(job);
+  const target={applicationId,environmentId,tenantReference:'explorer-a'},ops=new OperationsService(database,registry);
+  const all=(await ops.list(root,target,'issues',{pageSize:100})).items;expect(all).toHaveLength(30);
+  for(const [i,item] of all.entries())await database.worker(c=>c.query("UPDATE observability.issues SET status=$2,first_seen=now()-($3::int * interval '1 second'),last_seen=now()-($3::int * interval '1 second') WHERE id=$1",[item.id,i%2?'RESOLVED':'OPEN',i]).then(()=>undefined));
+  const order={sort:'OCCURRENCES',groupBy:'STATUS',pageSize:7};
+  const grouped=await ops.list(root,target,'issues',order);expect(grouped).toMatchObject({total:30,sort:'OCCURRENCES',groupBy:'STATUS',groups:[{key:'OPEN',issues:15},{key:'RESOLVED',issues:15}]});expect(grouped.items).toHaveLength(7);
+  const complete=[];for(let page=1;page<=5;page++)complete.push(...(await ops.list(root,target,'issues',{...order,page})).items);
+  const expected=await database.worker(async c=>(await c.query("SELECT id FROM observability.issues WHERE application_id=$1 AND tenant_reference='explorer-a' ORDER BY status ASC,occurrence_count DESC,id DESC",[applicationId])).rows.map(row=>row.id));expect(complete.map(row=>row.id)).toEqual(expected);expect(new Set(complete.map(row=>row.id)).size).toBe(30);
+  for(const [sort,column] of [['FIRST_SEEN','first_seen'],['LAST_SEEN','last_seen']] as const){const ordered=await ops.list(root,target,'issues',{sort,pageSize:100});const exact=await database.worker(async c=>(await c.query(`SELECT id FROM observability.issues WHERE application_id=$1 AND tenant_reference='explorer-a' ORDER BY ${column} DESC,id DESC`,[applicationId])).rows.map(row=>row.id));expect(ordered.items.map(row=>row.id)).toEqual(exact);}
+  const severities=await ops.list(root,target,'issues',{groupBy:'SEVERITY',sort:'SEVERITY',pageSize:1});expect(severities.groups).toEqual([{key:'CRITICAL',issues:10},{key:'ERROR',issues:20}]);expect(severities.items[0].severity).toBe('CRITICAL');
+  const matching=(await ops.list(root,target,'issues',{release:'v2',category:'FRONTEND'})).items;expect(matching).toHaveLength(1);expect((await ops.list(root,target,'issues',{release:'v1',category:'FRONTEND'})).total).toBe(0);
+  const detail=await ops.detail(root,target,'issues',matching[0].id);expect(detail.affected_releases.map((row:Record<string,unknown>)=>[row.release_version,row.events])).toEqual([['v1','1'],['v2','1'],[null,'1']]);
+  expect((await ops.list(root,target,'issues',{status:'OPEN'})).total).toBe(15);
+  const grant=await registry.grant(root,{applicationId,environmentId,tenantReference:'explorer-a',targetPrincipalId:ordinary,role:'VIEWER',reason:'Scoped Explorer acceptance'});
+  const query=new URLSearchParams({environmentId,tenantReference:'explorer-a',sort:'OCCURRENCES',groupBy:'STATUS',pageSize:'1'}),base=`${endpoint}/operations/applications/${applicationId}`;
+  const read=async(path:string)=>fetch(path,{headers:{authorization:'Bearer scoped-identity-placeholder'}});
+  const response=await read(`${base}/issues?${query}`);expect(response.status).toBe(200);const projection=await response.json();expect(projection.groups).toEqual(grouped.groups);expect(projection.total).toBe(30);expect(JSON.stringify(projection)).not.toContain('explorer-b');expect(JSON.stringify(projection)).not.toContain('foreign-release');
+  expect((await read(`${base}/issues?${query}&sort=LAST_SEEN`)).status).toBe(400);
+  for(const suffix of ['sort=DROP','groupBy=tenant_reference','status=UNKNOWN'])expect((await read(`${base}/issues?environmentId=${environmentId}&tenantReference=explorer-a&${suffix}`)).status).toBe(400);
+  for(const path of ['overview','events',`issues/${matching[0].id}`,'export?resource=issues'])expect((await read(`${base}/${path}${path.includes('?')?'&':'?'}${query}`)).status).toBe(400);
+  expect((await read(`${base}/issues?environmentId=${environmentId}&tenantReference=explorer-b&groupBy=STATUS`)).status).toBe(403);
+  expect((await read(`${endpoint}/operations/applications/${appB}/issues?environmentId=${environmentId}&groupBy=STATUS`)).status).toBe(403);
+  await registry.revokeGrant(root,applicationId,grant.id,'Revoke Explorer fixture access');expect((await read(`${base}/issues?${query}`)).status).toBe(403);
+  const manyReleases=Array.from({length:102},(_,i)=>event({...samples[0],eventId:randomUUID(),releaseVersion:`bounded-release-${String(i).padStart(3,'0')}`}));
+  for(let offset=0;offset<manyReleases.length;offset+=50)expect((await ingestion.ingest({events:manyReleases.slice(offset,offset+50)},input)).acknowledgements.every(row=>row.status==='ACCEPTED')).toBe(true);
+  for(let jobs=await engine.queue.claim(randomUUID(),50,['AGGREGATE']);jobs.length;jobs=await engine.queue.claim(randomUUID(),50,['AGGREGATE']))for(const job of jobs)await engine.aggregate(job);
+  const bounded=await ops.detail(root,target,'issues',matching[0].id);expect(bounded.affected_releases).toHaveLength(100);expect(new Set(bounded.affected_releases.map((row:Record<string,unknown>)=>row.release_version)).size).toBe(100);expect(bounded.affected_releases[0].release_version).toBe('bounded-release-000');expect(JSON.stringify(bounded.affected_releases)).not.toContain('foreign-release');
+ });
  it('exposes only the current active verified identity without granting discovery or management authority',async()=>{
   const headers={authorization:'Bearer unassigned-identity-placeholder'},get=async(path:string)=>{const response=await fetch(endpoint+path,{headers});return{status:response.status,body:await response.json(),cache:response.headers.get('cache-control')};},me=await get('/operations/identity');expect(me.status).toBe(200);expect(me.cache).toBe('no-store');expect(Object.keys(me.body).sort()).toEqual(['displayName','principalId']);expect(me.body.displayName).toBe('Unassigned operator');expect((await get('/operations/applications')).body).toEqual([]);expect((await get(`/operations/applications/${appB}/access-grants`)).status).toBe(403);expect((await get('/operations/identity?principalId='+root)).status).toBe(400);
   const grant=await registry.assignAccess(root,appB,{targetPrincipalId:me.body.principalId,role:'VIEWER',environmentId:envB,reason:'Self identity reference explicit assignment'});expect((await get('/operations/applications')).body.map((row:any)=>row.id)).toEqual([appB]);await registry.revokeManagedAccess(root,appB,grant.id,'Self identity assignment cleanup');expect((await get('/operations/applications')).body).toEqual([]);await database.control(async c=>{await c.query('UPDATE observability.principals SET active=false WHERE id=$1',[me.body.principalId]);});expect((await get('/operations/identity')).status).toBe(403);

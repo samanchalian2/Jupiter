@@ -1,5 +1,29 @@
 # Current State
 
+**2026-10-20 Issue Explorer remediation (GOAL-069 IN PROGRESS):**
+DEC-056 extends the existing Issue list/detail (60 operations, no migration):
+strict global sorting/grouping, whole-cohort enum counts before pagination,
+status drill-down, same-retained-event category/release filters and bounded
+affected-release evidence. Three focused pure/real SQL/HTTP cases and full actual
+OpenAPI traversal pass; Console 25 tests/typechecks pass. Native first attempt
+could not locate the exact grouping label; explicit accessible selector names
+added; native second attempt passed. Visual QC then fixed unreadably compressed
+mobile columns with scoped inner scrolling. Expanded third attempt found the
+same old human-status name issue and a fixture draining only one 50-job batch;
+both corrected without raising limits/relaxing assertions. Final focused rerun
+exec48962/log output/goal069-issue-explorer-focused-4.log passes all three selected
+real SQL/HTTP/OpenAPI/native cases. Native also proves held old-sort response
+discard, human status/assignment/note with three actor Audits and four-width RTL/
+no overflow plus readable inner-scroll. Serial full final gate exec78129/log
+output/goal069-explorer-final-release.log completed with
+GOAL069_EXPLORER_FINAL_RELEASE_EXIT=0: 467 tests (179 API,40 Web,248 Hub), all
+build/lint/typechecks, migration/native/reference/performance and both fault
+scripts pass. Post-gate:83 migrations,zero temporary DBs/RESERVED attempts,
+enabled 100000 budget unchanged. Runtime Console
+Help v6 published/read through authorized local service. No whole-Goal acceptance claim;
+A07 independent Incident workspace and full
+original specification audit still required. Shared hosts remain stopped.
+
 **2026-10-20 supported Registry access/credentials (GOAL-069 IN PROGRESS):**
 DEC-055 adds six whole-App ADMIN operations plus safe self identity (60 public operations): safe
 paged manual/host-managed grant listing, explicit verified-principal assignment,

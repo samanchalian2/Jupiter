@@ -1,5 +1,15 @@
 # Jupiter Design System V2
 
+DEC-056 Issue Explorer uses compact existing controls for sorting/grouping/status
+and keyboard-operable summary buttons for full-result drill-down. No new palette,
+navigation/card/wizard. The list is a keyboard-focusable inner-scroll region;
+affected-release evidence has explicit retained/bounded/unknown semantics.
+Visual QC found a 375px no-overflow table still compressed labels into vertical
+text. Issue table now has 900px inner-scroll minimum, 240px title column,
+bounded 40rem viewport, sticky headings and compact expandable long titles.
+Issue detail tables retain 640px inner width. Explicit select accessible names
+match their Persian labels; Issue row severity/status use existing Persian map.
+
 DEC-055 keeps own identity in compact read-only header details and grant/key
 controls in lazily opened existing Applications details, not new navigation.
 Preserve expanded subforms across metadata refresh while clearing one-time secret
