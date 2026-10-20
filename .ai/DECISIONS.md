@@ -1,5 +1,49 @@
 # Architecture Decisions
 
+## DEC-057 — Addressable Incident workspace and narrow operational projections
+
+Section42 gets a separate reusable workspace selected by fragment
+`#obs/incident/{applicationId}/{environmentId}/{incidentId}?tenant=...` on the
+current host page. Fragment navigation is intentional: the reusable Console is
+embedded by Jupiter /operations, Platform panel and independent clients without
+owning their routers. It creates a distinct reloadable/bookmarkable page with
+native Back/Forward and does not rename the inline detail. Fragment carries no
+credential, only explicit opaque scope; empty tenant is tenant-free, omission
+is all-authorized scope. Links from lists bind the row's actual tenant, not a
+wider selected filter. Strict UUID/path/query validation rejects malformed routes
+without fetching another scope. Invalid recognized route is an error page.
+Unknown fragments (including #alerts) remain host-owned. Current auth/grants/RLS
+are rechecked by normal detail and command APIs on every navigation/refresh.
+
+Existing Incident detail adds <=100 newest retained linked event timeline and
+<=100 newest immutable Audit projection; existing activity/issues/feedback/
+<=20 successful AI outputs remain. Timeline observes the related Issue history,
+not proof that all historical events occurred during this Incident. Impact is
+the existing rule-time snapshot; absent values remain unknown. Fixed AI schema
+renders readable summaries, hypotheses/confidence/evidence and recommendations
+separate from human status, notes and assignment. Nothing executes a suggestion.
+
+Migration065 runtime has INSERT, NOT SELECT, on Audit; its RLS is App-only. Do
+not broaden grants or query all App Audit. First read the exact App/environment/
+Incident under normal tenant RLS/current authorization. In that same transaction,
+temporarily switch to the existing control role, recheck the current grant,
+and only then select fixed
+INCIDENT_STATUS_CHANGED/INCIDENT_ASSIGNED/INCIDENT_NOTE_ADDED rows matching exact
+incidentId. Project id/action/safe reason/actor/time only, never arbitrary metadata.
+Assigned operator resolves only this exact Incident's principal id/displayName/
+active flag, no global directory. Restore runtime role in finally before any
+linked data reads. Control cannot read Incidents and receives no new grants;
+exact Incident existence/tenant is established only by the RLS-protected read.
+No migration, new endpoint, RLS weakening or global Audit read API.
+
+Workspace mutations retain existing human-only APIs, safe reason and permitted
+transitions. Status changes are separate from note/assignment, explicit unassign
+is distinct from leaving assignment unchanged. Late read/mutation completions
+are discarded after route/client/unmount change; no automatic command retry or
+provider call. Back returns to Console in previous App/environment when known;
+direct entry uses the route's scope, not a guessed default. Same theme/compact
+RTL controls and inner-scroll tables; no new main navigation.
+
 ## DEC-056 — Bounded Issue Explorer query and affected-release projections
 
 GOAL-069 section 41 extends the existing Issue list/detail contract, no migration.

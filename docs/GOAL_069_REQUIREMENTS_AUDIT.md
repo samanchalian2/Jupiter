@@ -79,12 +79,59 @@ Policy runtime Help v4 is published/read; access/credential workflows remain ope
 
 ## Audit work not finished
 
+### A10 — bounded Incident human-note visibility (source boundary)
+
+Existing Incident activity query orders created_at ascending LIMIT100. New
+workspace's Human Notes filters that same bounded activity array. Therefore a
+long-lived Incident with >100 early activities may not show its newly added
+note, although immutable Audit is newest-first. The small native note fixture
+does not prove this boundary. Reproduce with >100 actual scoped activity rows,
+define/document bounded newest human-note/activity semantics without deleting
+history, and verify fresh note visibility/order/tenant isolation through HTTP
+and native UI. Do not infer complete section42 from merely named panels or
+silently increase the unbounded result cap. Existing schema/lifecycle stay.
+
+### A09 — section23 operator-followable distributed correlation: not proved
+
+Actual host/Web acceptance proves Browser and Server rows share a real W3C trace
+and request ID under SQL/current scope; SDK propagation/storage is implemented.
+Inspected `OperationsService.filters/list/detail`, HTTP/OpenAPI and Console,
+however, expose these identifiers only as cells. No supported traceId/requestId
+filter/correlation endpoint or operator drill-through workflow is present;
+q searches message, not identifiers. An SQL fixture join is not the requested
+ability for an Operator to follow a failure chain. Implement bounded authorized
+App/environment/tenant correlation and actual HTTP/native drill-through evidence,
+with duplicate IDs across tenant/App deliberately denied. A trace/request ID must
+never grant broader scope. Do not mark section23 complete from capture alone.
+
+### A08 — operational Investigator configuration workflow (source inspection)
+
+Original sections8/44/48 require manageable AI budget/frequency/limits and
+current-scope operation. `InvestigatorService.configuration/configure` exposes
+and validates maxOutputTokens/maxContextBytes/maxConcurrent/reviewIntervalSeconds.
+`InvestigatorPanel` saves their existing values but renders no editable controls
+for those four settings; native budget/configuration-save coverage was not found
+in the inspected Browser fixtures (service configuration does not prove it).
+Reconcile the intended supported operator workflow rather than assume the table's
+"AI budget" row proves every control.
+
+Source also shows `save`/`analyze` await then set notice/revision/busy without
+current App/environment/tenant/client ownership; effect guards only read results.
+Panel is not keyed by selected scope in Console. Potential stale command notice/
+refresh is therefore unproven-safe; reproduce with an actual held authorized
+configuration PUT and scope switch before remediation. Reconciliation callback
+ownership needs the same audit. Do not alter the live local provider/key/budget
+to exercise these cases; use disposable App configurations/controlled provider.
+This is concrete next implementation/acceptance work, not an infrastructure
+blocker or a reason to waive original scope. No runtime failure claim is made
+until the source risk is actually reproduced.
+
 ### A07 — Issue Explorer / Incident Workspace (sections 41–42): PARTIAL
 
-Inspected `OperationsService.filters/list/detail`, public IssueDetail/
-IncidentDetail schemas and Console DataFields/DataTable/detail section. Current
-Issue detail has event timeline, activity and related Feedback; release values
-are carried by individual events, not a dedicated affected-release projection.
+Initial inspection covered `OperationsService.filters/list/detail`, public
+IssueDetail/IncidentDetail schemas and Console generic detail. At that checkpoint,
+Issue detail had event timeline/activity/related Feedback but release values
+only in individual events, not a dedicated affected-release projection.
 Original list order was fixed timestamp/ID descending with no supported selection;
 individual event release values did not prove affected-release workflow. DEC-056
 now adds explicit bounded global sort/group and retained affected-release detail,
@@ -96,31 +143,41 @@ lint/native/reference/performance/migration/fault scripts and cleanup pass. This
 concrete gaps, not a blanket section-41/full specification acceptance. Reconcile
 the existing related-feedback/timeline/search/permission evidence at actual scope.
 
-Incident is currently a selected inline detail inside Console, not an independently
-addressable Incident page. Existing projection includes activity, related Issue,
-Feedback and persisted AI output. Generic DataTable serializes nested AI output
-and evidence to JSON text; it is not proof of readable Suspected Causes and
-Recommended Actions or distinct Audit History and Timeline workflows. Section 42
-requires a real independent workspace, comprehensible AI/human separation and
-all named panels. Audit current SQL/RLS projections before extending them; do not
-invent causes/actions/impact when evidence is absent. Add route/context/refresh/
-authorization/RTL/no-overflow acceptance for that actual workspace. Existing
-generic detail and Investigator-tab tests must not stand in for this requirement.
+Incident originally used selected inline detail and JSON nested output. DEC-057
+now implements a distinct addressable workspace on a strict scoped fragment,
+all named readable panels, exact narrow Audit/assignee/current-manage/lifecycle
+projection and retained timeline. Real SQL/HTTP/OpenAPI and native independent
+navigation/reload/Back/Forward/human/late/current-grant/tenant/RTL/four-width
+acceptance pass. Actual authenticated Jupiter/compiled worker HTTP→Incident,
+direct-link/reload/four-width acceptance also passes, zero page errors. Incident
+Help v3 published/read locally. Final serial472-test full release/build/lint/
+typecheck/migration/native/reference/performance/fault scripts and cleanup pass;
+earlier failed fixture runs explicitly retained. No whole section/full Goal
+certificate inferred: A10 long-lived notes/embedded Platform reload remain,
+and A08/A09/full original audit are not waived.
+Actual Jupiter proof currently exercises standalone `/operations`. Source
+`PlatformPro` preserves its observability selection in search parameters, so
+fragment routing does not replace it; nevertheless add actual embedded
+`/platform?tab=observability#obs/incident/...` reload acceptance before claiming
+every host embedding verified. Source compatibility is not a native pass.
 
 Concrete next-source inspection: host `App.tsx` matches only exact `/operations`;
 `OperationsWorkspace` embeds Console, independent reference has no router.
 An addressable workspace must define host-compatible link/refresh/back semantics,
 not just rename current detail. Migration065 `audit_scope` is App-only and runtime
-has SELECT; do not read a whole App audit for tenant-scoped workspace. Authorize
+does NOT have SELECT (previous inspection statement corrected by actual ACL
+query/test); control cannot read Incidents either. Do not read whole App Audit
+or grant broad runtime SELECT. Authorize
 the exact Incident composite under tenant RLS first and restrict any audit query
 to its fixed action/reference and safe fields, excluding arbitrary metadata.
 Existing `InvestigationOutput` has bounded hypotheses/evidence/confidence and
 recommendedActions; use it for readable human-review panels, never stringify
-the nested output or infer causes from absent evidence. These are inspected
-implementation constraints, not proof the remaining workspace is implemented.
+the nested output or infer causes from absent evidence. Implementation now follows
+these constraints; final-source full gate and complete original audit remain.
 
-This is a concrete remaining requirement, not an external infrastructure blocker
-or a waiver. Preserve A01 and final 47-section Evidence reconciliation as well.
+These concrete gaps have focused implementation evidence, not an external
+infrastructure blocker or waiver. Preserve A01 and final 47-section Evidence
+reconciliation; full Goal status remains IN PROGRESS.
 
 ### Console mutation-context defect — reproduced, focused remediation verified
 

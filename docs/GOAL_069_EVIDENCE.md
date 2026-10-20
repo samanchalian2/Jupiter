@@ -4,6 +4,89 @@ Status: IN PROGRESS. Owner-approved plan supersedes the stale GOAL-060 identifie
 in the supplied specification. GOAL-060 Personal Service history is preserved.
 GOAL-059 remains BLOCKED; LOCAL evidence is not staging acceptance.
 
+## 2026-10-20/21 — Independent Incident workspace / DEC-057 (LOCAL checkpoint)
+
+- Existing reusable Console now opens Incident list rows as a distinct article
+  on strict #obs/incident/App/environment/Incident?tenant fragment. Real row tenant
+  is bound, tenant-free vs all-authorized distinct; malformed/duplicate/unknown
+  query references fail without a data fetch. Unknown host fragments stay owned
+  by host. Reload/native Back/Forward work without replacing Jupiter/reference
+  routers. This is a separate page, not the previous inline generic detail.
+- Detail adds bounded newest retained Issue-event timeline100, exact Audit100,
+  assigned operator projection, current management permission/core-derived
+  transition options and readable App/environment context. Existing AI20 and
+  human activity remain. No migration or new endpoint (60 operations).
+- Source audit correction: Audit runtime RLS is App-only, but runtime never had
+  SELECT. Control also cannot read Incidents. First attempted control-callback
+  lookup hit 503 in actual OpenAPI acceptance. Corrected flow: exact Incident
+  first read under normal tenant RLS/current grant, same-transaction temporary
+  control role/re-authorization for fixed Incident Audit and exact assignee only,
+  runtime restored in finally before linked reads. No permissions broadened.
+- Real SQL/HTTP fixture proves 102 events→100 timeline,21 analyses→20 findings,
+ 105 seeded Audits→100 projection, scoped VIEWER/no commands, exact current
+  grant/revocation, cross-tenant/tenant-free/App denial, no other tenant finding/
+  Audit or arbitrary metadata, sanitized human note, operator name/active and
+  unchanged absent runtime Audit SELECT. Full actual HTTP/OpenAPI traversal passes.
+- Native authenticated independent fixture proves list→distinct page, reload/
+  Back/Forward, all required named panels, readable persisted hypotheses/actions,
+  human status/assignment/note with three real actor Audits, actual committed
+  old-page mutation completion suppressed, VIEWER controls absent, revoked read
+  clears old data, malformed route no fetch, four widths RTL/no overflow and
+  mobile inner-scroll. First focused native pass recorded; expanded rerun found
+  test inspected Back's empty selector before asynchronous options loaded.
+  Corrected readiness to poll actual App AND environment, no assertion removed.
+- Visual QC found ISO date bidi reordering; times now isolated LTR. Own-command
+  success notice no longer immediately erased by result refresh. Final-source
+  focused3 rerun passes three SQL/HTTP/OpenAPI/native cases. Expanded native
+  confirms explicit unassign/empty AI sections in the final full gate.
+- Actual Jupiter acceptance: real Platform Admin password/JWT UI login, supported
+  rule/credential/event HTTP commands, actual compiled worker creates Incident,
+  /operations scoped direct link and reload show real App/environment/tenant.
+  Four widths RTL/no overflow, zero page errors. Log
+  output/goal069-incident-actual-host.log passes; ordinary manual-ticket/automatic
+  correlation acceptance and no customer commercial ledger rows remain intact.
+- Revised Incident Help published by supported LOCAL utility:0 created,1 revised;
+  public-audience service readback resolves v3 and confirms independent page,
+  exact Audit/human unassign/read-only AI explanations without logging bodies.
+- Serial final-source full gate running exec11983, durable
+  output/goal069-incident-final-release.log. Do not overlap build/native fixture;
+  final totals/exit/cleanup required before commit/push. This is not Goal completion.
+- First broad final gate exits1:125/126 server tests pass, but analytics fixture
+  references undefined target. QC found a text replacement intended for the new
+  Incident fixture had also replaced the old linked/unlinked/hidden Feedback
+  setup line. Restored that exact HEAD line with contextual patch; diff now only
+  adds the new workspace test/new native test, no old fixture edits. Focused
+  analytics+workspace+full contract traversal all pass (three selected tests,
+  output/goal069-incident-regression-restored.log). No assertion removed/relaxed.
+  Full serial final gate repeating with fresh durable
+  output/goal069-incident-final-release-2.log; previous failed log preserved.
+- Second full repeat exits1 at two analytics fixtures (50/51 fresh Events,1/2
+  fresh Feedback), while new Incident/native/contract cases pass. Direct focused
+  and full 12-case analytics reruns pass; prior wall-clock difference was not
+  independently reproduced. Do NOT assert a proven production clock bug.
+  Added a real controlled PostgreSQL500-microsecond fixture proving exact inclusive
+  end semantics:0 rows at millisecond boundary,1 Event+Feedback at next millisecond.
+  Whole-cohort fixtures now submit an explicit DB-observed next-millisecond UTC
+  end (same24h window) instead of racing JS millisecond now with committed DB
+  times. Counts51/2 and all filtering/isolation assertions remain unchanged;
+  production code/clock/limits untouched. All13 analytics cases pass, log
+  output/goal069-incident-exact-window.log. Third serial full repeat active,
+  output/goal069-incident-final-release-3.log. Both failed full logs preserved.
+- Final verification2026-10-21:third serial release exits0,
+  GOAL069_INCIDENT_FINAL_RELEASE_EXIT=0 in the durable final-release-3 log.
+  472 tests=179 API+40 Web+253 Hub (99 SDK/core/adapters,127 server,27 Console).
+  All builds/lint/typechecks,migration rehearsal,actual compiled host/independent
+  native/reference/performance and both standalone fetch/React isolation scripts
+  pass. Screenshots375/1440 inspected (actual Jupiter and independent workspace).
+  Post-gate safe LOCAL SQL:83 migrations,zero temporary DBs/RESERVED attempts,
+  unchanged enabled100000 combined monthly budget. Incident Help v3 readback
+  confirms all four new explanations; normal runtime content retained.
+  Shared3000/5174 have no listeners, not falsely reported ready. No deployment.
+  A08/A09/A10 and full original audit remain; new workspace is not whole-Goal
+  completion. A10 explicitly records untested long-lived human-note visibility
+  and embedded Platform reload; small-record standalone proof is not substituted.
+  No external provider, live tenant/key or target deployment; Goal remains active.
+
 ## 2026-10-20 — Issue Explorer query/projection remediation / DEC-056 (LOCAL)
 
 - Original section41 required sorting/grouping/affected releases; previous fixed

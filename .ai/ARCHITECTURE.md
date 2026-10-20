@@ -1,5 +1,12 @@
 # System Architecture
 
+DEC-057 gives reusable Console a strict scoped Incident fragment route, separate
+workspace and native reload/history support without taking over host routing.
+Existing detail gains bounded timeline, narrow Audit/assignee/can_manage/allowed
+transitions. Read exact Incident under runtime tenant RLS first; same transaction
+temporarily enters existing control role for current-authorized fixed Audit/
+principal projection, restores runtime in finally. No new DB grants/migration.
+
 DEC-056 adds bounded Issue sort/group projections and retained affected releases
 inside existing OperationsService/HTTP/OpenAPI and Console. No migration/service.
 Grouped counts share the full authorized filtered SQL cohort, separate from

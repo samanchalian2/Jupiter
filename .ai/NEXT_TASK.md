@@ -4,7 +4,7 @@
 
 The entire approved objective remains active. Source of truth:
 `docs/GOAL_069_SPECIFICATION.md` (all sections and A–I Definition of Done),
-`docs/GOAL_069_EVIDENCE.md`, current state and DEC-038 through DEC-055.
+`docs/GOAL_069_EVIDENCE.md`, current state and DEC-038 through DEC-057.
 Historical GOAL-060 Personal Service is not renamed. Do not start another Goal.
 
 ### Latest implementation boundary
@@ -20,11 +20,47 @@ This is not a blanket completion claim for all product workflows or the live
 Jupiter shell. Section-63 Help is runtime-published with actual Jupiter operations,
 Platform-panel and Feedback acceptance. The measured local performance checkpoint
 and Node hot-path remediation plus full-limit Browser/batch/redaction QC bring
-the full release gate to 462 tests with supported Registry access/credential management, native command-completion context isolation, enforced ingestion/sampling policy, audited Registry configuration, complete Overview/four-width/keyboard acceptance, named recovery triggers/native no-start acceptance, configurable rule cadence/actual worker, configurable retention/native expiry, actual authenticated Web/AppModule, React/fetch failure isolation, data-write/diagnostic-checkpoint isolation/real quota, explicit product comparison, scoped analytics, real queued provider failure/metering and concurrent/product-read boundary
+the full release gate to 472 tests with independent scoped Incident workspace and supported Registry access/credential management, native command-completion context isolation, enforced ingestion/sampling policy, audited Registry configuration, complete Overview/four-width/keyboard acceptance, named recovery triggers/native no-start acceptance, configurable rule cadence/actual worker, configurable retention/native expiry, actual authenticated Web/AppModule, React/fetch failure isolation, data-write/diagnostic-checkpoint isolation/real quota, explicit product comparison, scoped analytics, real queued provider failure/metering and concurrent/product-read boundary
 measurements and the performance flag enabled. Inspect
 latest Evidence for gates/runtime/remote commit.
 
 ### Remaining work — preserve the full original scope
+
+DEC-057 independent Incident workspace checkpoint verified. Exact RLS-first
+same-transaction narrow control Audit, no new grants/migration/endpoint. Real
+SQL/HTTP/OpenAPI/native and actual authenticated Jupiter/compiled-host direct
+link/reload/four-width pass. Help v3 published/read locally. Final serial release
+log output/goal069-incident-final-release-3.log ends
+GOAL069_INCIDENT_FINAL_RELEASE_EXIT=0:472 tests (179 API,40 Web,253 Hub), all
+build/lint/typechecks,migration/native/reference/performance/fault scripts pass.
+Failed earlier runs retained; exact old fixture line restored, whole-cohort
+fixtures now explicitly bound by DB-observed24h window plus real500us boundary
+test. Counts unchanged, no product clock change or proven production race claim.
+Cleanup:83 migrations,zero temporary DBs/active attempts,unchanged enabled100000
+budget; shared hosts stopped. Commit/push this scoped checkpoint, then prioritize
+A10 fresh-note boundary/actual embedded Platform reload before declaring A07
+accepted, plus A08/A09 and complete original requirement/Evidence audit.
+
+Next concrete original-scope audit A08: operational Investigator UI saves existing
+frequency/concurrency/context/output limits but has no editable controls for them;
+native configuration/budget save proof absent in inspected Browser fixtures.
+save/analyze completions lack current-scope ownership (read effect alone guarded),
+including reconciliation callback. Reproduce held real config PUT/scope-switch
+with disposable Apps, implement full settings/safe completion and actual native
+acceptance. Do not touch live provider/key/100000 budget. A01/full audit remain.
+
+A09 concrete original section23 gap: trace/request propagation is real, but
+Operations API/UI only display IDs; there is no supported identifier filter or
+chain drill-through. q searches message. Add bounded scoped Operator correlation
+with real HTTP/native tenant/App same-ID denial, not SQL-only fixture joins.
+
+A10 section42 boundary: Incident activity currently oldest100; Human Notes
+filters that array, so later notes can disappear after100 activities. Reproduce
+the actual >100 row boundary and define bounded newest note/activity semantics,
+HTTP/native fresh-note/ordering/isolation proof. Do not raise cap or erase history.
+Also exercise embedded Platform observability-tab Incident deep-link/reload in
+the actual host fixture; current actual native proof is standalone /operations,
+while PlatformPro search-param compatibility has only source inspection here.
 
 Active DEC-056 Issue Explorer: whole-result sort/group/status, actual linked-event
 release/category filtering and <=100 affected-release detail. Focused SQL/HTTP

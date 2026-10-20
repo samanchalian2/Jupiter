@@ -1,5 +1,19 @@
 # Business Rules
 
+## Independent Incident workspace (DEC-057)
+
+- Addressable route binds actual row App/environment/Incident/tenant; an address
+  never grants access. Unknown host fragments stay host-owned; malformed known
+  route requests no Incident data. Reload/back use current authentication.
+- Rule impact is snapshot, retained linked Issue timeline is not Incident-time
+  causality. Show unknown explicitly; bound timeline/Audit100 and AI20.
+- AI hypotheses/actions/evidence remain readable, read-only and separate from
+  human state/notes/assignment. Viewing invokes no provider.
+- Audit exposes only fixed action/reason/actor/time for the authorized exact
+  Incident, not raw metadata/all App history. Runtime Audit SELECT stays absent.
+- can_manage and allowed_transitions derive from current roles/core lifecycle;
+  commands always recheck. Explicit unassign differs from unchanged assignment.
+
 ## Issue Explorer (DEC-056)
 
 - Issue ordering applies before pagination; fixed enum selection and ID tie-break.

@@ -1,5 +1,11 @@
 # Domain Model
 
+DEC-057 adds no entity. Incident detail has timeline<=100 retained linked events,
+audit_history<=100 fixed-action projections, exact assigned_operator(id/name/
+active), current can_manage and allowed_transitions from existing lifecycle.
+Existing rule-time impact, human activity and successful investigations remain
+distinct records, never merged into an AI-generated state.
+
 DEC-056 adds projections only: Issue page sort/groupBy plus <=5 enum buckets
 (Issue count across the complete authorized filter); Issue detail affected_releases
 has <=100 nullable version/count/first_seen/last_seen groups from retained links.

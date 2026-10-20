@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-10-20/21 — GOAL-069 independent Incident workspace (IN PROGRESS)
+
+- DEC-057 strict portable addressable fragment/separate page; readable required
+  sections, retained timeline100, narrow Audit100, AI20, current manage/lifecycle,
+  exact assignee and real context. No migration/new endpoint/permission grant.
+- Actual SQL/HTTP/OpenAPI and independent native navigation/human/late/current
+  grant/security/four-width pass. Initial control role503 corrected with exact
+  RLS-first read and same-transaction narrow control projection. Test Back-option
+  readiness race corrected; visual ISO bidi and success notice fixed.
+- Actual authenticated Jupiter/App/compiled-worker direct-link/reload/four-width
+  acceptance passes; Incident Help v3 published/read locally. Final serial472-
+  test release/build/lint/typecheck/native/reference/performance/migration/fault
+  scripts pass. Failed broad runs documented:fixture line restored and explicit
+  DB-observed whole-cohort windows plus real500us inclusive boundary test added,
+  counts/product logic unchanged. Cleanup83/zero temp DBs/zero active attempts,
+  enabled100000 budget unchanged, shared hosts stopped. A08/A09/A10/full original
+  audit remain; no whole-Goal completion or target deployment.
+
 ## 2026-10-20 — GOAL-069 bounded Issue Explorer remediation (IN PROGRESS)
 
 - DEC-056: enum-only global sort/group, full-result bucket counts, status filter,

@@ -1,5 +1,14 @@
 # Security and Privacy
 
+DEC-057 route fragments contain no secrets, reject duplicate/unknown query keys
+and malformed references, and never substitute a default App/environment for a
+direct link. Incident row must be readable under tenant RLS before the same
+transaction switches to existing control role for exact fixed Audit projection.
+Current grant is rechecked; no SELECT granted to runtime Audit, no global user/
+audit directory and no raw metadata. Role restored in finally before linked data.
+Safe generic errors clear old page data on refresh/command denial. Fragment/client
+unmount invalidates pending command/read completions; server work is not retried.
+
 DEC-056 Issue ordering uses fixed SQL expressions from strict enum validation;
 no caller-controlled column/operator interpolation. Group totals and correlated
 release/category events run under the same scoped transaction/current grant/RLS

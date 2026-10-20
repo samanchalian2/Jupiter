@@ -2,6 +2,15 @@
 
 ## GOAL-069 — Observability Hub continuation (IN PROGRESS)
 
+DEC-057 independent Incident workspace implemented; scoped fragment, readable
+AI/human panels, exact RLS-first narrow Audit/control projection. Focused real
+SQL/HTTP/OpenAPI/independent native and actual authenticated Jupiter/compiled
+worker direct-link/reload/four-width passes. Incident Help v3 published/read.
+Final-source serial472-test release, all build/lint/typechecks,migration/native/
+reference/performance/fault scripts and cleanup pass (2026-10-21). Earlier failed
+fixture runs retained and corrected without changing counts/product clocks.
+A08/A09/A10 and complete original audit remain mandatory; shared hosts stopped.
+
 DEC-056 Issue global sorting/grouping/affected-release and same-event filters
 implemented; SQL/HTTP/contract/native four-width/human/late-response acceptance
 passes. Console Help v6 published/read locally, final serial467-test release gate/

@@ -6,6 +6,8 @@
 .obs-policy-rates{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:12px}.obs-registry fieldset{min-width:0;display:flex;flex-wrap:wrap;gap:8px 20px}
 .obs-management .obs-table table{min-width:560px}
 .obs-issue-table{max-height:40rem}.obs-issue-table table{min-width:900px}.obs-issue-table th,.obs-issue-table td{min-width:88px}.obs-issue-table th:first-child,.obs-issue-table td:first-child{min-width:240px}.obs-issue-table th{position:sticky;top:0}.obs-issue-table summary{min-height:44px;padding-block:8px;box-sizing:border-box;cursor:pointer}.obs-issue-detail .obs-table table{min-width:640px}
+.obs-incident-workspace>section{min-width:0;border-block-start:1px solid var(--color-border);padding-block:12px}.obs-incident-workspace .obs-table{max-height:32rem}.obs-incident-workspace table{min-width:640px}.obs-incident-workspace th,.obs-incident-workspace td{min-width:100px}.obs-incident-workspace p,.obs-incident-workspace h3,.obs-evidence{overflow-wrap:anywhere}.obs-incident-workspace .hint{max-width:65rem}.obs-evidence{padding-inline-start:20px}.obs-incident-workspace button,.obs-incident-workspace select{min-height:44px}
+.obs-incident-workspace time{display:inline-block;direction:ltr;unicode-bidi:isolate;font-variant-numeric:tabular-nums;max-width:100%;overflow-wrap:anywhere}
 .obs-console header h1{font-size:1.25rem;font-weight:500}.obs-console h2{font-size:1.05rem}.obs-console h3{font-size:1rem}
 .obs-console nav,.obs-scope,.obs-filters,.obs-pagination{display:flex;flex-wrap:wrap;align-items:end;gap:8px;margin-block:12px}
 .obs-console nav button{font-weight:500}.obs-selected{background:var(--color-brand);color:var(--color-on-primary)}

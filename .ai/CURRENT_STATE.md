@@ -1,5 +1,29 @@
 # Current State
 
+**2026-10-21 independent Incident workspace checkpoint (GOAL-069 IN PROGRESS):**
+DEC-057 implemented on Oct20/21: strict portable scoped fragment/separate page,
+normal current authorization/RLS, timeline100/Audit100/AI20, exact assignee/
+workspace context and core-derived management/transition projection. No migration,
+new endpoint or runtime Audit SELECT. Exact RLS-readable Incident precedes the
+same-transaction narrow authorized control projection; runtime restored finally.
+SQL/HTTP/full OpenAPI, independent native navigation/reload/Back/Forward/human/
+late/current-grant/four-width and actual authenticated Jupiter/compiled worker
+direct-link/reload acceptance pass. Visual ISO bidi/success notice fixes included.
+Incident Help v3 published/read through supported LOCAL public-audience service.
+Final-source serial release log output/goal069-incident-final-release-3.log ends
+GOAL069_INCIDENT_FINAL_RELEASE_EXIT=0:472 tests (179 API,40 Web,253 Hub),
+build/lint/typechecks,migration/native/reference/performance and both standalone
+fetch/React isolation scripts pass. Failed earlier runs preserved in Evidence:
+accidental old fixture line restored; fresh whole-cohort fixtures now use explicit
+DB-observed24h windows. Added real500us inclusive-window test; prior wall-clock
+failure cause is an inference, not a proven production bug; counts unchanged.
+Post-gate LOCAL:83 migrations,zero temporary DBs/RESERVED attempts,unchanged
+enabled100000 monthly input+output budget. Shared3000/5174 stopped. No external
+provider call/live tenant/key/Preview/main deployment. A01/A07 full inventory acceptance,
+A08 Investigator controls/command ownership,A09 operator correlation,A10 >100
+human-note visibility/embedded Platform reload and full original audit remain.
+No whole-Goal completion claim.
+
 **2026-10-20 Issue Explorer remediation (GOAL-069 IN PROGRESS):**
 DEC-056 extends the existing Issue list/detail (60 operations, no migration):
 strict global sorting/grouping, whole-cohort enum counts before pagination,

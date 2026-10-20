@@ -3,6 +3,33 @@
 Product-independent packages and PostgreSQL server adapters for GOAL-069.
 Implementation is IN PROGRESS; no complete platform claim is made.
 
+## Addressable Incident workspace
+
+The existing `OperationsConsole` now owns only the reserved fragment namespace
+`#obs/incident/{applicationId}/{environmentId}/{incidentId}?tenant={opaqueReference}`
+on its current host page. It does not require or replace the host router. Jupiter
+mounts it at `/operations`; the independent Browser reference mounts it on its
+own page. Native reload, Back/Forward and copying the page address work normally.
+Do not put a credential in the fragment. Other fragments, including `#alerts`,
+remain host-owned. A malformed recognized Incident link displays an error and
+does not guess a different scope or fetch a default Incident.
+
+All three IDs are exact UUID references. Omit tenant only for an authorized
+all-tenant view; `tenant=` is the distinct tenant-free scope. Encode a concrete
+opaque tenant reference with `URLSearchParams`, not string concatenation. The
+list's own link binds the row's actual tenant. Every read/command still uses the
+normal authenticated API/current grants/RLS; sharing a link grants no authority.
+
+The existing GET `/operations/applications/{applicationId}/incidents/{incidentId}`
+with `environmentId` and optional `tenantReference` query is the workspace data
+contract. Its additional projections are documented in OpenAPI: rule-time impact,
+retained linked Issue timeline (100), exact immutable Audit (100), current
+assignee/management/allowed transitions, related Issues/Feedback and successful
+AI findings (20). Missing impact/evidence stays unknown; this is not unlimited
+history or a new provider call. Human mutations use existing reason-bearing
+status/assignment/note commands. Runtime Audit SELECT is not granted: only an
+already RLS-readable exact Incident can obtain its narrow control projection.
+
 ## Application ingestion policy
 
 Whole-Application ADMIN can GET/PUT

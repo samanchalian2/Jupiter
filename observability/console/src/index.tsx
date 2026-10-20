@@ -9,6 +9,8 @@ import {observationLabel,overviewStateLabel} from './overview.js';
 import {RegistryConfiguration} from './RegistryConfiguration.js';
 import {CommandContext} from './command-context.js';
 import {IssueExplorerControls,initialIssueSelection,issueQuery,withoutIssueOrdering,type IssueGroup} from './IssueExplorerControls.js';
+import {incidentRoute,incidentHref,type IncidentRoute} from './incident-route.js';
+import {IncidentWorkspace} from './IncidentWorkspace.js';
 export { initialFilters, result, scopeQuery, type OperationsClient, type Filters } from './client.js';
 type Row = Record<string, unknown>;
 type Application = { id: string; name: string; slug: string; enabled: boolean };
@@ -28,18 +30,27 @@ function DataTable({ rows, open, label, compact=false,className='' }: { rows: Ro
   return <div className={`obs-table ${className}`} role={label?'region':undefined} aria-label={label} tabIndex={label?0:undefined}><table><thead><tr>{columns.map(key=><th key={key}>{labels[key] ?? key}</th>)}{open&&<th>جزئیات</th>}</tr></thead><tbody>{rows.map((row,index)=><tr key={text(row.id ?? index)}>{columns.map(key=><td dir="auto" key={key}>{compact&&text(row[key]).length>180?<details><summary aria-label="نمایش متن کامل">{text(row[key]).slice(0,140)}…</summary><p>{text(row[key])}</p></details>:text(row[key])}</td>)}{open&&<td><button type="button" className="secondary" onClick={()=>open(row)}>بررسی</button></td>}</tr>)}</tbody></table></div>;
 }
 export function OperationsConsole({ client,initialSection='overview' }: { client: OperationsClient;initialSection?:'overview'|'alert-inbox' }) {
+ const [route,setRoute]=useState(()=>typeof window==='undefined'?null:incidentRoute(window.location.hash));
+ const previous=useRef<IncidentRoute|null>(route&&route!=='INVALID'?route:null);
+ useEffect(()=>{const changed=()=>{const next=incidentRoute(window.location.hash);if(next&&next!=='INVALID')previous.current=next;setRoute(next);};window.addEventListener('hashchange',changed);return()=>window.removeEventListener('hashchange',changed);},[]);
+ const back=()=>{window.location.hash='#observability';};
+ if(route==='INVALID')return <article className="obs-console" dir="rtl"><h1>آدرس رخداد معتبر نیست</h1><p role="alert">محدوده یا شناسهٔ رخداد در آدرس معتبر نیست؛ هیچ داده‌ای درخواست نشد.</p><button type="button" className="secondary" onClick={back}>بازگشت به مرکز پایش</button></article>;
+ if(route)return <IncidentWorkspace key={JSON.stringify(route)} client={client} route={route} onBack={back}/>;
+ return <ConsoleHome client={client} initialSection={previous.current?'incidents':initialSection} initialScope={previous.current??undefined}/>;
+}
+function ConsoleHome({client,initialSection,initialScope}:{client:OperationsClient;initialSection:Section;initialScope?:IncidentRoute}){
   const [identity,setIdentity]=useState<{principalId:string;displayName:string}|null>(null);
   useEffect(()=>{let live=true;setIdentity(null);void client.request('/operations/identity').then(result<{principalId:string;displayName:string}>).then(value=>{if(live)setIdentity(value);}).catch(()=>{if(live)setIdentity(null);});return()=>{live=false;};},[client]);
-  const [applications,setApplications]=useState<Application[]>([]),[applicationId,setApplicationId]=useState('');
-  const [environments,setEnvironments]=useState<Environment[]>([]),[environmentId,setEnvironmentId]=useState('');
-  const [section,setSection]=useState<Section>(initialSection),[filters,setFilters]=useState<Filters>(initialFilters),[draft,setDraft]=useState<Filters>(initialFilters);
+  const [applications,setApplications]=useState<Application[]>([]),[applicationId,setApplicationId]=useState(initialScope?.applicationId??'');
+  const [environments,setEnvironments]=useState<Environment[]>([]),[environmentId,setEnvironmentId]=useState(initialScope?.environmentId??'');
+  const [section,setSection]=useState<Section>(initialSection),[filters,setFilters]=useState<Filters>(()=>({...initialFilters,tenant:initialScope?.tenantReference??''})),[draft,setDraft]=useState<Filters>(()=>({...initialFilters,tenant:initialScope?.tenantReference??''}));
   const [rows,setRows]=useState<Row[]>([]),[total,setTotal]=useState(0),[overview,setOverview]=useState<Row|null>(null),[detail,setDetail]=useState<Row|null>(null);
   const [error,setError]=useState(''),[notice,setNotice]=useState(''),[loading,setLoading]=useState(false),[paused,setPaused]=useState(false),[revision,setRevision]=useState(0);
   const [reason,setReason]=useState(''),[note,setNote]=useState(''),[nextStatus,setNextStatus]=useState(''),[assigned,setAssigned]=useState(''),[internal,setInternal]=useState(false),[busy,setBusy]=useState(false);
   const [newName,setNewName]=useState(''),[newSlug,setNewSlug]=useState('');
   const [analyticsReport,setAnalyticsReport]=useState('incidentTrend');
   const [issueSelection,setIssueSelection]=useState(initialIssueSelection),[issueGroups,setIssueGroups]=useState<IssueGroup[]>([]);
-  const generation=useRef(0), detailGeneration=useRef(0),environmentApplication=useRef('');
+  const generation=useRef(0), detailGeneration=useRef(0),environmentApplication=useRef(initialScope?.applicationId??'');
   const prefix=`/operations/applications/${applicationId}`;
   const query=useMemo(()=>section==='issues'?issueQuery(scopeQuery(environmentId,filters),issueSelection):scopeQuery(environmentId,filters),[environmentId,filters,revision,section,issueSelection]);
   const resource:Resource=section==='live'?'events':section==='analytics'?'events':section==='incidents'?'incidents':section==='feedback'?'feedback':'issues';
@@ -66,7 +77,7 @@ export function OperationsConsole({ client,initialSection='overview' }: { client
     return()=>{generation.current++;};
   },[client,applicationId,environmentId,section,filters,revision,comparingProducts,issueSelection]);
   useEffect(()=>{if(section!=='live'||paused)return;const timer=setInterval(()=>{if(document.visibilityState==='visible')refresh();},10000);return()=>clearInterval(timer);},[section,paused]);
-  const open=async(row:Row)=>{const current=++detailGeneration.current;setDetail(null);setBusy(false);setNotice('');setNote('');setReason('');setNextStatus('');setAssigned('');try{const value=await result<Row>(await client.request(`${prefix}/${resource}/${row.id}?${withoutIssueOrdering(query)}`));if(current===detailGeneration.current)setDetail(value);}catch(cause){if(current===detailGeneration.current)setError(text((cause as Error).message));}};
+  const open=async(row:Row)=>{if(resource==='incidents'){window.location.hash=incidentHref({applicationId,environmentId,incidentId:String(row.id),tenantReference:typeof row.tenant_reference==='string'?row.tenant_reference:null});return;}const current=++detailGeneration.current;setDetail(null);setBusy(false);setNotice('');setNote('');setReason('');setNextStatus('');setAssigned('');try{const value=await result<Row>(await client.request(`${prefix}/${resource}/${row.id}?${withoutIssueOrdering(query)}`));if(current===detailGeneration.current)setDetail(value);}catch(cause){if(current===detailGeneration.current)setError(text((cause as Error).message));}};
   const mutate=async(event:FormEvent)=>{event.preventDefault();if(!detail)return;const ownsCommand=commands.current.begin(),opened=detailGeneration.current,current=()=>ownsCommand()&&opened===detailGeneration.current;setBusy(true);setError('');try{
     const scope={environmentId,...(filters.tenant?{tenantReference:filters.tenant}:{})};
     const path=resource==='incidents'?`${prefix}/incidents/${detail.id}${nextStatus?'/transition':''}`:resource==='feedback'?`${prefix}/feedback/${detail.id}/replies`:`${prefix}/issues/${detail.id}`;

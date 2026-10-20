@@ -1,6 +1,6 @@
 import type { PoolClient } from 'pg';
-import { ContractError, isUuid, isRecord, SEVERITIES, CATEGORIES, type IncidentStatus } from '@observability/contracts';
-import { redactText } from '@observability/core';
+import { ContractError, isUuid, isRecord, SEVERITIES, CATEGORIES, INCIDENT_STATUSES, type IncidentStatus } from '@observability/contracts';
+import { redactText,canTransitionIncident } from '@observability/core';
 import { HubDatabase, type DataScope } from './database.js';
 import { RegistryService } from './registry.js';
 import {issueOrdering} from './issue-explorer.js';
@@ -57,6 +57,18 @@ export class OperationsService {
    if(resource==='issues'){row.events=(await c.query(`SELECT e.event_id,e.occurred_at,e.normalized_message,e.sanitized_stack,e.trace_id,e.request_id,e.release_version FROM observability.issue_events l JOIN observability.events e ON e.application_id=l.application_id AND e.environment_id=l.environment_id AND e.event_id=l.event_id WHERE l.application_id=$1 AND l.environment_id=$2 AND l.issue_id=$3 ORDER BY e.occurred_at DESC LIMIT 100`,[scope.applicationId,scope.environmentId,id])).rows;row.activity=(await c.query('SELECT kind,body,actor_principal_id,created_at FROM observability.issue_activity WHERE application_id=$1 AND environment_id=$2 AND issue_id=$3 ORDER BY created_at DESC LIMIT 100',[scope.applicationId,scope.environmentId,id])).rows;row.feedback=(await c.query('SELECT f.id,f.tracking_id,f.subject,f.status FROM observability.feedback f JOIN observability.issue_events e ON e.event_id=f.related_event_id AND e.application_id=f.application_id AND e.environment_id=f.environment_id WHERE e.issue_id=$1 LIMIT 100',[id])).rows;}
    if(resource==='issues')row.affected_releases=(await c.query(`SELECT e.release_version,count(*)::text events,min(e.occurred_at) first_seen,max(e.occurred_at) last_seen FROM observability.issue_events l JOIN observability.events e ON e.application_id=l.application_id AND e.environment_id=l.environment_id AND e.event_id=l.event_id WHERE l.application_id=$1 AND l.environment_id=$2 AND l.issue_id=$3 GROUP BY e.release_version ORDER BY count(*) DESC,e.release_version ASC NULLS LAST LIMIT 100`,[scope.applicationId,scope.environmentId,id])).rows;
    if(resource==='incidents'){
+    row.workspace_context=(await c.query('SELECT a.name application_name,e.key environment_key,e.kind environment_kind FROM observability.applications a JOIN observability.environments e ON e.application_id=a.id WHERE a.id=$1 AND e.id=$2',[scope.applicationId,scope.environmentId])).rows[0];
+    // Read the exact Incident under tenant RLS before using the control role
+    // for its narrow Audit/principal projection. Runtime gets no new grants.
+    await c.query('SET LOCAL ROLE observability_control');
+    try{
+     await this.registry.authorize(c,principalId,scope.applicationId,['ADMIN','OPERATOR','ANALYST','VIEWER'],scope.environmentId,scope.tenantReference);
+     row.audit_history=(await c.query("SELECT id,action,reason,actor_principal_id,created_at FROM observability.audit WHERE application_id=$1 AND metadata->>'incidentId'=$2 AND action IN ('INCIDENT_STATUS_CHANGED','INCIDENT_ASSIGNED','INCIDENT_NOTE_ADDED') ORDER BY created_at DESC,id DESC LIMIT 100",[scope.applicationId,id])).rows;
+     row.assigned_operator=row.assigned_principal_id?(await c.query('SELECT id,display_name,active FROM observability.principals WHERE id=$1',[row.assigned_principal_id])).rows[0]??null:null;
+     row.can_manage=true;try{await this.registry.authorize(c,principalId,scope.applicationId,['ADMIN','OPERATOR'],scope.environmentId,scope.tenantReference);}catch(error){if(error instanceof ContractError&&error.reasonCode==='OPERATIONAL_ACCESS_DENIED')row.can_manage=false;else throw error;}
+     row.allowed_transitions=row.can_manage?INCIDENT_STATUSES.filter(status=>canTransitionIncident(row.status as IncidentStatus,status)):[];
+    }finally{await c.query('SET LOCAL ROLE observability_runtime');}
+    row.timeline=(await c.query(`SELECT e.event_id,e.occurred_at,e.received_at,e.normalized_message,e.severity,e.category,e.release_version,e.trace_id,e.request_id FROM observability.issue_events l JOIN observability.events e ON e.application_id=l.application_id AND e.environment_id=l.environment_id AND e.event_id=l.event_id WHERE l.application_id=$1 AND l.environment_id=$2 AND l.issue_id=$3 ORDER BY e.occurred_at DESC,e.event_id DESC LIMIT 100`,[scope.applicationId,scope.environmentId,row.issue_id])).rows;
     row.activity=(await c.query('SELECT kind,reason,from_status,to_status,actor_principal_id,created_at FROM observability.incident_activity WHERE application_id=$1 AND environment_id=$2 AND incident_id=$3 ORDER BY created_at LIMIT 100',[scope.applicationId,scope.environmentId,id])).rows;
     row.issues=(await c.query('SELECT id,title,status,severity,occurrence_count,first_seen,last_seen FROM observability.issues WHERE application_id=$1 AND environment_id=$2 AND id=$3',[scope.applicationId,scope.environmentId,row.issue_id])).rows;
     row.feedback=(await c.query('SELECT f.id,f.tracking_id,f.subject,f.status FROM observability.feedback f WHERE f.application_id=$1 AND f.environment_id=$2 AND EXISTS(SELECT 1 FROM observability.issue_events l WHERE l.application_id=f.application_id AND l.environment_id=f.environment_id AND l.issue_id=$3 AND l.event_id=f.related_event_id) ORDER BY f.created_at DESC LIMIT 100',[scope.applicationId,scope.environmentId,row.issue_id])).rows;

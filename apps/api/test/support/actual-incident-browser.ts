@@ -1,0 +1,27 @@
+import {expect,vi} from 'vitest';
+import {randomUUID} from 'node:crypto';
+import {join} from 'node:path';
+import {mkdir} from 'node:fs/promises';
+import type {Pool} from 'pg';
+
+/** Actual Jupiter login/App/OperationsWorkspace and compiled Hub route. */
+export async function acceptActualIncidentBrowser(browser:any,input:{pool:Pool;base:string;webOrigin:string;organizationId:string;applicationId:string;password:string}){
+ const context=await browser.newContext();let pagesErrors=0;
+ try{
+  const page=await context.newPage();page.on('pageerror',()=>{pagesErrors++;});await page.goto(`${input.webOrigin}/operations`);
+  await page.locator('input[autocomplete="username"]').fill('admin@host.invalid');await page.locator('input[autocomplete="current-password"]').fill(input.password);
+  const login=page.waitForResponse((response:any)=>new URL(response.url()).pathname==='/api/v1/auth/login');await page.getByRole('button',{name:'ورود به سامانه',exact:true}).click();const loggedIn=await login;expect(loggedIn.status()).toBe(201);const token=(await loggedIn.json()).accessToken;
+  const environmentId=(await input.pool.query('SELECT id FROM observability.environments WHERE application_id=$1 AND key=$2',[input.applicationId,'test'])).rows[0].id;
+  const prefix=`${input.base}/observability/operations/applications/${input.applicationId}`,headers={authorization:`Bearer ${token}`,'content-type':'application/json'};
+  const configured=await fetch(`${prefix}/rules`,{method:'PUT',headers,body:JSON.stringify({code:'CRITICAL_EVENT',enabled:true,threshold:1,minimum_samples:1,window_seconds:60,cooldown_seconds:60,reason:'Actual workspace host acceptance'})});expect(configured.status).toBe(200);
+  const credentialResponse=await fetch(`${prefix}/credentials`,{method:'POST',headers,body:JSON.stringify({environmentId,reason:'Disposable workspace native ingestion'})});expect(credentialResponse.status).toBe(201);const credential=(await credentialResponse.json()).token;
+  const eventId=randomUUID(),code=`host.workspace.${randomUUID()}`;
+  const accepted=await fetch(`${input.base}/observability/events/batch`,{method:'POST',headers:{authorization:`Bearer ${credential}`,'content-type':'application/json'},body:JSON.stringify({events:[{schemaVersion:'1.1',eventId,applicationId:input.applicationId,environmentId,occurredAt:new Date().toISOString(),source:'WORKER',category:'WORKER',severity:'CRITICAL',eventCode:code,normalizedMessage:'رخداد مستقل در پوستهٔ واقعی ژوپیتر',tenantReference:input.organizationId}]})});expect(accepted.status).toBe(200);expect((await accepted.json()).acknowledgements[0].status).toBe('ACCEPTED');
+  let incidentId='';await vi.waitFor(async()=>{const rows=(await input.pool.query('SELECT i.id FROM observability.incidents i JOIN observability.issue_events l ON l.application_id=i.application_id AND l.environment_id=i.environment_id AND l.issue_id=i.issue_id WHERE l.event_id=$1',[eventId])).rows;expect(rows).toHaveLength(1);incidentId=rows[0].id;},{timeout:20000,interval:100});
+  const href=`${input.webOrigin}/operations#obs/incident/${input.applicationId}/${environmentId}/${incidentId}?${new URLSearchParams({tenant:input.organizationId})}`;await page.goto(href);
+  const workspace=page.getByRole('article',{name:'فضای کاری مستقل رخداد',exact:true});await workspace.getByRole('heading',{name:'رخداد مستقل در پوستهٔ واقعی ژوپیتر',exact:true}).waitFor();await workspace.getByRole('region',{name:'خط زمانی رویدادها',exact:true}).getByText('رخداد مستقل در پوستهٔ واقعی ژوپیتر',{exact:true}).waitFor();expect(await workspace.getByLabel('محدودهٔ واقعی رخداد',{exact:true}).innerText()).toContain('Disposable Jupiter host');
+  await page.reload();await workspace.getByRole('heading',{name:'رخداد مستقل در پوستهٔ واقعی ژوپیتر',exact:true}).waitFor();
+  const widths=[];for(const width of [375,768,1024,1440]){await page.setViewportSize({width,height:900});const layout=await page.evaluate(()=>({width:innerWidth,document:document.documentElement.scrollWidth,rtl:getComputedStyle(document.documentElement).direction}));expect(layout.rtl).toBe('rtl');expect(layout.document).toBeLessThanOrEqual(width);widths.push(layout);if(process.env.OBSERVABILITY_BROWSER_ARTIFACT_DIR&&[375,1440].includes(width)){await mkdir(process.env.OBSERVABILITY_BROWSER_ARTIFACT_DIR,{recursive:true});await workspace.getByRole('heading',{name:'فضای کاری رخداد عملیاتی',exact:true}).evaluate((node:HTMLElement)=>node.scrollIntoView({block:'start'}));await page.screenshot({path:join(process.env.OBSERVABILITY_BROWSER_ARTIFACT_DIR,`jupiter-incident-${width}.png`)});}}
+  expect(pagesErrors).toBe(0);console.log(JSON.stringify({event:'observability.actual_jupiter_incident_workspace',result:'PASS',auth:'ACTUAL_PLATFORM_ADMIN_PASSWORD_JWT',path:'/operations#obs/incident/...',source:'REAL_COMPILED_HOST_WORKER_HTTP_TO_INCIDENT',navigation:'DIRECT_LINK_AND_RELOAD',context:'ACTUAL_APPLICATION_ENVIRONMENT_TENANT',widths,pagesErrors,limits:'Disposable actual Jupiter fixture only; no external provider or shared host/tenant change.'}));
+ }finally{try{expect((await context.request.post(`${input.webOrigin}/api/v1/auth/logout`)).status()).toBe(201);expect((await context.request.post(`${input.webOrigin}/api/v1/auth/refresh`)).status()).toBe(401);}finally{await context.close();}}
+}

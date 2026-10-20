@@ -1,5 +1,12 @@
 # Jupiter Design System V2
 
+DEC-057 Incident workspace is a distinct article/page on a strict scoped host-
+portable fragment, not an inline renamed detail. Named Summary/Impact/Timeline/
+Issues/Feedback/AI/hypotheses/actions/human/Audit sections use readable Persian
+text, evidence references and unknown/retention disclaimers. Existing palette,
+compact headings and 44px controls; 640px inner-scroll tables. Separate human
+status versus note/assignment forms, no auto-run suggestion controls/new main nav.
+
 DEC-056 Issue Explorer uses compact existing controls for sorting/grouping/status
 and keyboard-operable summary buttons for full-result drill-down. No new palette,
 navigation/card/wizard. The list is a keyboard-focusable inner-scroll region;
