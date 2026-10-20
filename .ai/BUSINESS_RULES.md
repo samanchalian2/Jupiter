@@ -1,5 +1,15 @@
 # Business Rules
 
+## Console command context (GOAL-069)
+
+- A committed command belongs to its original authorized target; switching scope
+  cannot redirect or undo it, nor automatically repeat it.
+- Obsolete completions cannot set the new scope's success/error/busy state,
+  redirect its Application selection, or start an old-scope CSV download.
+- A newer command owns its busy/error completion; an older one cannot clear it.
+- Current-scope completion remains visible normally. A committed creation whose
+  response became obsolete remains discoverable on an explicit list refresh.
+
 ## Application ingestion policy (GOAL-069, DEC-054)
 
 - New validated/sanitized events obey the current Application source allowlist.

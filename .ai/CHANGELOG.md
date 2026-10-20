@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-10-20 — GOAL-069 Console command completion isolation (IN PROGRESS)
+
+- Actual delayed committed rule PUT reproduced an old-App success notice in the
+  newly selected App; native regression fails before implementation.
+- Shared UI-only command ownership guards current scope/latest command/unmount;
+  detail/create/rule and CSV completion paths discard obsolete results.
+- Four unit cases and expanded native committed-rule/400/CSV/create/detail-close
+  cases pass. Broad gate failed during overlapping package rebuild/comparison
+  navigation; serial final-source repeat passes all 456 tests/build/lint/typecheck
+  and both fault scripts. Cleanup verified; shared local hosts remain stopped.
+  No API/migration/security weakening.
+- A01 and full requirement audit remain open; no target promotion.
+
 ## 2026-10-20 — GOAL-069 effective ingestion and sampling (IN PROGRESS)
 
 - DEC-054, strict versioned policy API (53 operations), existing JSON member and

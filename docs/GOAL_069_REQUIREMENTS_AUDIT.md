@@ -51,19 +51,47 @@ Policy runtime Help v4 is published/read; access/credential workflows remain ope
 
 ## Audit work not finished
 
-### Additional Console mutation-context check required
+### A07 — Issue Explorer / Incident Workspace (sections 41–42): PARTIAL
 
-Source review of `OperationsConsole.saveRule` shows an awaited PUT followed by
-unconditional notice/refresh/error/busy updates, unlike generation-guarded list
-reads and Registry configuration. The request retains its original App URL, but
-late completion may decorate a newly selected App with the old command's result.
-This is an **unverified workflow risk, not an executed defect reproduction**.
-Before final Console acceptance, hold a real rule-update response, switch App/
-environment/section, release it and inspect form/notice/busy/current-scope state.
-If reproduced, guard the mutation completion and cover the analogous create/detail
-commands; preserve original authorization/target and do not silently cancel a
-committed command or claim it affected the newly selected context. Existing
-late-read tests do not establish late-mutation safety.
+Inspected `OperationsService.filters/list/detail`, public IssueDetail/
+IncidentDetail schemas and Console DataFields/DataTable/detail section. Current
+Issue detail has event timeline, activity and related Feedback; release values
+are carried by individual events, not a dedicated affected-release projection.
+List order is fixed timestamp/ID descending; no supported sort/group selection
+contract/control is present. These facts do not prove requested Explorer
+grouping/sorting/affected-release workflows. Add explicit bounded semantics and
+real current-grant/RLS/HTTP/Browser tests before accepting section 41.
+
+Incident is currently a selected inline detail inside Console, not an independently
+addressable Incident page. Existing projection includes activity, related Issue,
+Feedback and persisted AI output. Generic DataTable serializes nested AI output
+and evidence to JSON text; it is not proof of readable Suspected Causes and
+Recommended Actions or distinct Audit History and Timeline workflows. Section 42
+requires a real independent workspace, comprehensible AI/human separation and
+all named panels. Audit current SQL/RLS projections before extending them; do not
+invent causes/actions/impact when evidence is absent. Add route/context/refresh/
+authorization/RTL/no-overflow acceptance for that actual workspace. Existing
+generic detail and Investigator-tab tests must not stand in for this requirement.
+
+This is a concrete remaining requirement, not an external infrastructure blocker
+or a waiver. Preserve A01 and final 47-section Evidence reconciliation as well.
+
+### Console mutation-context defect — reproduced, focused remediation verified
+
+Native actual HTTP fixture held a committed authorized rule PUT, switched App/
+section and released the response: baseline rendered one old success notice in
+the new scope (expected zero). CommandContext now guards rule/detail/create/CSV
+completion by current client/App/environment/section/filters/latest command and
+unmount; detail also checks the opened generation. Four unit cases and actual
+native red-to-green response pass. Expanded native acceptance passes real 400
+error suppression on section change, actual CSV download suppression after App
+change, and one committed creation without obsolete redirect. Original targets/
+Audit are not cancelled/retargeted/undone. Temporary global create grant revoked;
+disposable fixture only. Final serial LOCAL 456-test release gate/both fault
+scripts and cleanup pass, including the held committed detail-note/close with
+no stuck busy/obsolete notice. Earlier broad run failed during overlapping build
+and is not counted as a pass. This addresses
+the concrete completion race, not all Console workflow requirements.
 
 The source sections 1–73 and DoD have been reread. The rows above record concrete
 findings, not final disposition of every bullet. Continue reconciling the other

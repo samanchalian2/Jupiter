@@ -2,6 +2,14 @@
 
 ## GOAL-069 Observability Hub
 
+Console command completion now verifies the current client/App/environment/
+section/filter identity and latest command before UI state/download/selection
+side effects. Detail mutations additionally require the same opened detail.
+This restores context-isolation presentation, not server-side cancellation or
+rollback; original verified target and atomic Audit remain authoritative.
+Unrelated old command failures never decorate the new scope. No tenant permission
+or endpoint contract changes; a committed command must not be auto-retried.
+
 DEC-054 policy commands require current whole-Application ADMIN and safe reason,
 reject unknown/incomplete/unbounded schema, and Audit atomically. They return
 only the validated ingestion projection, never arbitrary Application policy

@@ -4,6 +4,55 @@ Status: IN PROGRESS. Owner-approved plan supersedes the stale GOAL-060 identifie
 in the supplied specification. GOAL-060 Personal Service history is preserved.
 GOAL-059 remains BLOCKED; LOCAL evidence is not staging acceptance.
 
+## 2026-10-20 — Console mutation completion context (LOCAL)
+
+- Existing `saveRule` awaited PUT then unconditionally set notice/refresh/error/
+  busy. Native fixture holds the actual successful authorized HTTP response after
+  commit, switches App/section, then releases it. Baseline fails with one obsolete
+  rule success notice in the new App where zero expected; actual red log:
+  output/goal069-mutation-red.log. This is an executed defect, not a static concern.
+- CommandContext separates UI completion ownership from server execution: current
+  client/App/environment/section/filter references, monotonic context epoch,
+  latest command and unmount invalidation. Rule/detail/create/CSV paths check it
+  before any success/error/busy/selection/download effects. Detail additionally
+  checks its opened generation; opening a replacement detail resets its local
+  busy/notice. CSV blob is not converted/downloaded after context change.
+- No request cancellation/retry/rollback is invented. Server still commits its
+  original authorized target; no endpoint/schema/role/business/provider change.
+  This restores the existing late-context invariant, no architecture ADR needed.
+- Four unit cases cover stable same-context rerenders, every context dimension,
+  round-trip non-resurrection, newest-command ownership and unmount. Console 20
+  tests/build pass. Initial native red-to-green rule response scenario passes in
+  output/goal069-mutation-green.log; rest of previous native acceptance passes.
+- Expanded native fixture now tests a real invalid-rule 400 after section change,
+  actual CSV response after App change and actual one-time App creation after
+  navigating away. Temporary REGISTRY_CREATE is explicit and revoked in finally;
+  disposal removes all fixture Apps. Expanded native passes. Later code review
+  found closing a detail while its mutation is pending invalidates completion
+  but also needs to reset busy locally. Close now resets busy/notice; added actual
+  held committed-note/close/no-stuck-CSV/no-obsolete-notice Browser check.
+  This last change occurred after the broad gate started; that execution alone
+  cannot certify final source. Final-source full gate still required.
+- Broad run output/goal069-mutation-release.log exits 1: its later comparison
+  Browser selection timed out after a navigation. During that run a focused
+  check rebuilt the same Console dist while its Vite consumer was open; this
+  is a fixture-contamination risk, not evidence of product comparison failure
+  or a successful full gate. Final-source focused native (including detail close)
+  passes separately. Repeat full gate serially, with no overlapping package build
+  or Browser fixture, preserving all comparison assertions/timeouts.
+- Final-source serial repeat passes with unchanged assertions/timeouts: durable
+  output/goal069-mutation-final-release.log ends
+  GOAL069_MUTATION_FINAL_RELEASE_EXIT=0. 456 tests (179 API, 40 Web, 237 Hub =
+  99 contracts/core/SDK/adapters + 118 server + 20 Console), builds/lint/typechecks,
+  migration rehearsal, reference clients, full native responsive/performance/
+  security acceptance and both standalone fetch/React fault scripts pass. This
+  run includes committed-detail-close/no-stuck-busy proof. Post-gate read-only
+  status: 83 migrations, zero temporary DBs/active AI attempts; enabled 100000
+  monthly budget unchanged. Shared 3000/5174 remain stopped, no live readiness
+  claim. No external provider/customer quota/target host changes.
+- A01 access/credential UI and full specification/Evidence audit remain open.
+  No live Jupiter rule, target deployment, provider credential or budget mutation.
+
 ## 2026-10-20 — Effective ingestion/sampling policy / A01 partial (LOCAL)
 
 - DEC-054 adds GET/PUT ingestion-policy (53 documented operations) under current

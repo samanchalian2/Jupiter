@@ -2,6 +2,13 @@
 
 ## GOAL-069 — Observability Hub continuation (IN PROGRESS)
 
+Console old-context mutation notice reproduced with real committed PUT, then
+initial native green/four unit cases after UI-only completion ownership guards.
+Expanded native rule/400/CSV/create/detail-close passes. Serial final-source LOCAL
+456-test release gate/both fault scripts and cleanup pass after failed broad run.
+Shared local hosts remain stopped. Does not
+waive A01/full-spec requirements (including A07 Explorer/Incident audit gaps).
+
 DEC-054 now implements effective ingestion/source/sampling policy API/Console
 and actual transaction enforcement, with focused unit/SDK/SQL/HTTP/native passes.
 Final-source full LOCAL 452-test release gate and both fault scripts pass;

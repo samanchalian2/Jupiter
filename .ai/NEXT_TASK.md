@@ -20,13 +20,32 @@ This is not a blanket completion claim for all product workflows or the live
 Jupiter shell. Section-63 Help is runtime-published with actual Jupiter operations,
 Platform-panel and Feedback acceptance. The measured local performance checkpoint
 and Node hot-path remediation plus full-limit Browser/batch/redaction QC bring
-the full release gate to 452 tests with enforced ingestion/sampling policy, audited Registry configuration, complete Overview/four-width/keyboard acceptance, named recovery triggers/native no-start acceptance, configurable rule cadence/actual worker, configurable retention/native expiry, actual authenticated Web/AppModule, React/fetch failure isolation, data-write/diagnostic-checkpoint isolation/real quota, explicit product comparison, scoped analytics, real queued provider failure/metering and concurrent/product-read boundary
+the full release gate to 456 tests with native command-completion context isolation, enforced ingestion/sampling policy, audited Registry configuration, complete Overview/four-width/keyboard acceptance, named recovery triggers/native no-start acceptance, configurable rule cadence/actual worker, configurable retention/native expiry, actual authenticated Web/AppModule, React/fetch failure isolation, data-write/diagnostic-checkpoint isolation/real quota, explicit product comparison, scoped analytics, real queued provider failure/metering and concurrent/product-read boundary
 measurements and the performance flag enabled. Inspect
 latest Evidence for gates/runtime/remote commit.
 
 ### Remaining work — preserve the full original scope
 
-**Concrete audited work:** `docs/GOAL_069_REQUIREMENTS_AUDIT.md` A01–A06.
+Console mutation-context audit has a verified real-HTTP red reproduction and
+initial native green fix, four command-ownership unit cases. Expanded native
+real-error/export/create acceptance passes; pending-detail close/busy reset also
+added after broad-gate start, with its own actual committed-note native check.
+Final focused native including committed-note/close passes. Broad gate failed in
+comparison after navigation during overlapping package build (fixture risk).
+Serial final-source gate completed: output/goal069-mutation-final-release.log
+ends GOAL069_MUTATION_FINAL_RELEASE_EXIT=0; 456 tests/build/lint/typecheck and
+both fault scripts pass. Cleanup: 83 migrations, zero temporary DBs/active AI
+attempts, unchanged enabled 100000 budget. Shared 3000/5174 remain stopped.
+No public contract/ADR change needed:
+this restores the existing scope/late-response invariant. Then continue A01
+supported access/credentials and the full original requirement reconciliation.
+A07 now records concrete Explorer/Incident workspace gaps from sections 41–42:
+fixed list ordering/no supported group-sort selection, no independent Incident
+page, generic nested JSON instead of complete human-readable AI/workspace
+panels. Inspect/implement those original requirements with explicit contracts,
+RLS/real HTTP/Browser acceptance; do not waive them from current generic detail.
+
+**Concrete audited work:** `docs/GOAL_069_REQUIREMENTS_AUDIT.md` A01–A07.
 Registry mutable metadata/enabled/policy workflows (section 8), Browser retention
 options (14), named activity/probe recovery triggers (19), configurable bounded
 host rule cadence (34) and full required Overview (39) were audited. A02 now has

@@ -1,5 +1,26 @@
 # Current State
 
+**2026-10-20 Console mutation-context remediation (GOAL-069 IN PROGRESS):**
+Native actual PUT reproduction confirms a rule save committed in App A but its
+late success notice rendered under newly selected App B (red assertion 1 vs 0).
+CommandContext now owns completion by client/App/environment/section/filters and
+latest command, invalidates on unmount, and guards rule/detail/create/CSV paths.
+Detail selection additionally checks the opened detail generation. Commands are
+not cancelled/retried/rolled back; only obsolete UI completions are discarded.
+Four unit cases and expanded red-to-green native rule/real-400/CSV/create pass.
+Closing pending detail also resets local busy/notice; added committed-note/close
+native check passes. Broad run failed at comparison after navigation during
+overlapping focused package rebuild (fixture-contamination risk, not waived).
+Final-source serial full LOCAL gate now passes: 456 tests (179 API, 40 Web,
+237 Hub), builds/lint/typechecks, migration/native/reference/performance gates
+and both standalone fault scripts. Durable log output/goal069-mutation-final-
+release.log ends GOAL069_MUTATION_FINAL_RELEASE_EXIT=0. Post-gate: 83 migrations,
+zero temporary DBs/active AI attempts, enabled 100000 monthly budget unchanged.
+No API/schema/authorization/business or host-deployment change. A01 supported
+access/credentials and full-spec audit remain open; A07 additionally records
+concrete original Explorer/independent Incident workspace gaps, not infrastructure
+blockers. Shared hosts still stopped.
+
 **2026-10-20 effective ingestion/sampling (GOAL-069 IN PROGRESS):** DEC-054
 adds strict whole-App ADMIN GET/PUT policy operations (53 public operations),
 using the existing Application policy JSON. Defaults preserve full ingestion.
