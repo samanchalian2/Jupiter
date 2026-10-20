@@ -1,11 +1,12 @@
 // Explicit LOCAL mounted-React acceptance, no sessions/business data/provider.
 import {createRequire} from 'node:module';
+import {observabilityBrowserFixture} from './observability-browser-fixture.mjs';
 const require=createRequire(new URL('../observability/server/package.json',import.meta.url));
 const {chromium}=require('playwright');
-const origin=process.env.JUPITER_REACT_ACCEPTANCE_ORIGIN??'http://127.0.0.1:5174';
-if(!['localhost','127.0.0.1','[::1]'].includes(new URL(origin).hostname))throw Error('LOCAL acceptance only');
-const browser=await chromium.launch({channel:'msedge',headless:true});
+const fixture=await observabilityBrowserFixture(process.env.JUPITER_REACT_ACCEPTANCE_ORIGIN),origin=fixture.origin;
+let browser;
 try{
+ browser=await chromium.launch({channel:'msedge',headless:true});
  const context=await browser.newContext();await context.grantPermissions(['local-network-access'],{origin});const page=await context.newPage();
  const errors=[];page.on('pageerror',()=>errors.push('PAGE_ERROR'));
  await page.route(`${origin}/__obs069_react_acceptance`,route=>route.fulfill({contentType:'text/html',body:`<!doctype html><html lang="fa" dir="rtl"><body><script type="module">
@@ -32,4 +33,4 @@ try{
  }
  console.log(JSON.stringify({event:'observability.react_mounted_isolation',result:'PASS',cases:outcomes,unhandled:0,pageErrors:0,limits:'Actual reusable React adapter mounted with adversarial SDK ports in native Edge via local Vite fixture. Not authenticated full Jupiter shell or persisted telemetry proof.'}));
  await context.close();
-}finally{await browser.close();}
+}finally{await browser?.close();await fixture.close();}

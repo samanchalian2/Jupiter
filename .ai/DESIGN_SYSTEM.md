@@ -1,5 +1,11 @@
 # Jupiter Design System V2
 
+DEC-054 policy editing stays inside existing Application management with the
+same semantic colors. Source checkboxes have 44px labels; category percentages
+use a responsive grid, no new navigation/card/wizard. Persian impact text names
+whole-App scope, terminal exclusion, independent SDK sampling and severe bypass.
+Safe reason/confirmation is separate from ordinary metadata configuration.
+
 DEC-053 adds one compact configuration section inside existing Applications
 navigation, not a new menu/wizard. Application identity is read-only in a native
 details block; mutable metadata/origins and environment enablement have separate

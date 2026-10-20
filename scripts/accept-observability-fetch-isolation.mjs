@@ -1,10 +1,10 @@
 // LOCAL real-browser QC of the actual Jupiter fetch adapter. No user credentials.
 import {createRequire} from 'node:module';
 import {createServer} from 'node:http';
+import {observabilityBrowserFixture} from './observability-browser-fixture.mjs';
 const require=createRequire(new URL('../observability/server/package.json',import.meta.url));
 const {chromium}=require('playwright');
-const origin=process.env.JUPITER_FETCH_ACCEPTANCE_ORIGIN??'http://127.0.0.1:5174';
-if(!['localhost','127.0.0.1','[::1]'].includes(new URL(origin).hostname))throw Error('LOCAL acceptance only');
+const fixture=await observabilityBrowserFixture(process.env.JUPITER_FETCH_ACCEPTANCE_ORIGIN),origin=fixture.origin;
 const commits=new Map();
 const server=createServer(async(request,response)=>{
  response.setHeader('access-control-allow-origin',origin);
@@ -60,4 +60,4 @@ try{
  await page.getByRole('button',{name:'ارسال درخواست بدون تداخل تأیید شد'}).waitFor();
  console.log(JSON.stringify({event:'observability.jupiter_fetch_browser_isolation',result:'PASS',...results,committedOnce:results.results.length,pageErrors:errors.length,limits:'Actual Jupiter source module, native Edge fetch and loopback HTTP fixture. Not authenticated full-shell/ticket-service acceptance.'}));
  await context.close();
-}finally{await browser?.close();server.closeAllConnections();await new Promise(done=>server.close(()=>done()));}
+}finally{await browser?.close();server.closeAllConnections();await new Promise(done=>server.close(()=>done()));await fixture.close();}

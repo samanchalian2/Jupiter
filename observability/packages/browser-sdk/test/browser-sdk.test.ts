@@ -6,6 +6,10 @@ const event={category:'FRONTEND' as const,severity:'ERROR' as const,eventCode:'t
 const setup=(overrides:Partial<ConstructorParameters<typeof BrowserSdk>[0]>={})=>new BrowserSdk({reportMetrics:false,applicationId:scope.applicationId,environmentId:scope.environmentId,endpoint:'https://hub.example.test/api/v1/observability',contextProvider:()=>scope,authProvider:async s=>({scope:s,token:'unit-test-placeholder',expiresAt:Date.now()+60_000}),storage:new MemoryQueue(),...overrides});
 const ackTransport:typeof fetch=async(_url,init)=>{const batch=JSON.parse(String(init?.body));return Response.json({schemaVersion:'1.1',acknowledgements:batch.events.map((e:{eventId:string})=>({eventId:e.eventId,status:'ACCEPTED'}))});};
 describe('browser queue protocol and isolation',()=>{
+  it('removes intentional policy exclusions without reporting transport loss, while other rejections still count',async()=>{
+    const sdk=setup({transport:async(_url,init)=>{const batch=JSON.parse(String(init?.body));return Response.json({schemaVersion:'1.1',acknowledgements:batch.events.map((item:{eventId:string},index:number)=>({eventId:item.eventId,status:'REJECTED',reasonCode:['SAMPLING_EXCLUDED','SOURCE_DISABLED_BY_POLICY','INVALID_EVENT'][index]}))});}});
+    for(let index=0;index<3;index++)await sdk.capture(event);await sdk.flush();expect(await sdk.getStatus()).toMatchObject({queued:0,dropped:1});expect(sdk.getMetricReport()!.counters).toEqual({dropped:1,retryDropped:0,retryDelivered:0});
+  });
   it('coalesces successful probe notifications and preserves retry backoff and event identity',async()=>{
     vi.useFakeTimers();try{
       const store=new MemoryQueue(),sent:string[]=[];let failing=true;

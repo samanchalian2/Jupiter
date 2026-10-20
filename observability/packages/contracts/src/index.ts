@@ -7,6 +7,8 @@ export const CATEGORIES = ['FRONTEND','BACKEND','WORKER','CONNECTIVITY','PERFORM
 export const SOURCES = ['BROWSER','SERVER','WORKER','REFERENCE_CLIENT'] as const;
 export const ENVIRONMENT_KINDS = ['DEVELOPMENT','TEST','STAGING','PRODUCTION'] as const;
 export const OPERATIONAL_ROLES = ['ADMIN','OPERATOR','ANALYST','VIEWER'] as const;
+/** Intentional server-policy filtering is terminal, but is not transport loss. */
+export function isPolicyExclusion(ack:{status:unknown;reasonCode?:unknown}):boolean{return ack.status==='REJECTED'&&(ack.reasonCode==='SAMPLING_EXCLUDED'||ack.reasonCode==='SOURCE_DISABLED_BY_POLICY');}
 export type Severity = typeof SEVERITIES[number];
 export type Category = typeof CATEGORIES[number];
 export type EventSource = typeof SOURCES[number];

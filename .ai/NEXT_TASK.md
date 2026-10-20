@@ -4,7 +4,7 @@
 
 The entire approved objective remains active. Source of truth:
 `docs/GOAL_069_SPECIFICATION.md` (all sections and A–I Definition of Done),
-`docs/GOAL_069_EVIDENCE.md`, current state and DEC-038 through DEC-053.
+`docs/GOAL_069_EVIDENCE.md`, current state and DEC-038 through DEC-054.
 Historical GOAL-060 Personal Service is not renamed. Do not start another Goal.
 
 ### Latest implementation boundary
@@ -20,7 +20,7 @@ This is not a blanket completion claim for all product workflows or the live
 Jupiter shell. Section-63 Help is runtime-published with actual Jupiter operations,
 Platform-panel and Feedback acceptance. The measured local performance checkpoint
 and Node hot-path remediation plus full-limit Browser/batch/redaction QC bring
-the full release gate to 445 tests with audited Registry configuration, complete Overview/four-width/keyboard acceptance, named recovery triggers/native no-start acceptance, configurable rule cadence/actual worker, configurable retention/native expiry, actual authenticated Web/AppModule, React/fetch failure isolation, data-write/diagnostic-checkpoint isolation/real quota, explicit product comparison, scoped analytics, real queued provider failure/metering and concurrent/product-read boundary
+the full release gate to 452 tests with enforced ingestion/sampling policy, audited Registry configuration, complete Overview/four-width/keyboard acceptance, named recovery triggers/native no-start acceptance, configurable rule cadence/actual worker, configurable retention/native expiry, actual authenticated Web/AppModule, React/fetch failure isolation, data-write/diagnostic-checkpoint isolation/real quota, explicit product comparison, scoped analytics, real queued provider failure/metering and concurrent/product-read boundary
 measurements and the performance flag enabled. Inspect
 latest Evidence for gates/runtime/remote commit.
 
@@ -50,8 +50,17 @@ real SQL/HTTP/OpenAPI and four-width native authorization/Audit/late-response
 acceptance and full LOCAL 445-test release gate/both fault scripts pass. Cleanup
 shows 83 migrations, no temporary DBs or active attempts, unchanged enabled
 100000 budget. Shared local API/Web listeners are absent; startup was rejected
-by tool policy, so do not claim live readiness. A01 remains PARTIAL: implement effective
-ingestion/sampling policies and supported access/credential administration
+by tool policy, so do not claim live readiness. A01 remains PARTIAL: implement
+supported access/credential administration. DEC-054 now implements the effective
+ingestion/sampling policy with actual enforcement; focused unit/SDK/SQL/HTTP and
+native UI passes, including the responsive grid and delayed policy read. UUID-case
+hashing was fixed/tested during review; full final-source 452-test LOCAL release
+gate/both fault scripts pass. Scripts own strict-port temporary Vite fixtures;
+shared local services remain stopped. Cleanup: 83 migrations, zero temporary DBs/
+active AI attempts, enabled 100000 budget unchanged. Final screenshots inspected.
+Applications Help v4 is runtime-published/read through the local public audience
+service. Continue supported access/credential administration and the recorded
+late-mutation Console risk reproduction, followed by full requirement audit
 (not dummy JSON forms or mislabeled private service ports). The complete
 section-8 inventory and final requirement audit are still required;
 do not treat

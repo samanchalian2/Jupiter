@@ -1,5 +1,28 @@
 # Current State
 
+**2026-10-20 effective ingestion/sampling (GOAL-069 IN PROGRESS):** DEC-054
+adds strict whole-App ADMIN GET/PUT policy operations (53 public operations),
+using the existing Application policy JSON. Defaults preserve full ingestion.
+Event transactions enforce source gates and deterministic Event-ID category
+sampling; severe sampling bypass, prior accepted receipt precedence and atomic
+event/job persistence remain explicit. Intentional policy ACK exclusions do not
+inflate Browser/Node failure/drop/recovery counters. Four policy unit tests,
+focused real SQL/HTTP/whole-contract traversal and SDK tests pass; native UI
+zero/restore policy drives actual HTTP exclusion/severe bypass/accept/duplicate
+with real actor Audit, four-width RTL/no overflow. First native attempt used old
+compiled UI; rebuilding required package fixed fixture prerequisite, assertions
+unchanged. Final-source full LOCAL release gate passes: 452 tests (179 API,
+40 Web, 233 Hub), builds/lint/typechecks, migrations, native/reference/performance
+and both standalone fault scripts. UUID-case normalization/regression included.
+Fault scripts now own ephemeral Vite fixtures, independent of stopped Web 5174;
+the first dependency-failing run was not counted as a full pass. Final 375/1440
+screenshots inspected. Post-gate: 83 migrations, zero temporary DBs/active AI
+attempts, unchanged enabled 100000 budget; shared 3000/5174 still stopped.
+Help runtime version 4 is
+published/read through the public audience service (not live HTTP). A01 remains
+PARTIAL for supported access/credential workflows and full inventory audit.
+No active Jupiter policy, budget, customer capacity or target host change.
+
 **2026-10-20 Registry configuration workflow (GOAL-069 IN PROGRESS):** DEC-053
 adds whole-App ADMIN configuration read/update and composite environment status
 commands; public OpenAPI now has 51 operations. UUID/slug/environment key/kind

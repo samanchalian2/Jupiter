@@ -2,6 +2,16 @@
 
 ## GOAL-069 Observability Hub
 
+DEC-054 policy commands require current whole-Application ADMIN and safe reason,
+reject unknown/incomplete/unbounded schema, and Audit atomically. They return
+only the validated ingestion projection, never arbitrary Application policy
+members. Ingestion still validates/sanitizes identity before policy; source
+disablement is not bypassed by severe events. Hash sampling ignores client
+sampleRate/sampleWeight. Existing accepted receipts preserve ACK/conflict rules.
+Excluded IDs are terminal non-persistence decisions, not receipt evidence.
+Malformed stored policy retries new events rather than silently dropping them.
+Feedback and diagnostic permissions/routes are not widened or disabled by policy.
+
 DEC-053 public configuration operations require current whole-Application ADMIN;
 tenant/environment ADMIN cannot escalate through an app-wide setting. Environment
 commands validate the composite target, reject query ambiguity/extra properties,

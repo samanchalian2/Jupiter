@@ -1,5 +1,11 @@
 # Domain Model
 
+DEC-054 uses Application.policy.ingestion (version 1) for enabled event sources
+and complete per-category integer sampling basis points (0–10000). Absent legacy
+member resolves to all sources/full rates; other policy members are preserved.
+Excluded events have no Event/receipt/job. Existing accepted receipt keeps the
+same digest/idempotency rules after a policy change. No new commercial entity.
+
 DEC-053 manages existing Application name/description/origins/enabled and existing
 Environment enabled state. UUID, slug and environment key/kind are fixed identity/
 historical context, not rewritten evidence. Disabled is not deleted or revoked:

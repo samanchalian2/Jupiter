@@ -2,6 +2,13 @@
 
 ## GOAL-069 — Observability Hub continuation (IN PROGRESS)
 
+DEC-054 now implements effective ingestion/source/sampling policy API/Console
+and actual transaction enforcement, with focused unit/SDK/SQL/HTTP/native passes.
+Final-source full LOCAL 452-test release gate and both fault scripts pass;
+cleanup and final screenshots verified, stopped shared hosts not restarted;
+policy Help version 4 published/read through the local public audience service.
+A01 still needs supported access/credential management and full inventory audit.
+
 DEC-053 implements the configuration/lifecycle portion of A01 through supported
 API/Console, with focused SQL/HTTP/OpenAPI and four-width native acceptance.
 Full LOCAL 445-test release gate and both fault scripts pass; cleanup verified.

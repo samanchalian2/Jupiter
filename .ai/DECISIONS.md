@@ -1,5 +1,40 @@
 # Architecture Decisions
 
+## DEC-054 — Effective Application ingestion/sampling policy (GOAL-069)
+
+The existing bounded Application policy JSON owns a version-1 `ingestion` member;
+no parallel store/migration or customer allowance change. Defaults preserve all
+four source types and 10000 basis points for every existing event category.
+Whole-Application ADMIN or current Hub Super Admin may read/replace it through
+GET/PUT `/operations/applications/{id}/ingestion-policy`, with safe mandatory
+reason, strict complete schema and same-transaction real-actor Audit. Other
+policy members remain unchanged. Scoped admins cannot change App-wide policy.
+
+Ingestion validates/redacts/enforces identity first. For an active App/environment,
+an existing accepted receipt wins over later policy changes (duplicate or content
+conflict), before new policy decisions. New events must have an enabled source.
+ERROR/CRITICAL bypass sampling but NOT explicit source disablement. Other events
+use SHA-256 of lowercase App/environment/Event UUIDs, first 32 bits / 2^32 against category
+basis points / 10000; retries use the same ID, not random draws or client hints.
+Excluded events return existing terminal REJECTED ACK with fixed codes
+SOURCE_DISABLED_BY_POLICY or SAMPLING_EXCLUDED; they create no receipt/event/job.
+They are not persistence failures or billable actions. A deliberately resubmitted
+previously excluded ID is evaluated against the then-current policy; excluded
+IDs are not falsely represented as persisted/deduplicated evidence.
+
+Policy applies to all event-ingestion clients, not Feedback/diagnostic channels.
+SDK-local sampling stays independent; server filtering cannot recover events the
+SDK never sent. No fabricated weighted analytics or automatic remote SDK config.
+The policy is read within the event transaction, without shared mutable cache;
+in-flight transactions may finish using the policy observed before an update.
+Malformed stored policy fails retryably (no silent default/drop), while absent
+legacy policy uses defaults. Console explains impact, protected severities and
+terminal exclusion, requires reason/confirmation, and discards stale App replies.
+Known terminal policy exclusions remove the SDK queue item without incrementing
+failure/drop or retry-failure counters; other rejected ACKs retain their existing
+drop behavior. Measured server rejected ACKs remain truthful totals. No excluded
+event is counted as accepted, delivered recovery, or data-loss failure.
+
 ## DEC-053 — Explicit Application/environment lifecycle configuration
 
 GOAL-069 section 8 adds supported GET/PUT /operations/applications/{id}/configuration

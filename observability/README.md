@@ -3,6 +3,25 @@
 Product-independent packages and PostgreSQL server adapters for GOAL-069.
 Implementation is IN PROGRESS; no complete platform claim is made.
 
+## Application ingestion policy
+
+Whole-Application ADMIN can GET/PUT
+`/operations/applications/{id}/ingestion-policy` through the existing authenticated
+operations boundary. Use the OpenAPI schema for version 1 source allowlist and
+complete category integer basis points (0–10000). Legacy defaults accept all;
+updates need safe reason and atomic Audit. The Console exposes the same policy
+inside Applications, not a host-only JSON placeholder.
+
+New event source gates apply before deterministic Event-ID sampling. ERROR and
+CRITICAL bypass sampling, not source denial. Prior accepted receipt ACKs retain
+their duplicate/conflict semantics after a policy change. Terminal REJECTED codes
+`SAMPLING_EXCLUDED` and `SOURCE_DISABLED_BY_POLICY` mean no event/receipt/job was
+persisted; do not retry them as network failures or count them as recovered
+delivery. Browser/Node SDKs remove these intentional exclusions without inflating
+failure/drop counters; other rejected ACK behavior is unchanged. SDK-local
+sampling is independent and cannot be undone by the server. Direct Feedback and
+SDK diagnostics are separate channels. No customer AI units are consumed.
+
 ## Host monitoring cadence
 
 The Jupiter adapter accepts deployment-owned

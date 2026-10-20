@@ -1,5 +1,21 @@
 # Business Rules
 
+## Application ingestion policy (GOAL-069, DEC-054)
+
+- New validated/sanitized events obey the current Application source allowlist.
+- DEBUG/INFO/WARNING use deterministic Event-ID category sampling; ERROR/CRITICAL
+  bypass sampling only, not explicit source disablement or identity validation.
+- Default legacy policy preserves every current source/category at 10000 basis
+  points. Unknown/incomplete/out-of-range settings cannot be saved.
+- A prior accepted receipt remains DUPLICATE (or content conflict) after a policy
+  update; an excluded event has no receipt/event/job. Concurrent accepted replay
+  still produces one event and one aggregation job.
+- Known policy exclusions are terminal, not delivery/drop/recovery failures;
+  other rejected ACKs preserve existing loss counters. No billable unit is used.
+- Direct Feedback/SDK diagnostics and local SDK sampling remain independent.
+- App-wide policy changes require current whole-App ADMIN, explicit safe reason
+  and real actor Audit in the same transaction; Audit failure rolls them back.
+
 ## React diagnostic isolation (GOAL-069)
 
 - Provider startup, returned cleanup, route capture and ErrorBoundary reporting

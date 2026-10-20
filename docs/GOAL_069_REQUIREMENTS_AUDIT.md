@@ -10,7 +10,7 @@ No requirement is waived because an existing suite does not assert it.
 
 | ID / source requirement | Inspected authoritative source | Result and required work | Why previous green evidence is insufficient |
 | --- | --- | --- | --- |
-| A01 — section 8 Application Registry: complete manageable identity/metadata/environment/status/policies/access/credentials inventory | DEC-053; RegistryService configuration/environment methods; public API/OpenAPI (51 operations); RegistryConfiguration; actual SQL/HTTP/native fixtures | **PARTIAL, NOT ACCEPTED.** Supported metadata/origins/App+environment enablement now implemented with whole-App ADMIN, immutable identities, safe reason/real Audit, history and credential gates. SQL/HTTP/OpenAPI traversal, native create/edit/suspend/resume/four-width/VIEWER/late-response checks, Audit-failure rollback and full LOCAL 445-test release gate/both fault scripts pass. Fixture cleanup verified; shared local API/Web readiness is unavailable, not inferred from tests. Effective ingestion/sampling policy and supported grant/credential administration workflows are still missing; retention/rules/AI remain their existing separate controls. | SQL columns/private service ports are not supported UI workflows. Do not call A01 complete from this vertical slice, or expose a policy form whose values are not enforced. The complete original section-8 inventory remains mandatory. |
+| A01 — section 8 Application Registry: complete manageable identity/metadata/environment/status/policies/access/credentials inventory | DEC-053/054; RegistryService; actual ingestion policy enforcement; public API/OpenAPI (53 operations); RegistryConfiguration/IngestionPolicyPanel; SQL/HTTP/native fixtures | **PARTIAL, NOT ACCEPTED.** Metadata/origins/App+environment enablement has full LOCAL 445-test release evidence. Effective ingestion/source/sampling policy now has strict schema, same-transaction real Audit, stable-ID sampling/severe bypass, prior receipt precedence and exclusion-aware SDK metrics. Focused unit/SDK/SQL/HTTP/full-contract and native UI passes; final responsive/late-policy-read full release running. Help source updated/runtime version 4 published and read through the public audience service. Supported access/credential administration still missing; retention/rules/AI remain their existing controls. Shared local API/Web readiness is unavailable, not inferred from tests. | SQL columns/private service ports are not supported UI workflows. Do not call A01 complete from this vertical slice. The complete original section-8 inventory remains mandatory. |
 | A02 — section 14 configurable Browser retention | BrowserSdkConfiguration/constructor/capture/submitFeedback; DEC-049; SDK tests; reference retention.html + offline-browser-acceptance.ts | **IMPLEMENTED AND VERIFIED.** Optional bounded retentionMs events/feedback, copied/validated at construction, defaults 48h/24h, minimum 1000ms, no extension past previous limits. Immutable enqueue-time expiry survives retry/reload; new configuration applies to new envelopes. Four regressions pass (SDK 41). Native IndexedDB real-time expiry/default-policy reload removes both rows before SDK auth/transport, zero SQL rows. Full LOCAL 428-test gate, both fault scripts and cleanup pass. | Earlier fixed-default expiry tests did not prove configuration. This evidence covers enqueue-time Browser TTL, not server retention or physical deletion while storage is unavailable. |
 | A03 — section 19 retry on successful API connectivity probe / next authenticated activity | DEC-051; Browser SDK notification ports; Jupiter fetch/session wiring; SDK/Web tests; no-start native recovery fixture | **IMPLEMENTED AND VERIFIED.** Scoped immediate-return notifications coalesce/throttle, preserve due time/credential/ACK rules and cancel on identity/logout/shutdown. SDK 46 and host fetch 14 tests/typechecks pass. Native verified-session/IndexedDB/HTTP/SQL test deliberately omits SDK.start and any explicit flush, isolating both named triggers, failed probe and same-ID post-due recovery. Both native cases, full LOCAL 440-test gate/both fault scripts and cleanup pass. | Earlier periodic recovery did not prove these named triggers. Native/full evidence is executed; a hint is not authorization or evidence of successful delivery. |
 | A04 — section 34 configurable bounded rule-evaluation interval | HubBindingService + DEC-050; hub-rule-cadence.spec.ts; actual compiled host integration | **IMPLEMENTED AND VERIFIED.** Deployment-owned 10000–300000ms interval, default/fallback 60000. Immediate first attempt, failure throttling/containment; independent maintenance/AI cadence unchanged. Three unit tests/typecheck and actual compiled AppModule two-cohort HTTP→SQL acceptance pass (10000ms configuration; 10012ms focused / 10048ms full-run incident separation). Full LOCAL 432-test gate, both isolation scripts and cleanup/readiness pass. | Earlier rule windows/AI cadence did not configure scheduler frequency. New evidence exercises actual timer/worker; not a production real-time guarantee. |
@@ -18,6 +18,11 @@ No requirement is waived because an existing suite does not assert it.
 | A06 — DEC-044/DEC-048 diagnostic-only storage failure must not switch the data queue | Browser SDK checkpointMetrics; five data-write regressions and diagnostic tests | **DEFECT REPRODUCED AND REMEDIATED; full 424-test LOCAL gate and both fault scripts passed.** A METRICS-only put failure called degrade(), closed the data store and changed active queue status from DURABLE/1 to MEMORY/0, overwriting the data failure state. One new red test proves it. Checkpoint now leaves metric snapshot unacknowledged and reports its own fixed failure without degrading data storage. Recovery sends the original Event ID and same diagnostic report, with no recursive loss. | Existing metrics network retry tests did not inject checkpoint journal write failure; earlier data-write tests deliberately disabled metrics. Previous ADR text was stronger than actual code. |
 
 ## Scope/decision controls for remediation
+
+DEC-054 final checkpoint: the complete final-source LOCAL 452-test release gate,
+both standalone fault scripts and cleanup pass. This supersedes the pending
+policy-gate wording in the working A01 row above, not its PARTIAL verdict.
+Policy runtime Help v4 is published/read; access/credential workflows remain open.
 
 - A01 must cover the ENTIRE section-8 management inventory, not only metadata:
   inspect enabled/allowed environments, Origins, policy enforcement, monitoring/
@@ -45,6 +50,20 @@ No requirement is waived because an existing suite does not assert it.
   separate BLOCKED status remain the approved boundary.
 
 ## Audit work not finished
+
+### Additional Console mutation-context check required
+
+Source review of `OperationsConsole.saveRule` shows an awaited PUT followed by
+unconditional notice/refresh/error/busy updates, unlike generation-guarded list
+reads and Registry configuration. The request retains its original App URL, but
+late completion may decorate a newly selected App with the old command's result.
+This is an **unverified workflow risk, not an executed defect reproduction**.
+Before final Console acceptance, hold a real rule-update response, switch App/
+environment/section, release it and inspect form/notice/busy/current-scope state.
+If reproduced, guard the mutation completion and cover the analogous create/detail
+commands; preserve original authorization/target and do not silently cancel a
+committed command or claim it affected the newly selected context. Existing
+late-read tests do not establish late-mutation safety.
 
 The source sections 1–73 and DoD have been reread. The rows above record concrete
 findings, not final disposition of every bullet. Continue reconciling the other

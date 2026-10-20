@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-10-20 — GOAL-069 effective ingestion and sampling (IN PROGRESS)
+
+- DEC-054, strict versioned policy API (53 operations), existing JSON member and
+  atomic actual-actor Audit; whole-App ADMIN only, no migration.
+- Actual source/category gate, deterministic ID sampling, severe bypass and
+  prior accepted receipt precedence; no event/job for terminal exclusions.
+- Browser/Node exclusions no longer count as failure/drop/recovered delivery.
+  Unit/SDK, real SQL/HTTP/OpenAPI and focused native policy UI acceptance pass.
+- Responsive same-theme form and stale-policy-response coverage added. UUID-case
+  hashing corrected/tested during review; final-source 452-test release gate,
+  builds/lint/typechecks and both fault scripts pass. Fault scripts use temporary
+  strict-port Vite fixtures instead of assuming shared Web 5174 is running.
+  Cleanup verified; shared local service readiness still not claimed.
+  Applications Help v4 published locally/read through the public audience service.
+- A01/full audit remain open; no Preview/main, live Jupiter policy or budget change.
+
 ## 2026-10-20 — GOAL-069 explicit Registry lifecycle configuration (IN PROGRESS)
 
 - DEC-053 adds three documented whole-App ADMIN operations for configuration and

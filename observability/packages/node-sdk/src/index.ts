@@ -1,5 +1,5 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
-import { SCHEMA_VERSION, LIMITS, isRecord, encodedBytes, type IdentityScope, type TelemetryEvent } from '@observability/contracts';
+import { SCHEMA_VERSION, LIMITS, isRecord, encodedBytes, isPolicyExclusion, type IdentityScope, type TelemetryEvent } from '@observability/contracts';
 import { sanitizeEvent, sanitizeStack, redactText, enforceScope, newTrace, retryDelay, SdkMetricBuffer } from '@observability/core';
 export interface NodeContext extends IdentityScope {requestId?:string;traceId?:string;spanId?:string;}
 export interface NodeSdkConfiguration {
@@ -89,7 +89,7 @@ export class NodeSdk {
         const ids=new Set(batch.map(p=>p.event.eventId)),seen=new Set<string>();
         for(const ack of value.acknowledgements){if(!isRecord(ack)||typeof ack.eventId!=='string'||!ids.has(ack.eventId)||seen.has(ack.eventId)||!['ACCEPTED','DUPLICATE','REJECTED','RETRYABLE'].includes(String(ack.status)))throw new Error('INVALID_ACK');seen.add(ack.eventId);}
         const complete=new Set<string>(value.acknowledgements.filter(a=>a.status!=='RETRYABLE').map(a=>a.eventId));
-        for(const item of batch){if(complete.has(item.event.eventId)){const rejected=value.acknowledgements.some(a=>a.eventId===item.event.eventId&&a.status==='REJECTED');if(rejected){this.dropped++;this.metrics.add('dropped');if(item.attempts>0)this.metrics.add('retryDropped');}else if(item.attempts>0)this.metrics.add('retryDelivered');this.remove(item);}else this.defer(item);}
+        for(const item of batch){if(complete.has(item.event.eventId)){const ack=value.acknowledgements.find(a=>a.eventId===item.event.eventId)!,excluded=isPolicyExclusion(ack);if(ack.status==='REJECTED'&&!excluded){this.dropped++;this.metrics.add('dropped');if(item.attempts>0)this.metrics.add('retryDropped');}else if(!excluded&&item.attempts>0)this.metrics.add('retryDelivered');this.remove(item);}else this.defer(item);}
       }finally{clearTimeout(timeout);}
     }catch{
       for(const item of batch){this.fallback('INGESTION_UNAVAILABLE',item.event);this.defer(item);}

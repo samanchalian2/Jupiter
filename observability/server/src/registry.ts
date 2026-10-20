@@ -4,6 +4,7 @@ import { ContractError, ENVIRONMENT_KINDS, OPERATIONAL_ROLES, isUuid, type Ident
 import { sha256, redactText } from '@observability/core';
 import { HubDatabase } from './database.js';
 import type { DataScope } from './database.js';
+import {storedIngestionPolicy,validateIngestionPolicy} from './ingestion-policy.js';
 
 export interface VerifiedPrincipal {issuer:string;subject:string;displayName:string;}
 export class RegistryService {
@@ -69,6 +70,14 @@ export class RegistryService {
   async configureEnvironment(principalId:string,applicationId:string,environmentId:string,input:{enabled:boolean;reason:string}){
     this.reason(input.reason);if(!isUuid(applicationId)||!isUuid(environmentId)||typeof input.enabled!=='boolean')throw new ContractError('INVALID_ENVIRONMENT');
     return this.database.control(async c=>{await this.authorize(c,principalId,applicationId,['ADMIN']);const prior=(await c.query('SELECT enabled FROM observability.environments WHERE id=$1 AND application_id=$2 FOR UPDATE',[environmentId,applicationId])).rows[0];if(!prior)throw new ContractError('ENVIRONMENT_NOT_FOUND');await c.query('UPDATE observability.environments SET enabled=$1 WHERE id=$2 AND application_id=$3',[input.enabled,environmentId,applicationId]);await this.audit(c,applicationId,principalId,'ENVIRONMENT_CONFIGURATION_CHANGED',input.reason,{environmentId,previousEnabled:prior.enabled,enabled:input.enabled});return{updated:true};});
+  }
+  async ingestionPolicy(principalId:string,applicationId:string){
+    if(!isUuid(applicationId))throw new ContractError('INVALID_APPLICATION');
+    return this.database.control(async c=>{await this.authorize(c,principalId,applicationId,['ADMIN']);const row=(await c.query('SELECT policy FROM observability.applications WHERE id=$1',[applicationId])).rows[0];if(!row)throw new ContractError('APPLICATION_NOT_FOUND');return storedIngestionPolicy(row.policy);});
+  }
+  async configureIngestionPolicy(principalId:string,applicationId:string,policy:unknown,reason:string){
+    this.reason(reason);if(!isUuid(applicationId))throw new ContractError('INVALID_APPLICATION');const validated=validateIngestionPolicy(policy);
+    return this.database.control(async c=>{await this.authorize(c,principalId,applicationId,['ADMIN']);const updated=await c.query("UPDATE observability.applications SET policy=jsonb_set(policy,'{ingestion}',$1::jsonb),updated_at=now() WHERE id=$2 RETURNING id",[JSON.stringify(validated),applicationId]);if(!updated.rowCount)throw new ContractError('APPLICATION_NOT_FOUND');await this.audit(c,applicationId,principalId,'INGESTION_POLICY_CHANGED',reason,validated);return{updated:true};});
   }
   async createEnvironment(principalId:string,applicationId:string,input:{key:string;kind:typeof ENVIRONMENT_KINDS[number]}){
     if(!/^[a-zA-Z0-9_-]{1,64}$/.test(input.key)||!ENVIRONMENT_KINDS.includes(input.kind))throw new ContractError('INVALID_ENVIRONMENT');

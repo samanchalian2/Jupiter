@@ -4,6 +4,82 @@ Status: IN PROGRESS. Owner-approved plan supersedes the stale GOAL-060 identifie
 in the supplied specification. GOAL-060 Personal Service history is preserved.
 GOAL-059 remains BLOCKED; LOCAL evidence is not staging acceptance.
 
+## 2026-10-20 — Effective ingestion/sampling policy / A01 partial (LOCAL)
+
+- DEC-054 adds GET/PUT ingestion-policy (53 documented operations) under current
+  whole-App ADMIN authorization. Version 1 sources/complete category basis points
+  use the existing bounded Application policy JSON; unrelated members preserved.
+  No migration, endpoint-wide disablement or new provider/commercial contract.
+- New event validation/redaction/scope checks precede policy. Existing accepted
+  receipt digest takes precedence over new filtering; otherwise sources are
+  explicitly gated. ERROR/CRITICAL bypass sampling only. Other events use the
+  first 32 SHA-256 bits of lowercase App/environment/Event UUIDs, against integer 0–10000
+  basis points. Client sampleRate/weight never controls this decision. No random
+  retry lottery, false ACCEPTED receipt, synthetic event/job or weighted report.
+- Exclusion uses existing terminal REJECTED ACK with fixed reason codes; excluded
+  events create zero event/receipt/job. They are not retried by normal SDK replay.
+  A deliberate later resubmission of an excluded ID uses the then-current policy;
+  this is not a promise that non-persisted IDs have an immutable receipt. Existing
+  accepted duplicate/conflict handling and concurrent exactly-once writes remain.
+  Source/category policy does not affect direct Feedback or SDK metric channels.
+- QC found that existing SDK rejection handling would inflate dropped/retry-loss
+  counters for intentional filtering. Browser and Node now recognize only the two
+  explicit exclusion codes; other rejections still count. Node retry exclusion
+  also avoids false recovered-delivery counts. New regressions cover both SDKs.
+- Four policy tests verify strict bounds/complete schema/unknowns, immutable fresh
+  defaults, severe/source precedence and deterministic independent hash vectors.
+  Actual disposable SQL/HTTP tests pass policy default/updates, other JSON member
+  preservation, no excluded rows, prior receipt/conflict, 50% stable replay,
+  six-way one-ACCEPTED/five-DUPLICATE replay, restore/excluded-ID submission, App/env/
+  tenant ADMIN denial, current grant revocation, other-App defaults, actual Audit
+  actors and Audit-trigger rollback. Malformed stored policy is retryable with
+  zero event write, not silently defaulted. Injected trigger/function removed.
+- All 53 public HTTP operations are traversed and actual schemas validated;
+  focused complete traversal, policy fixture and affected typechecks pass.
+  Initial same-client concurrent fixture count queries emitted pg deprecation;
+  replaced with serial awaited queries rather than suppressing the warning.
+- Native authenticated disposable Registry fixture edits zero/full policy in UI,
+  verifies actual HTTP sampling exclusion, ERROR bypass, restored acceptance/
+  duplicate and two real-actor policy Audits. Four-width RTL/no document overflow
+  passes. First attempt used old compiled package and lacked the new controls;
+  package build prerequisite fixed without weakening selectors or timeouts.
+  Final responsive grid and independently delayed policy-read coverage pass in
+  the full release's native step; final screenshots visually inspected at
+  375/1440. Code review then found UUID case must not alter sampling; lowercase
+  hashing and an explicit uppercase-ID regression added. The first full run
+  cannot certify that last source change; final-source gate still required.
+- First broad run passed all 452 tests/build/lint/typecheck, but its standalone
+  fetch fault script failed waiting for the React preamble: it implicitly assumed
+  shared Web 5174, which is stopped. Recorded release exit is 1, NOT a full pass.
+  Both standalone scripts now default to an in-process disposable LOCAL Vite on
+  a reserved OS-selected strict port, configFile=false/no API proxy; finally
+  closes it. Explicit exact LOCAL origins remain opt-in and are never closed by
+  the helper. Exact-origin validation rejects remote/path/userinfo/non-HTTP URLs;
+  syntax checks for all three scripts and explicit validation probe pass.
+  No shared 3000/5173/5174 service is started/replaced, no session or
+  business database touched, no process-start restriction bypass. Focused fetch
+  and all 16 mounted React cases pass against isolated real source-module fixtures. Final-source
+  release plus both standalone scripts must still pass before checkpoint commit.
+- Final-source repeat now passes: output/goal069-policy-final-release.log ends
+  GOAL069_POLICY_FINAL_RELEASE_EXIT=0, with all 452 tests (179 API, 40 Web,
+  233 Hub = 99 contracts/core/SDK/adapters + 118 server + 16 Console), builds,
+  lint/typechecks, migration/client/native/security/performance acceptance and
+  both isolated source-module fault scripts. UUID-case fix is in this execution.
+  Final 375/1440 images inspected; four-width RTL/no-overflow passes. Post-gate
+  read-only check: 83 migrations, zero temporary DBs/active AI attempts, enabled
+  100000 monthly budget; Help v4 markers present. Shared 3000/5174 listeners still
+  absent; this checkpoint does not claim local shared readiness or deployment.
+- Persian policy Help source updated and published through the supported LOCAL
+  utility with a validated active Platform Admin actor: 0 created/1 revised.
+  Public-audience ProductHelpService readback resolves version 4 and confirms
+  policy/terminal-exclusion/independent-SDK explanations; no raw content or secret
+  is logged. HTTP host remains stopped, so this is service-level runtime readback,
+  not a claim of live authenticated Browser Help acceptance. No live Jupiter policy mutation,
+  external provider call, target deployment or customer allowance change.
+- A01 still requires supported access/credential management and the full section-8
+  inventory audit; the entire GOAL-069 specification/final evidence audit remains
+  required. Green focused tests do not close those requirements.
+
 ## 2026-10-20 — Registry configuration/lifecycle workflow / A01 partial (LOCAL)
 
 - DEC-053 adds GET/PUT Application configuration and PUT composite environment

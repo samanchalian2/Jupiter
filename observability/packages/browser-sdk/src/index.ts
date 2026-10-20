@@ -1,4 +1,4 @@
-import { SCHEMA_VERSION, LIMITS, ContractError, encodedBytes, validateFeedback, isRecord, isUuid, type IdentityScope, type TelemetryEvent, type BatchAcknowledgement, type FeedbackSubmission, type SdkMetricReport } from '@observability/contracts';
+import { SCHEMA_VERSION, LIMITS, ContractError, encodedBytes, validateFeedback, isRecord, isUuid, isPolicyExclusion, type IdentityScope, type TelemetryEvent, type BatchAcknowledgement, type FeedbackSubmission, type SdkMetricReport } from '@observability/contracts';
 import { sanitizeEvent, redactText, sanitizeStack, scopeKey, retryDelay, routeTemplate, newTrace, SdkMetricBuffer } from '@observability/core';
 import { IndexedDbQueue, MemoryQueue, type QueueStorage, type OfflineEnvelope } from './storage.js';
 export { IndexedDbQueue, MemoryQueue, type QueueStorage, type OfflineEnvelope } from './storage.js';
@@ -182,7 +182,7 @@ export class BrowserSdk {
             if(ack.some(a=>!isRecord(a)||!allowed.has(a.eventId as string)||seen.has(a.eventId as string)||(seen.add(a.eventId as string),!['ACCEPTED','DUPLICATE','REJECTED','RETRYABLE'].includes(String(a.status)))))throw new Error('INVALID_ACK');
             await this.removeData(ack.filter(a=>a.status==='ACCEPTED'||a.status==='DUPLICATE'||a.status==='REJECTED').map(a=>a.eventId));
             if(startedGeneration!==this.generation)return;
-            this.countDropped(events.filter(e=>ack.some(a=>a.eventId===e.id&&a.status==='REJECTED')));
+            this.countDropped(events.filter(e=>ack.some(a=>a.eventId===e.id&&a.status==='REJECTED'&&!isPolicyExclusion(a))));
             this.metrics.add('retryDelivered',events.filter(e=>e.attempts>0&&ack.some(a=>a.eventId===e.id&&(a.status==='ACCEPTED'||a.status==='DUPLICATE'))).length);
             const unfinished=new Set(ack.filter(a=>a.status!=='RETRYABLE').map(a=>a.eventId));await this.postpone(events.filter(e=>!unfinished.has(e.id)));
           }else{await this.postpone(events,[400,403,404,410,413,422].includes(response.status));this.status.lastFailure=`INGESTION_HTTP_${response.status}`;}

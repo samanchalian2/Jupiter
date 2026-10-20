@@ -1,5 +1,14 @@
 # System Architecture
 
+DEC-054 keeps effective ingestion/sampling in the existing generic Registry and
+IngestionService. The bounded Application policy JSON supplies a versioned source
+allowlist/category basis points; public operations use the same verified generic
+principal and whole-App grant boundary. No worker, cache, schema, provider or
+commercial module is added. Existing accepted receipts precede new filtering;
+new exclusions produce terminal non-persistence ACKs, not fake events. SDK-local
+sampling and Feedback/diagnostic channels stay independent. Browser/Node SDKs
+recognize explicit policy exclusions without misreporting loss/recovery.
+
 DEC-051 adds scoped, coalesced recovery notifications to the Browser SDK and
 optional current-scope wiring in Jupiter's existing fetch adapter. Notifications
 schedule only the existing authenticated/due-time/ACK flush path; no probe

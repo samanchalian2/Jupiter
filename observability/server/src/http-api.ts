@@ -130,6 +130,8 @@ export class HubHttpApi {
        if(request.method==='POST'&&aiRoute[2]==='investigations'){const body=this.body(request);if(Object.keys(body).some(k=>!['environmentId','tenantReference','kind','targetReference','idempotencyKey'].includes(k))||!isUuid(body.environmentId)||typeof body.idempotencyKey!=='string'||typeof body.kind!=='string')throw new ContractError('INVALID_INVESTIGATION_REQUEST');return{status:201,body:await this.investigator.request(principalId,{applicationId:aiRoute[1],environmentId:body.environmentId,tenantReference:body.tenantReference as string|null|undefined},body.kind as 'ISSUE',body.targetReference as string|null??null,body.idempotencyKey)};}
       }
       const configurationRoute=/^\/operations\/applications\/([0-9a-f-]{36})\/origins$/.exec(path);
+      const ingestionPolicyRoute=/^\/operations\/applications\/([0-9a-f-]{36})\/ingestion-policy$/.exec(path);
+      if(ingestionPolicyRoute){if(url.searchParams.size)throw new ContractError('INVALID_QUERY');if(request.method==='GET')return{status:200,body:await this.registry.ingestionPolicy(principalId,ingestionPolicyRoute[1])};if(request.method==='PUT'){const body=this.body(request);if(Object.keys(body).some(key=>!['policy','reason'].includes(key)))throw new ContractError('INVALID_INGESTION_POLICY');return{status:200,body:await this.registry.configureIngestionPolicy(principalId,ingestionPolicyRoute[1],body.policy,body.reason as string)};}}
       const applicationConfiguration=/^\/operations\/applications\/([0-9a-f-]{36})\/configuration$/.exec(path);
       if(applicationConfiguration){
         if(url.searchParams.size)throw new ContractError('INVALID_QUERY');
