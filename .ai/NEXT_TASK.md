@@ -40,8 +40,20 @@ completed with GOAL069_EXPLORER_FINAL_RELEASE_EXIT=0:467 tests/build/lint/typech
 migration/native/reference/performance and both fault scripts pass. Console Help
 v6 published/read locally. Cleanup:83 migrations,zero temporary DBs/RESERVED
 attempts,unchanged enabled100000 budget; shared hosts stopped. Scoped commit/push
-required. Continue A07 independent Incident workspace/full original scope audit;
+completed as edf0b042699319ceae90b1dbc80059c0d9bb8f1d; origin/main SHA verified.
+Continue A07 independent Incident workspace/full original scope audit;
 this checkpoint does not implement/waive it or mark Goal complete.
+
+Incident preparation inspected actual host: App.tsx only dispatches exact
+/operations; reusable Console currently owns inline detail, reference mounts it
+without a router. Introduce explicit addressable workspace with host-compatible
+route semantics/ADR and refresh/back/current-auth tests, not a renamed inline box.
+Audit table's existing runtime RLS is APPLICATION-only; never query all App audit
+for a tenant workspace. First authorize/read the exact composite Incident under
+tenant RLS, then select only its fixed action/reference projection (no arbitrary
+metadata). Current incident activity lacks a separate raw event timeline and
+readable hypotheses/actions. Inspect existing investigation output schema rather
+than inventing AI evidence/causes. No implementation/acceptance claim for this.
 
 Active DEC-055: supported Registry access/credential/self-identity APIs (60
 operations) and Persian Console implemented; three SQL/HTTP fixtures + complete

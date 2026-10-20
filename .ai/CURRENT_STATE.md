@@ -23,6 +23,10 @@ enabled 100000 budget unchanged. Runtime Console
 Help v6 published/read through authorized local service. No whole-Goal acceptance claim;
 A07 independent Incident workspace and full
 original specification audit still required. Shared hosts remain stopped.
+Explorer checkpoint pushed as edf0b042699319ceae90b1dbc80059c0d9bb8f1d and
+origin/main SHA verified. Post-checkpoint Incident audit confirms /operations is
+exact host route and Audit RLS is App-only; tenant workspace requires exact
+authorized Incident-bound audit projection, not a general App Audit listing.
 
 **2026-10-20 supported Registry access/credentials (GOAL-069 IN PROGRESS):**
 DEC-055 adds six whole-App ADMIN operations plus safe self identity (60 public operations): safe

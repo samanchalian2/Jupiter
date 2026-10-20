@@ -107,6 +107,18 @@ invent causes/actions/impact when evidence is absent. Add route/context/refresh/
 authorization/RTL/no-overflow acceptance for that actual workspace. Existing
 generic detail and Investigator-tab tests must not stand in for this requirement.
 
+Concrete next-source inspection: host `App.tsx` matches only exact `/operations`;
+`OperationsWorkspace` embeds Console, independent reference has no router.
+An addressable workspace must define host-compatible link/refresh/back semantics,
+not just rename current detail. Migration065 `audit_scope` is App-only and runtime
+has SELECT; do not read a whole App audit for tenant-scoped workspace. Authorize
+the exact Incident composite under tenant RLS first and restrict any audit query
+to its fixed action/reference and safe fields, excluding arbitrary metadata.
+Existing `InvestigationOutput` has bounded hypotheses/evidence/confidence and
+recommendedActions; use it for readable human-review panels, never stringify
+the nested output or infer causes from absent evidence. These are inspected
+implementation constraints, not proof the remaining workspace is implemented.
+
 This is a concrete remaining requirement, not an external infrastructure blocker
 or a waiver. Preserve A01 and final 47-section Evidence reconciliation as well.
 
