@@ -1,5 +1,11 @@
 # Domain Model
 
+DEC-053 manages existing Application name/description/origins/enabled and existing
+Environment enabled state. UUID, slug and environment key/kind are fixed identity/
+historical context, not rewritten evidence. Disabled is not deleted or revoked:
+historical data/grants/credential revocation records persist. No new entity,
+configuration secrets, commercial state or migration is introduced.
+
 DEC-052 Overview panels are bounded read projections over existing scoped
 Events/Issues/Investigations, not a new health/deployment or commercial entity.
 Current critical-issue count is distinct from filtered-window impact. Observed

@@ -130,6 +130,14 @@ export class HubHttpApi {
        if(request.method==='POST'&&aiRoute[2]==='investigations'){const body=this.body(request);if(Object.keys(body).some(k=>!['environmentId','tenantReference','kind','targetReference','idempotencyKey'].includes(k))||!isUuid(body.environmentId)||typeof body.idempotencyKey!=='string'||typeof body.kind!=='string')throw new ContractError('INVALID_INVESTIGATION_REQUEST');return{status:201,body:await this.investigator.request(principalId,{applicationId:aiRoute[1],environmentId:body.environmentId,tenantReference:body.tenantReference as string|null|undefined},body.kind as 'ISSUE',body.targetReference as string|null??null,body.idempotencyKey)};}
       }
       const configurationRoute=/^\/operations\/applications\/([0-9a-f-]{36})\/origins$/.exec(path);
+      const applicationConfiguration=/^\/operations\/applications\/([0-9a-f-]{36})\/configuration$/.exec(path);
+      if(applicationConfiguration){
+        if(url.searchParams.size)throw new ContractError('INVALID_QUERY');
+        if(request.method==='GET')return{status:200,body:await this.registry.applicationConfiguration(principalId,applicationConfiguration[1])};
+        if(request.method==='PUT'){const body=this.body(request);if(Object.keys(body).some(key=>!['name','description','enabled','allowedOrigins','reason'].includes(key)))throw new ContractError('INVALID_APPLICATION');return{status:200,body:await this.registry.updateApplication(principalId,applicationConfiguration[1],body as never)};}
+      }
+      const environmentConfiguration=/^\/operations\/applications\/([0-9a-f-]{36})\/environments\/([0-9a-f-]{36})$/.exec(path);
+      if(environmentConfiguration&&request.method==='PUT'){if(url.searchParams.size)throw new ContractError('INVALID_QUERY');const body=this.body(request);if(Object.keys(body).some(key=>!['enabled','reason'].includes(key)))throw new ContractError('INVALID_ENVIRONMENT');return{status:200,body:await this.registry.configureEnvironment(principalId,environmentConfiguration[1],environmentConfiguration[2],body as never)};}
       if(configurationRoute&&request.method==='PUT'){const body=this.body(request);if(Object.keys(body).some(k=>!['allowedOrigins','reason'].includes(k))||!Array.isArray(body.allowedOrigins)||typeof body.reason!=='string')throw new ContractError('INVALID_ORIGINS');return{status:200,body:await this.registry.configureApplication(principalId,configurationRoute[1],{allowedOrigins:body.allowedOrigins as string[],reason:body.reason})};}
       const dataRoute=/^\/operations\/applications\/([0-9a-f-]{36})\/(overview|analytics|events|issues|incidents|feedback|alerts|export)(?:\/([0-9a-f-]{36}))?(?:\/(transition|replies))?$/.exec(path);
       if(dataRoute&&isUuid(dataRoute[1])){

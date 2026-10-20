@@ -1,5 +1,27 @@
 # Architecture Decisions
 
+## DEC-053 — Explicit Application/environment lifecycle configuration
+
+GOAL-069 section 8 adds supported GET/PUT /operations/applications/{id}/configuration
+and PUT /operations/applications/{id}/environments/{environmentId}. Configuration
+read/write requires a current whole-Application ADMIN grant (or Hub Super Admin),
+not merely a tenant/environment-scoped ADMIN. Existing origin-only API stays
+compatible. UUID, Application slug and environment key/kind are immutable identity
+and historical-context fields; names/descriptions/origins and enabled status are
+managed explicitly. No deletion, evidence relabeling or new grant is implied.
+
+Configuration updates require a safe reason and lock the existing target row;
+immutable actor-bearing Audit and update commit in one transaction. Environment
+configuration accepts enabled status only, validates the composite App/env target
+and records the prior/next state. Disabling denies existing and new ingestion
+credentials through the current credential and ingestion gates; historical
+evidence remains readable under normal grants and re-enabling restores that
+same identity. No credential is copied/returned in configuration. Unsupported
+properties and unsafe metadata are rejected. No migration, provider/commercial
+contract, role expansion or host deployment. Sampling/ingestion-policy and
+grant/credential management workflows remain required A01 work, not placeholder
+controls or waived requirements.
+
 ## DEC-052 — Bounded, evidence-scoped Overview panels
 
 GOAL-069 section 39 extends the existing Overview response additively with a

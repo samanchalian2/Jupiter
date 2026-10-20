@@ -2,6 +2,13 @@
 
 ## GOAL-069 — Observability Hub continuation (IN PROGRESS)
 
+DEC-053 implements the configuration/lifecycle portion of A01 through supported
+API/Console, with focused SQL/HTTP/OpenAPI and four-width native acceptance.
+Full LOCAL 445-test release gate and both fault scripts pass; cleanup verified.
+Shared local API/Web are not listening; startup was policy-rejected, so live
+readiness is not claimed. A01 remains PARTIAL for policy/sampling enforcement and
+grant/credential administration; entire original inventory/audit stay required.
+
 DEC-052 implements A05 Overview projections/compact Persian panels; real SQL/
 HTTP filtered/unknown/tenant/revocation tests and gates pass. Final four-width
 native/keyboard/44px/scroll acceptance and full LOCAL 444-test release gate/both

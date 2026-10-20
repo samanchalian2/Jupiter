@@ -4,6 +4,71 @@ Status: IN PROGRESS. Owner-approved plan supersedes the stale GOAL-060 identifie
 in the supplied specification. GOAL-060 Personal Service history is preserved.
 GOAL-059 remains BLOCKED; LOCAL evidence is not staging acceptance.
 
+## 2026-10-20 — Registry configuration/lifecycle workflow / A01 partial (LOCAL)
+
+- DEC-053 adds GET/PUT Application configuration and PUT composite environment
+  status. 51 executable OpenAPI operations now include all three new paths;
+  focused actual HTTP/SQL contract traversal and Swagger/typecheck pass. An
+  initial path-parameter helper misuse was caught and fixed: route() already
+  generates path parameters; no malformed/duplicated declaration remains.
+- Whole-App ADMIN/current Super Admin required, not tenant/env ADMIN. Immutable
+  UUID/slug/env key/kind, historical evidence and independent revocation/expiry
+  preserved. Metadata/origins/enabled change requires safe reason and real Audit
+  in the same locked transaction. Unknown properties, query ambiguity, invalid
+  origins, oversized origin list, wrong types/unsafe metadata and foreign target
+  are rejected without writes. No migration or policy placeholder is added.
+- Real HTTP/SQL fixture tests disable/re-enable both Application and environment,
+  rejection of existing server/browser credentials while disabled, prior-event
+  preservation/readability, resumed ingestion, fixed identity, scoped ADMIN
+  denial and four actor-bearing changes. A temporary Audit rejection trigger
+  proves failed Audit rolls back metadata/status (HTTP 503, original name/enabled/
+  credential validity unchanged); trigger/function are dropped in finally.
+- RegistryConfiguration is inside existing Applications navigation, with separate
+  App/env forms, safe reason/impact confirmation, Origin guidance, environment
+  creation and read-only integration IDs. Environment selector refresh retains
+  current selection when still valid and discovers a newly created environment.
+  Generation guards suppress old App reads/mutation completion after selection
+  changes. Forms do not store/return credentials; native summaries and checkbox
+  labels preserve 44px targets, existing palette/navigation remain unchanged.
+- Native fixture grants REGISTRY_CREATE explicitly to the already authenticated
+  fixture principal, uses actual UI to create a disposable App/environment, then
+  edits metadata/origins and suspends/resumes both. Existing credential rejection,
+  real actor on all four changes, VIEWER no-form denial, held old-App response
+  discard, RTL/no document overflow at 375/768/1024/1440 all pass. 375/1440 images
+  inspected; no real Jupiter App, credential or external tenant is changed.
+  Temporary global create grant is revoked in finally; database teardown removes
+  fixture rows. This is not public principal/bootstrap/role-administration UI.
+- Focused Browser QC first exposed a prior Overview assertion depending on the
+  optional performance fill. The long-title fixture now sends an explicit safe
+  REFERENCE_CLIENT event through real HTTP/aggregation, independently of that
+  flag; no assertion is skipped. A later timeout was exact label matching of
+  select text including its options: explicit accessible names fixed the control,
+  with unchanged assertions/timeouts. Supported UI then passes without performance
+  mode (focused native test 45327ms). Expanded Browser scenario timeout is 180s
+  to cover added create/write/late-response workflows, not a product latency SLO.
+- Persian Applications Help updated and runtime-published only for its slug:
+  0 created, 1 revised; public LOCAL API version 3 includes configuration and
+  suspension-versus-revocation explanations.
+- Final LOCAL release verification exits zero: 445 tests (179 API, 40 Web,
+  226 Hub = 97 contracts/core/SDK/adapters + 113 server + 16 Console), builds,
+  lint/typechecks, reference clients, real PostgreSQL/migrations, performance
+  and native Browser acceptance. Both standalone fetch/React fault scripts pass.
+  Durable local log: output/goal069-registry-release.log, final marker
+  GOAL069_REGISTRY_RELEASE_EXIT=0. Final 375/1440 screenshots visually inspected;
+  four-width RTL/no-overflow assertions pass. These are disposable fixture tests,
+  not a deployment or completeness certificate for A01.
+- Post-gate database check: 83 migrations, zero temporary databases and active
+  AI attempts; encrypted operational configuration remains enabled with 100000
+  combined monthly tokens. Previous shared local API/Web listeners (3000/5174)
+  are absent and external health probe returns PROBE_FAILED. Tool policy rejected
+  a hidden-process startup command before execution; no alternative bypass was
+  attempted. Shared local readiness is therefore not claimed. No preview/main
+  deployment or other application mutation occurred.
+- **A01 remains PARTIAL.** Effective ingestion/sampling policies, supported
+  grant/credential management and the complete original section-8 inventory
+  still require implementation/acceptance. Final full-spec audit remains open;
+  these controls are not a redefinition of Registry or whole-Goal completion.
+
 ## 2026-10-20 — Complete Overview projections / A05 (LOCAL)
 
 - DEC-052 extends the existing Overview/OpenAPI response, not a parallel route.

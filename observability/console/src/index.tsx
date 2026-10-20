@@ -6,6 +6,7 @@ import {MaintenancePanel} from './MaintenancePanel.js';
 import {SelfHealthPanel} from './SelfHealthPanel.js';
 import {ProductComparisonPanel} from './ProductComparisonPanel.js';
 import {observationLabel,overviewStateLabel} from './overview.js';
+import {RegistryConfiguration} from './RegistryConfiguration.js';
 export { initialFilters, result, scopeQuery, type OperationsClient, type Filters } from './client.js';
 type Row = Record<string, unknown>;
 type Application = { id: string; name: string; slug: string; enabled: boolean };
@@ -15,6 +16,7 @@ const sections: [Section, string][] = [['overview','نمای کلی'],['live','�
 const labels: Record<string,string> = { title:'عنوان', subject:'عنوان', severity:'شدت', status:'وضعیت', category:'دسته', source:'منبع', event_code:'کد رویداد', normalized_message:'شرح', operation_name:'عملیات', release_version:'نسخه', received_at:'دریافت', occurred_at:'وقوع', first_seen:'اولین مشاهده', last_seen:'آخرین مشاهده', occurrence_count:'تعداد وقوع', regression_count:'بازگشت خطا', tracking_id:'شناسهٔ پیگیری', created_at:'ایجاد', updated_at:'آخرین تغییر', http_status:'وضعیت HTTP', duration_ms:'مدت (ms)', description:'شرح گزارش', sanitized_stack:'Stack پاک‌سازی‌شده', impact:'اثر', reason:'دلیل', body:'متن', kind:'نوع', rule_code:'قانون', active_issues:'خطاهای فعال', active_incidents:'رخدادهای فعال', pending_feedback:'بازخوردهای منتظر', affected_users:'کاربران متأثر', affected_tenants:'سازمان‌های متأثر', operations:'عملیات اندازه‌گیری‌شده', failures:'عملیات ناموفق', events:'رویدادها', errors:'خطاها', bucket_start:'بازهٔ UTC', failed_operations:'عملیات ناموفق' };
 Object.assign(labels,{bucketStart:'بازهٔ UTC',incidents:'رخدادهای ایجادشده',resolved:'رفع‌شده',reports:'گزارش‌ها',issueId:'خطا',occurrences:'تعداد وقوع در بازه',lifetimeReopenCount:'بازگشت در کل عمر',operationName:'عملیات',affectedUsers:'کاربران متأثر',affectedTenants:'سازمان‌های متأثر',browserFamily:'مرورگر',operatingSystem:'سیستم‌عامل',deviceClass:'نوع دستگاه',releaseVersion:'نسخه',firstSeen:'اولین مشاهده در بازه',errorRate:'نرخ خطای HTTP',deltaFromPrevious:'تغییر نرخ نسبت به نسخهٔ قبلی',resolvedCount:'تعداد رفع‌شده',averageSeconds:'میانگین؛ ثانیه',p50Seconds:'میانه؛ ثانیه',p95Seconds:'صدک ۹۵؛ ثانیه',exceptionType:'نوع استثنا',eventCode:'کد رویداد',fingerprint:'اثر انگشت خطا',actorReference:'شناسهٔ کاربر',tenantReference:'شناسهٔ سازمان'});
 Object.assign(labels,{critical_issues:'خطاهای بحرانی فعال',observations:'رویدادهای مشاهده‌شده',lastObservedAt:'آخرین مشاهده در بازه',firstObservedAt:'اولین مشاهده در بازه',summary:'خلاصهٔ تحلیل',createdAt:'زمان ایجاد'});
+Object.assign(labels,{name:'نام برنامه',slug:'شناسهٔ مسیر',enabled:'وضعیت'});
 function text(value: unknown): string { if (value === null || value === undefined) return '—'; return typeof value === 'object' ? JSON.stringify(value) : String(value); }
 function DataFields({ row }: { row: Row }) { return <dl className="obs-fields">{Object.entries(row).filter(([,value]) => !Array.isArray(value)).map(([key,value]) => <div key={key}><dt>{labels[key] ?? key}</dt><dd dir="auto">{text(value)}</dd></div>)}</dl>; }
 function DataTable({ rows, open, label, compact=false }: { rows: Row[]; open?: (row: Row) => void;label?:string;compact?:boolean }) {
@@ -31,14 +33,14 @@ export function OperationsConsole({ client,initialSection='overview' }: { client
   const [reason,setReason]=useState(''),[note,setNote]=useState(''),[nextStatus,setNextStatus]=useState(''),[assigned,setAssigned]=useState(''),[internal,setInternal]=useState(false),[busy,setBusy]=useState(false);
   const [newName,setNewName]=useState(''),[newSlug,setNewSlug]=useState('');
   const [analyticsReport,setAnalyticsReport]=useState('incidentTrend');
-  const generation=useRef(0), detailGeneration=useRef(0);
+  const generation=useRef(0), detailGeneration=useRef(0),environmentApplication=useRef('');
   const prefix=`/operations/applications/${applicationId}`;
   const query=useMemo(()=>scopeQuery(environmentId,filters),[environmentId,filters,revision]);
   const resource:Resource=section==='live'?'events':section==='analytics'?'events':section==='incidents'?'incidents':section==='feedback'?'feedback':'issues';
   const comparingProducts=section==='analytics'&&analyticsReport==='products';
   const refresh=()=>setRevision(value=>value+1);
   useEffect(()=>{let live=true;void client.request('/operations/applications').then(result<Application[]>).then(items=>{if(live){setApplications(items);setApplicationId(current=>items.some(item=>item.id===current)?current:items[0]?.id??'');}}).catch(cause=>{if(live)setError(text(cause instanceof Error?cause.message:'دریافت برنامه‌ها ناموفق بود.'));});return()=>{live=false;};},[client,revision]);
-  useEffect(()=>{let live=true;setEnvironments([]);setEnvironmentId('');setDetail(null);detailGeneration.current++;if(applicationId)void client.request(`${prefix}/environments`).then(result<Environment[]>).then(items=>{if(live){setEnvironments(items);setEnvironmentId(items[0]?.id??'');}}).catch(cause=>{if(live)setError(text(cause.message));});return()=>{live=false;};},[client,applicationId]);
+  useEffect(()=>{let live=true;if(environmentApplication.current!==applicationId){setEnvironments([]);setEnvironmentId('');}environmentApplication.current=applicationId;setDetail(null);detailGeneration.current++;if(applicationId)void client.request(`${prefix}/environments`).then(result<Environment[]>).then(items=>{if(live){setEnvironments(items);setEnvironmentId(current=>items.some(item=>item.id===current)?current:items[0]?.id??'');}}).catch(cause=>{if(live)setError(text(cause.message));});return()=>{live=false;};},[client,applicationId,revision]);
   useEffect(()=>{
     const requestGeneration=++generation.current;detailGeneration.current++;setDetail(null);setRows([]);setOverview(null);setError('');setLoading(false);
     if(section==='ai'||section==='alert-inbox'||section==='maintenance'||section==='self-health'||comparingProducts)return;
@@ -99,7 +101,7 @@ export function OperationsConsole({ client,initialSection='overview' }: { client
         <button disabled={busy}>ثبت اقدام</button>
       </form>}
     </section>}
-    {section==='applications'&&<><DataTable rows={applications.map(({name,slug,enabled})=>({name,slug,enabled}))}/><form className="obs-command" onSubmit={event=>void createApp(event)}><h2>ایجاد برنامه با مجوز مستقل</h2><label>نام<input value={newName} onChange={event=>setNewName(event.target.value)} minLength={2} maxLength={160} required/></label><label>شناسهٔ مسیر<input dir="ltr" value={newSlug} onChange={event=>setNewSlug(event.target.value)} pattern="[a-z0-9-]{3,63}" required/></label><button disabled={busy}>ایجاد برنامه</button></form></>}
+    {section==='applications'&&<><DataTable rows={applications.map(({name,slug,enabled})=>({name,slug,enabled:enabled?'فعال':'غیرفعال'}))}/><form className="obs-command" onSubmit={event=>void createApp(event)}><h2>ایجاد برنامه با مجوز مستقل</h2><label>نام<input value={newName} onChange={event=>setNewName(event.target.value)} minLength={2} maxLength={160} required/></label><label>شناسهٔ مسیر<input dir="ltr" value={newSlug} onChange={event=>setNewSlug(event.target.value)} pattern="[a-z0-9-]{3,63}" required/></label><button disabled={busy}>ایجاد برنامه</button></form>{applicationId&&<RegistryConfiguration key={applicationId} client={client} applicationId={applicationId} onChanged={refresh}/>}</>}
     {section==='rules'&&rows.map(row=><form className="obs-rule" key={text(row.code)} onSubmit={event=>void saveRule(event,row)}><h3 dir="ltr">{text(row.code)}</h3><label><input type="checkbox" name="enabled" defaultChecked={Boolean(row.enabled)}/>فعال</label>{[['threshold','آستانه'],['minimum_samples','حداقل نمونه'],['window_seconds','پنجره (ثانیه)'],['cooldown_seconds','فاصلهٔ اعلان (ثانیه)']].map(([key,title])=><label key={key}>{title}<input type="number" name={key} defaultValue={text(row[key])} min="0" step="any" required/></label>)}<label>دلیل تغییر<input name="reason" minLength={3} maxLength={500} required/></label><button disabled={busy}>ذخیرهٔ قانون</button></form>)}
   </section>;
 }

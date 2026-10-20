@@ -4,7 +4,7 @@
 
 The entire approved objective remains active. Source of truth:
 `docs/GOAL_069_SPECIFICATION.md` (all sections and A–I Definition of Done),
-`docs/GOAL_069_EVIDENCE.md`, current state and DEC-038 through DEC-052.
+`docs/GOAL_069_EVIDENCE.md`, current state and DEC-038 through DEC-053.
 Historical GOAL-060 Personal Service is not renamed. Do not start another Goal.
 
 ### Latest implementation boundary
@@ -20,7 +20,7 @@ This is not a blanket completion claim for all product workflows or the live
 Jupiter shell. Section-63 Help is runtime-published with actual Jupiter operations,
 Platform-panel and Feedback acceptance. The measured local performance checkpoint
 and Node hot-path remediation plus full-limit Browser/batch/redaction QC bring
-the full release gate to 444 tests with complete Overview/four-width/keyboard acceptance, named recovery triggers/native no-start acceptance, configurable rule cadence/actual worker, configurable retention/native expiry, actual authenticated Web/AppModule, React/fetch failure isolation, data-write/diagnostic-checkpoint isolation/real quota, explicit product comparison, scoped analytics, real queued provider failure/metering and concurrent/product-read boundary
+the full release gate to 445 tests with audited Registry configuration, complete Overview/four-width/keyboard acceptance, named recovery triggers/native no-start acceptance, configurable rule cadence/actual worker, configurable retention/native expiry, actual authenticated Web/AppModule, React/fetch failure isolation, data-write/diagnostic-checkpoint isolation/real quota, explicit product comparison, scoped analytics, real queued provider failure/metering and concurrent/product-read boundary
 measurements and the performance flag enabled. Inspect
 latest Evidence for gates/runtime/remote commit.
 
@@ -44,7 +44,16 @@ Overview projections/compact Persian panels, real PostgreSQL/HTTP isolation
 test and Console/OpenAPI/typecheck passes. Final four-width native/keyboard/
 44px/internal-scroll acceptance, full LOCAL 444-test gate and both fault scripts
 pass; cleanup/readiness/budget unchanged. Console Help version 5 is runtime-
-published locally. A01 and remaining requirement audit are still incomplete;
+published locally. A01 now has DEC-053 metadata/origins/Application/environment
+enablement API and supported Console create/configuration workflow. Focused
+real SQL/HTTP/OpenAPI and four-width native authorization/Audit/late-response
+acceptance and full LOCAL 445-test release gate/both fault scripts pass. Cleanup
+shows 83 migrations, no temporary DBs or active attempts, unchanged enabled
+100000 budget. Shared local API/Web listeners are absent; startup was rejected
+by tool policy, so do not claim live readiness. A01 remains PARTIAL: implement effective
+ingestion/sampling policies and supported access/credential administration
+(not dummy JSON forms or mislabeled private service ports). The complete
+section-8 inventory and final requirement audit are still required;
 do not treat
 these individual remediations as full-Goal delivery.
 Select and record backward-compatible decisions before public API/config changes.

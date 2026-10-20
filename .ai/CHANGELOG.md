@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-10-20 — GOAL-069 explicit Registry lifecycle configuration (IN PROGRESS)
+
+- DEC-053 adds three documented whole-App ADMIN operations for configuration and
+  explicit environment status. IDs remain stable; no schema or evidence deletion.
+- Supported Persian Console workflow, reason/confirmation, selected environment
+  refresh and stale-response containment; native four-width acceptance passes.
+- Real HTTP/SQL tests verify disabled existing credentials, history, scope denial,
+  real Audit and rollback on Audit failure; all 51 public operations exercised.
+- Decoupled long-title Browser assertion from optional performance fixture;
+  corrected explicit select accessible naming, not its assertions/timeouts.
+- Full LOCAL 445-test release gate/build/lint/typecheck and both fault scripts
+  pass; final screenshots inspected, fixture cleanup verified. Shared local
+  API/Web listeners are absent and startup was policy-rejected (not bypassed);
+  disposable host acceptance is not live readiness. Budget remains 100000.
+- Policy/sampling and access/credential workflows remain A01
+  work; no preview/main host promotion, provider/budget or business-data change.
+
 ## 2026-10-20 — GOAL-069 full Overview evidence panels (IN PROGRESS)
 
 - DEC-052 extends existing Overview with critical issues, explicitly observed

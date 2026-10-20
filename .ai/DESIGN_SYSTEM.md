@@ -1,5 +1,13 @@
 # Jupiter Design System V2
 
+DEC-053 adds one compact configuration section inside existing Applications
+navigation, not a new menu/wizard. Application identity is read-only in a native
+details block; mutable metadata/origins and environment enablement have separate
+reason/impact confirmation. Known state labels are Persian, technical keys stay
+LTR. Checkbox labels/summary controls retain 44px targets without decorative
+cards, larger headers or palette changes. Application/environment refresh keeps
+the selected environment when it still exists; stale App responses are discarded.
+
 DEC-047 comparison stays inside the Analytics report selector. Explicit current
 scope add/remove controls preserve the selected per-product environment/tenant
 list while navigating App selectors; no new sidebar, wizard or decorative cards.

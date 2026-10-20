@@ -2,6 +2,15 @@
 
 ## GOAL-069 Observability Hub
 
+DEC-053 public configuration operations require current whole-Application ADMIN;
+tenant/environment ADMIN cannot escalate through an app-wide setting. Environment
+commands validate the composite target, reject query ambiguity/extra properties,
+and atomically Audit the actual actor. Disabled ingestion preserves historical
+reads, not new ingress; re-enable does not undo independent revocations/expiry.
+Configuration returns no credential/hash. Native fixtures create their own App
+through explicit REGISTRY_CREATE, revoke that temporary global grant in finally,
+never mutate the active Jupiter App. Late UI responses are generation-guarded.
+
 DEC-052 Overview additions use the same revalidated grant and tenant-scoped
 transaction as existing statistics; no cross-tenant precomputed health cache or
 provider call. AI summaries expose only a bounded persisted summary/kind/time/

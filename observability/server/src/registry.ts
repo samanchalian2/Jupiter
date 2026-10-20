@@ -51,6 +51,25 @@ export class RegistryService {
     for(const value of input.allowedOrigins){let url:URL;try{url=new URL(value);}catch{throw new ContractError('INVALID_ORIGIN');}if(url.origin!==value||url.username||url.password||!['http:','https:'].includes(url.protocol))throw new ContractError('INVALID_ORIGIN');}
     return this.database.control(async c=>{await this.authorize(c,principalId,applicationId,['ADMIN']);const result=await c.query('UPDATE observability.applications SET allowed_origins=$1 WHERE id=$2 RETURNING id',[Array.from(new Set(input.allowedOrigins)),applicationId]);if(!result.rowCount)throw new ContractError('APPLICATION_NOT_FOUND');await this.audit(c,applicationId,principalId,'APPLICATION_ORIGINS_CHANGED',input.reason,{origins:input.allowedOrigins});return{updated:true};});
   }
+  async applicationConfiguration(principalId:string,applicationId:string){
+    if(!isUuid(applicationId))throw new ContractError('INVALID_APPLICATION');
+    return this.database.control(async c=>{await this.authorize(c,principalId,applicationId,['ADMIN']);const row=(await c.query('SELECT id,slug,name,description,enabled,allowed_origins,updated_at FROM observability.applications WHERE id=$1',[applicationId])).rows[0];if(!row)throw new ContractError('APPLICATION_NOT_FOUND');return row;});
+  }
+  async updateApplication(principalId:string,applicationId:string,input:{name:string;description:string;enabled:boolean;allowedOrigins:string[];reason:string}){
+    this.reason(input.reason);
+    if(!isUuid(applicationId)||typeof input.name!=='string'||!input.name.trim()||input.name.length>160||typeof input.description!=='string'||input.description.length>2000||typeof input.enabled!=='boolean'||redactText(input.name)!==input.name||redactText(input.description)!==input.description)throw new ContractError('INVALID_APPLICATION');
+    if(!Array.isArray(input.allowedOrigins)||input.allowedOrigins.length>20)throw new ContractError('INVALID_ORIGINS');
+    for(const value of input.allowedOrigins){if(typeof value!=='string')throw new ContractError('INVALID_ORIGIN');let url:URL;try{url=new URL(value);}catch{throw new ContractError('INVALID_ORIGIN');}if(url.origin!==value||url.username||url.password||!['http:','https:'].includes(url.protocol))throw new ContractError('INVALID_ORIGIN');}
+    return this.database.control(async c=>{
+      await this.authorize(c,principalId,applicationId,['ADMIN']);const prior=(await c.query('SELECT enabled FROM observability.applications WHERE id=$1 FOR UPDATE',[applicationId])).rows[0];if(!prior)throw new ContractError('APPLICATION_NOT_FOUND');
+      await c.query('UPDATE observability.applications SET name=$1,description=$2,enabled=$3,allowed_origins=$4,updated_at=now() WHERE id=$5',[input.name.trim(),input.description,input.enabled,Array.from(new Set(input.allowedOrigins)),applicationId]);
+      await this.audit(c,applicationId,principalId,'APPLICATION_CONFIGURATION_CHANGED',input.reason,{previousEnabled:prior.enabled,enabled:input.enabled,changedFields:['name','description','enabled','allowedOrigins']});return{updated:true};
+    });
+  }
+  async configureEnvironment(principalId:string,applicationId:string,environmentId:string,input:{enabled:boolean;reason:string}){
+    this.reason(input.reason);if(!isUuid(applicationId)||!isUuid(environmentId)||typeof input.enabled!=='boolean')throw new ContractError('INVALID_ENVIRONMENT');
+    return this.database.control(async c=>{await this.authorize(c,principalId,applicationId,['ADMIN']);const prior=(await c.query('SELECT enabled FROM observability.environments WHERE id=$1 AND application_id=$2 FOR UPDATE',[environmentId,applicationId])).rows[0];if(!prior)throw new ContractError('ENVIRONMENT_NOT_FOUND');await c.query('UPDATE observability.environments SET enabled=$1 WHERE id=$2 AND application_id=$3',[input.enabled,environmentId,applicationId]);await this.audit(c,applicationId,principalId,'ENVIRONMENT_CONFIGURATION_CHANGED',input.reason,{environmentId,previousEnabled:prior.enabled,enabled:input.enabled});return{updated:true};});
+  }
   async createEnvironment(principalId:string,applicationId:string,input:{key:string;kind:typeof ENVIRONMENT_KINDS[number]}){
     if(!/^[a-zA-Z0-9_-]{1,64}$/.test(input.key)||!ENVIRONMENT_KINDS.includes(input.kind))throw new ContractError('INVALID_ENVIRONMENT');
     return this.database.control(async c=>{await this.authorize(c,principalId,applicationId,['ADMIN']);const row=(await c.query<{id:string;key:string;kind:string}>('INSERT INTO observability.environments(application_id,key,kind) VALUES($1,$2,$3) RETURNING id,key,kind',[applicationId,input.key,input.kind])).rows[0];await this.audit(c,applicationId,principalId,'ENVIRONMENT_CREATED','Environment registered',{environmentId:row.id});return row;});

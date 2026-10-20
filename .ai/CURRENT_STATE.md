@@ -1,5 +1,27 @@
 # Current State
 
+**2026-10-20 Registry configuration workflow (GOAL-069 IN PROGRESS):** DEC-053
+adds whole-App ADMIN configuration read/update and composite environment status
+commands; public OpenAPI now has 51 operations. UUID/slug/environment key/kind
+stay fixed; disabled credentials cannot ingest, historical reads remain allowed.
+Safe reason/Audit commit atomically; injected Audit failure rolls changes back.
+New Persian RegistryConfiguration supports actual create/environment selection,
+metadata/origins, enabled state and reason/confirmation. Four-width native UI,
+real-actor Audit, existing-credential gating, VIEWER denial and delayed old-App
+response tests pass in disposable fixtures; 375/1440 screenshots inspected.
+Full LOCAL release gate passes: 445 tests (179 API, 40 Web, 226 Hub), builds,
+lint/typechecks, native/reference/performance/migration acceptance and both fault
+scripts; durable log ends GOAL069_REGISTRY_RELEASE_EXIT=0. Screenshot review
+confirms final 375/1440 layout. Post-gate: 83 migrations, zero temporary databases
+and active AI attempts, enabled 100000 monthly budget. Previous 3000/5174 local
+processes are no longer listening; health probe fails. A hidden-process startup
+attempt was rejected by tool policy before execution; no workaround attempted.
+Disposable authenticated host acceptance passed, but shared local readiness is
+NOT currently verified. A01 is
+PARTIAL: policy/sampling enforcement and grant/credential management workflows
+remain required, along with final full-spec audit. No target deployment or live
+Jupiter App/credential change; existing unrelated worktree edits preserved.
+
 **2026-10-20 complete Overview projections (GOAL-069 IN PROGRESS):** DEC-052
 adds current critical count, observed-health basis, recent releases, high-impact
 Issue cohorts and latest persisted AI summaries to existing scoped Overview.
