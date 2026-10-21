@@ -1,5 +1,15 @@
 # Business Rules
 
+## Live Monitor observations (DEC-061)
+
+- includeIssue=true|false is accepted only on Event list. Default/false keeps
+  legacy rows; true adds fixed related_issue/null for<=100 authorized page IDs.
+- Related count/first-last are lifetime Issue observations, not Event receive
+  time or filtered Event total. Missing relation never means zero/healthy.
+- Pause affects automatic display only; manual filter/refresh remains explicit.
+  Visible-tab ten-second timer waits during open detail, resumes after close
+  unless explicitly paused. Collection/aggregation continues independently.
+
 ## Seed-bound correlation (DEC-060)
 
 - TRACE or REQUEST matches only the authorized seed's selected identifier in

@@ -2,6 +2,14 @@
 
 ## GOAL-069 — Observability Hub continuation (IN PROGRESS)
 
+DEC-061 A11 Live Monitor context/timer remediation implemented. Focused SQL/HTTP/
+OpenAPI7,Console32,native real pause/resume/detail/four widths and actual host3
+pass. Final-source482-test serial release/all gates/both fault scripts, final
+visual widths/native keyboard,Help v8 and zero-fixture cleanup verified. Scoped
+commit/push/new CI result pending; prior CI failed missing dist at lint and
+workflow build order corrected. DEC-062 precedes A12 implementation; A12/full
+original audit remains mandatory.
+
 DEC-060 A09 seed-bound correlation API/Console implemented; focused8 SQL/HTTP/
 OpenAPI/native and actual authenticated Jupiter real chain acceptance pass.
 Console Help v7 published/read; final-source third478-test full release and both

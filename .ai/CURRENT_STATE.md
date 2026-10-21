@@ -1,5 +1,60 @@
 # Current State
 
+**2026-10-21 final-source Live Monitor checkpoint (GOAL-069 IN PROGRESS):**
+Serial output/goal069-live-final-release-3.log TERMINATED0 with
+GOAL069_LIVE_FINAL_RELEASE_EXIT=0:482 tests(179API/40Web/263Hub),all builds/lint/
+typechecks/migration/native/reference/performance and both isolation scripts.
+Fresh1440/375-far-left screenshots inspected: readable severity/date/Details,
+inner scroll, no document overflow. Retention fixture's bounded global-claim
+assumption fixed without changing production retention/lease/auth. Failed logs
+remain in Evidence. Post-gate83 migrations/zero temporary DBs/zero active AI
+attempts/unchanged enabled100000 budget; Help v8 public-service flags all true.
+Shared3000/5174 remain stopped. No running test handle. Scoped commit/push and
+new remote CI check pending. Actual prior push CI39604737671 failed missing
+workspace dist declarations during lint; workflow now builds before checks.
+DEC-062 records optional request/estimated-cost policy BEFORE implementation;
+A12 remains unimplemented/open. A01/A07/whole original audit still mandatory.
+LOCAL only; no deployment/provider/key/live budget mutation.
+
+**2026-10-21 latest verified observation:** User confirmed 100,000 monthly combined
+input/output tokens. Safe LOCAL readback confirms enabled=true, budget=100000,
+83 migrations and zero active attempts. Final-source second release session62139
+has TERMINATED with exit1 (output/goal069-live-final-release-2.log): native Live
+acceptance passes, but retention fixture assumes its next job is among a global
+50-job claim and passes undefined to execute. Fixture now prioritizes only its
+generated next job's due time and asserts exact normal lease identity; no queue
+cap/auth/production retention change. Fresh1440 visual QC also found severity
+column compressed to vertical letters; added110px minimum/native width assertion.
+Console build/32 tests pass. Focused retention+native session66161 TERMINATED1:
+retention passes, native resume observed0 rows. Console build ran concurrently
+with this fixture (possible HMR interference, not proven root cause). Unchanged
+serial rerun27515 TERMINATED0 (output/goal069-live-focused-4.log):2 selected tests
+pass/100 deliberately skipped, real timer/width assertions included. Fresh1440
+screenshot inspected: severity/source now readable, bounded internal scroll.
+Post-test readback:83 migrations/zero temporary DBs/zero active attempts/unchanged
+enabled100000 budget. Final-source third full gate subsequently passed (above).
+Do not infer success from the earlier482 green run. No deployment/key change.
+
+**2026-10-21 Live Monitor context (GOAL-069 IN PROGRESS):**
+DEC-061 implements opt-in includeIssue on Event list only, default/false legacy
+shape preserved;<=100 authorized Event IDs fetched in one scoped link batch,
+fixed lifetime Issue context/null and no new operation/migration. Compact Live
+table shows App/env, Event UTC/severity/operation/correlation, related Issue and
+distinct lifetime counts/first-last. No raw nested JSON. Timer waits while detail
+open; pause/resume collection semantics unchanged. Focused SQL/HTTP/OpenAPI7,
+Console32 tests and real native pause11s/resume10s/detail11s/close-resume/four-width
+pass. Actual compiled-host all3 cases pass(output/goal069-live-host.log), including
+real correlation/manual and standalone/embedded Incident. Visual QC found split
+dates; normalized UTC/nowrap/210px first column added, source tests pass. Native
+keyboard horizontal-scroll/nowrap native assertions pass(latest browser-final).
+Help v8 published/read. First serial release output/goal069-live-final-release.log
+terminal0:482 tests and both isolation scripts pass. Visual375 far-left revealed
+narrow Details button wraps; now>=88px/nowrap,stats210/correlation180 inner-scroll
+columns. Native computed-style assertions added. Need final-source second full
+gate and latest screenshot inspection; no live first-run handle remains.
+Second serial run62139 terminated1; third serial run16237 terminated0 (above).
+Cleanup verified; scoped commit/push required. A12/A01/A07/full audit remain.
+
 **2026-10-21 correlation implementation (GOAL-069 IN PROGRESS):**
 DEC-060 adds authorized seed Event correlation GET,61 public operations. Exact
 seed App/environment/tenant match even for all-tenant admin; TRACE vs REQUEST,

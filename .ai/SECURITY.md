@@ -1,5 +1,10 @@
 # Security and Privacy
 
+DEC-061 joins only bounded already authorized Event IDs with exact composite
+App/environment/Event/tenant identity and existing RLS/current grants. Same
+fingerprint in another tenant cannot supply an Issue count. No raw body, stack,
+metadata, credential or extra privilege is added to the Live projection.
+
 DEC-060 Trace/Request IDs never authorize a lookup. Read the exact seed Event
 under current grant/tenant RLS, then hard-bind matches to its tenant even for
 all-tenant administrators. No cross-App/environment/tenant or recursive OR joins,

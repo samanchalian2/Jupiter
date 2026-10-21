@@ -4,6 +4,90 @@ Status: IN PROGRESS. Owner-approved plan supersedes the stale GOAL-060 identifie
 in the supplied specification. GOAL-060 Personal Service history is preserved.
 GOAL-059 remains BLOCKED; LOCAL evidence is not staging acceptance.
 
+## 2026-10-21 — Actual push CI diagnosis (LOCAL remediation in progress)
+
+Generic GitHub GET (not the PR-only commit wrapper) confirms prior fd5bc7c
+push run39604737671/job119237918188 completed FAILURE. Install succeeded;
+lint failed TS2307 resolving @observability/contracts from core because clean
+checkout has no exported dist declarations. Subsequent checks were skipped.
+This contradicts any inference that empty legacy statuses means CI success.
+Workflow now builds the workspace topologically before lint/typecheck/test,
+matching the existing LOCAL verify:release dependency order. No deployment step
+or new permissions. Fresh-checkout and new push CI verification still required.
+
+## 2026-10-21 — Live Monitor Issue context / DEC-061 (LOCAL, in progress)
+
+- FINAL-SOURCE serial output/goal069-live-final-release-3.log TERMINATED0:
+  GOAL069_LIVE_FINAL_RELEASE_EXIT=0,482 tests(179API/40Web/263Hub),all build/lint/
+  typecheck/migration/native/reference/performance and both isolation scripts.
+  Fresh1440 and375-far-left screenshots inspected: severity/source readable,
+  UTC dates/button stable, bounded keyboard-accessible inner scroll. No document
+  overflow. Post-gate83 migrations/zero temporary databases/zero active attempts/
+  unchanged enabled100000 monthly budget; Help v8 authorized public readback all
+  flags true. Shared3000/5174 listeners absent. No deployment/external provider.
+  Whole Goal remains IN PROGRESS; A12 DEC-062 is decision-only, not implemented.
+
+- Latest second full release TERMINATED1: retention fixture follow-up claimed
+  globally50 jobs and failed to find its intended generated-scope job, passing
+  undefined to execute. Native Live test passed. Corrected fixture-only next due
+  time and assert exact normal1-job lease; production queue cap/authorization/
+  retention unchanged. Fresh1440 screenshot exposed severity/source vertical
+  letter wrapping; added110px column minimum and native actual-width assertion.
+  Console build/32 tests pass. Focused follow-up and final-source full gate still
+  required; earlier green is not substituted. User-confirmed LOCAL readback:
+  enabled100000 combined monthly tokens/83 migrations/zero active attempts.
+- Focused3 retains retention PASS but native resume saw0 rows. Console rebuild
+  overlapped that Browser run; possible HMR interference is an inference, not
+  proven product failure. Unchanged serial focused4 TERMINATED0:2 selected tests
+  pass/100 deliberately skipped, native real timers/four widths/110px severity
+  and88px nowrap button assertions included. Fresh1440 screenshot inspected:
+  readable severity/source with inner scrolling. Post-test safe readback:
+  83 migrations/zero temporary DBs/zero active attempts/enabled100000 budget.
+  No active test handles. Final-source full release gate remains required;
+  do not discard the failed logs or claim final acceptance.
+
+- Existing Event listing accepts includeIssue=true|false only on list, preserving
+  default/false legacy rows. True adds related_issue fixed safe projection/null.
+  One bounded batch for<=100 authorized Event IDs, exact App/env/Event/tenant
+  composite and current RLS/grants; no N+1/migration/new operation(61 remain).
+- Live table shows current App/env, Event occurrence/receive UTC/severity/source/
+  operation/correlation, related Issue and explicitly lifetime occurrence/first-
+  last observations. Null never implies zero/healthy. No nested JSON dump/new
+  palette/nav/card. Native visual375 revealed date wrapping; UTC normalization,
+  nowrap and210px first column corrected before final gate.
+- Timer now waits while Event detail is open, then resumes unless explicitly
+  paused. Collection unaffected, manual refresh/filter stays explicit. Real
+  native output/goal069-live-browser.log proves committed new events during11s
+  pause with no list request/row change, normal10s resume, real count1→2/null
+  unaggregated observation, detail survives11s/new event without polling, closing
+  resumes to four rows; RTL/no document overflow at375/768/1024/1440. No fake timer.
+- Focused output/goal069-live-api.log:7 SQL/HTTP/full OpenAPI cases pass, including
+  legacy compatibility, exact lifetime date/count, same-fingerprint tenant1vs2,
+  null unaggregated state,page bound, invalid/repeated/unsupported flag rejected
+  and current revoke. Console32 tests pass including safe UTC/unknown/no JSON SSR.
+  Actual compiled-host output/goal069-live-host.log all3 pass, including actual
+  ticket correlation/manual/recovery and Incident standalone/embedded acceptance.
+- Latest output/goal069-live-browser-final.log passes native keyboard horizontal
+  scroll, nowrap date assertion and all real timer/Issue/four-width checks. Console
+  Help v8 published/read via authorized public service: lifetime/unknown/pause/
+  reading/correlation assertions true. Earlier visual375 at far-left revealed
+  narrow Details wrapping; final visual/source assertions/gate now corrected
+  and passed (latest above). Scoped commit/push still required.
+  Prior fd5bc7c remote checkpoint; no Preview/main deployment or live AI change.
+- GitHub connector is now available. Read-only lookup of prior fd5bc7c returns
+  workflow_runs=[] from a PR-only wrapper and statuses=[] from legacy status
+  checks. Neither proves push-triggered Actions/check-runs success or failure;
+  remote CI remains unverified, not an excuse to waive local work. No external
+  job rerun, deployment, credential change or unrelated repository mutation.
+- First serial full release output/goal069-live-final-release.log ends
+  GOAL069_LIVE_FINAL_RELEASE_EXIT=0:482 tests(179API/40Web/263Hub),all build/lint/
+  typecheck/migration/native/reference/performance and both isolation scripts
+  pass. Subsequent visual polish gives Details>=88px and nowrap button, lifetime
+  stats210px/correlation180px inner-scroll columns. Native asserts computed
+  button/column styles; second full gate failed retention fixture, third final-
+  source full gate passed (latest above). No palette/API/architecture change
+  in these visual fixes.
+
 ## 2026-10-21 — Seed-bound correlation / DEC-060 (LOCAL, in progress)
 
 - Added61st operation: authorized seed Event GET correlation, not a global trace

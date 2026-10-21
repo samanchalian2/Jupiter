@@ -1,0 +1,7 @@
+import {describe,expect,it} from 'vitest';
+import {renderToStaticMarkup} from 'react-dom/server';
+import {LiveEventTable} from './LiveEventTable.js';
+describe('truthful readable Live Monitor projection',()=>{
+ it('separates lifetime Issue statistics from Event UTC time and escapes titles instead of dumping JSON',()=>{const html=renderToStaticMarkup(<LiveEventTable application="App" environment="test" open={()=>undefined} rows={[{id:'event',occurred_at:'2026-10-21T12:00:00Z',received_at:'2026-10-21T12:00:01Z',normalized_message:'<script>synthetic</script>',source:'SERVER',severity:'ERROR',related_issue:{id:'issue',title:'Safe Issue',status:'OPEN',severity:'ERROR',occurrence_count:'42',first_seen:'2026-10-20T10:00:00+00:00',last_seen:'2026-10-21T12:00:00+00:00'}}]}/>);expect(html).toContain('تعداد کل عمر:');expect(html).toContain('42');expect(html).toContain('2026-10-20T10:00:00.000Z');expect(html).toContain('2026-10-21T12:00:01.000Z');expect(html).not.toContain('{&quot;id&quot;');expect(html).not.toContain('<script>');expect(html).toContain('&lt;script&gt;');});
+ it('keeps missing relation and invalid times unknown rather than inventing a zero count',()=>{const html=renderToStaticMarkup(<LiveEventTable application="App" environment="test" open={()=>undefined} rows={[{id:'pending',occurred_at:'invalid',received_at:null,related_issue:null}]}/>);expect(html).toContain('خطای مرتبطی ثبت نشده');expect(html).not.toContain('تعداد کل عمر:');expect(html).not.toContain('Invalid Date');expect(html).not.toContain('datetime="invalid"');});
+});

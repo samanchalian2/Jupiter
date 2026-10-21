@@ -94,8 +94,25 @@ safe explicit estimation basis and atomic UNKNOWN/reservation/retry semantics
 before implementation; no actual invoice/payment/pricing engine or guessed model
 rates. Defaults must preserve current100000 token budget/provider configuration.
 This is outstanding implementation/acceptance, not an external blocker.
+DEC-062 now records the selected nullable request/estimated-USD-cost policy,
+explicit rate snapshots/upward integer rounding and fail-closed unpriced legacy
+semantics BEFORE implementation. No migration/API/runtime control exists yet;
+A12 remains OPEN. Preserve live null optional limits and100000-token policy.
 
 ### A11 — section40 Live Monitor required Issue context (source gap)
+
+DEC-061 remediation implemented: optional includeIssue only on Event list,
+default/false legacy shape unchanged, one bounded scoped page-link batch and
+fixed lifetime Issue context/null. Compact dedicated table makes App/env and
+Event time distinct from Issue count/first-last. Focused SQL/HTTP/OpenAPI7,
+Console32 and native real11s pause/new-event/resume/detail-protection/four widths
+pass. Latest native also verifies keyboard horizontal scroll and normalized
+nowrap UTC. Actual compiled-host3 passes existing correlation/manual/Incident
+flows. Console Help v8 published/read. Final-source third482-test serial gate/
+both isolation scripts pass; final visual date/button/severity widths inspected
+and native assertions pass. Cleanup83/zero fixtures/zero active attempts/unchanged
+100000 verified. A11 concrete remediation accepted locally; full Goal remains open.
+Earlier finding below describes pre-remediation code and is retained for audit.
 
 Original section40 explicitly names related Issue, event count and first/last
 seen alongside current severity/operation/correlation and Pause/Resume. Current

@@ -4,7 +4,7 @@
 
 The entire approved objective remains active. Source of truth:
 `docs/GOAL_069_SPECIFICATION.md` (all sections and A–I Definition of Done),
-`docs/GOAL_069_EVIDENCE.md`, current state and DEC-038 through DEC-060.
+`docs/GOAL_069_EVIDENCE.md`, current state and DEC-038 through DEC-062.
 Historical GOAL-060 Personal Service is not renamed. Do not start another Goal.
 
 ### Latest implementation boundary
@@ -25,6 +25,42 @@ measurements and the performance flag enabled. Inspect
 latest Evidence for gates/runtime/remote commit.
 
 ### Remaining work — preserve the full original scope
+
+LATEST: final-source serial release3 TERMINATED0 (482 tests/all gates/both fault
+scripts). Read output/goal069-live-final-release-3.log; no active test handles.
+Fresh screenshots/Help v8/cleanup83/zero fixtures/zero attempts/unchanged100000
+verified. Scoped commit/push and actual new push-CI verification next. Generic
+GitHub GET revealed prior push39604737671 FAILURE at lint (missing contracts
+dist declarations); workflow now builds before lint/typecheck/test. No deploy.
+Then implement A12 using DEC-062: nullable optional monthly attempt/cost ceilings,
+explicit immutable rate snapshots, exact upward-rounding/UNKNOWN/legacy policy.
+No A12 migration/API/runtime implementation yet. A01/A07/full original audit stays.
+
+LATEST supersedes historical active-run text below: session62139 TERMINATED1,
+retention fixture's unscoped50-job claim missed its intended next job. Fixed
+fixture-only due priority/exact identity with normal bounded claim. Fresh1440
+severity column was compressed;110px/native assertion added. Console build/32
+tests pass. Focused66161 TERMINATED1:retention passes/native resume0 rows; a
+concurrent Console build may have caused HMR (inference only). Unchanged serial
+rerun27515/log goal069-live-focused-4 TERMINATED0:2 selected tests pass,100 skipped.
+Fresh1440 visual inspected/readable severity; cleanup zero temporary DBs/active
+attempts. Final-source third full gate subsequently passed (latest above).
+Safe LOCAL budget readback is enabled100000, zero active attempts,83 migrations.
+
+Active DEC-061 A11 Live Monitor: bounded opt-in Issue context, compact readable
+table and detail-safe refresh implemented. Focused SQL/HTTP/OpenAPI7/Console32
+and native pause/resume/reading/four-width pass; actual compiled host all3 pass.
+Dates normalized UTC/nowrap after visual QC; native keyboard scroll assertion
+added and passes(latest browser-final). Help v8 published/read. Active full serial
+log output/goal069-live-final-release.log terminal0:482 tests/all gates and both
+isolation scripts pass. Visual375 far-left Details button wrapping now corrected
+>=88px/nowrap plus stats/correlation column minimums; native style assertions added.
+Second full gate62139 terminated1; final-source third16237 terminated0,482 tests
+and both fault scripts. Visual/cleanup/Help verified. Need scoped commit/push.
+Preserve unrelated
+gateway/training edits and output/tmp; no Preview/main deploy or live AI change.
+Then A12 approved optional operational request/cost ceilings and full original
+A01/A07/sections1–73/A–I/47 Evidence/remote CI audit, not a new Goal.
 
 Active DEC-060 A09 seed-bound correlation: API/SQL/full61-operation OpenAPI
 focused8 pass including dedicated native paging/window/late-read/missing IDs/

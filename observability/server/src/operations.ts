@@ -5,7 +5,7 @@ import { HubDatabase, type DataScope } from './database.js';
 import { RegistryService } from './registry.js';
 import {issueOrdering} from './issue-explorer.js';
 export interface OperationScope {applicationId:string;environmentId:string;tenantReference?:string|null;}
-export interface QueryFilter {from?:string;to?:string;q?:string;severity?:string;category?:string;release?:string;status?:string;sort?:string;groupBy?:string;page?:number;pageSize?:number;}
+export interface QueryFilter {from?:string;to?:string;q?:string;severity?:string;category?:string;release?:string;status?:string;sort?:string;groupBy?:string;page?:number;pageSize?:number;includeIssue?:boolean;}
 const resources={events:{table:'events',time:'received_at',title:'normalized_message',fields:'event_id AS id,received_at,occurred_at,source,category,severity,event_code,normalized_message,exception_type,fingerprint,trace_id,request_id,operation_name,release_version,http_status,duration_ms,tenant_reference'},issues:{table:'issues',time:'last_seen',title:'title',fields:'id,title,status,severity,first_seen,last_seen,occurrence_count,regression_count,assigned_principal_id,tenant_reference'},incidents:{table:'incidents',time:'created_at',title:'title',fields:'id,issue_id,title,status,severity,impact,assigned_principal_id,rule_code,created_at,updated_at,tenant_reference'},feedback:{table:'feedback',time:'created_at',title:'subject',fields:'id,tracking_id,subject,category,status,created_at,updated_at,tenant_reference'},alerts:{table:'alerts',time:'created_at',title:'title',fields:'id,incident_id,title,created_at,tenant_reference'}} as const;
 export type Resource=keyof typeof resources;
 export function csvCell(value:unknown):string{let text=value===null||value===undefined?'':typeof value==='object'?JSON.stringify(value):String(value);if(/^[\s]*[=+\-@]/.test(text)&&typeof value!=='number')text=`'${text}`;return `"${text.replaceAll('"','""')}"`;}
@@ -60,12 +60,17 @@ export class OperationsService {
   return{selected,values,where:clauses.join(' AND '),page,size};
  }
  async list(principalId:string,scope:OperationScope,resource:Resource,filter:QueryFilter={}){
+  if(filter.includeIssue!==undefined&&(resource!=='events'||typeof filter.includeIssue!=='boolean'))throw new ContractError('INVALID_FILTER');
   const query=this.filters(resource,scope,filter);
   return this.scoped(principalId,scope,async c=>{
    const total=Number((await c.query<{total:string}>(`SELECT count(*) total FROM observability.${query.selected.table} WHERE ${query.where}`,query.values)).rows[0].total);
    const ordering=resource==='issues'?issueOrdering(filter):null;
    const orderBy=ordering?.orderBy??`${query.selected.time} DESC,${resource==='events'?'event_id':'id'} DESC`;
    const rows=(await c.query(`SELECT ${query.selected.fields} FROM observability.${query.selected.table} WHERE ${query.where} ORDER BY ${orderBy} LIMIT $${query.values.length+1} OFFSET $${query.values.length+2}`,[...query.values,query.size,(query.page-1)*query.size])).rows;
+   if(filter.includeIssue){
+    const links=rows.length?(await c.query(`SELECT l.event_id,jsonb_build_object('id',i.id,'title',i.title,'status',i.status,'severity',i.severity,'occurrence_count',i.occurrence_count::text,'first_seen',i.first_seen,'last_seen',i.last_seen) related_issue FROM observability.issue_events l JOIN observability.issues i ON i.application_id=l.application_id AND i.environment_id=l.environment_id AND i.id=l.issue_id AND i.tenant_scope_key=l.tenant_scope_key JOIN observability.events e ON e.application_id=l.application_id AND e.environment_id=l.environment_id AND e.event_id=l.event_id AND e.tenant_scope_key=l.tenant_scope_key WHERE l.application_id=$1 AND l.environment_id=$2 AND l.event_id=ANY($3::uuid[])`,[scope.applicationId,scope.environmentId,rows.map(row=>row.id)])).rows:[];
+    const byEvent=new Map(links.map(row=>[row.event_id,row.related_issue]));for(const row of rows)row.related_issue=byEvent.get(row.id)??null;
+   }
    const groups=ordering?.groupColumn?(await c.query(`SELECT ${ordering.groupColumn} AS key,count(*)::int issues FROM observability.issues WHERE ${query.where} GROUP BY ${ordering.groupColumn} ORDER BY ${ordering.groupOrder}`,query.values)).rows:[];
    return{items:rows,total,page:query.page,pageSize:query.size,...(ordering?{sort:ordering.sort,groupBy:ordering.groupBy,groups}:{})};
   });

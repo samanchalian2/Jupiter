@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-10-21 — GOAL-069 Live Monitor context (IN PROGRESS)
+
+- DEC-061 opt-in bounded related-Issue projection; legacy Event API unchanged.
+  Live table separates Event times from lifetime Issue counts/first-last.
+- Real native pause/resume and open-detail survival pass at four widths;
+  SQL/HTTP/OpenAPI7,Console32 and compiled-host3 cases pass. Final-source serial
+  482-test release/all gates/both fault scripts pass. Visual date/Details/severity
+  widths corrected/asserted; Help v8/readback and zero-fixture cleanup verified.
+- Diagnosed actual prior push-CI lint failure: missing workspace dist. Workflow
+  builds topologically before checks; new remote result still to verify.
+- DEC-062 optional operational caps recorded before implementation (A12 open).
+- A12/full original audit remain open; no target deployment/live AI mutation.
+
 ## 2026-10-21 — GOAL-069 seed-bound correlation (IN PROGRESS)
 
 - DEC-060 adds61st operation: exact authorized Event TRACE/REQUEST evidence,

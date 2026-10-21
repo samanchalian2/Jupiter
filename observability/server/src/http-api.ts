@@ -155,13 +155,14 @@ export class HubHttpApi {
       }
       const dataRoute=/^\/operations\/applications\/([0-9a-f-]{36})\/(overview|analytics|events|issues|incidents|feedback|alerts|export)(?:\/([0-9a-f-]{36}))?(?:\/(transition|replies))?$/.exec(path);
       if(dataRoute&&isUuid(dataRoute[1])){
-        const issueList=request.method==='GET'&&dataRoute[2]==='issues'&&!dataRoute[3];
-        const allowedQuery=['environmentId','tenantReference','from','to','q','severity','category','release','status','page','pageSize','resource',...(issueList?['sort','groupBy']:[])];if([...url.searchParams.keys()].some(k=>!allowedQuery.includes(k)||url.searchParams.getAll(k).length!==1))throw new ContractError('INVALID_QUERY');
+        const issueList=request.method==='GET'&&dataRoute[2]==='issues'&&!dataRoute[3],eventList=request.method==='GET'&&dataRoute[2]==='events'&&!dataRoute[3];
+        const allowedQuery=['environmentId','tenantReference','from','to','q','severity','category','release','status','page','pageSize','resource',...(issueList?['sort','groupBy']:[]),...(eventList?['includeIssue']:[])];if([...url.searchParams.keys()].some(k=>!allowedQuery.includes(k)||url.searchParams.getAll(k).length!==1))throw new ContractError('INVALID_QUERY');
         const body=request.method==='GET'?{}:this.body(request);
         const environmentId=request.method==='GET'?url.searchParams.get('environmentId'):body.environmentId;if(!isUuid(environmentId))throw new ContractError('INVALID_DATA_SCOPE');
         const tenantReference=request.method==='GET'?(url.searchParams.has('tenantReference')?url.searchParams.get('tenantReference')||null:undefined):body.tenantReference as string|null|undefined;
         const scope:OperationScope={applicationId:dataRoute[1],environmentId,tenantReference},ops=new OperationsService(this.database,this.registry);
         const filter:QueryFilter={};for(const key of ['from','to','q','severity','category','release','status','sort','groupBy'] as const){const value=url.searchParams.get(key);if(value!==null)filter[key]=value;}for(const key of ['page','pageSize'] as const){const value=url.searchParams.get(key);if(value!==null){if(!/^\d{1,4}$/.test(value))throw new ContractError('INVALID_PAGINATION');filter[key]=Number(value);}}
+        if(url.searchParams.has('includeIssue')){const value=url.searchParams.get('includeIssue');if(!['true','false'].includes(value!))throw new ContractError('INVALID_FILTER');filter.includeIssue=value==='true';}
         if(request.method==='GET'){
           if(dataRoute[2]==='overview')return{status:200,body:await ops.overview(principalId,scope,filter)};
           if(dataRoute[2]==='analytics'&&!dataRoute[3])return{status:200,body:await ops.analytics(principalId,scope,filter)};

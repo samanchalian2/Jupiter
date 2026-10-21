@@ -18,7 +18,9 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      # Workspace packages resolve their published dist declarations. A clean
+      # checkout has no dist artifacts; build topologically before noEmit checks.
+      - run: pnpm build
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test
-      - run: pnpm build

@@ -1,5 +1,10 @@
 # System Architecture
 
+DEC-061 opts into fixed related-Issue context on the existing Event list. Default
+contract stays; one bounded link batch after authorized page fetch under current
+grants/RLS and composite tenant identity. No N+1/entity/migration/new operation.
+Reusable Live table and detail-safe timer do not alter collection/business work.
+
 DEC-060 adds seed-bound Event correlation to existing OperationsService/HTTP
 and reusable Console. Current RLS-readable seed precedes exact App/env/tenant
 identifier match; no new entity, tracing service, migration or provider work.

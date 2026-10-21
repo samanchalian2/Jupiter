@@ -15,9 +15,10 @@ import {issueExplorerBrowserAcceptance} from './issue-explorer-browser-acceptanc
 import {incidentWorkspaceBrowserAcceptance} from './incident-workspace-browser-acceptance.js';
 import {investigatorBrowserAcceptance} from './investigator-browser-acceptance.js';
 import {correlationBrowserAcceptance} from './correlation-browser-acceptance.js';
+import {liveMonitorBrowserAcceptance} from './live-monitor-browser-acceptance.js';
 import {HubDatabase,RegistryService,IngestionService,HubHttpApi,createHubServer,IssueEngine,InvestigatorService,AesCredentialVault,RetentionService,SelfMonitoringService,type InvestigationProvider} from '../src/index.js';
 
-export async function browserAcceptance(database:HubDatabase,registry:RegistryService,root:string,mode:'FULL'|'INCIDENT'|'INVESTIGATOR'|'CORRELATION'='FULL'){
+export async function browserAcceptance(database:HubDatabase,registry:RegistryService,root:string,mode:'FULL'|'INCIDENT'|'INVESTIGATOR'|'CORRELATION'|'LIVE'='FULL'){
  const application=(await registry.createApplication(root,{slug:`browser-${randomUUID()}`,name:'Independent Browser B'})).id,environment=(await registry.createEnvironment(root,application,{key:'browser',kind:'TEST'})).id;
  const a=(await registry.createApplication(root,{slug:`isolation-${randomUUID()}`,name:'Independent Isolation A'})).id,envA=(await registry.createEnvironment(root,a,{key:'isolation',kind:'TEST'})).id;
  const identity={issuer:'independent-reference',subject:randomUUID(),displayName:'Reference operator'},principal=await registry.principal(identity),operationToken=randomUUID()+randomUUID();
@@ -43,6 +44,7 @@ export async function browserAcceptance(database:HubDatabase,registry:RegistrySe
   await page.goto(origin);await page.getByRole('button',{name:'ثبت خطای مرورگر',exact:true}).waitFor();
   if(mode==='INCIDENT'){await page.getByLabel('برنامه',{exact:true}).selectOption(application);await expect.poll(()=>page.getByLabel('محیط',{exact:true}).inputValue()).toBe(environment);await incidentWorkspaceBrowserAcceptance(page,database,registry,root,principal,application,environment);await context.close();return;}
   if(mode==='CORRELATION'){await page.getByLabel('برنامه',{exact:true}).selectOption(application);await expect.poll(()=>page.getByLabel('محیط',{exact:true}).inputValue()).toBe(environment);await correlationBrowserAcceptance(page,database,registry,root,principal,application,environment,a,envA);await context.close();return;}
+  if(mode==='LIVE'){await page.getByLabel('برنامه',{exact:true}).selectOption(application);await expect.poll(()=>page.getByLabel('محیط',{exact:true}).inputValue()).toBe(environment);await liveMonitorBrowserAcceptance(page,database,registry,root,application,environment);await context.close();return;}
   if(mode==='INVESTIGATOR'){await page.getByLabel('برنامه',{exact:true}).selectOption(application);await expect.poll(()=>page.getByLabel('محیط',{exact:true}).inputValue()).toBe(environment);await investigatorBrowserAcceptance(page,database,registry,ai,root,principal,application,environment,a,envA);await context.close();return;}
   expect((await context.request.post(origin+'/reference/browser-credential',{headers:{Origin:origin},data:{tenantReference:'forged'}})).status()).toBe(400);expect((await context.request.post(origin+'/reference/switch-tenant',{headers:{Origin:origin},data:{tenantReference:'unauthorized'}})).status()).toBe(403);
   expect((await context.request.post(origin+'/reference/browser-credential',{headers:{Origin:origin.replace('http:','https:')},data:{}})).status()).toBe(403);

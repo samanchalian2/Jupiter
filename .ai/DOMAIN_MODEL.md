@@ -1,5 +1,9 @@
 # Domain Model
 
+DEC-061 LiveEventRow is an opt-in Event read projection with related_issue:null
+or fixed Issue id/title/status/severity/lifetime occurrence_count/first-last.
+No new entity/history and no denormalized counters. Legacy EventRow stays.
+
 DEC-060 EventCorrelation is a read projection: exact seed/scope/kind/identifier,
 available flag, occurrence window/page/total and<=100 sanitized Event rows with
 existing span/operation/route/status/duration. No new stored span/trace entity or

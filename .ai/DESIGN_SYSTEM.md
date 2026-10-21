@@ -1,5 +1,11 @@
 # Jupiter Design System V2
 
+DEC-061 Live Monitor uses a named focusable inner-scroll table(min1100px,
+max-height40rem), explicit App/env context, compact expandable descriptions/
+Issue titles and separate lifetime statistics. UTC times normalize to ISO Z,
+stay LTR/nowrap with210px first column. Missing relations show unknown, no nested
+JSON/new card/navigation/palette. Explain pause versus collection/detail reading.
+
 DEC-060 correlation is a lazy expandable Event-detail section, no new primary
 navigation/card/palette. Explicit Trace/Request selector, UTC range/default hint,
 truthful missing-ID/incomplete evidence and exact seed-tenant context. Fixed

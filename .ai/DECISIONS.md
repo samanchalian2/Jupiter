@@ -1,5 +1,70 @@
 # Architecture Decisions
 
+## DEC-062 — Optional operational request and estimated-cost ceilings
+
+Status: decision recorded before implementation; NOT YET IMPLEMENTED/ACCEPTED.
+Source: GOAL-069 approved preamble/A12. Keep mandatory combined monthly token
+budget and the existing provider interface. Add nullable per-Application monthly
+provider-attempt and estimated-cost ceilings to the existing configuration;
+omission preserves an existing optional setting, explicit null removes it, and
+new/legacy configurations default to null. No automatic activation, guessed
+model rate, customer commercial pool, payment or invoice dependency.
+
+An operational request means one persisted provider-dispatch attempt, including
+retries/fallbacks and UNKNOWN outcomes; queueing/duplicate logical requests and
+diagnostics do not create another attempt. Count reservations conservatively,
+including interrupted dispatches, in their original UTC month across all App
+environments/tenants. Request counts are not silently refunded after failures.
+Use the existing App advisory lock for token/request/cost checks plus reservation
+in one transaction, before decrypt/dispatch. Denial stops AI only.
+
+Cost is explicitly an ESTIMATE in integer USD micro-units, not a provider bill.
+Admins must supply BOTH input/output rates in USD micro-units per million tokens
+before enabling a cost ceiling. Zero rates require explicit configuration; null
+is unknown, never zero. Use exact integer arithmetic and upward rounding of the
+combined input/output charge. Snapshot rates and the conservative reserved cost
+on each new attempt; actual verified token settlement/reconciliation derives its
+estimate from THAT snapshot, not current configuration. Preserve immutable ledger
+identity/rates/reservation and existing terminal-state protection. UNKNOWN holds
+its full cost just as it holds tokens; retries reserve separately.
+
+Do not reprice/backfill historical attempts or manufacture provider usage. If
+the current UTC month includes unpriced non-released attempts and a cost ceiling
+is enabled, deny further dispatch with an explicit estimate-unavailable reason.
+Expose known estimates and unpriced-attempt counts truthfully in the existing
+scoped usage projection; never present incomplete totals as actual spend. Default
+null limits/rates preserve the encrypted live key/model/enabled100000 policy.
+
+Acceptance must include real SQL/HTTP concurrent reservations, UTC boundaries,
+retry/UNKNOWN/reconciliation/legacy/rate-change semantics, immutable snapshots,
+current-grant/RLS denial, full OpenAPI, compact Persian controls and actual native
+save/readback/denial/nullable reset/four-width behavior. No new operation needed;
+an additive migration/contract update requires full migration rehearsal/gates.
+
+## DEC-061 — Bounded Live Monitor Issue context and non-destructive refresh
+
+Keep existing events listing/filter/pagination and default response unchanged.
+Add optional includeIssue=true|false ONLY on GET events list (not detail/export/
+other resources). True adds related_issue:null or a fixed safe Issue projection
+to each bounded page Event. Fetch links for<=100 already authorized Event IDs in
+one batch, exact App/environment/Event/tenant composite plus existing RLS/current
+grant. No N+1, unbounded Issue scan, migration, new operation or business coupling.
+OpenAPI documents legacy EventRow versus opted-in LiveEventRow;61 operations stay.
+
+Issue occurrence_count/first_seen/last_seen are lifetime aggregation observations,
+not page/window Event counts or receive timestamps. Null is no recorded related
+Issue, not zero/healthy or a claim that aggregation must be pending. Raw list
+filters/default severities are preserved. Compact reusable Live table explicitly
+shows current App/environment, Event time/severity/operation/correlation and the
+related Issue lifetime context; no nested JSON dump/new main navigation/palette.
+
+Pause/Resume affects automatic visible-tab ten-second refresh, not collection or
+backend aggregation. Explicit manual refresh/filter changes remain deliberate.
+Automatic refresh also waits while Event detail is open, so reading evidence is
+not destroyed by the next timer tick; closing detail resumes cadence unless
+explicitly paused. Real Browser tests observe new committed events during pause,
+absence of list requests while paused/reading, then fresh rows on normal resume.
+
 ## DEC-060 — Seed-bound operational correlation, not global tracing search
 
 Section23 requires an Operator-followable retained evidence chain. Add GET
