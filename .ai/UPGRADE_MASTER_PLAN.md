@@ -2,6 +2,13 @@
 
 ## GOAL-069 — Observability Hub continuation (IN PROGRESS)
 
+DEC-058 A10 fresh-note defect reproduced in real native UI; independent newest100
+human_notes and newest100 activity implemented. Focused SQL/HTTP/full contract/
+native saturation/history-digest checks pass. Actual embedded Platform acceptance
+passes direct/reload/return/native Back and four widths; Help v4 published/read.
+Final serial472-test full release/both isolation scripts and cleanup pass;
+A08/A09/full audit remain mandatory. No whole-Goal completion claim.
+
 DEC-057 independent Incident workspace implemented; scoped fragment, readable
 AI/human panels, exact RLS-first narrow Audit/control projection. Focused real
 SQL/HTTP/OpenAPI/independent native and actual authenticated Jupiter/compiled

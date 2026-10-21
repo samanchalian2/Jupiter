@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-10-21 — GOAL-069 recent Incident notes (IN PROGRESS)
+
+- DEC-058:reproduced fresh human note hidden after105 activities; dedicated
+  newest100 notes and newest100 activity fix with stable ordering/RLS/no migration.
+- Focused SQL/HTTP/contract/native saturation/immutable-read digest checks pass.
+  Embedded Platform actual acceptance passes with real section search parameter,
+  reload/return/native Back/four widths; Help v4 published/read. First disposable
+  host readiness failed before tests; unchanged-timeout retry passed, cause unknown.
+  Final serial472-test full release and both standalone isolation scripts pass;
+  post-gate83 migrations/zero fixture DBs/zero RESERVED/unchanged100000 budget.
+  No live data/provider or target deployment. A08/A09/full audit remain open.
+
 ## 2026-10-20/21 — GOAL-069 independent Incident workspace (IN PROGRESS)
 
 - DEC-057 strict portable addressable fragment/separate page; readable required

@@ -81,15 +81,21 @@ Policy runtime Help v4 is published/read; access/credential workflows remain ope
 
 ### A10 — bounded Incident human-note visibility (source boundary)
 
-Existing Incident activity query orders created_at ascending LIMIT100. New
-workspace's Human Notes filters that same bounded activity array. Therefore a
-long-lived Incident with >100 early activities may not show its newly added
-note, although immutable Audit is newest-first. The small native note fixture
-does not prove this boundary. Reproduce with >100 actual scoped activity rows,
-define/document bounded newest human-note/activity semantics without deleting
-history, and verify fresh note visibility/order/tenant isolation through HTTP
-and native UI. Do not infer complete section42 from merely named panels or
-silently increase the unbounded result cap. Existing schema/lifecycle stay.
+**REPRODUCED AND REMEDIATED; final full gate passes.** Native red log
+output/goal069-incident-notes-red.log proves the old oldest100 projection hid a
+fresh committed note after105 earlier activities. DEC-058 now returns newest100
+activity and independent newest100 human_notes, stable created_at DESC,id DESC.
+Focused SQL/HTTP/OpenAPI/native green proves105 older notes and105 later non-note
+activities, fresh note/order, same tenant authorization and unchanged history
+count/digest. No migration, new operation or increased cap. Actual authenticated
+Jupiter host acceptance output/goal069-incident-notes-host-2.log passes both
+/operations and /platform?section=observability fragments: direct link, reload,
+return and native Back preserve section; all four widths RTL/no document overflow,
+zero page errors. First host attempt failed before tests at readiness; retry
+passed unchanged timeout, cause not established. Help v4 published/read locally.
+Final serial472-test release, both isolation scripts, diff check and post-gate
+zero-fixture/zero-RESERVED readback pass (output/goal069-notes-final-release.log).
+Do not infer whole section42/full Goal completion from this repaired boundary.
 
 ### A09 — section23 operator-followable distributed correlation: not proved
 
@@ -158,8 +164,10 @@ and A08/A09/full original audit are not waived.
 Actual Jupiter proof currently exercises standalone `/operations`. Source
 `PlatformPro` preserves its observability selection in search parameters, so
 fragment routing does not replace it; nevertheless add actual embedded
-`/platform?tab=observability#obs/incident/...` reload acceptance before claiming
-every host embedding verified. Source compatibility is not a native pass.
+`/platform?section=observability#obs/incident/...` reload acceptance before claiming
+every host embedding verified. (The earlier tab= example was incorrect.) This
+actual embedded acceptance now passes in DEC-058's focused host run, including
+four widths and native Back; final-source472-test full release gate passes.
 
 Concrete next-source inspection: host `App.tsx` matches only exact `/operations`;
 `OperationsWorkspace` embeds Console, independent reference has no router.

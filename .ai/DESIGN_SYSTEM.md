@@ -1,5 +1,10 @@
 # Jupiter Design System V2
 
+DEC-058 Human Notes shows dedicated latest notes, not a filter of an activity
+page. Explain independent100-row newest-first limits without a new navigation,
+card or palette. Current-state label must not imply rule-generated NEW is a
+human decision. Embedded Platform query context remains intact on fragment back.
+
 DEC-057 Incident workspace is a distinct article/page on a strict scoped host-
 portable fragment, not an inline renamed detail. Named Summary/Impact/Timeline/
 Issues/Feedback/AI/hypotheses/actions/human/Audit sections use readable Persian

@@ -1,5 +1,9 @@
 # Security and Privacy
 
+DEC-058 note/activity reads use exact App/environment/Incident and the same
+tenant RLS/current grant. Independent bounded note selection adds no permission,
+raw data or Audit grant. Verify cross-scope denial and unchanged history digest.
+
 DEC-057 route fragments contain no secrets, reject duplicate/unknown query keys
 and malformed references, and never substitute a default App/environment for a
 direct link. Incident row must be readable under tenant RLS before the same

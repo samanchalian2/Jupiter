@@ -1,5 +1,29 @@
 # Architecture Decisions
 
+## DEC-058 — Bounded newest Incident activity and independent human notes
+
+Section42's Human Notes must show the fresh note a human actually submitted,
+even after >100 older activities or >100 later non-note activities. Existing
+oldest100 activity projection is insufficient; filtering it in the UI cannot
+guarantee note visibility. Use existing immutable incident_activity, no migration,
+new entity, write behavior or expanded unbounded result.
+
+Incident detail's activity becomes newest100 ordered created_at DESC,id DESC
+(documented order refinement; previous contract did not promise ascending order).
+Add human_notes: newest100 NOTE_ADDED rows with identical scoped fixed-field
+projection/order, independent of status/assignment/rule activity count. No raw
+payload, new permission or global Audit read. Retention still governs eligible
+history; this is bounded recent evidence, not the entire archive. Additive API
+field is documented in OpenAPI and follows existing tenant RLS/current grant.
+
+Workspace Human Notes reads this dedicated projection and explains newest-first
+limits; current status is labeled current state, not an assertion that initial
+rule-generated NEW came from a human. Actual new-note UI/HTTP/Audit tests run
+against saturated disposable history; history counts/digests remain unchanged by
+reads. Cross-tenant/App/environment and current revocation remain mandatory.
+Also verify existing fragment links in Jupiter's embedded Platform tab, not only
+the standalone /operations route, including real authenticated reload/back.
+
 ## DEC-057 — Addressable Incident workspace and narrow operational projections
 
 Section42 gets a separate reusable workspace selected by fragment

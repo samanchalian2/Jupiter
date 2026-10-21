@@ -1,5 +1,9 @@
 # System Architecture
 
+DEC-058 refines existing Incident detail activity to newest100 with stable ID
+tie-break and adds human_notes (newest100 NOTE_ADDED independently), under the
+same tenant RLS/current grant. No migration/new entity/expanded result limit.
+
 DEC-057 gives reusable Console a strict scoped Incident fragment route, separate
 workspace and native reload/history support without taking over host routing.
 Existing detail gains bounded timeline, narrow Audit/assignee/can_manage/allowed

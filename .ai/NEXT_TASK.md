@@ -26,6 +26,20 @@ latest Evidence for gates/runtime/remote commit.
 
 ### Remaining work — preserve the full original scope
 
+Active DEC-058 A10: native red reproduced105 earlier activity hiding a committed
+fresh human note. Independent newest100 human_notes and newest100 activity now
+implemented, same RLS/no migration. Added >100 later non-note/digest/HTTP/native
+proof and actual embedded Platform route with section=observability (not tab=).
+Focused SQL/HTTP/OpenAPI/native green and actual embedded Platform direct/reload/
+return/native Back/four-width acceptance passed. First host readiness attempt
+failed before tests; unchanged-timeout retry passed, cause unknown. Help v4
+published/read. Final serial release and both isolation scripts pass,472 tests,
+output/goal069-notes-final-release.log terminal GOAL069_NOTES_FINAL_RELEASE_EXIT=0.
+Post-gate83 migrations/zero temp DBs/zero RESERVED attempts/unchanged100000 budget.
+Scoped commit/push retry next (GitHub443 previously unreachable); then A08:
+editable existing Investigator limits/frequency and current command ownership,
+native held real authorized PUT red/green. Preserve A09/full audit afterward.
+
 DEC-057 independent Incident workspace checkpoint verified. Exact RLS-first
 same-transaction narrow control Audit, no new grants/migration/endpoint. Real
 SQL/HTTP/OpenAPI/native and actual authenticated Jupiter/compiled-host direct

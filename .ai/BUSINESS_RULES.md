@@ -1,5 +1,14 @@
 # Business Rules
 
+## Incident recent human evidence (DEC-058)
+
+- Recent activity and Human Notes each have independent100-row newest-first
+  projections (created_at DESC,id DESC). Non-note activity cannot evict a fresh
+  note from Human Notes. Retained history is not deleted or rewritten by reads.
+- Initial rule-generated NEW is current state, not a claim of human decision.
+- Embedded Platform deep link preserves the actual section=observability search
+  parameter; native reload/return/back must not switch the host tab.
+
 ## Independent Incident workspace (DEC-057)
 
 - Addressable route binds actual row App/environment/Incident/tenant; an address

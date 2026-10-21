@@ -1,5 +1,23 @@
 # Current State
 
+**2026-10-21 Incident human-note boundary (GOAL-069 IN PROGRESS):**
+A10 reproduced in actual authenticated Browser:105 earlier activities, supported
+human note/assignment commits, Human Notes fails to show fresh note (native red
+log output/goal069-incident-notes-red.log). DEC-058 implemented newest100 activity
+and separate newest100 human_notes, stable tie-break/same RLS, no migration.
+SQL/HTTP/history-digest and native >100 earlier/later non-note acceptance added;
+focused green passed (SQL/HTTP/OpenAPI/native). Embedded actual Platform direct
+link/reload/return/native Back/four-width acceptance passed with the real
+section=observability parameter. First host attempt failed readiness before tests;
+unchanged-timeout retry passed, cause not established. Help v4 published/read.
+Final serial release and both isolation scripts pass,472 tests; log
+output/goal069-notes-final-release.log ends GOAL069_NOTES_FINAL_RELEASE_EXIT=0.
+Post-gate83 migrations/zero temporary DBs/zero RESERVED attempts/unchanged
+enabled100000 budget; diff check passes. Shared servers remain stopped.
+Scoped commit/push retry next (GitHub443 previously unreachable). A10 concrete
+boundary verified; A08/A09/A01/A07 and whole original audit remain open.
+No host/provider change.
+
 **2026-10-21 independent Incident workspace checkpoint (GOAL-069 IN PROGRESS):**
 DEC-057 implemented on Oct20/21: strict portable scoped fragment/separate page,
 normal current authorization/RLS, timeline100/Audit100/AI20, exact assignee/

@@ -4,6 +4,48 @@ Status: IN PROGRESS. Owner-approved plan supersedes the stale GOAL-060 identifie
 in the supplied specification. GOAL-060 Personal Service history is preserved.
 GOAL-059 remains BLOCKED; LOCAL evidence is not staging acceptance.
 
+## 2026-10-21 — Saturated Incident human notes / DEC-058 (LOCAL, in progress)
+
+- A10 reproduced through the actual authenticated native UI:105 earlier activity
+  fixture rows, real supported note+assignment POST, assigned operator updates
+  but fresh Human Notes text never appears. Red log
+  output/goal069-incident-notes-red.log fails at the exact fresh-note visibility
+  assertion. Existing UI filtered the oldest100 activities instead of notes.
+- Incident detail now returns activity newest100(created_at DESC,id DESC) and
+  independent newest100 human_notes with fixed kind NOTE_ADDED. Same scoped
+  transaction/current grant/RLS, no migration/entity/new operation/unbounded cap.
+  Workspace uses dedicated notes, explains independent newest-first limits;
+  current status no longer labels initial rule-generated NEW a human decision.
+- Real SQL/HTTP fixture includes105 older notes, a real newly submitted note,
+  and105 later non-note activities. activity100 all non-notes while human_notes100
+  starts with the actual fresh note, exact SQL deterministic order, no foreign
+  tenant note. Authorized HTTP projection matches. Count/digest before and after
+  reads identical; revocation/isolation still asserted. No history rewritten.
+- Focused green SQL/HTTP/full actual60-operation OpenAPI and native passes:
+  output/goal069-incident-notes-green.log (three selected cases). Expanded native
+  proves fresh note after105 earlier AND105 later non-note activities, plus
+  existing navigation/human/Audit/late-response/security/four-width checks.
+- Actual embedded Platform route requires section=observability, not the old
+  audit's guessed tab= example. Added direct link/reload/return/native Back/
+  four-width acceptance to actual Jupiter fixture. Focused host acceptance passes
+  output/goal069-incident-notes-host-2.log: standalone and embedded RTL/no document
+  overflow at375/768/1024/1440, zero page errors. Inspected375/1440 embedded
+  screenshots. Initial output/goal069-incident-notes-host.log failed before any
+  test because disposable API readiness fetch was ECONNREFUSED within20s;
+  repeat passed with unchanged timeout/source. Cause not established; no assertion
+  removed or shared server restarted. Product Help v4 published through supported
+  LOCAL catalog utility and authorized public service readback. Final serial
+  release gate completed successfully: output/goal069-notes-final-release.log
+  and terminal marker GOAL069_NOTES_FINAL_RELEASE_EXIT=0. All472 tests pass
+  (179API/40Web/253Hub), build/lint/typecheck,83-migration rehearsal, native/
+  reference/performance and both standalone fetch/React isolation scripts pass.
+  Post-gate LOCAL readback:83 migrations,zero disposable obs069 databases,
+  zero RESERVED attempts, unchanged enabled100000 monthly input+output budget.
+  Public Help readback v4 also asserts independent recent-note guidance exists.
+  git diff --check passes. Shared servers remain stopped; no target deployment.
+  GitHub443 was unreachable; prior doc7f2a2ec local before push retry. No target deploy,
+  live tenant/provider/key/budget change. Full Goal audit remains open.
+
 ## 2026-10-20/21 — Independent Incident workspace / DEC-057 (LOCAL checkpoint)
 
 - Existing reusable Console now opens Incident list rows as a distinct article
