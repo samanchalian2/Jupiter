@@ -14,6 +14,7 @@ let ownerId = '';
 let platformId = '';
 let hiddenArticleId = '';
 let managedArticleId = '';
+const rankedArticleIds:string[]=[];
 
 beforeAll(async () => {
   await seedHelpRepository((database as unknown as { pool: import('pg').Pool }).pool, join(process.cwd(), '../../docs/help'));
@@ -31,6 +32,7 @@ beforeAll(async () => {
 afterAll(async () => {
   await database.query("DELETE FROM audit_logs WHERE action LIKE 'help.%' AND (actor_user_id=$1 OR actor_user_id=$2)", [ownerId, platformId]);
   if (managedArticleId) await database.query('DELETE FROM product_help_articles WHERE id=$1', [managedArticleId]);
+  for(const id of rankedArticleIds)await database.query('DELETE FROM product_help_articles WHERE id=$1',[id]);
   await database.query('DELETE FROM product_help_articles WHERE id=$1', [hiddenArticleId]);
   await database.query('DELETE FROM membership_roles WHERE membership_id IN (SELECT id FROM memberships WHERE organization_id=$1)', [organizationId]);
   await database.query('DELETE FROM memberships WHERE organization_id=$1', [organizationId]);
@@ -99,6 +101,12 @@ describe('Product Help publication and audience isolation', () => {
     await expect(help.detail(undefined, initial.slug)).rejects.toBeInstanceOf(NotFoundException);
   });
 
+  it('ranks an exact domain tag ahead of a newer broad title match',async()=>{
+    const query=`دامنه-${suffix}`;
+    const exact=await help.create(platformId,{slug:`rank-exact-${suffix}`,title:'راهنمای تخصصی',summary:'راهنمای دامنهٔ دقیق',content:'متن موقت آزمون',category:'آزمون',audience:['ALL'],tags:[query],productArea:'آزمون'});rankedArticleIds.push(exact.id);await help.publish(platformId,exact.id,exact.revisionId);
+    const broad=await help.create(platformId,{slug:`rank-broad-${suffix}`,title:`راهنمای عمومی ${query}`,summary:'تطبیق کلی عنوان',content:'متن موقت آزمون',category:'آزمون',audience:['ALL'],tags:[],productArea:'آزمون'});rankedArticleIds.push(broad.id);await help.publish(platformId,broad.id,broad.revisionId);
+    expect((await help.list(undefined,{q:query})).map(row=>row.slug)).toEqual([`rank-exact-${suffix}`,`rank-broad-${suffix}`]);
+  });
   it('ranks Persian domain matches and exposes a published article for every contextual feature', async () => {
     const expectations: Array<[string,string[]]> = [['دایرکتوری',['organization-directory']],['جفت‌سازی',['organization-directory']],['تیکت',['ticket-lifecycle']],['SLA',['sla-business-calendar']],['هوش مصنوعی',['ai-ticket-review','personal-capacity','observability-ai']],['Assist',['jupiter-assist']],['اشتراک',['commercial-allowances']],['سهمیه',['commercial-allowances']],['راه‌اندازی سازمان',['organization-setup-wizard']]];
     for (const [query,slugs] of expectations) expect(slugs).toContain((await help.list(ownerId, { q:query }))[0]?.slug);

@@ -6,6 +6,24 @@ GOAL-059 remains BLOCKED; LOCAL evidence is not staging acceptance.
 
 ## 2026-10-21 — Actual push CI diagnosis (LOCAL remediation in progress)
 
+Run39633488275/job119337617376 (069b59c remote SHA verified) passes DB setup,
+supported migrations,build/lint/typecheck and mandatory Hub persistence. API test
+fails Help query تیکت: fresh seed recency chooses organization-ticket-configuration
+instead of ticket-lifecycle. DEC-063 generic temporary published-article test
+reproduces exact-tag vs newer broad title (red-2). Initial red1 was a fixture
+omitting required revisionId; fixed test, no API relaxation. First ranking change
+then exposed notifications vs commercial-allowances equal-tag relevance. Final
+weighted exact/title/tag plus earlier-title-position ordering passes13 Help tests
+(output/goal069-ci-help-ranking-green-2.log); no slug-specific boost, audience/
+publication/filter change, runtime reseed/republication or normal article edits.
+New push result pending. This is not a claim that CI has become green yet.
+
+A12 schema QC has advanced: migration073 integrated in disposable fixtures only,
+84-chain rehearsal preserves a SETTLED row inserted BEFORE073 without inventing
+rates/cost. SQL snapshot/settlement invariants and pure arithmetic/nullable limits
+pass6 selected tests/101 skipped(output/goal069-operational-limits-schema-2.log).
+Main LOCAL remains83; no backend reserve/config/API/UI enforcement implemented.
+
 Generic GitHub GET (not the PR-only commit wrapper) confirms prior fd5bc7c
 push run39604737671/job119237918188 completed FAILURE. Install succeeded;
 lint failed TS2307 resolving @observability/contracts from core because clean

@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-10-21 — GOAL-069 clean-CI relevance remediation (IN PROGRESS)
+
+- CI now builds before checking and provisions only isolated ephemeral PostgreSQL.
+  Actual remote run reached mandatory persistence/API tests, finding an existing
+  fresh-seed Help ranking defect instead of silently skipping DB acceptance.
+- DEC-063 generic exact-domain ranking regression red/green;13 Help tests pass.
+  Original Persian expected results preserved, no slug boost or audience change.
+- A12 pure helper/schema/rehearsal6 selected tests pass, but actual enforcement/
+  UI/contract/full gates are pending and local operational database unchanged.
+
 ## 2026-10-21 — GOAL-069 Live Monitor context (IN PROGRESS)
 
 - DEC-061 opt-in bounded related-Issue projection; legacy Event API unchanged.

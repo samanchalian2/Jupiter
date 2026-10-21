@@ -26,6 +26,14 @@ latest Evidence for gates/runtime/remote commit.
 
 ### Remaining work — preserve the full original scope
 
+LATEST CI:069b59c pushed;39633488275 gets through actual PostgreSQL/Hub tests,
+fails Help relevance on fresh seed dates. DEC-063 regression red-2/green-2 now
+13 Help tests PASS; API typecheck/build87394 TERMINATED0. Commit/push ONLY Help fix+
+decision/docs,inspect new actual push run. A12 uncommitted fixture/migration/helper
+work remains separate:6 focused tests pass with84-chain rehearsal and actual old
+SETTLED row preserved unpriced. Main DB83 unchanged. Finish A12 actual atomic
+backend/API/UI/native/Help integration; schema/unit tests are NOT enforcement.
+
 POST-PUSH latest: b4d561b pushed/remote verified; actual CI39633029864 passes
 clean build/lint/typecheck then fails missing PostgreSQL configuration. CI-only
 ephemeral PostgreSQL16/migrate fix drafted; commit/push only this CI/docs change

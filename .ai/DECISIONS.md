@@ -1,5 +1,20 @@
 # Architecture Decisions
 
+## DEC-063 — Stable Help domain relevance on a fresh catalog
+
+Actual clean CI PostgreSQL acceptance exposes an existing search ranking defect:
+a newer partial title match outranks the exact domain tag (e.g. ticket setup vs
+ticket lifecycle). Reproduce with two temporary published articles through normal
+authoring; do not relax expected search relevance or alter runtime seed history.
+Keep API shape/audience/publication/query filters. Rank exact title, exact tag
+with title match, exact tag alone, partial title, partial tag, category, then
+summary; earlier title match precedes publication time/title/slug tie-breakers.
+This also prevents a newer generic notification guide with the same tag from
+outranking the matching subscription-title guide. No slug-specific boost, new search engine, migration
+or authorization change. Generic red/green SQL integration plus original Persian
+queries and fresh remote CI are required. This is a release-gate remediation
+within GOAL-069, not reopening/changing the scope of GOAL-056.
+
 ## DEC-062 — Optional operational request and estimated-cost ceilings
 
 Status: decision recorded before implementation; NOT YET IMPLEMENTED/ACCEPTED.

@@ -1,5 +1,21 @@
 # Current State
 
+**2026-10-21 latest CI/QC evidence:** 069b59c166e8e23b4ab1a620264d3ccfb5c7ba60
+pushed/remote verified. Actual CI39633488275 now passes isolated DB initialization,
+all build/lint/typecheck and Hub persistence, but fails existing Help relevance:
+fresh seed publication dates rank generic configuration ahead of ticket lifecycle.
+DEC-063 generic temporary-article regression reproduces it (red-2); initial test
+mistake omitted publish revisionId, corrected without weakening API. First fix
+also exposed same-tag notification outranking subscription; relevance now weighs
+exact title/exact tag+title/exact tag/partial title/tag/category/summary, then title
+match position before recency.13 Help tests pass(green-2); API typecheck/build
+TERMINATED0. New commit/CI pending.
+A12 migration073 now integrated ONLY in disposable fixtures,84-chain rehearsal
+including pre-migration SETTLED unpriced row preservation and SQL immutable-rate/
+settlement constraints pass;6 focused tests/101 skipped(schema-2). No runtime
+reserve/configuration/API/UI support yet. Main LOCAL DB remains83; no migration
+applied to it. A12 files remain uncommitted; don't deploy/start shared services.
+
 **2026-10-21 post-push continuation:** b4d561b55ef321411550ca7b8673ed9586baabd8
 pushed/remote SHA verified. Actual CI39633029864 passes build/lint/typecheck on
 clean checkout, then fails missing PostgreSQL test configuration. Workflow now

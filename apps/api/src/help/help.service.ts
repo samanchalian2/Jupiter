@@ -69,7 +69,7 @@ export class ProductHelpService {
     const rows = (await this.database.query<ArticleRow>(`${this.select(false)}
       AND ($2='' OR revision.title ILIKE $3 OR revision.summary ILIKE $3 OR revision.category ILIKE $3 OR array_to_string(revision.tags, ' ') ILIKE $3)
       AND ($4='' OR revision.category=$4) AND ($5='' OR revision.related_route=$5) AND ($6='' OR revision.related_feature=$6)
-      ORDER BY CASE WHEN $2='' THEN 0 WHEN revision.title ILIKE $3 THEN 0 WHEN $2 = ANY(revision.tags) THEN 1 WHEN array_to_string(revision.tags, ' ') ILIKE $3 THEN 2 WHEN revision.category ILIKE $3 THEN 3 ELSE 4 END, revision.published_at DESC,revision.title`, [viewer.audiences, q, `%${q}%`, input.category?.trim() ?? '', input.relatedRoute?.trim() ?? '', input.relatedFeature?.trim() ?? ''])).rows;
+      ORDER BY CASE WHEN $2='' THEN 0 WHEN lower(revision.title)=lower($2) THEN 0 WHEN $2 = ANY(revision.tags) AND revision.title ILIKE $3 THEN 1 WHEN $2 = ANY(revision.tags) THEN 2 WHEN revision.title ILIKE $3 THEN 3 WHEN array_to_string(revision.tags, ' ') ILIKE $3 THEN 4 WHEN revision.category ILIKE $3 THEN 5 ELSE 6 END,CASE WHEN $2<>'' AND revision.title ILIKE $3 THEN strpos(lower(revision.title),lower($2)) ELSE 2147483647 END,revision.published_at DESC,revision.title,article.slug`, [viewer.audiences, q, `%${q}%`, input.category?.trim() ?? '', input.relatedRoute?.trim() ?? '', input.relatedFeature?.trim() ?? ''])).rows;
     return rows.map(row => this.map(row, false));
   }
 
