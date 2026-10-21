@@ -31,9 +31,20 @@ implementation and focused green3 pass; Console30 tests/typechecks pass. Help v3
 published/read,375/1440 screenshots inspected. Final serial476-test release and
 both isolation scripts pass (output/goal069-investigator-final-release.log,
 GOAL069_INVESTIGATOR_FINAL_RELEASE_EXIT=0). Post-gate83 migrations/zero temp DBs/
-zero RESERVED/unchanged100000 budget; diff check passes. Scoped commit/push next.
+zero RESERVED/unchanged100000 budget; diff check passes. Implementation4fbd13e
+pushed and remote main SHA verified. No live process pending at this checkpoint.
 Prior983d6e1 pushed and remote SHA verified. Continue A09 operator correlation
 and full original A01/A07/sections1–73/A–I/47 Evidence audit afterward.
+
+Next concrete A09 boundary: add an Operator-followable bounded trace/request
+chain from an authorized seed Event, not a global identifier lookup. Revalidate
+exact App/environment/tenant/current grant; even all-tenant App viewers must not
+merge tenants sharing identifiers. Record ADR before additive HTTP contract.
+Expose sanitized chronological source/operation/status/duration evidence, not
+invented parent-child causality or missing spans. Verify actual HTTP and native
+drill-through, duplicate IDs across scopes, revocation and late responses. Reuse
+existing events/telemetry, no provider calls, new tracing infrastructure or live
+tenant fixture. Read section23 before choosing final endpoint/query semantics.
 
 Previous DEC-058 A10: native red reproduced105 earlier activity hiding a committed
 fresh human note. Independent newest100 human_notes and newest100 activity now
