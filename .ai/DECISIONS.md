@@ -1,5 +1,25 @@
 # Architecture Decisions
 
+## DEC-059 — Operational Investigator controls and command ownership
+
+Expose the existing validated per-Application configuration fields in the compact
+Console: output128–4096 tokens, context2048–32768 bytes, concurrency1–4 and periodic
+review300–86400 seconds, alongside monthly combined input+output budget. Existing
+service defaults remain1024/16000/1/300. No new provider contract, endpoint,
+migration or commercial allowance coupling. Exact reason/real actor Audit also
+records these non-secret limits; existing encrypted credential is preserved when
+replacement is blank and never returned. Limits are ceilings, not a promise to
+run exactly on schedule or a guarantee of provider context/token usage.
+
+Investigator reads/commands are owned by current client/App/environment/tenant.
+Use the shared CommandContext guard for completion ownership, reset transient
+forms/messages on scope change and invalidate on unmount. Late success/failure
+may not clear new credentials/reason, refresh a new scope or show old notices.
+This never cancels/retries a write already committed by the server. Reconciliation
+uses the same rule before invoking its parent refresh callback. Current server
+authorization remains authoritative. Native tests hold real authorized responses,
+switch scope and verify committed Audit separately from discarded UI completion.
+
 ## DEC-058 — Bounded newest Incident activity and independent human notes
 
 Section42's Human Notes must show the fresh note a human actually submitted,

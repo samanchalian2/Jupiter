@@ -4,7 +4,7 @@
 
 The entire approved objective remains active. Source of truth:
 `docs/GOAL_069_SPECIFICATION.md` (all sections and A–I Definition of Done),
-`docs/GOAL_069_EVIDENCE.md`, current state and DEC-038 through DEC-057.
+`docs/GOAL_069_EVIDENCE.md`, current state and DEC-038 through DEC-059.
 Historical GOAL-060 Personal Service is not renamed. Do not start another Goal.
 
 ### Latest implementation boundary
@@ -26,7 +26,16 @@ latest Evidence for gates/runtime/remote commit.
 
 ### Remaining work — preserve the full original scope
 
-Active DEC-058 A10: native red reproduced105 earlier activity hiding a committed
+Active DEC-059 A08 Investigator controls/command ownership: real native red,
+implementation and focused green3 pass; Console30 tests/typechecks pass. Help v3
+published/read,375/1440 screenshots inspected. Final serial476-test release and
+both isolation scripts pass (output/goal069-investigator-final-release.log,
+GOAL069_INVESTIGATOR_FINAL_RELEASE_EXIT=0). Post-gate83 migrations/zero temp DBs/
+zero RESERVED/unchanged100000 budget; diff check passes. Scoped commit/push next.
+Prior983d6e1 pushed and remote SHA verified. Continue A09 operator correlation
+and full original A01/A07/sections1–73/A–I/47 Evidence audit afterward.
+
+Previous DEC-058 A10: native red reproduced105 earlier activity hiding a committed
 fresh human note. Independent newest100 human_notes and newest100 activity now
 implemented, same RLS/no migration. Added >100 later non-note/digest/HTTP/native
 proof and actual embedded Platform route with section=observability (not tab=).
@@ -36,9 +45,8 @@ failed before tests; unchanged-timeout retry passed, cause unknown. Help v4
 published/read. Final serial release and both isolation scripts pass,472 tests,
 output/goal069-notes-final-release.log terminal GOAL069_NOTES_FINAL_RELEASE_EXIT=0.
 Post-gate83 migrations/zero temp DBs/zero RESERVED attempts/unchanged100000 budget.
-Scoped commit/push retry next (GitHub443 previously unreachable); then A08:
-editable existing Investigator limits/frequency and current command ownership,
-native held real authorized PUT red/green. Preserve A09/full audit afterward.
+Checkpoint983d6e1 pushed and remote SHA verified. Its concrete A10 boundary is
+verified; current A08 work above does not waive A09 or the full original audit.
 
 DEC-057 independent Incident workspace checkpoint verified. Exact RLS-first
 same-transaction narrow control Audit, no new grants/migration/endpoint. Real

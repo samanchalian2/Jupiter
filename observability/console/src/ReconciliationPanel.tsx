@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { result, type OperationsClient } from './client.js';
+import {CommandContext} from './command-context.js';
 export interface UnknownAttempt { id:string;investigation_id:string;tenant_reference:string|null;period_start:string;reserved_tokens:number;model:string;outcome:string;created_at:string }
 export function reconciliationCommand(input:string,output:string,reason:string,confirmed:boolean,reserved:number){
   if(!/^\d+$/.test(input)||!/^\d+$/.test(output))throw Error('تعداد واقعی توکن ورودی و خروجی را وارد کنید.');
@@ -13,6 +14,8 @@ export function ReconciliationPanel({client,applicationId,environmentId,tenant,o
   const[input,setInput]=useState(''),[output,setOutput]=useState(''),[reason,setReason]=useState(''),[confirmed,setConfirmed]=useState(false);
   const[error,setError]=useState(''),[notice,setNotice]=useState(''),[busy,setBusy]=useState(false),[loading,setLoading]=useState(true);
   const generation=useRef(0),prefix=`/operations/applications/${applicationId}/ai`;
+  const commands=useRef(new CommandContext());commands.current.update([client,applicationId,environmentId,tenant]);
+  useEffect(()=>()=>commands.current.invalidate(),[]);
   useEffect(()=>{
     const current=++generation.current;setAttempts([]);setSelected(null);setError('');setNotice('');setBusy(false);setLoading(true);
     const query=new URLSearchParams({environmentId,...(tenant?{tenantReference:tenant}:{})});
@@ -21,13 +24,13 @@ export function ReconciliationPanel({client,applicationId,environmentId,tenant,o
   },[client,applicationId,environmentId,tenant]);
   const choose=(attempt:UnknownAttempt)=>{setSelected(attempt);setInput('');setOutput('');setReason('');setConfirmed(false);setError('');setNotice('');};
   const submit=async(event:FormEvent)=>{
-    event.preventDefault();if(!selected||busy)return;const current=generation.current;setError('');
+    event.preventDefault();if(!selected||busy)return;const current=commands.current.begin();setError('');
     try{
       const command=reconciliationCommand(input,output,reason,confirmed,selected.reserved_tokens);setBusy(true);
       await result(await client.request(`${prefix}/attempts/${selected.id}/reconcile`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({environmentId,tenantReference:selected.tenant_reference,...command})}));
-      if(current!==generation.current)return;
+      if(!current())return;
       setAttempts(items=>items.filter(item=>item.id!==selected.id));setSelected(null);setNotice('مصرف واقعی ثبت شد؛ شمارش نهایی دیگر قابل تغییر نیست.');onReconciled();
-    }catch(cause){if(current===generation.current)setError((cause as Error).message);}finally{if(current===generation.current)setBusy(false);}
+    }catch(cause){if(current())setError((cause as Error).message);}finally{if(current())setBusy(false);}
   };
   return <section aria-label="تطبیق مصرف نامعلوم"><h3>تطبیق مصرف نامعلوم</h3><p className="hint">تنها پس از بررسی گزارش مصرف provider، مقدار واقعی را ثبت کنید. صفر را صرفاً برای آزادکردن بودجه وارد نکنید. این کار نتیجهٔ تحلیل را تأیید یا بازنویسی نمی‌کند.</p>
     {error&&<p className="error" role="alert">{error}</p>}{notice&&<p role="status">{notice}</p>}{loading?<p role="status">در حال دریافت مصرف نامعلوم…</p>:!error&&!attempts.length?<p>مصرف نامعلومی در این محدوده وجود ندارد.</p>:null}

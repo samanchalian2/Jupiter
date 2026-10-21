@@ -4,6 +4,41 @@ Status: IN PROGRESS. Owner-approved plan supersedes the stale GOAL-060 identifie
 in the supplied specification. GOAL-060 Personal Service history is preserved.
 GOAL-059 remains BLOCKED; LOCAL evidence is not staging acceptance.
 
+## 2026-10-21 — Investigator operational controls / DEC-059 (LOCAL, in progress)
+
+- A08 native red output/goal069-investigator-config-red.log: real authorized
+  configuration PUT commits; switch to VIEWER-only other App while response held;
+  old success notice appears in new App. Defect reproduced, not inferred.
+- Existing output/context/concurrency/review interval are now editable with exact
+  service bounds/defaults, plus monthly combined token budget. Compact Persian
+  form explains App-wide policy versus scoped findings/manual requests. Shared
+  CommandContext guards save/analyze/reconcile completions; no endpoint/schema/
+  provider change. Audit records effective non-secret limits and real actor.
+- Console30 tests pass including three new bounds/default/credential-preservation
+  tests; API/server/UI typechecks pass at focused checkpoint. Native green3 log
+  output/goal069-investigator-config-green-3.log proves real PUT/Audit/readback/
+  reload, four widths RTL/no document overflow, same encrypted credential retained,
+  real held400 error discarded after App switch, real201 queue request discarded
+  after tenant switch, real failed controlled provider UNKNOWN attempt reconciled
+  with actor Audit without refreshing new tenant through obsolete callback,
+  and revoked current grant clears settings. No external provider called.
+- Earlier expanded fixture green2 failed because waiting networkidle while an
+  old response was deliberately held cannot complete. Replaced with exact new-
+  scope usage response/rendered-form wait, not a longer timeout or weaker assertion.
+  Original red and failed intermediate logs retained. Runtime AI Help v3 published
+  through supported LOCAL catalog and authorized public service readback asserts
+  limits/frequency/App scope/credential preservation/reconciliation. Inspected
+ 375/1440 screenshots; all four widths asserted by native workflow.
+- Final serial output/goal069-investigator-final-release.log and terminal marker
+  GOAL069_INVESTIGATOR_FINAL_RELEASE_EXIT=0:476 tests(179API/40Web/257Hub), build,
+  lint,typechecks,83-migration rehearsal,native/reference/performance and both
+  standalone fetch/React isolation scripts pass. Post-gate LOCAL83 migrations,
+  zero temporary DBs/RESERVED attempts, unchanged enabled100000 combined monthly
+  budget. git diff --check passes; shared3000/5174 remain stopped. Scoped commit/
+  push next; A09/full original audit remains open, no whole-Goal acceptance.
+- Prior DEC-058 checkpoint983d6e1a9dd41355dc9a602ab6f85f0375fc1d4b pushed and
+  remote main SHA verified. No Preview/main host deployment; unrelated edits kept.
+
 ## 2026-10-21 — Saturated Incident human notes / DEC-058 (LOCAL, in progress)
 
 - A10 reproduced through the actual authenticated native UI:105 earlier activity

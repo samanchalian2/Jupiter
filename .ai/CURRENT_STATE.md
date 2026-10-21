@@ -1,5 +1,21 @@
 # Current State
 
+**2026-10-21 Investigator controls (GOAL-069 IN PROGRESS):**
+DEC-059 A08 real native red reproduced old App success notice after scope switch.
+Editable existing output/context/concurrency/review interval plus monthly budget,
+shared command ownership for save/analyze/reconcile and non-secret limit Audit
+implemented. Console30 tests/typechecks and focused native green3 pass: actual
+PUT/Audit/readback/reload, held400/201 and reconcile scope/callback isolation,
+revocation and four widths. Intermediate networkidle fixture deadlock corrected
+to exact new-scope response wait; logs retained. Help v3 published/read locally.
+Final serial release passes476 tests(179API/40Web/257Hub), all builds/lint/
+typechecks/migration/native/reference/performance and both isolation scripts;
+output/goal069-investigator-final-release.log terminal
+GOAL069_INVESTIGATOR_FINAL_RELEASE_EXIT=0. Post-gate83 migrations/zero temporary
+DBs/zero RESERVED attempts/unchanged enabled100000 budget; diff check passes.
+Scoped commit/push next. Prior983d6e1 pushed, remote SHA verified. A09/full audit
+remain open. LOCAL only; no live provider/key/budget or target server changes.
+
 **2026-10-21 Incident human-note boundary (GOAL-069 IN PROGRESS):**
 A10 reproduced in actual authenticated Browser:105 earlier activities, supported
 human note/assignment commits, Human Notes fails to show fresh note (native red
@@ -14,7 +30,7 @@ Final serial release and both isolation scripts pass,472 tests; log
 output/goal069-notes-final-release.log ends GOAL069_NOTES_FINAL_RELEASE_EXIT=0.
 Post-gate83 migrations/zero temporary DBs/zero RESERVED attempts/unchanged
 enabled100000 budget; diff check passes. Shared servers remain stopped.
-Scoped commit/push retry next (GitHub443 previously unreachable). A10 concrete
+Checkpoint983d6e1 pushed and remote SHA verified. A10 concrete
 boundary verified; A08/A09/A01/A07 and whole original audit remain open.
 No host/provider change.
 

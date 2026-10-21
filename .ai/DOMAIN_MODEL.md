@@ -1,5 +1,9 @@
 # Domain Model
 
+DEC-059 exposes existing AiConfiguration limits; no new entity or schema.
+INVESTIGATOR_CONFIGURATION_CHANGED Audit metadata additionally records effective
+output/context/concurrency/review interval, never ciphertext or plaintext key.
+
 DEC-058 adds human_notes:existing IncidentActivity NOTE_ADDED projection<=100,
 independent from activity<=100. Both newest-first with ID tie-break; no new
 aggregate or persistent note entity and no change to immutable write history.

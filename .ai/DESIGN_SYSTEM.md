@@ -1,5 +1,11 @@
 # Jupiter Design System V2
 
+DEC-059 Investigator uses existing compact number inputs with explicit units,
+bounds and per-App policy explanation. No wizard/new navigation/palette. Blank
+secret means preserve, not delete; human reconcile remains a separate confirmed
+action. Reset transient forms/messages on context change without claiming that
+the already submitted server operation was cancelled.
+
 DEC-058 Human Notes shows dedicated latest notes, not a filter of an activity
 page. Explain independent100-row newest-first limits without a new navigation,
 card or palette. Current-state label must not imply rule-generated NEW is a

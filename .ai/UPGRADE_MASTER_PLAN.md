@@ -2,6 +2,11 @@
 
 ## GOAL-069 — Observability Hub continuation (IN PROGRESS)
 
+DEC-059 A08 existing Investigator limits/frequency and scoped command completion
+implemented after native red reproduction. Focused native green3/Console30 pass;
+Help v3 and final476-test full release/both isolation scripts/cleanup pass.
+Scoped commit next; A09/full audit remains. No whole-Goal completion claim.
+
 DEC-058 A10 fresh-note defect reproduced in real native UI; independent newest100
 human_notes and newest100 activity implemented. Focused SQL/HTTP/full contract/
 native saturation/history-digest checks pass. Actual embedded Platform acceptance

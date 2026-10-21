@@ -2,6 +2,13 @@
 
 ## GOAL-069 independent operational Investigator
 
+DEC-059 operational Console edits existing output/context/concurrency/review
+interval policy with service bounds/defaults. All environments/tenants share the
+App monthly budget; scoped manual requests do not create extra allowance.
+Configuration Audit records validated limits, never credentials. CommandContext
+guards late save/analyze/reconciliation completion, without cancelling committed
+server writes. Provider port, scheduling algorithm and commercial boundary stay.
+
 Investigator consumes curated sanitized Hub events/technical feedback, never
 Jupiter ticket bodies or files. The generic server accepts a provider port and
 Application-bound credential vault; Jupiter's host supplies the allowlist and

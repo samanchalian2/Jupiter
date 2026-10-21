@@ -1,5 +1,10 @@
 # Security and Privacy
 
+DEC-059 never reads back provider credentials. Configuration remains App ADMIN
+only, findings follow existing scoped grants. Stale command results/callbacks
+cannot repopulate new scope or clear its credential/reason. Current server auth
+still decides writes; UI ownership is not cancellation or authorization.
+
 DEC-058 note/activity reads use exact App/environment/Incident and the same
 tenant RLS/current grant. Independent bounded note selection adds no permission,
 raw data or Audit grant. Verify cross-scope denial and unchanged history digest.

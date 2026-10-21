@@ -115,22 +115,19 @@ never grant broader scope. Do not mark section23 complete from capture alone.
 Original sections8/44/48 require manageable AI budget/frequency/limits and
 current-scope operation. `InvestigatorService.configuration/configure` exposes
 and validates maxOutputTokens/maxContextBytes/maxConcurrent/reviewIntervalSeconds.
-`InvestigatorPanel` saves their existing values but renders no editable controls
-for those four settings; native budget/configuration-save coverage was not found
-in the inspected Browser fixtures (service configuration does not prove it).
-Reconcile the intended supported operator workflow rather than assume the table's
-"AI budget" row proves every control.
-
-Source also shows `save`/`analyze` await then set notice/revision/busy without
-current App/environment/tenant/client ownership; effect guards only read results.
-Panel is not keyed by selected scope in Console. Potential stale command notice/
-refresh is therefore unproven-safe; reproduce with an actual held authorized
-configuration PUT and scope switch before remediation. Reconciliation callback
-ownership needs the same audit. Do not alter the live local provider/key/budget
-to exercise these cases; use disposable App configurations/controlled provider.
-This is concrete next implementation/acceptance work, not an infrastructure
-blocker or a reason to waive original scope. No runtime failure claim is made
-until the source risk is actually reproduced.
+DEC-059 now exposes all four existing limits in the compact Persian form, with
+service bounds/defaults, explicit App-wide semantics and non-secret limit Audit.
+Native red log output/goal069-investigator-config-red.log reproduces a real
+authorized PUT success leaking into the new App. Shared CommandContext now guards
+save/analyze/reconcile; obsolete success/error/callback cannot refresh new scope.
+Focused green3 proves actual save/Audit/readback/reload, monthly budget and four
+limits, retained encrypted credential, held400/App and201/tenant scope switches,
+real UNKNOWN controlled-provider attempt settlement/actor Audit with no obsolete
+parent refresh, current revocation and four-width RTL/no document overflow.
+Console30 tests pass; runtime AI Help v3 published/read. Final serial476-test
+release/all builds/lint/typechecks/migration/native/reference/performance and
+both isolation scripts pass; cleanup zero temporary DBs/RESERVED, unchanged100000
+budget. Not a whole section8/44/48 certificate. Live provider/key unchanged.
 
 ### A07 — Issue Explorer / Incident Workspace (sections 41–42): PARTIAL
 

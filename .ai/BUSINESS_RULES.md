@@ -1,5 +1,16 @@
 # Business Rules
 
+## Investigator operational configuration (DEC-059)
+
+- Same per-App policy governs all environments/tenants; scope selection never
+  creates extra budget. Output128–4096,context2048–32768 bytes,concurrency1–4,
+  periodic review300–86400 seconds; existing defaults1024/16000/1/300 preserved.
+- Real actor/reason Audit includes these non-secret effective limits. Blank
+  replacement preserves encrypted credential; never return credential contents.
+- Async save/analyze/reconcile completion belongs to current client/App/env/tenant;
+  obsolete success/error/callback must not change current forms/busy/read state.
+  A scope change never rolls back or automatically repeats a committed command.
+
 ## Incident recent human evidence (DEC-058)
 
 - Recent activity and Human Notes each have independent100-row newest-first

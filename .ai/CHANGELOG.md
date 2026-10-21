@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-10-21 — GOAL-069 Investigator controls (IN PROGRESS)
+
+- DEC-059 exposes existing bounded frequency/output/context/concurrency controls;
+  real actor Audit records safe effective limits. No new API/migration/provider.
+- Actual old-App completion defect reproduced and guarded for save/analyze/
+  reconciliation. Focused real HTTP/native green3 and Console30 tests pass;
+  four-width/reload/revocation/held400/201/UNKNOWN reconciliation exercised.
+- Help v3 published/read. Final476-test release/build/lint/typecheck/migration/
+  native/reference/performance and both isolation scripts pass; cleanup zero
+  temp DBs/RESERVED and unchanged100000 budget. A09/full audit not waived.
+
 ## 2026-10-21 — GOAL-069 recent Incident notes (IN PROGRESS)
 
 - DEC-058:reproduced fresh human note hidden after105 activities; dedicated

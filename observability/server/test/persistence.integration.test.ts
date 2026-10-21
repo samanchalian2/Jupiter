@@ -312,6 +312,7 @@ describe('LOCAL measured performance in disposable PostgreSQL',()=>{
 });
 
 describe('real independent Browser acceptance',()=>{
+ it.skipIf(process.env.OBSERVABILITY_BROWSER_ACCEPTANCE!=='true')('saves operational Investigator limits and discards obsolete authenticated configuration completions',async()=>{await browserAcceptance(database,registry,root,'INVESTIGATOR');},120000);
  it.skipIf(process.env.OBSERVABILITY_BROWSER_ACCEPTANCE!=='true')('exercises a distinct authenticated Incident page, readable AI and current scope under native navigation',async()=>{await browserAcceptance(database,registry,root,'INCIDENT');},120000);
  it.skipIf(process.env.OBSERVABILITY_BROWSER_ACCEPTANCE!=='true')('proves IndexedDB/network recovery, independent reference, correlation, scope and maintenance RTL',async()=>{await browserAcceptance(database,registry,root);},180000);
 });
