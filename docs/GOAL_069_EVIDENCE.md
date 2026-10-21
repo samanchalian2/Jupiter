@@ -67,9 +67,13 @@ GOAL-059 remains BLOCKED; LOCAL evidence is not staging acceptance.
   Post-gate LOCAL83 migrations/zero temporary DBs/zero RESERVED attempts,
   unchanged enabled100000 monthly input+output budget. Authorized public Help
   readback v7 assertions all true; diff check passes. Shared3000/5174 remain
-  stopped; no Preview/main deployment. Scoped commit/push next. A11/A12/full
+  stopped; no Preview/main deployment. Implementation checkpoint
+  a9676d88355207365155413013512b6a09439db0 pushed and remote main SHA verified.
+  A11/A12/full
   original audit remains open. GitHub CI is not claimed green: only quality job
-  exists(no deployment), local gh command unavailable; remote-run audit remains.
+  exists(no deployment), local gh command unavailable and unauthenticated public
+  Actions API read unavailable; remote-run audit remains, not a runtime failure
+  assertion. Local gate success is not presented as remote CI success.
 
 ## 2026-10-21 — Investigator operational controls / DEC-059 (LOCAL, in progress)
 

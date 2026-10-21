@@ -42,13 +42,24 @@ Final-source full serial output/goal069-correlation-final-release-3.log terminal
 478 tests,all builds/lint/typechecks/migration/native/reference/performance and
 both isolation scripts pass. No live test handle remains. Post-gate83 migrations/
 zero temp DBs/zero RESERVED/unchanged100000 budget,Help v7/diff check pass.
-Scoped commit/push next; do not deploy target servers. A09 concrete boundary
+Implementationa9676d88355207365155413013512b6a09439db0 pushed/remote SHA
+verified. No live test handle pending. Remote Actions state unverified (gh absent,
+public API read unavailable); local full gate is not a remote CI-green claim.
+Do not deploy target servers. A09 concrete boundary
 verified, not whole-Goal completion.
 Need final full gate/cleanup/evidence/scoped commit/
 push. Do not deploy Preview/main or touch shared tenants/provider/key/budget.
 Prior13c4700 pushed/remote verified. A11 Live Monitor related-Issue context and
 A12 approved optional operational request/cost caps are concrete remaining gaps;
 read their source findings before implementation/ADR. A01/A07/full audit mandatory.
+
+Next safe implementation: A11 section40 Live Monitor missing related-Issue/
+occurrence/first-last context and actual pause/new-event/resume proof. Read exact
+spec/source and record ADR before an additive read contract. Keep raw Event time
+distinct from lifetime Issue observations, truthful unaggregated state, bounded
+pagination/current grants/RLS, same-event tenant identity and readable inner scroll.
+Then A12 minimal optional operational ceilings and complete original audit; do
+not substitute a narrower completion objective or invent staging prerequisites.
 
 Active DEC-059 A08 Investigator controls/command ownership: real native red,
 implementation and focused green3 pass; Console30 tests/typechecks pass. Help v3
