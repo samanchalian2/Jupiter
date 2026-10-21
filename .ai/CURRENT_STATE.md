@@ -1,5 +1,14 @@
 # Current State
 
+**2026-10-21 post-push continuation:** b4d561b55ef321411550ca7b8673ed9586baabd8
+pushed/remote SHA verified. Actual CI39633029864 passes build/lint/typecheck on
+clean checkout, then fails missing PostgreSQL test configuration. Workflow now
+adds loopback-only ephemeral PostgreSQL16 and supported schema migration; no
+production/preview credential or target. New push/result pending. A12 DEC-062
+implementation started: pure cost/nullable-limit helper4 tests pass; migration073
+drafted but NOT applied, service/API/UI/fixtures not integrated. Do not run shared
+API against this unfinished A12. LOCAL83 migrations/enabled100000 preserved.
+
 **2026-10-21 final-source Live Monitor checkpoint (GOAL-069 IN PROGRESS):**
 Serial output/goal069-live-final-release-3.log TERMINATED0 with
 GOAL069_LIVE_FINAL_RELEASE_EXIT=0:482 tests(179API/40Web/263Hub),all builds/lint/

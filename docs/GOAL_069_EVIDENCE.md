@@ -15,6 +15,19 @@ Workflow now builds the workspace topologically before lint/typecheck/test,
 matching the existing LOCAL verify:release dependency order. No deployment step
 or new permissions. Fresh-checkout and new push CI verification still required.
 
+Implementation b4d561b55ef321411550ca7b8673ed9586baabd8 pushed and remote SHA
+verified. Actual new push run39633029864/job119336020314 confirms clean install,
+build,lint,typecheck PASS; test FAILS explicitly because no PostgreSQL test
+configuration exists. This is a second real CI setup gap, not a test to skip.
+Workflow now supplies an ephemeral PostgreSQL16 service bound to runner loopback,
+public CI-only throwaway credentials, and supported migrate before tests. No
+deployed host/database/secret is accessed. New remote result still required.
+
+A12 implementation started AFTER the final-source Live checkpoint: exact integer
+cost/nullable-limit helper has4 passing pure tests; migration073 drafted but NOT
+applied locally or integrated into fixtures/service/API/UI yet. This draft is not
+claimed as runtime enforcement or accepted A12. Existing local schema remains83.
+
 ## 2026-10-21 — Live Monitor Issue context / DEC-061 (LOCAL, in progress)
 
 - FINAL-SOURCE serial output/goal069-live-final-release-3.log TERMINATED0:

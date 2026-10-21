@@ -26,6 +26,15 @@ latest Evidence for gates/runtime/remote commit.
 
 ### Remaining work — preserve the full original scope
 
+POST-PUSH latest: b4d561b pushed/remote verified; actual CI39633029864 passes
+clean build/lint/typecheck then fails missing PostgreSQL configuration. CI-only
+ephemeral PostgreSQL16/migrate fix drafted; commit/push only this CI/docs change
+before continuing A12 and inspect real new run, never skip mandatory persistence.
+A12 pure helper4 tests pass/migration073 DRAFT only, NOT APPLIED or integrated.
+Finish service atomic caps/snapshot settlement/reconcile/usage, HTTP/OpenAPI,
+SQL/concurrency/migration/legacy tests, compact UI/native/Help and full gates.
+Current LOCAL schema83/live key/model/enabled100000 untouched; no server start.
+
 LATEST: final-source serial release3 TERMINATED0 (482 tests/all gates/both fault
 scripts). Read output/goal069-live-final-release-3.log; no active test handles.
 Fresh screenshots/Help v8/cleanup83/zero fixtures/zero attempts/unchanged100000
