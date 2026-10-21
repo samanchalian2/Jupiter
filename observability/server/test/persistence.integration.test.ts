@@ -65,6 +65,28 @@ const scope=()=>({applicationId:appA,environmentId:envA,actorReference:'userA',t
 const analyticsFixtureWindow=async()=>{const end=await database.worker(async c=>(await c.query("SELECT date_trunc('millisecond',clock_timestamp())+interval '1 millisecond' window_end")).rows[0].window_end as Date);return{from:new Date(end.getTime()-86400000).toISOString(),to:end.toISOString()};};
 
 describe('bounded scoped analytics reports',()=>{
+ it('follows exact seed trace or request evidence without crossing tenant App or environment',async()=>{
+  const app=(await registry.createApplication(root,{slug:`correlation-${randomUUID()}`,name:'Correlation acceptance'})).id,env=(await registry.createEnvironment(root,app,{key:'test',kind:'TEST'})).id,otherEnv=(await registry.createEnvironment(root,app,{key:'other',kind:'TEST'})).id;
+  const trace='1234567890abcdef1234567890abcdef',request='shared-native-request',now=Date.now(),ops=new OperationsService(database,registry),target={applicationId:app,environmentId:env,tenantReference:'chain-a'};
+  const rows=Array.from({length:105},(_,i)=>event({...target,eventId:randomUUID(),source:i===0?'BROWSER':i===1?'SERVER':'WORKER',category:i===0?'FRONTEND':i===1?'BACKEND':'WORKER',occurredAt:new Date(now-1000+i).toISOString(),traceId:trace,requestId:i<2?request:`worker-${i}`,spanId:(i+1).toString(16).padStart(16,'0'),operationName:`chain.step.${i}`,normalizedMessage:`Authorized chain ${i}`}));
+  const foreign=[event({...target,tenantReference:'chain-b',traceId:trace,requestId:request,normalizedMessage:'FOREIGN_TENANT'}),event({...target,tenantReference:null,traceId:trace,requestId:request,normalizedMessage:'FOREIGN_TENANT_FREE'}),event({...target,environmentId:otherEnv,traceId:trace,requestId:request,normalizedMessage:'FOREIGN_ENVIRONMENT'}),event({applicationId:appB,environmentId:envB,traceId:trace,requestId:request,normalizedMessage:'FOREIGN_APPLICATION'})];
+  const bridge=event({...target,traceId:'fedcba0987654321fedcba0987654321',requestId:'worker-2',normalizedMessage:'NOT_A_RECURSIVE_TRACE_BRIDGE'});
+  for(const sample of [...rows,...foreign,bridge])expect((await ingestion.ingest({events:[sample]},{applicationId:sample.applicationId,environmentId:sample.environmentId,tenantAll:true,actorAll:true,source:'SERVER'})).acknowledgements[0].status).toBe('ACCEPTED');
+  const first=await ops.correlation(root,{applicationId:app,environmentId:env},rows[0].eventId,{pageSize:100});expect(first.tenantReference).toBe('chain-a');expect(first.total).toBe(105);expect(first.items.map(row=>row.id)).toEqual(rows.slice(0,100).map(row=>row.eventId));expect(first.items.map(row=>row.source).slice(0,3)).toEqual(['BROWSER','SERVER','WORKER']);expect(JSON.stringify(first)).not.toContain('FOREIGN_');expect(first.items[0].span_id).toBe(rows[0].spanId);
+  expect((await ops.correlation(root,target,rows[0].eventId,{page:2,pageSize:100})).items.map(row=>row.id)).toEqual(rows.slice(100).map(row=>row.eventId));expect((await ops.correlation(root,target,rows[0].eventId,{kind:'REQUEST'})).total).toBe(2);
+  expect(JSON.stringify(first)).not.toContain('NOT_A_RECURSIVE_TRACE_BRIDGE');expect((await ops.correlation(root,{applicationId:app,environmentId:env},foreign[1].eventId)).items.map(row=>row.id)).toEqual([foreign[1].eventId]);
+  const exact=await ops.correlation(root,target,rows[0].eventId,{from:rows[0].occurredAt,to:rows[1].occurredAt});expect(exact.items.map(row=>row.id)).toEqual(rows.slice(0,2).map(row=>row.eventId));
+  const missing=event({...target});expect((await ingestion.ingest({events:[missing]},{...target,source:'SERVER',actorAll:true})).acknowledgements[0].status).toBe('ACCEPTED');expect(await ops.correlation(root,target,missing.eventId)).toMatchObject({available:false,identifier:null,items:[],total:0});
+  const grant=await registry.grant(root,{applicationId:app,environmentId:env,tenantReference:'chain-a',targetPrincipalId:ordinary,role:'VIEWER',reason:'Scoped chain reader'}),base=`${endpoint}/operations/applications/${app}/events/${rows[0].eventId}/correlation`,headers={authorization:'Bearer scoped-identity-placeholder'};
+  const response=await fetch(`${base}?environmentId=${env}&tenantReference=chain-a`,{headers});expect(response.status).toBe(200);expect((await response.json()).total).toBe(105);
+  for(const extra of ['kind=OTHER','traceId='+trace,'kind=TRACE&kind=REQUEST','pageSize=101','page=0','from=','from=invalid','from=1','from=2026-02-30T00%3A00%3A00Z','from=2026-01-01T00%3A00%3A00Z&to=2026-03-01T00%3A00%3A00Z'])expect((await fetch(`${base}?environmentId=${env}&tenantReference=chain-a&${extra}`,{headers})).status).toBe(400);
+  expect((await fetch(`${base}?environmentId=${otherEnv}`,{headers})).status).toBe(403);expect((await fetch(`${base}?environmentId=${env}&tenantReference=chain-b`,{headers})).status).toBe(403);
+  await expect(ops.correlation(ordinary,target,foreign[0].eventId)).rejects.toThrow('RESOURCE_NOT_FOUND');await expect(ops.correlation(root,{...target,applicationId:appB,environmentId:envB},rows[0].eventId)).rejects.toThrow('RESOURCE_NOT_FOUND');
+  await registry.revokeGrant(root,app,grant.id,'Scoped chain acceptance revoke');expect((await fetch(`${base}?environmentId=${env}`,{headers})).status).toBe(403);
+  // Drain the fixture's real aggregation work; do not leave105 new pending jobs
+  // to consume a later contract test's bounded50-job claim.
+  const engine=new IssueEngine(database,registry);for(;;){const jobs=await engine.queue.claim(randomUUID(),50,['AGGREGATE']);if(!jobs.length)break;for(const job of jobs)await engine.aggregate(job);}
+ });
  it('honors exact inclusive UTC boundaries for sub-millisecond retained events and Feedback',async()=>{
   const applicationId=(await registry.createApplication(root,{slug:`analytics-time-${randomUUID()}`,name:'Exact UTC report bounds'})).id,environmentId=(await registry.createEnvironment(root,applicationId,{key:'clock',kind:'TEST'})).id;
   const target={applicationId,environmentId,tenantReference:'time-boundary',actorReference:'time-reader',source:'SERVER' as const},message=event({...target,source:'SERVER',eventCode:'time.boundary'}),feedbackId=randomUUID();
@@ -312,6 +334,7 @@ describe('LOCAL measured performance in disposable PostgreSQL',()=>{
 });
 
 describe('real independent Browser acceptance',()=>{
+ it.skipIf(process.env.OBSERVABILITY_BROWSER_ACCEPTANCE!=='true')('follows a retained authorized correlation chain through the actual reusable Console',async()=>{await browserAcceptance(database,registry,root,'CORRELATION');},120000);
  it.skipIf(process.env.OBSERVABILITY_BROWSER_ACCEPTANCE!=='true')('saves operational Investigator limits and discards obsolete authenticated configuration completions',async()=>{await browserAcceptance(database,registry,root,'INVESTIGATOR');},120000);
  it.skipIf(process.env.OBSERVABILITY_BROWSER_ACCEPTANCE!=='true')('exercises a distinct authenticated Incident page, readable AI and current scope under native navigation',async()=>{await browserAcceptance(database,registry,root,'INCIDENT');},120000);
  it.skipIf(process.env.OBSERVABILITY_BROWSER_ACCEPTANCE!=='true')('proves IndexedDB/network recovery, independent reference, correlation, scope and maintenance RTL',async()=>{await browserAcceptance(database,registry,root);},180000);
@@ -486,7 +509,7 @@ describe('complete public OpenAPI over actual HTTP and PostgreSQL',()=>{
    const browser=await call('/credentials/browser','POST',{...operationScope,actorReference:'contract-user'},credential.token);
    await call('/sdk-metrics','POST',{reportId:randomUUID(),observedAt:new Date().toISOString(),counters:{dropped:1,retryDelivered:2,retryDropped:1}},browser.token,'https://contract.example.test');
    await call(base+'/self-health'+`?environmentId=${environment.id}`);
-   const message=event({...operationScope,source:'REFERENCE_CLIENT',actorReference:'contract-user',eventCode:'contract.operation'});await call('/events/batch','POST',{events:[message]},credential.token);
+   const message=event({...operationScope,source:'REFERENCE_CLIENT',actorReference:'contract-user',eventCode:'contract.operation',traceId:'1234567890abcdef1234567890abcdef'});await call('/events/batch','POST',{events:[message]},credential.token);await call(`${base}/events/${message.eventId}/correlation?environmentId=${environment.id}&tenantReference=contract-tenant`);
    const feedback=await call('/feedback','POST',{feedbackId:randomUUID(),subject:'Contract report',description:'Controlled independent report',category:'BUG',relatedEventId:message.eventId},browser.token,'https://contract.example.test');
    await call('/feedback/mine','GET',undefined,browser.token,'https://contract.example.test');await call(`/feedback/${feedback.feedbackId}`,'GET',undefined,browser.token,'https://contract.example.test');
    await call(base+'/rules','PUT',{code:'ERROR_BURST',enabled:true,threshold:1,minimum_samples:1,window_seconds:300,cooldown_seconds:900,reason:'Controlled contract rule'});await call(base+'/rules');

@@ -1,5 +1,10 @@
 # Domain Model
 
+DEC-060 EventCorrelation is a read projection: exact seed/scope/kind/identifier,
+available flag, occurrence window/page/total and<=100 sanitized Event rows with
+existing span/operation/route/status/duration. No new stored span/trace entity or
+inferred parent relationship. Missing identifier produces empty evidence.
+
 DEC-059 exposes existing AiConfiguration limits; no new entity or schema.
 INVESTIGATOR_CONFIGURATION_CHANGED Audit metadata additionally records effective
 output/context/concurrency/review interval, never ciphertext or plaintext key.

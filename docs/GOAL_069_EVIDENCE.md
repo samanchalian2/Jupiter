@@ -4,6 +4,73 @@ Status: IN PROGRESS. Owner-approved plan supersedes the stale GOAL-060 identifie
 in the supplied specification. GOAL-060 Personal Service history is preserved.
 GOAL-059 remains BLOCKED; LOCAL evidence is not staging acceptance.
 
+## 2026-10-21 — Seed-bound correlation / DEC-060 (LOCAL, in progress)
+
+- Added61st operation: authorized seed Event GET correlation, not a global trace
+  identifier search. Exact current-grant/RLS seed read, exact tenant enforced
+  even for all-tenant readers. TRACE/REQUEST independent, missing ID returns empty,
+  occurrence chronology/time bounds/default±15min and pagination<=100. Fixed
+  sanitized source/operation/route/status/duration/span evidence, no raw payload.
+- Focused output/goal069-correlation-api-3.log passes7 SQL/HTTP/full public OpenAPI
+  cases.105 same-scope rows,100+5 paging, TRACE105 vs REQUEST2, inclusive window,
+  foreign tenant/free/env/App excluded, unknown/repeated query/bounds rejected,
+  narrow tenant grant and current revocation asserted. Full contract traversal
+  now exercises61 operations, not just a schema-count edit.
+- First fixture run failed because a BROWSER envelope cannot carry server/worker
+  attribution; corrected trusted SERVER envelope. Second run required explicit
+  tenant for a tenant-only viewer and105 fixture jobs occupied later bounded50
+  claim. Corrected explicit scope and drained actual fixture aggregation; no
+  auth rule or claim cap changed. Failed logs retained alongside green3.
+- Reusable Console lazy drill-through now passes independent native acceptance,
+  output/goal069-correlation-focused-final-2.log (8 focused cases including full
+  61-operation contract):55 witnesses/50+5 pages, TRACE vs REQUEST, explicit
+  inclusive two-row window/reset, missing-ID no fallback, current revoke clears
+  chain, held real response discarded on App switch and four-width RTL/no overflow.
+  Actual authenticated Jupiter output/goal069-correlation-host-2.log passes real
+  failed ticket capture→Operator UI→Browser/Server evidence for TRACE and REQUEST,
+  four widths, no injected chain rows, no external provider. Existing Incident
+  standalone/embedded and manual-ticket/trace/recovery acceptance still passes.
+- Browser1 failed at an incorrect pause-button test label; Browser2/3 exposed
+  missing exact accessible name on correlation select (safe diagnostic counts
+  prove section remained open). Added explicit aria-label; native4 passed.
+  Combined final1 exposed native fixture aggregation backlog affecting later
+  bounded50 claim; native now drains its real jobs too, final2 passes. No worker
+  cap/auth assertion changed. First actual-host attempt timed out selecting seed
+  row; added exact new-scope listing response/seed-presence synchronization before
+  row selection. Actual-host2 passes; no production issue inferred from that wait.
+- Inspected375 independent and actual-host screenshots; readable horizontal
+  table uses inner scroll. Final full-release/runtime Help/cleanup/commit pending.
+  No external provider/live tenant/Preview/main deployment.
+- First full serial run ends GOAL069_CORRELATION_FINAL_RELEASE_EXIT=1, actual-host
+  seed-presence assertion. All130 server tests pass, API178pass/1fail. Fixture
+  wrongly assumed newest25 contains the captured seed. It now navigates actual
+  UI pages using exact current query and still asserts the exact seed ID. All
+  three compiled-host cases pass in output/goal069-correlation-host-all-3.log:
+  selectedPage2,total40,pageRows15,seedPresent=true; actual Trace/Request UI and
+  manual/Incident flows pass. No production auth/query cap or assertion weakened.
+  Correlation timestamps also reject non-ISO and impossible calendar dates rather
+  than letting JS normalize them. Second full serial run required; first failure
+  retained, no green claim from focused rerun alone.
+- Second serial full release output/goal069-correlation-final-release-2.log ends
+  GOAL069_CORRELATION_FINAL_RELEASE_EXIT=0:478 tests and both isolation scripts
+  pass. Final accessibility audit then reproduced a22px outer summary hit target
+  (output/goal069-correlation-touch-red.log). Outer lazy details now carries the
+  existing semantic class so its summary receives44px minimum. Native touch-green
+  measures44px; keyboard/four-width target assertions added. Final-source full
+  gate must run again after this UI fix; do not present the earlier green as
+  covering untested final UI. No palette/new navigation/API change in this fix.
+- Final-source third serial release output/goal069-correlation-final-release-3.log
+  ends GOAL069_CORRELATION_FINAL_RELEASE_EXIT=0:478 tests(179API/40Web/259Hub),
+  all builds/lint/typechecks,83-migration rehearsal,native/reference/performance
+  and both standalone fetch/React isolation scripts pass. Touch44/four-width/
+  Enter assertion runs in the gate, not just a separate screenshot check.
+  Post-gate LOCAL83 migrations/zero temporary DBs/zero RESERVED attempts,
+  unchanged enabled100000 monthly input+output budget. Authorized public Help
+  readback v7 assertions all true; diff check passes. Shared3000/5174 remain
+  stopped; no Preview/main deployment. Scoped commit/push next. A11/A12/full
+  original audit remains open. GitHub CI is not claimed green: only quality job
+  exists(no deployment), local gh command unavailable; remote-run audit remains.
+
 ## 2026-10-21 — Investigator operational controls / DEC-059 (LOCAL, in progress)
 
 - A08 native red output/goal069-investigator-config-red.log: real authorized

@@ -11,6 +11,25 @@ export type Resource=keyof typeof resources;
 export function csvCell(value:unknown):string{let text=value===null||value===undefined?'':typeof value==='object'?JSON.stringify(value):String(value);if(/^[\s]*[=+\-@]/.test(text)&&typeof value!=='number')text=`'${text}`;return `"${text.replaceAll('"','""')}"`;}
 export class OperationsService {
  constructor(private readonly database:HubDatabase,private readonly registry:RegistryService){}
+ async correlation(principalId:string,scope:OperationScope,id:string,input:{kind?:string;from?:string;to?:string;page?:number;pageSize?:number}={}){
+  if(!isUuid(id)||input.kind!==undefined&&!['TRACE','REQUEST'].includes(input.kind))throw new ContractError('INVALID_CORRELATION');
+  const kind=input.kind??'TRACE',page=input.page??1,pageSize=input.pageSize??50;
+  if(!Number.isInteger(page)||page<1||page>400||!Number.isInteger(pageSize)||pageSize<1||pageSize>100)throw new ContractError('INVALID_PAGINATION');
+  return this.scoped(principalId,scope,async c=>{
+   const seed=(await c.query<{event_id:string;occurred_at:Date;tenant_reference:string|null;trace_id:string|null;request_id:string|null}>('SELECT event_id,occurred_at,tenant_reference,trace_id,request_id FROM observability.events WHERE application_id=$1 AND environment_id=$2 AND event_id=$3',[scope.applicationId,scope.environmentId,id])).rows[0];if(!seed)throw new ContractError('RESOURCE_NOT_FOUND');
+   const timestamp=(value:string|undefined,fallback:number)=>{if(value===undefined)return new Date(fallback);if(typeof value!=='string'||!/^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])T([01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|[+-](?:[01]\d|2[0-3]):[0-5]\d)$/.test(value))throw new ContractError('INVALID_TIME_RANGE');const day=new Date(`${value.slice(0,10)}T00:00:00Z`);if(!Number.isFinite(day.getTime())||day.toISOString().slice(0,10)!==value.slice(0,10))throw new ContractError('INVALID_TIME_RANGE');return new Date(value);};
+   const from=timestamp(input.from,new Date(seed.occurred_at).getTime()-900000),to=timestamp(input.to,new Date(seed.occurred_at).getTime()+900000);
+   if(!Number.isFinite(from.getTime())||!Number.isFinite(to.getTime())||from>to||to.getTime()-from.getTime()>31*86400000)throw new ContractError('INVALID_TIME_RANGE');
+   const identifier=kind==='TRACE'?seed.trace_id:seed.request_id;
+   const context={seedEventId:id,applicationId:scope.applicationId,environmentId:scope.environmentId,tenantReference:seed.tenant_reference,kind,identifier,available:Boolean(identifier),from:from.toISOString(),to:to.toISOString(),page,pageSize};
+   if(!identifier)return{...context,items:[],total:0};
+   const column=kind==='TRACE'?'trace_id':'request_id',values=[scope.applicationId,scope.environmentId,seed.tenant_reference,identifier,from.toISOString(),to.toISOString()];
+   const where=`application_id=$1 AND environment_id=$2 AND tenant_reference IS NOT DISTINCT FROM $3 AND ${column}=$4 AND occurred_at>=$5 AND occurred_at<=$6`;
+   const total=Number((await c.query(`SELECT count(*) total FROM observability.events WHERE ${where}`,values)).rows[0].total);
+   const items=(await c.query(`SELECT ${resources.events.fields},span_id,route_template FROM observability.events WHERE ${where} ORDER BY occurred_at ASC,event_id ASC LIMIT $7 OFFSET $8`,[...values,pageSize,(page-1)*pageSize])).rows;
+   return{...context,items,total};
+  });
+ }
  private async scoped<T>(principalId:string,input:OperationScope,work:(c:PoolClient,scope:DataScope)=>Promise<T>,roles:readonly string[]=['ADMIN','OPERATOR','ANALYST','VIEWER'],before?:(c:PoolClient,scope:DataScope)=>Promise<void>){
   const scope=await this.registry.dataScope(principalId,input,roles);
   return this.database.scoped(scope,c=>work(c,scope),async c=>{await this.registry.authorize(c,principalId,scope.applicationId,roles,scope.environmentId,scope.tenantAll?undefined:scope.tenantReference);if(before)await before(c,scope);});

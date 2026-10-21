@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-10-21 — GOAL-069 seed-bound correlation (IN PROGRESS)
+
+- DEC-060 adds61st operation: exact authorized Event TRACE/REQUEST evidence,
+  concrete seed tenant even for all-tenant viewers, bounded chronological pages,
+  truthful missing-ID result. No migration/provider/tracing infrastructure.
+- Lazy Console drill-through, accessible selector and readable inner-scroll table.
+  Focused SQL/HTTP/full OpenAPI/native8 and actual authenticated Jupiter real
+  failed-ticket Browser+Server chain acceptance pass at four widths. Failed fixture
+  labels/list waits/backlogs documented without weakening auth/worker limits.
+- Console Help v7 published/read locally; final serial full gate in progress.
+  A11 Live Monitor Issue context/A12 optional operational caps/full audit remain.
+- First full gate exposed newest25 fixture assumption; actual UI paging finds
+  exact seed on page2/40 and all host cases pass. Second478-test full gate passes.
+  Subsequent accessibility red measured outer summary22px; semantic class fix
+  measures44px/four widths/Enter. Final-source third478-test full gate and both
+  isolation scripts pass; zero fixture DBs/RESERVED and unchanged100000 budget.
+
 ## 2026-10-21 — GOAL-069 Investigator controls (IN PROGRESS)
 
 - DEC-059 exposes existing bounded frequency/output/context/concurrency controls;

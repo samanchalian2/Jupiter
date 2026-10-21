@@ -79,6 +79,38 @@ Policy runtime Help v4 is published/read; access/credential workflows remain ope
 
 ## Audit work not finished
 
+### A12 — approved preamble optional operational request/cost ceilings (gap)
+
+The approved requirements preamble explicitly says support optional request/
+estimated-cost limits in addition to the mandatory combined monthly token budget.
+Inspected InvestigatorConfiguration/configure/reservation/usage and Console now
+support token/output/context/concurrency/review interval only. No optional monthly
+attempt/request or estimated-cost ceiling/rate projection was found in these
+contracts. HTTP abuse limits are not a per-App provider spend/request policy;
+customer Smart Action cost telemetry is unrelated and must not be reused.
+Do not infer this requirement complete from token reservation alone or silently
+drop the approved preamble. Evaluate/document minimal nullable operational caps,
+safe explicit estimation basis and atomic UNKNOWN/reservation/retry semantics
+before implementation; no actual invoice/payment/pricing engine or guessed model
+rates. Defaults must preserve current100000 token budget/provider configuration.
+This is outstanding implementation/acceptance, not an external blocker.
+
+### A11 — section40 Live Monitor required Issue context (source gap)
+
+Original section40 explicitly names related Issue, event count and first/last
+seen alongside current severity/operation/correlation and Pause/Resume. Current
+Console live maps directly to OperationsService events listing: fields include
+received/occurred timestamps, source/severity/operation/trace/request but no
+Issue reference or Issue occurrence/first_seen/last_seen projection. A raw Event
+timestamp or paginated total is not proof of those related-Issue fields. Existing
+UI has a real ten-second visible-tab refresh and Pause/Resume button; inspecting
+that timer does not prove the entire named workflow under incoming events.
+Reconcile section40 at actual authorized SQL/HTTP/native scope after A09's gate,
+including truthful unaggregated Event state, bounded query cost/row count,
+tenant/App isolation and actual pause/new-event/resume. Do not invent Issue
+counts or claim this gap is an external infrastructure blocker. No production
+change chosen yet; record ADR before an additive read contract.
+
 ### A10 — bounded Incident human-note visibility (source boundary)
 
 **REPRODUCED AND REMEDIATED; final full gate passes.** Native red log
@@ -97,7 +129,22 @@ Final serial472-test release, both isolation scripts, diff check and post-gate
 zero-fixture/zero-RESERVED readback pass (output/goal069-notes-final-release.log).
 Do not infer whole section42/full Goal completion from this repaired boundary.
 
-### A09 — section23 operator-followable distributed correlation: not proved
+### A09 — section23 operator-followable distributed correlation: verified boundary
+
+DEC-060 remediation now implements seed-bound61st public operation and lazy
+Console drill-through. Focused SQL/HTTP/full OpenAPI/native8 cases pass;105-row
+bound/pagination, no recursive bridge, exact tenant including tenant-free even
+for all-tenant admin, invalid query and current revoke. Dedicated native proves
+55-row paging/UTC range/missing IDs/revoke/held late read/four widths. Actual
+authenticated Jupiter host proves real failed ticket Browser+Server evidence in
+Operator UI for both TRACE and REQUEST. Console Help v7 published/read; final
+serial final-source third478-test gate/all builds/lint/typechecks/migration/
+native/reference/performance/both isolation scripts and cleanup pass. Final
+accessibility red22px fixed44px, four widths/Enter asserted. First full failure
+was newest25 fixture assumption; actual page2/40 selection proved, exact seed
+retained. This is concrete executed evidence beyond capture,
+not a full original-specification completion certificate. Earlier finding below
+describes the pre-remediation source, retained for audit history.
 
 Actual host/Web acceptance proves Browser and Server rows share a real W3C trace
 and request ID under SQL/current scope; SDK propagation/storage is implemented.

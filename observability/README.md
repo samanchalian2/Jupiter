@@ -3,6 +3,20 @@
 Product-independent packages and PostgreSQL server adapters for GOAL-069.
 Implementation is IN PROGRESS; no complete platform claim is made.
 
+## Seed-bound correlation
+
+In an authorized Event detail, expand `دنبال‌کردن زنجیرهٔ خطا`. GET
+`/operations/applications/{applicationId}/events/{eventId}/correlation` requires
+`environmentId` and the caller's explicit tenant scope where applicable. Select
+`kind=TRACE` (default) or `REQUEST`; no arbitrary ID search is accepted. The exact
+RLS-readable seed determines identifier AND tenant, even for all-tenant admins.
+Default occurrence window is seed±15min, optional from/to<=31days, page1–400,
+pageSize1–100(default50), chronological occurred_at/event_id. Missing ID returns
+available=false/empty, not an unfiltered fallback. Retention/sampling may omit
+evidence; correlation never proves complete parent-child spans or causality.
+No raw body/metadata/stack or credential is projected. See the public OpenAPI
+(61 operations) for strict parameters and response; no new tracing service/schema.
+
 ## Addressable Incident workspace
 
 The existing `OperationsConsole` now owns only the reserved fragment namespace

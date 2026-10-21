@@ -1,5 +1,11 @@
 # Security and Privacy
 
+DEC-060 Trace/Request IDs never authorize a lookup. Read the exact seed Event
+under current grant/tenant RLS, then hard-bind matches to its tenant even for
+all-tenant administrators. No cross-App/environment/tenant or recursive OR joins,
+arbitrary identifier query, raw stack/metadata/body/credential projection. Strict
+bounded query and current-revocation checks apply to every correlation read.
+
 DEC-059 never reads back provider credentials. Configuration remains App ADMIN
 only, findings follow existing scoped grants. Stale command results/callbacks
 cannot repopulate new scope or clear its credential/reason. Current server auth

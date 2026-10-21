@@ -146,6 +146,13 @@ export class HubHttpApi {
       const environmentConfiguration=/^\/operations\/applications\/([0-9a-f-]{36})\/environments\/([0-9a-f-]{36})$/.exec(path);
       if(environmentConfiguration&&request.method==='PUT'){if(url.searchParams.size)throw new ContractError('INVALID_QUERY');const body=this.body(request);if(Object.keys(body).some(key=>!['enabled','reason'].includes(key)))throw new ContractError('INVALID_ENVIRONMENT');return{status:200,body:await this.registry.configureEnvironment(principalId,environmentConfiguration[1],environmentConfiguration[2],body as never)};}
       if(configurationRoute&&request.method==='PUT'){const body=this.body(request);if(Object.keys(body).some(k=>!['allowedOrigins','reason'].includes(k))||!Array.isArray(body.allowedOrigins)||typeof body.reason!=='string')throw new ContractError('INVALID_ORIGINS');return{status:200,body:await this.registry.configureApplication(principalId,configurationRoute[1],{allowedOrigins:body.allowedOrigins as string[],reason:body.reason})};}
+      const correlationRoute=/^\/operations\/applications\/([0-9a-f-]{36})\/events\/([0-9a-f-]{36})\/correlation$/.exec(path);
+      if(correlationRoute&&request.method==='GET'){
+       if([...url.searchParams.keys()].some(key=>!['environmentId','tenantReference','kind','from','to','page','pageSize'].includes(key)||url.searchParams.getAll(key).length!==1))throw new ContractError('INVALID_QUERY');
+       const environmentId=url.searchParams.get('environmentId');if(!isUuid(environmentId))throw new ContractError('INVALID_DATA_SCOPE');
+       const filter:{kind?:string;from?:string;to?:string;page?:number;pageSize?:number}={};for(const key of ['kind','from','to'] as const)if(url.searchParams.has(key))filter[key]=url.searchParams.get(key)!;for(const key of ['page','pageSize'] as const)if(url.searchParams.has(key)){const value=url.searchParams.get(key)!;if(!/^\d{1,4}$/.test(value))throw new ContractError('INVALID_PAGINATION');filter[key]=Number(value);}
+       return{status:200,body:await new OperationsService(this.database,this.registry).correlation(principalId,{applicationId:correlationRoute[1],environmentId,...(url.searchParams.has('tenantReference')?{tenantReference:url.searchParams.get('tenantReference')||null}:{})},correlationRoute[2],filter)};
+      }
       const dataRoute=/^\/operations\/applications\/([0-9a-f-]{36})\/(overview|analytics|events|issues|incidents|feedback|alerts|export)(?:\/([0-9a-f-]{36}))?(?:\/(transition|replies))?$/.exec(path);
       if(dataRoute&&isUuid(dataRoute[1])){
         const issueList=request.method==='GET'&&dataRoute[2]==='issues'&&!dataRoute[3];

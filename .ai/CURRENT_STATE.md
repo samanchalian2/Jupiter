@@ -1,5 +1,38 @@
 # Current State
 
+**2026-10-21 correlation implementation (GOAL-069 IN PROGRESS):**
+DEC-060 adds authorized seed Event correlation GET,61 public operations. Exact
+seed App/environment/tenant match even for all-tenant admin; TRACE vs REQUEST,
+default±15min occurrence window/explicit<=31days/page cap100/missing-ID empty.
+Focused SQL/HTTP/OpenAPI7 cases pass(output/goal069-correlation-api-3.log).
+Earlier fixture mistakes corrected: trusted SERVER envelope needed for varied
+source rows, tenant grant requires explicit tenant, drain fixture aggregation
+before later bounded contract claim. No auth/worker cap weakened. Reusable
+Console lazy drill-through passes dedicated native/full61-operation focused8,
+including55-row paging/window/missing IDs/current revoke/late read/four widths.
+Actual authenticated Jupiter passes real failed ticket→UI→Browser/Server TRACE/
+REQUEST chain and existing Incident/embedded/manual acceptance; logs focused-final-2
+and correlation-host-2. Accessible name and fixture read/backlog synchronization
+corrected, failed logs retained. Console Help v7 published/read. First final
+serial run fails actual-host seed-presence assertion (source host helper line18),
+all130 server tests pass. Old fixture assumed seed is in newest25; now navigates
+actual UI pages with exact current query and still requires exact seed. All-three-
+host-case rerun passes(host-all-3):selectedPage2,total40,exact seed found; actual
+Trace/Request/manual/Incident/embedded checks pass. Added strict ISO/calendar
+window validation. Second full serial gate running, log
+output/goal069-correlation-final-release-2.log completed478 tests/both isolation
+scripts, terminal0. Subsequent native accessibility audit reproduced outer lazy
+summary22px; semantic class fix measures44px, native keyboard/four-width target
+assertions added. Final-source third serial release passes478 tests and both
+isolation scripts, builds/lint/typechecks/migration/native/reference/performance;
+output/goal069-correlation-final-release-3.log terminal0. Post-gate83 migrations/
+zero temporary DBs/zero RESERVED/unchanged enabled100000 budget,Help v7 readback
+all flags true,diff check pass. Shared3000/5174 stopped. Scoped commit/push next.
+A11 Live Monitor Issue
+context/A12 optional operational caps and A01/A07/full audit remain.
+Prior13c4700 pushed/remote verified.
+A01/A07/full specification audit remains; no live host/provider/key change.
+
 **2026-10-21 Investigator controls (GOAL-069 IN PROGRESS):**
 DEC-059 A08 real native red reproduced old App success notice after scope switch.
 Editable existing output/context/concurrency/review interval plus monthly budget,

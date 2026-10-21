@@ -1,5 +1,10 @@
 # System Architecture
 
+DEC-060 adds seed-bound Event correlation to existing OperationsService/HTTP
+and reusable Console. Current RLS-readable seed precedes exact App/env/tenant
+identifier match; no new entity, tracing service, migration or provider work.
+Bounded chronological fixed-field evidence is not a synthetic causal trace.
+
 DEC-059 exposes existing Investigator configuration limits in the reusable
 Console. Shared CommandContext owns save/analyze/reconciliation completions by
 client/App/environment/tenant; server auth/budget/provider contracts unchanged.

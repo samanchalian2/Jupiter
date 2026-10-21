@@ -1,5 +1,27 @@
 # Architecture Decisions
 
+## DEC-060 — Seed-bound operational correlation, not global tracing search
+
+Section23 requires an Operator-followable retained evidence chain. Add GET
+/operations/applications/{applicationId}/events/{eventId}/correlation with explicit
+environmentId, optional tenantReference, kind TRACE(default)/REQUEST and optional
+from/to/page/pageSize. Authorize and read the exact seed Event under existing
+current-grant/tenant RLS first. Match ONLY that seed's trace_id or request_id,
+in its exact App/environment/tenant (IS NOT DISTINCT FROM, including tenant-free),
+even when the caller has all-tenant access. No caller-supplied arbitrary identifier,
+cross-product/tenant union, recursive OR matching or authorization by identifier.
+
+Default window is seed occurred_at ±15 minutes; explicit window <=31 days uses
+occurred_at inclusive, pagination1–400 and1–100 rows(default50). Chronological
+occurred_at,event_id order, exact total and bounded sanitized fixed Event fields,
+including existing span_id/operation/route/status/duration. Missing selected ID
+returns available=false and empty items, never an unfiltered fallback. Retention,
+sampling and missing instrumentation make this observed evidence, not a complete
+causal parent-child trace; never invent spans or state that correlation proves cause.
+No migration/new tracing infrastructure/provider work. Additive public OpenAPI
+contract and reusable Console drill-through retain current scope and discard late
+reads on context change. Validate strict query keys, UUIDs and window/pagination.
+
 ## DEC-059 — Operational Investigator controls and command ownership
 
 Expose the existing validated per-Application configuration fields in the compact

@@ -20,3 +20,4 @@
 .obs-analytics>label{max-width:28rem}.obs-analytics select{min-height:44px}
 .obs-analytics table{min-width:38rem}.obs-analytics th{min-width:5.5rem}
 .obs-comparison th:first-child,.obs-comparison td:first-child{min-width:10rem}
+.obs-correlation{min-width:0;overflow-wrap:anywhere}.obs-correlation table{min-width:850px}.obs-correlation th:last-child,.obs-correlation td:last-child{min-width:220px}.obs-correlation summary{min-height:44px;box-sizing:border-box;padding-block:8px;cursor:pointer}

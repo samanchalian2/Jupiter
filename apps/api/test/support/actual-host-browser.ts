@@ -68,7 +68,7 @@ export async function acceptActualHostBrowser(input:{pool:Pool;base:string;webOr
    expect(layout.rtl).toBe('rtl');expect(layout.document).toBeLessThanOrEqual(width);detailWidths.push(layout);
    if(process.env.OBSERVABILITY_BROWSER_ARTIFACT_DIR&&[375,1440].includes(width))await page.screenshot({path:join(process.env.OBSERVABILITY_BROWSER_ARTIFACT_DIR,`jupiter-detail-${width}.png`),fullPage:true});
   }
-  await acceptActualIncidentBrowser(browser,input);
+  await acceptActualIncidentBrowser(browser,{...input,correlationSeed:queued!.id});
   expect(pageErrors).toBe(0);expect((await input.pool.query('SELECT 1 FROM commercial_usage_ledger WHERE organization_id=$1',[input.organizationId])).rowCount).toBe(0);
   console.log(JSON.stringify({event:'observability.actual_jupiter_web',result:'PASS',entrypoint:'apps/web/src/main.tsx',authenticated:true,manualTicket:'ONE_OPEN',automaticCorrelation:['BROWSER','SERVER'],telemetryOutage:'REAL_NETWORK_ABORT_INDEXEDDB_SAME_ID_RECOVERY_ACK_CLEANUP',blockedTelemetry,widths,detailWidths,pageErrors,commercialEntries:0,limits:'Actual Web/App/SDK and compiled AppModule in disposable fixture; no AI/provider or arbitrary business workflow coverage.'}));
  }finally{

@@ -1,5 +1,16 @@
 # Business Rules
 
+## Seed-bound correlation (DEC-060)
+
+- TRACE or REQUEST matches only the authorized seed's selected identifier in
+  its exact App/environment/tenant. Tenant-free remains distinct; all-tenant
+  access cannot merge identically named traces across tenants.
+- Missing selected ID returns available=false/empty, not all events. Default
+  occurred_at window±15min; explicit inclusive window<=31days;1–400 pages and
+  1–100 rows(default50), chronological occurred_at,event_id stable order.
+- Observed retained/sampled evidence may be incomplete and proves no cause,
+  parent-child relation or missing instrumentation. No provider invocation.
+
 ## Investigator operational configuration (DEC-059)
 
 - Same per-App policy governs all environments/tenants; scope selection never

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { initialFilters, result, scopeQuery, type OperationsClient, type Filters, type Resource } from './client.js';
 import { InvestigatorPanel } from './InvestigatorPanel.js';
+import {CorrelationPanel} from './CorrelationPanel.js';
 import { AlertInbox } from './AlertInbox.js';
 import {MaintenancePanel} from './MaintenancePanel.js';
 import {SelfHealthPanel} from './SelfHealthPanel.js';
@@ -107,6 +108,7 @@ function ConsoleHome({client,initialSection,initialScope}:{client:OperationsClie
     {section==='issues'&&<IssueExplorerControls selection={issueSelection} groups={issueGroups} onChange={next=>{setIssueSelection(next);setFilters(previous=>({...previous,page:1}));}} onSeverity={severity=>{setFilters(previous=>({...previous,severity,page:1}));setDraft(previous=>({...previous,severity,page:1}));}}/>}
     {['live','issues','incidents','feedback'].includes(section)&&<><DataTable className={section==='issues'?'obs-issue-table':undefined} compact={section==='issues'} label={section==='issues'?'فهرست خطاها':undefined} rows={section==='issues'?rows.map(row=>({...row,status:overviewStateLabel(row.status),severity:overviewStateLabel(row.severity)})):rows} open={row=>void open(row)}/><div className="obs-pagination"><button className="secondary" disabled={filters.page<=1||loading} onClick={()=>setFilters({...filters,page:filters.page-1})}>قبلی</button><span>صفحهٔ {filters.page.toLocaleString('fa-IR')} · {total.toLocaleString('fa-IR')} نتیجه</span><button className="secondary" disabled={filters.page*25>=total||loading} onClick={()=>setFilters({...filters,page:filters.page+1})}>بعدی</button><button className="secondary" disabled={busy} onClick={()=>void exportCsv()}>CSV</button></div></>}
     {detail&&<section className={`obs-detail ${resource==='issues'?'obs-issue-detail':''}`} aria-label="جزئیات">
+      {resource==='events'&&<CorrelationPanel client={client} scope={{applicationId,environmentId,tenantReference:typeof detail.tenant_reference==='string'?detail.tenant_reference:null}} seedEventId={String(detail.id)}/>}
       <header><h2>{text(detail.title??detail.subject??'جزئیات رویداد')}</h2><button className="secondary" onClick={()=>{detailGeneration.current++;setDetail(null);setBusy(false);setNotice('');}}>بستن</button></header>
       <DataFields row={detail}/>
       {resource==='issues'&&<p className="hint">نسخه‌های متأثر از رویدادهای مرتبطِ هنوز نگه‌داری‌شده‌اند؛ حداکثر ۱۰۰ نسخه. نسخهٔ نامشخص با — نمایش داده می‌شود. تعداد، رویدادهای مشاهده‌شده است؛ علت قطعی خطا یا تاریخ استقرار نیست.</p>}

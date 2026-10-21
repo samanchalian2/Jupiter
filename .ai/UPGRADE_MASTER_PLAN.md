@@ -2,6 +2,15 @@
 
 ## GOAL-069 — Observability Hub continuation (IN PROGRESS)
 
+DEC-060 A09 seed-bound correlation API/Console implemented; focused8 SQL/HTTP/
+OpenAPI/native and actual authenticated Jupiter real chain acceptance pass.
+Console Help v7 published/read; final-source third478-test full release and both
+isolation scripts/cleanup pass. Touch22→44 native red/green/four-width/Enter fixed.
+A11 Live
+Monitor related-Issue context and A12 optional operational request/cost ceilings
+now recorded as original-source gaps, not new Goals or waived requirements.
+A01/A07/full sections1–73/A–I/47 Evidence reconciliation remains mandatory.
+
 DEC-059 A08 existing Investigator limits/frequency and scoped command completion
 implemented after native red reproduction. Focused native green3/Console30 pass;
 Help v3 and final476-test full release/both isolation scripts/cleanup pass.

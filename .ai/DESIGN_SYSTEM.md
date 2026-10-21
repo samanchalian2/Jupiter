@@ -1,5 +1,13 @@
 # Jupiter Design System V2
 
+DEC-060 correlation is a lazy expandable Event-detail section, no new primary
+navigation/card/palette. Explicit Trace/Request selector, UTC range/default hint,
+truthful missing-ID/incomplete evidence and exact seed-tenant context. Fixed
+chronological columns use850px keyboard-focusable inner scroll instead of
+compressing text on375px. Technical IDs/times are isolated LTR. Outer lazy details
+must share the semantic class so its summary, not just row summaries, has>=44px
+hit height; native four-width measurement and Enter opening are required.
+
 DEC-059 Investigator uses existing compact number inputs with explicit units,
 bounds and per-App policy explanation. No wizard/new navigation/palette. Blank
 secret means preserve, not delete; human reconcile remains a separate confirmed

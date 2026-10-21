@@ -4,7 +4,7 @@
 
 The entire approved objective remains active. Source of truth:
 `docs/GOAL_069_SPECIFICATION.md` (all sections and A–I Definition of Done),
-`docs/GOAL_069_EVIDENCE.md`, current state and DEC-038 through DEC-059.
+`docs/GOAL_069_EVIDENCE.md`, current state and DEC-038 through DEC-060.
 Historical GOAL-060 Personal Service is not renamed. Do not start another Goal.
 
 ### Latest implementation boundary
@@ -25,6 +25,30 @@ measurements and the performance flag enabled. Inspect
 latest Evidence for gates/runtime/remote commit.
 
 ### Remaining work — preserve the full original scope
+
+Active DEC-060 A09 seed-bound correlation: API/SQL/full61-operation OpenAPI
+focused8 pass including dedicated native paging/window/late-read/missing IDs/
+current revoke/four widths. Actual authenticated Jupiter real captured failed
+ticket→Operator UI TRACE/REQUEST Browser+Server acceptance passes(host-2).
+Help v7 published/read. First full release fails actual-host seed-presence
+assertion; all130 server tests pass. Updated fixture to navigate actual current
+query pages instead of assuming newest25 contains seed; exact seed assertion
+retained. All-three-host-case rerun passes(host-all-3), selects page2/40 total
+and exact seed. Strict ISO/calendar windows added. Active second full serial log
+output/goal069-correlation-final-release-2.log passed478/all gates and isolation
+scripts. Final accessibility red then measured outer summary22px; semantic class
+fix now measures44px, native keyboard and four-width hit-target checks pass.
+Final-source full serial output/goal069-correlation-final-release-3.log terminal0:
+478 tests,all builds/lint/typechecks/migration/native/reference/performance and
+both isolation scripts pass. No live test handle remains. Post-gate83 migrations/
+zero temp DBs/zero RESERVED/unchanged100000 budget,Help v7/diff check pass.
+Scoped commit/push next; do not deploy target servers. A09 concrete boundary
+verified, not whole-Goal completion.
+Need final full gate/cleanup/evidence/scoped commit/
+push. Do not deploy Preview/main or touch shared tenants/provider/key/budget.
+Prior13c4700 pushed/remote verified. A11 Live Monitor related-Issue context and
+A12 approved optional operational request/cost caps are concrete remaining gaps;
+read their source findings before implementation/ADR. A01/A07/full audit mandatory.
 
 Active DEC-059 A08 Investigator controls/command ownership: real native red,
 implementation and focused green3 pass; Console30 tests/typechecks pass. Help v3
