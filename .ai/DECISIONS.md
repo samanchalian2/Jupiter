@@ -17,7 +17,8 @@ within GOAL-069, not reopening/changing the scope of GOAL-056.
 
 ## DEC-062 — Optional operational request and estimated-cost ceilings
 
-Status: decision recorded before implementation; NOT YET IMPLEMENTED/ACCEPTED.
+Status: implemented, LOCAL functional499-test/native/schema/Help QC verified;
+scoped delivery/remote CI and whole-Goal original-scope audit remain separate.
 Source: GOAL-069 approved preamble/A12. Keep mandatory combined monthly token
 budget and the existing provider interface. Add nullable per-Application monthly
 provider-attempt and estimated-cost ceilings to the existing configuration;

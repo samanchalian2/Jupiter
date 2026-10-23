@@ -2,6 +2,19 @@
 
 ## GOAL-069 — Observability Hub continuation (IN PROGRESS)
 
+2026-10-23 A12 functional499-test full release/all gates/both fault scripts pass.
+LOCAL073 applied/84 total, null optional defaults/live100000 policy preserved.
+Help AIv4/limitsv3 published/read. Only stale host test-log counter changed after
+full gate; actual-host recheck49879 all3/observed84 and cleanup pass. Scoped push/CI next. No
+deployment or next Goal. Full original audit/A01/A07 remains to sign off.
+
+DEC-062 A12 optional operational ceilings implemented through migration073,
+backend/strict HTTP/OpenAPI/compact Console/Help sources.20 focused tests,
+Console34 and native save/reload/reset/zero-denial/known+UNKNOWN usage/four widths
+pass, with real120/min pacing. Full serial17923 active; local migration84/runtime
+Help/cleanup/scoped commit/push/remote CI still pending. Actual prior push1d1259b
+CI39634632976 is SUCCESS. Whole original audit/A01/A07 remains mandatory.
+
 DEC-061 A11 Live Monitor context/timer remediation implemented. Focused SQL/HTTP/
 OpenAPI7,Console32,native real pause/resume/detail/four widths and actual host3
 pass. Final-source482-test serial release/all gates/both fault scripts, final

@@ -289,6 +289,14 @@ being released. Findings cite only curated authorized evidence; no tools or
 business mutation are available to the model. AI failure never blocks ingestion.
 Operational AI accounting is separate from Commercial/Personal customer pools.
 
+DEC-062 optional request/estimated-cost caps reuse whole-App ADMIN authorization,
+current grants/RLS and the same atomic reservation lock. UNKNOWN holds cost and
+tokens; retry counts cannot be silently refunded. Explicit rate snapshots are
+immutable and settled estimates DB-checked. Missing historical price fails closed
+when a cost cap applies, not a manufactured zero. No provider secret, prompt,
+evidence text or customer billing key is added to cost telemetry/Audit. Monetary
+values are explicitly estimates, not proof of actual spend or provider invoices.
+
 Operational identity/grants are independent of Jupiter roles. Ingestion
 credentials are scoped, hashed, revocable and browser short-lived. Runtime Hub
 data uses dedicated RLS scopes and has no direct credential-hash privileges.

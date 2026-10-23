@@ -4,7 +4,110 @@ Status: IN PROGRESS. Owner-approved plan supersedes the stale GOAL-060 identifie
 in the supplied specification. GOAL-060 Personal Service history is preserved.
 GOAL-059 remains BLOCKED; LOCAL evidence is not staging acceptance.
 
+## 2026-10-21 — Optional operational ceilings / DEC-062 (LOCAL, in progress)
+
+2026-10-23 final follow-up49879 TERMINATED0/all3 actual host cases,
+output/goal069-operational-limits-host-metadata.log: observed84 count now correct,
+normal password/JWT/membership, real outage/manual/trace/Incident/embedded four-
+width acceptance retained. Only test metadata/assertion changed after499 full
+functional gate, re-executed directly; no production code changed. Cleanup safe
+readback84/zero temporary databases/zero active AI attempts/enabled100000,
+optional-null/live-policy flags true; Help AIv4/limitsv3 public-service flags all
+true. Shared3000/5174 listeners absent. No active local test handle; scoped
+commit/push/remote CI and full original requirement audit remain.
+
+2026-10-23 FINAL functional source: serial84572 TERMINATED0. Log
+output/goal069-operational-limits-final-release-2.log ends
+GOAL069_OPERATIONAL_LIMITS_FINAL_RELEASE_EXIT=0:499 tests(180API/40Web/279Hub),
+all build/lint/typechecks/84-migration rehearsal/native/reference/performance and
+both isolated fetch/React scripts PASS. Supersedes prior failed fixture gate,
+not the need for remaining original requirement audit. Native Persian denial,
+four-width/keyboard far-left cost evidence inspected. No production code changed
+after this gate; only stale host-test log constant83 replaced by observed executed
+count84 plus assertion; follow-up actual-host3 run49879 is active.
+
+After full gate, guarded preflight confirms loopback/exact only073 pending/83
+applied/zero active attempts/zero temporary databases. Supported migrate runner
+applies073 locally:84 now. Safe readback confirms optional defaults null and
+existing enabled100000/model/encrypted credential presence preserved. Authorized
+slug-only publication revises observability-ai to v4 and observability-ai-limits
+to v3; normal public-audience Help detail confirms optional/units/unknown/history/
+limits/manual guidance flags all true. No external provider call or target-server
+deployment, no business tenant/credential policy mutation.
+
+2026-10-23 continuation:17923 process handle missing; final log confirms exit1,
+144 Hub tests pass/1 reconciliation fixture fails because its pending job is not
+in the global50 claim. Exact generated pending job is now due-prioritized in
+fixture helper/normal claim1 with exact dedupe assertion; production queue/cap/
+lease/auth unchanged. Added Persian denial explanation retaining safe code and
+native wording/keyboard/far-left usage check. Focused96384 running; final-source
+gates still required. Focused96384 now TERMINATED0:Console35 and18 selected
+SQL/HTTP/AI/native pass,93 deliberately skipped. Persian denial plus keyboard
+far-left usage screenshot inspected. Second full final-source release started,
+output/goal069-operational-limits-final-release-2.log, exec84572 confirmed live.
+Main migration/Help pending.
+
+Full-run84572 host fixture actually asserts84 migration files and executes them,
+but its old console metadata still prints hard-coded migrations:83. This is a
+reporting defect, not a missing migration: source beforeAll asserts84, separate
+full-chain rehearsal also asserts84. After this active run terminates, replace
+the log constant with the observed migration-file count and re-execute actual
+host acceptance. Do not cite the stale log value as schema evidence.
+
+- Migration073 adds nullable request/estimated-USD-cost policy and paired rates
+  to existing config; immutable attempt rate/reserved-cost snapshots and exact
+  derived-cost settlement constraint. No new table/service/public operation or
+  provider contract;61 operations.84-chain disposable rehearsal preserves actual
+  pre-073 SETTLED row as unpriced, never zero/revalued. Main DB still83/unmodified.
+- Existing App advisory lock atomically checks mandatory tokens plus optional
+  monthly requests and conservative cost across environments/tenants. Omitted
+  optional settings preserve, null resets; explicit zero remains meaningful.
+  Both explicit rates required for cost cap. Every reserved provider attempt,
+  including retries/UNKNOWN, counts; UNKNOWN token/cost stays held. Unpriced
+  current-month non-released history denies cost-capped calls. Actual validated
+  settlement/reconciliation uses its original snapshot, not current rate.
+- output/goal069-operational-limits-focused-final.log passes20 selected tests,
+  100 deliberately skipped: four pure arithmetic/nullable cases,five OpenAPI,
+  eleven actual SQL/HTTP/61-operation/rehearsal/concurrency/retry/UTC cases.
+  Includes known retry cost40→80, UNKNOWN/reconcile snapshot, separate environment
+  sharing cap, non-UTC connection/prior-month unknown, malformed/unauthorized
+  config, immutable derived costs, and provider input-count overflow held UNKNOWN.
+  First backend2 run failed new REQUIRED reason mapped403 and actor-mismatched
+  second-env evidence. Corrected only new validation400 mapping and fixture actor/
+  explicit ACK; no generic auth/cap weakened. Backend3/4/final pass.
+- Console34 tests/typecheck pass. Existing form gains four optional controls,
+  explicit blank/zero/unit semantics and known/held/unpriced cost projections.
+  Native browser1 passes save/readback/reload/nullable reset and queued zero-cap
+  denial with zero provider calls/attempts; four-width RTL/no document overflow.
+  Expanded browser2 proves actual settled40-micro and UNKNOWN held-cost rendering,
+  but following context acceptance reaches public120/min. Real-window pacing
+  added (not rate-limit increase); browser3 TERMINATED0, all checks including old
+  late-command/grant/reconciliation pass. Sources not rebuilt during acceptance.
+- Help AI/limits sources updated; runtime publication, final full gates, main
+  local migration/cleanup, screenshots and scoped commit/push still required.
+  Active serial17923/output/goal069-operational-limits-final-release.log.
+- Inspected native optional controls and known/UNKNOWN cost screenshots375/1440:
+  readable compact controls, explicit units and inner-scroll table; no document
+  overflow. Worker-denial output is still only English safe reason code; add
+  Persian human explanation and native wording/far-left keyboard cost visibility
+  acceptance AFTER17923 ends, then rerun final-source gates. Not a full A12
+  acceptance certificate yet; no shared-data migration/publication performed.
+
+## 2026-10-21 — Actual remote CI verified
+
+Push1d1259b594207f7dc7aaa27c4cdebc5b61e87840 run39634632976/job119341692747
+completed SUCCESS after clean build/ephemeral PostgreSQL/Help ranking fixes.
+Read actual job state, not empty legacy statuses/PR-only wrappers. This CI does
+not enable optional LOCAL browser/performance/reference flags; not a substitute
+for full native/performance LOCAL acceptance or staging/deployment evidence.
+
 ## 2026-10-21 — Actual push CI diagnosis (LOCAL remediation in progress)
+
+Help correction1d1259b594207f7dc7aaa27c4cdebc5b61e87840 pushed; origin/main
+SHA verified. Actual push CI39634632976 confirmed in_progress at handoff, not
+success. No local exec handle pending. Post-QC main DB83/zero temporary DBs/
+zero active AI attempts/enabled100000,git diff --check passes. Uncommitted A12
+schema/helper/fixture work remains separate from this tested Help checkpoint.
 
 Run39633488275/job119337617376 (069b59c remote SHA verified) passes DB setup,
 supported migrations,build/lint/typecheck and mandatory Hub persistence. API test

@@ -2,6 +2,15 @@
 
 ## GOAL-069 independent operational Investigator
 
+DEC-062 retains the provider interface and adds optional App-wide UTC-month
+attempt/estimated-cost caps alongside mandatory token reservation. Explicit
+micro-USD rates per million tokens are snapshotted immutably; exact integer
+ceiling arithmetic governs known settlement/reconciliation. No guessed prices,
+commercial units or usage reconciliation. Current-month unpriced history fails
+closed under cost caps; UNKNOWN retains cost/tokens and every retry counts as
+another provider attempt. Exceeded provider input bounds remain UNKNOWN rather
+than permitting a settled estimate beyond the held cost. No business mutation.
+
 DEC-059 operational Console edits existing output/context/concurrency/review
 interval policy with service bounds/defaults. All environments/tenants share the
 App monthly budget; scoped manual requests do not create extra allowance.

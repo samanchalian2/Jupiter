@@ -1,5 +1,73 @@
 # Current State
 
+**2026-10-23 ready for scoped delivery:** Host metadata follow-up49879 TERMINATED0,
+all3 actual compiled host/native cases pass with observed migrations84. No local
+test handle remains. Final cleanup readback84/zero temporary DBs/zero active AI
+attempts/enabled100000; optional-null/live policy/readable Helpv4/v3 flags true.
+Shared3000/5174 listeners absent. Functional499 full gate and both scripts pass;
+only test-log count/assertion changed afterward and was re-executed. Scoped
+commit/push/current remote CI next. Whole Goal original audit remains active.
+
+**2026-10-23 operational ceilings delivery QC (GOAL-069 IN PROGRESS):**
+Full serial84572 TERMINATED0, output/goal069-operational-limits-final-release-2.log
+ends GOAL069_OPERATIONAL_LIMITS_FINAL_RELEASE_EXIT=0:499 tests(180API/40Web/
+279Hub),all builds/lint/typechecks/migration/native/reference/performance and both
+isolation scripts. Main LOCAL supported runner applied ONLY073 after loopback/
+exact-pending83/zero attempts/zero-fixture preflight.84 migrations now. New fields
+all null, existing enabled100000/model/credential-presence readback preserved.
+Authorized slug-only runtime Help revised AIv4/AI-limitsv3; public-service content
+flags all true. No provider call/Preview/main deployment/shared host start.
+Actual-host test's stale hard-coded83 log changed to observed executed count84;
+ONLY this reporting/test assertion changed after functional full gate. Actual
+host3-case follow-up49879 currently ACTIVE, output/goal069-operational-limits-host-metadata.log.
+Poll before cleanup/scoped commit/push/remote CI. A01/A07/full original audit still
+open; do not claim whole Goal accepted. Preserve unrelated user edits/output/tmp.
+
+**2026-10-23 final-source follow-up:** Focused96384 TERMINATED0:Console35 and
+18 selected SQL/HTTP/AI/native tests pass (93 intentionally skipped). Reconciliation
+fixture correction and Persian denial/keyboard inner-scroll verified. Final-source
+second full serial release84572 CONFIRMED ACTIVE, log
+output/goal069-operational-limits-final-release-2.log; poll same current handle.
+No concurrent runtime edits/build. Main migration/Help publication pending.
+
+**2026-10-23 resumed QC:** Previous run17923 is missing from process registry;
+authoritative final log TERMINATED1 (not a timeout):144 Hub tests pass/1 fails
+because reconciliation fixture cannot find its job among global50 claims.
+Generated-fixture claimed() now prioritizes exact pending dedupe job then uses
+normal claim1/assert exact identity, no production queue change. Persian worker
+denial explanation added alongside unchanged safe code; native adds wording and
+keyboard/far-left usage-table check. Focused96384 CONFIRMED ACTIVE, log
+output/goal069-operational-limits-focused-5.log. No concurrent runtime edits/build.
+Main local migration/Help publication still pending; no deployed host changes.
+
+**2026-10-21 A12 current implementation (GOAL-069 IN PROGRESS):** Actual CI
+39634632976/job119341692747 completed SUCCESS for pushed1d1259b. Optional limits
+now integrated into configure/reserve/settle/reconcile/usage, strict HTTP/OpenAPI
+and compact UI.20 focused tests/Console34 pass; migration073/84-chain preserves
+legacy null pricing and exact derived-cost DB checks. Per-App atomic caps include
+UNKNOWN/attempts/retries, snapshot rates/UTC/unpriced-history denial, no provider
+contract/customer allowance change. Native first passes; expanded known40-micro+
+UNKNOWN held-cost UI passes, but later context test hit120/min (browser-2). REAL
+rate-window pacing preserves cap/auth/clock; browser3 TERMINATED0, all assertions
+pass. Final full serial run17923 CONFIRMED ACTIVE, log
+output/goal069-operational-limits-final-release.log. Poll same handle; no runtime
+edit/build/restart while it runs. Main DB STILL83/unmodified; migration073/runtime
+Help publication/cleanup/commit/push pending after full gates. No deploy.
+Latest screenshot QC: optional cost controls/table readable, but worker denial
+is only raw English code. Persian explanation + retained safe code and native
+keyboard/far-left cost visibility assertion required AFTER17923 terminal; no
+runtime changes while that test runs. Current green assertions do not waive it.
+
+**2026-10-21 handoff — GOAL-069 ACTIVE:** Help remediation1d1259b594207f7dc7aaa27c4cdebc5b61e87840
+pushed and origin/main SHA verified. Actual push CI39634632976 is CONFIRMED
+in_progress; inspect this exact run/job before declaring CI success or retrying.
+No local exec handle remains. Main LOCAL readback still83 migrations/zero temp
+DBs/zero active attempts/enabled100000. Diff check passes. A12 uncommitted helper,
+migration073 and disposable84-fixture changes pass6 focused tests(schema-2);
+actual configure/reserve/settle/reconcile/usage/API/UI/native Help integration
+still required. Do not apply073 to main/start services until integration/QC.
+Preserve unrelated gateway LF-only and website-training edits/output/tmp. No deploy.
+
 **2026-10-21 latest CI/QC evidence:** 069b59c166e8e23b4ab1a620264d3ccfb5c7ba60
 pushed/remote verified. Actual CI39633488275 now passes isolated DB initialization,
 all build/lint/typecheck and Hub persistence, but fails existing Help relevance:

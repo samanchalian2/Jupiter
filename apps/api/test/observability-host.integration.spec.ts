@@ -14,6 +14,7 @@ import {acceptActualHostBrowser} from './support/actual-host-browser.js';
 const name=`obs069_host_${randomUUID().replaceAll('-','')}`;
 const admin=new Client({connectionString:databaseUrl()});
 let connected=false,created=false,pool:Pool|undefined,hub:HubDatabase|undefined,child:ChildProcess|undefined,base='',webOrigin='',org='',otherOrg='',requester='',platformAdmin='',appId='',environmentId='',priorRole='';
+let executedMigrations=0;
 const password=randomBytes(24).toString('base64url');
 const requests:Array<{path:string;statusCode:number}>=[];
 const roleSnapshot=async()=>JSON.stringify((await admin.query("SELECT rolname,rolsuper,rolinherit,rolcreaterole,rolcreatedb,rolcanlogin,rolreplication,rolbypassrls FROM pg_roles WHERE rolname='jupiter_app'")).rows);
@@ -25,13 +26,14 @@ beforeAll(async()=>{
  const configured=new URL(databaseUrl());if(!['localhost','127.0.0.1','[::1]'].includes(configured.hostname))throw Error('LOCAL disposable host acceptance only');
  await admin.connect();connected=true;priorRole=await roleSnapshot();expect(JSON.parse(priorRole)).toHaveLength(1);
  await admin.query(`CREATE DATABASE "${name}"`);created=true;configured.pathname=`/${name}`;pool=new Pool({connectionString:configured.toString(),max:4});
- const files=(await readdir(join(process.cwd(),'migrations'))).filter(file=>file.endsWith('.sql')).sort();expect(files).toHaveLength(83);
+ const files=(await readdir(join(process.cwd(),'migrations'))).filter(file=>file.endsWith('.sql')).sort();expect(files).toHaveLength(84);
  for(const file of files){let sql=await readFile(join(process.cwd(),'migrations',file),'utf8');
   // The actual process uses the existing production role name. Grant statements
   // affect ONLY newly created objects in this disposable DB; no cluster role,
   // membership or existing database ACL is changed. The role already exists.
   if(file==='001_identity.sql'){expect(sql).toContain('CREATE ROLE jupiter_app NOLOGIN;');sql=sql.replace('CREATE ROLE jupiter_app NOLOGIN;','');}
   await pool.query(sql);
+  executedMigrations++;
  }
  org=(await pool.query("INSERT INTO organizations(slug,name,status) VALUES('host-acceptance','Host acceptance','active') RETURNING id")).rows[0].id;
  otherOrg=(await pool.query("INSERT INTO organizations(slug,name,status) VALUES('host-other','Other fixture scope','active') RETURNING id")).rows[0].id;
@@ -123,7 +125,7 @@ describe('actual compiled Jupiter main/AppModule process',()=>{
   expect((await fetch(`${base}/auth/refresh`,{method:'POST',headers:{cookie:user.cookie}})).status).toBe(401);
   await fetch(`${base}/auth/logout`,{method:'POST',headers:{cookie:operator.cookie}});
   expect((await pool!.query('SELECT 1 FROM refresh_sessions WHERE user_id=ANY($1::uuid[]) AND revoked_at IS NULL',[[requester,platformAdmin]])).rowCount).toBe(0);
-  console.log(JSON.stringify({event:'observability.actual_appmodule_host',result:'PASS',process:'dist/main.js',migrations:83,auth:'REAL_PASSWORD_JWT_MEMBERSHIP',failedDraft:'500_ZERO_TICKETS_EVENT_ISSUE',hubOutage:'REAL_TABLE_UNAVAILABLE_TIMER_ATTEMPT',manualSubmit:'ONE_OPEN_TICKET',commercialEntries:0,sessions:'REVOKED',limits:'Disposable database; real compiled AppModule/API/SDK/worker HTTP process. No browser shell, provider call or process-crash recovery claim.'}));
+  expect(executedMigrations).toBe(84);console.log(JSON.stringify({event:'observability.actual_appmodule_host',result:'PASS',process:'dist/main.js',migrations:executedMigrations,auth:'REAL_PASSWORD_JWT_MEMBERSHIP',failedDraft:'500_ZERO_TICKETS_EVENT_ISSUE',hubOutage:'REAL_TABLE_UNAVAILABLE_TIMER_ATTEMPT',manualSubmit:'ONE_OPEN_TICKET',commercialEntries:0,sessions:'REVOKED',limits:'Disposable database; real compiled AppModule/API/SDK/worker HTTP process. No browser shell, provider call or process-crash recovery claim.'}));
   }finally{await Promise.all([user.cookie,operator.cookie].map(cookie=>fetch(`${base}/auth/logout`,{method:'POST',headers:{cookie}})));}
  },60000);
  it.runIf(process.env.OBSERVABILITY_BROWSER_ACCEPTANCE==='true')('runs authenticated actual Web/manual ticket/automatic trace acceptance without touching shared tenants',async()=>{

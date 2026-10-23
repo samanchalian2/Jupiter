@@ -35,7 +35,7 @@ beforeAll(async()=>{
  const url=new URL(databaseUrl());url.pathname=`/${name}`;const connectionString=url.toString(),pool=new Pool({connectionString,max:4});
  try{
   const directory=join(process.cwd(),'migrations');
-  const files=(await readdir(directory)).filter(file=>file.endsWith('.sql')).sort();expect(files).toHaveLength(83);
+  const files=(await readdir(directory)).filter(file=>file.endsWith('.sql')).sort();expect(files).toHaveLength(84);
   for(const file of files)await pool.query((await readFile(join(directory,file),'utf8')).replace(/\bjupiter_app\b/g,role));
   // Same tenant transaction/RLS implementation, with only the rehearsal role name
   // substituted for this disposable DB. Never change the shared business role.

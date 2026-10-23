@@ -4,7 +4,7 @@
 
 The entire approved objective remains active. Source of truth:
 `docs/GOAL_069_SPECIFICATION.md` (all sections and A–I Definition of Done),
-`docs/GOAL_069_EVIDENCE.md`, current state and DEC-038 through DEC-062.
+`docs/GOAL_069_EVIDENCE.md`, current state and DEC-038 through DEC-063.
 Historical GOAL-060 Personal Service is not renamed. Do not start another Goal.
 
 ### Latest implementation boundary
@@ -25,6 +25,73 @@ measurements and the performance flag enabled. Inspect
 latest Evidence for gates/runtime/remote commit.
 
 ### Remaining work — preserve the full original scope
+
+LATEST2026-10-23: Host metadata49879 TERMINATED0/all3 cases,observed84. Cleanup:
+84 local migrations/zero temporary DBs/zero active AI attempts/enabled100000;
+optional defaults null/live policy/Help AIv4+limitsv3 readback PASS. No live local
+test handles/shared3000/5174 listeners. Scoped commit/push/new actual remote CI
+next, then whole original requirement audit/A01/A07/47 Evidence reconciliation.
+Do not repeat the already successful499 functional gate solely for the corrected
+test-only reporting count (re-executed actual3 cases). No next Goal/deployment.
+
+LATEST2026-10-23: full84572 TERMINATED0,499 tests/all functional gates/both fault
+scripts. Main LOCAL073 applied through supported runner after zero-attempt/fixture
+preflight;84 now,optional null defaults and enabled100000/model/key-presence
+preserved. Help AIv4/AI-limitsv3 runtime publication/readback pass. Post-gate ONLY
+test-log hardcoded83 changed to actual executed84+assertion; actual-host3-case
+follow-up49879 ACTIVE/log goal069-operational-limits-host-metadata. Poll then
+cleanup/diffcheck/scoped commit/push/actual CI. No production-source edits after
+the499 gate. Continue full original requirement audit/A01/A07/47 Evidence, not a
+new Goal or deploy. Prior instructions saying DB83/migrationpending are historical.
+
+LATEST2026-10-23:96384 terminal0, Console35 +18 focused actual SQL/HTTP/AI/native
+pass. Final-source second full serial84572 CONFIRMED ACTIVE:
+output/goal069-operational-limits-final-release-2.log. Poll SAME handle; don't
+restart/build/edit runtime while live. First full17923 terminal1/fixture missing
+claim, not a product queue failure. Exact fixture priority+identity fixed.
+Persian denial and native wording/keyboard far-left screenshot verified. After
+full pass: guarded LOCAL migration073 (84 total), authorized slug-only AI Help
+publication/readback, cleanup/remaining original audit, scoped commit/push/CI.
+Reporting QC: actual-host test asserts/executes84 migration files but console
+event still hard-codes83. AFTER84572 terminates, use observed files.length for
+metadata and rerun actual-host acceptance; do not interpret stale counter as
+missing073 or hide it in Evidence. No production code/API change required.
+
+2026-10-23 IMMEDIATE: run17923 missing; final log terminal1 at global-claim
+fixture mismatch, not unknown/active. Exact generated pending job now prioritized
+in test helper with normal claim1/identity assertions; no production queue fix.
+Persian denial explanation/native wording/keyboard far-left check added. Poll
+focused96384/output/goal069-operational-limits-focused-5.log, confirmed active;
+then inspect screenshots, run final-source full gate/both scripts. Do not apply
+local073/publish Help/commit until verified. Main DB83/enabled100000 unchanged.
+
+IMMEDIATE A12: poll full serial17923/output/goal069-operational-limits-final-release.log,
+confirmed active; no concurrent build/runtime edits. Native69431 TERMINATED0:
+known40 micro/UNKNOWN held cost, zero-call denial, save/reload/null reset and
+four widths, then existing late/grant checks, with unchanged120/min REAL pacing.
+20 focused SQL/HTTP/OpenAPI/UTC/concurrency/retry/schema and Console34 pass.
+Backend/API/UI/Help source now implemented, not merely schema. Main DB83 still;
+after final-source full release/both isolation scripts, inspect fresh screenshots,
+apply supported local073 (84 total) only with zero active attempts, publish/read
+only AI/AI-limits Help through authorized local utility, cleanup/scoped commit/
+push and actual CI. Remote39634632976/job119341692747 for1d1259b is SUCCESS;
+new A12 code has NOT been pushed/remote tested. All original audit/A01/A07 remain.
+Visual QC additionally found worker denial shown only as English reason code.
+After17923 terminal, add Persian human explanation retaining safe diagnostic code,
+native wording assertion and keyboard/far-left cost-table visibility check, then
+focused/native and final-source gates. No API/architecture change required for
+this presentation fix. Do not mark A12 accepted from the currently running gate.
+
+IMMEDIATE: inspect actual push CI39634632976 for1d1259b594207f7dc7aaa27c4cdebc5b61e87840,
+confirmed in_progress after Help fix push/remote SHA verification. Do not rerun
+solely because observation expires. No local test handle remains. Then finish
+A12 DEC-062: uncommitted helper/migration073/84-fixture rehearsal is tested6
+focused, but runtime enforcement absent. Keep optional fields omitted=preserve,
+null=reset; atomic whole-App monthly token/request/cost lock, snapshot price,
+UNKNOWN cost hold and explicit legacy-unpriced denial. Integrate service/config/
+settlement/reconcile/scoped usage, strict HTTP/OpenAPI, compact controls/native
+acceptance/Help, migration/full QC before apply/commit. Main LOCAL83/zero fixtures/
+zero attempts/enabled100000 unchanged. No next Goal, deploy or external AI calls.
 
 LATEST CI:069b59c pushed;39633488275 gets through actual PostgreSQL/Hub tests,
 fails Help relevance on fresh seed dates. DEC-063 regression red-2/green-2 now
@@ -408,8 +475,8 @@ DEC-044 metric isolation. No active-App mutation or next Goal.
   the co-hosted Arandi application/database. GOAL-059 staging gates stay separate.
 - Local Jupiter API is 3000 and Web is 5174; 5173 belongs to another application.
   Verify the exact owned process before any restart and check active AI attempts.
-- Migrations through 072 are local (83 total, 27 Hub tables); no further SQL
-  migration is required for automatic diagnostic transport/Console.
+- Migrations through 073 are local (84 total, 27 Hub tables).073 adds only DEC-062
+  config/ledger columns and constraints; no new customer commercial tables.
 - Approved GapGPT configuration remains unchanged: gpt-6-luna, encrypted key and
   100,000 combined input/output tokens per UTC month. Do not ask for another key,
   switch provider or invent unknown usage reconciliation. This is not customer

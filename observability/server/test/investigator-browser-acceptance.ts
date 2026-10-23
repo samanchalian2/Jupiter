@@ -4,9 +4,10 @@ import {mkdir} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import {randomUUID} from 'node:crypto';
 import {AesCredentialVault,InvestigatorService,IngestionService,type HubDatabase,type RegistryService} from '../src/index.js';
+import {optionalLimitsBrowserAcceptance} from './optional-limits-browser-acceptance.js';
 
 /** Real scoped configuration commits; no external provider or shared App writes. */
-export async function investigatorBrowserAcceptance(page:Page,database:HubDatabase,registry:RegistryService,ai:InvestigatorService,root:string,principal:string,applicationId:string,environmentId:string,otherApplication:string,otherEnvironment:string){
+export async function investigatorBrowserAcceptance(page:Page,database:HubDatabase,registry:RegistryService,ai:InvestigatorService,root:string,principal:string,applicationId:string,environmentId:string,otherApplication:string,otherEnvironment:string,consoleWindowStarted:number){
  await ai.configure(root,applicationId,{enabled:false,externalProcessingAllowed:false,endpoint:'http://127.0.0.1:9999/v1',model:'investigator-native-fixture',credential:'disposable-fixture-only',monthlyTokenBudget:100000,reason:'Disposable Investigator configuration fixture'});
  await page.getByRole('button',{name:'تحلیلگر هوش مصنوعی',exact:true}).click();
  const panel=page.locator('.obs-investigator');await panel.getByText('تنظیمات مستقل تحلیلگر',{exact:true}).click();await panel.getByLabel('دلیل تغییر',{exact:true}).fill('Held Investigator configuration acceptance');
@@ -28,6 +29,10 @@ export async function investigatorBrowserAcceptance(page:Page,database:HubDataba
  const configured=await ai.configuration(root,applicationId);expect(configured).toMatchObject({monthlyTokenBudget:'120000',maxOutputTokens:256,maxContextBytes:4096,maxConcurrent:2,reviewIntervalSeconds:600,hasCredential:true,enabled:false,externalProcessingAllowed:false});expect(JSON.stringify(configured)).not.toContain('disposable-fixture-only');
  const configurationAudit=await database.control(async c=>(await c.query("SELECT actor_principal_id,metadata FROM observability.audit WHERE application_id=$1 AND reason='Native Investigator bounded settings acceptance'",[applicationId])).rows);expect(configurationAudit).toHaveLength(1);expect(configurationAudit[0].actor_principal_id).toBe(principal);expect(configurationAudit[0].metadata).toMatchObject({maxOutputTokens:256,maxContextBytes:4096,maxConcurrent:2,reviewIntervalSeconds:600,monthlyTokenBudget:120000,credentialChanged:false});expect(JSON.stringify(configurationAudit)).not.toContain('disposable-fixture-only');
  await page.reload();await page.getByRole('button',{name:'تحلیلگر هوش مصنوعی',exact:true}).click();await panel.getByText('تنظیمات مستقل تحلیلگر',{exact:true}).click();for(const [label,value] of limits)expect(await panel.getByLabel(label,{exact:true}).inputValue()).toBe(value);
+ await optionalLimitsBrowserAcceptance(page,database,registry,ai,root,applicationId,environmentId);
+ // Added real save/reload/known+UNKNOWN flows must obey the unchanged public
+ // 120/minute limiter, not raise it or weaken subsequent authorization checks.
+ const paceMs=Math.max(0,Math.min(60000,consoleWindowStarted+61000-Date.now()));if(paceMs){console.log(JSON.stringify({event:'observability.optional_limits_rate_pacing',waitMs:paceMs,limit:'UNCHANGED_120_PER_MINUTE'}));await page.waitForTimeout(paceMs);}
  const widths=[];for(const width of [375,768,1024,1440]){await page.setViewportSize({width,height:900});const layout=await page.evaluate(()=>({width:innerWidth,document:document.documentElement.scrollWidth,rtl:getComputedStyle(document.documentElement).direction}));expect(layout.rtl).toBe('rtl');expect(layout.document).toBeLessThanOrEqual(width);widths.push(layout);if(process.env.OBSERVABILITY_BROWSER_ARTIFACT_DIR&&[375,1440].includes(width)){await mkdir(process.env.OBSERVABILITY_BROWSER_ARTIFACT_DIR,{recursive:true});await panel.getByText('تنظیمات مستقل تحلیلگر',{exact:true}).scrollIntoViewIfNeeded();await page.screenshot({path:resolve(process.env.OBSERVABILITY_BROWSER_ARTIFACT_DIR,`investigator-settings-${width}.png`)});}}
  // A held old command intentionally prevents networkidle. Wait for the exact
  // NEW scope read and its rendered form instead of waiting on the held command.

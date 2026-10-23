@@ -1,5 +1,31 @@
 # Changelog
 
+## 2026-10-23 — GOAL-069 operational ceilings QC checkpoint (IN PROGRESS)
+
+-499-test full functional release, builds/lint/typechecks/rehearsal/native/
+ reference/performance and both fault scripts pass. Persian denial explanation/
+ safe diagnostic code and keyboard far-left cost-table acceptance added.
+- Test fixture's global claim assumption corrected using exact generated pending
+ job priority/normal bounded claim, not a production queue/cap/auth change.
+- Supported LOCAL migration073 applied (84 total), optional defaults null/live
+ enabled100000/model/credential presence preserved. Runtime AIv4/limitsv3 Help
+ revised/read through normal authorized service. No deployment/provider call.
+- Test-only migration log83 replaced by observed executed84; focused actual-host
+ recheck3 cases pass with observed84. Cleanup84/zero fixture DBs/zero attempts
+ verified. Scoped delivery/remote CI and whole original Goal audit still open.
+
+## 2026-10-21 — GOAL-069 optional operational ceilings (IN PROGRESS)
+
+- DEC-062 migration073, nullable attempt/cost caps, atomic App-wide monthly
+  reservation and immutable explicit rate/cost snapshots. UNKNOWN holds retained;
+  legacy unpriced history is never zero/revalued. Scoped estimated projections.
+- Compact Persian policy controls/report/Help source,34 Console tests;20 focused
+  SQL/HTTP/OpenAPI/UTC/retry/concurrency/rehearsal tests pass. Native confirms
+  zero-call denial, reload/reset and actual40-micro+UNKNOWN projection at four
+  widths. Real120/min window respected after a measured429, no cap weakened.
+- Final full release in progress; main DB83 and live100000 budget unchanged.
+- Actual previous push1d1259b CI39634632976 now SUCCESS after clean-CI fixes.
+
 ## 2026-10-21 — GOAL-069 clean-CI relevance remediation (IN PROGRESS)
 
 - CI now builds before checking and provisions only isolated ephemeral PostgreSQL.

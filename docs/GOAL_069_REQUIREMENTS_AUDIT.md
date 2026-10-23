@@ -79,7 +79,56 @@ Policy runtime Help v4 is published/read; access/credential workflows remain ope
 
 ## Audit work not finished
 
+### 2026-10-23 reconciliation of the remaining A01/A07 boundaries
+
+This is a fresh source/test-scope review, not a completion certificate. The
+active final-source gate must finish and the entire original specification still
+needs reconciliation. No extra staging/deployment requirement is introduced.
+
+| Original requirement | Current authoritative implementation | Actual acceptance boundary to retain |
+| --- | --- | --- |
+| Section8 identity, name, description, environment/origin/enabled controls | RegistryService createApplication/applicationConfiguration/updateApplication/configureEnvironment; RegistryConfiguration.tsx | DEC-053 actual HTTP/native create, same-ID disable/resume, source metadata fields, explicit origin validation and actor Audit; immutable ID/key semantics recorded |
+| Section8 ingestion/sampling policy | ingestionPolicy/configureIngestionPolicy and actual IngestionService exclusion; IngestionPolicyPanel | DEC-054 actual policy save plus real accepted/rejected/duplicate/severity sampling behavior, not merely stored JSON |
+| Section8 retention/monitoring/AI/access/credential controls | RetentionService+MaintenancePanel, MonitoringEngine+rule editor, InvestigatorPanel, AccessCredentialsPanel | Existing actual SQL/HTTP/native configuration, rule PUT, current grants/manual revoke/managed boundaries, one-time masked issue/rotate/revoke with child invalidation; A12 expands optional AI controls separately |
+| Section41 search/filter/group/sort/drill-down/releases | OperationsService.filters/list/detail, issueOrdering, IssueExplorerControls and Console detail | DEC-056 global-group/whole-cohort order, same-event release/category and bounded affected-release SQL assertions; native keyboard grouping/status filter/sort/paging/drill-down, late response discarded, v1/v2 observed releases |
+| Section41 timeline/related feedback/human owner/status/note | Existing bounded Issue detail events/feedback/activity arrays and table rendering; OperationsService.manageIssue | Existing scoped SQL/HTTP detail/human-write/Audit tests; native status+assignment+note yields three real actor Audits. Do not infer a populated related-feedback browser panel solely from the releases screenshot |
+| Section42 separate Summary/Impact/Timeline/Issues/Feedback/AI/Causes/Notes/Assigned/Status/Actions/Audit | IncidentWorkspace named semantic sections; OperationsService incidentDetail projection | DEC-057 actual SQL/HTTP and native populated fixture, distinct route/reload/Back/Forward, human-state updates and read-only AI hypothesis/actions; bounded recent notes separately verified DEC-058 |
+| Section42 host integration and decision separation | /operations fragment and /platform?section=observability embedding | Actual compiled Jupiter authenticated host/worker capture→Incident, direct-link/reload/return/native Back, both standalone/embedded four-width checks; no model-driven business mutation |
+
+Current source has implementations for all named A01 items and A07 panels;
+the final audit must use these specific executed assertions rather than the
+historical PARTIAL statements or generic 'all tests passed'. A12 full delivery,
+updated47-section evidence index and remaining sections1–73/A–I still not signed
+off. Do not manufacture missing UI proof, nor demand every unrelated Jupiter
+domain workflow as a new acceptance criterion.
+
 ### A12 — approved preamble optional operational request/cost ceilings (gap)
+
+2026-10-23: IMPLEMENTED/functional LOCAL QC VERIFIED by499-test full serial gate,
+both fault scripts, scoped SQL/HTTP/UTC/parallel/UNKNOWN/retry/rate snapshot/native
+four-width acceptance, migration073 rehearsal+guarded local apply and runtime
+Helpv4/v3 readback. Optional settings remain null on live App/100000 preserved.
+Only post-gate test-log migration counter corrected; focused host follow-up and
+scoped commit/remote CI pending. This closes the concrete A12 implementation gap,
+not the full original Goal audit. Historical findings below remain audit history.
+
+DEC-062 remediation now implements migration073/nullable policy, whole-App atomic
+token/request/cost gates, immutable rate/reserved-cost snapshots, verified actual
+settlement/reconciliation and scoped known/unpriced reporting. Strict HTTP/
+OpenAPI, compact Persian controls and Help source updated.20 focused tests pass
+(pure/SQL/UTC/retry/concurrency/schema/full61-operation HTTP contract), Console34
+and native save/reload/reset/zero-denial/four-width pass. Expanded native known+
+UNKNOWN cost rendering also passes, with real rate-window pacing before existing
+context/grant checks (browser3). Main DB83 unchanged; full gates/local migration/
+runtime Help/commit/remote acceptance still required. Earlier finding below is
+historical, not the current implementation boundary.
+
+Additional observed QC before A12 acceptance: native cost screenshot renders
+AI_REQUEST_LIMIT_EXHAUSTED as the only denial explanation. Add a Persian-first
+human-readable reason while preserving the safe diagnostic code (section62),
+and assert native denial wording/keyboard inner-scroll to far-left cost columns.
+Do this only AFTER active full-run17923 terminates; then focused/native and
+final-source gates again. Do not hide the observation behind the no-overflow pass.
 
 The approved requirements preamble explicitly says support optional request/
 estimated-cost limits in addition to the mandatory combined monthly token budget.

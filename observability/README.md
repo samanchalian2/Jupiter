@@ -3,6 +3,34 @@
 Product-independent packages and PostgreSQL server adapters for GOAL-069.
 Implementation is IN PROGRESS; no complete platform claim is made.
 
+## Optional operational AI ceilings
+
+The existing whole-App ADMIN AI configuration supports nullable
+`monthlyRequestLimit`, `monthlyEstimatedCostMicros`,
+`inputRateMicrosPerMillion` and `outputRateMicrosPerMillion`. Omit an optional
+field to preserve it; explicit null removes it. Zero is explicit, not unknown.
+Both input/output rates are required for a cost ceiling. Values are safe bounded
+integers (request limit<=1e9; cost/rates<=1e12); costs are USD micro-units and
+rates are micro-USD per million tokens. No default model prices or invoices.
+The mandatory combined monthly token budget remains independent of all customer
+Smart Actions. See the strict OpenAPI configuration/usage schemas.
+
+Every persisted provider-dispatch attempt counts, including retries/UNKNOWN;
+queueing/duplicate logical requests do not. UTC-month token/request/cost capacity
+is checked atomically under the existing App lock across all environments and
+tenants before dispatch. Denial stops AI, never telemetry or manual tickets.
+Rate/reserved-cost snapshots are immutable per attempt. Verified settlement and
+human reconciliation use those snapshots with exact upward rounding; UNKNOWN
+retains cost/tokens. Historical unpriced attempts remain null and block new
+cost-capped calls in the same month rather than masquerading as zero spend.
+
+Scoped usage reports `estimated_settled_cost_micros`,
+`held_estimated_cost_micros` and `unpriced_attempts`. Known sums omit unpriced
+attempts: any unpriced count means the estimate is incomplete. A changed rate
+never reprices history; this is an operational guardrail, not provider billing.
+Migration073 retains existing RLS/grants/composite identities and validates
+settled cost against the immutable snapshot. No provider-interface changes.
+
 ## Seed-bound correlation
 
 In an authorized Event detail, expand `دنبال‌کردن زنجیرهٔ خطا`. GET

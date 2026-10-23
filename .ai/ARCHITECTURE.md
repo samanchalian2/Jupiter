@@ -1,5 +1,13 @@
 # System Architecture
 
+DEC-062 extends the existing operational Investigator (migration073, no new
+service/operation/provider contract) with optional per-App UTC-month attempt/
+estimated-USD-cost ceilings. Existing advisory lock covers all environments and
+tenants atomically. Rates/reserved costs are immutable attempt snapshots, not a
+commercial pricing model; known settlement/reconciliation uses that snapshot.
+Scoped reports expose only known estimated sums plus unpriced counts. Optional
+policy null defaults preserve existing providers and mandatory token budgets.
+
 DEC-061 opts into fixed related-Issue context on the existing Event list. Default
 contract stays; one bounded link batch after authorized page fetch under current
 grants/RLS and composite tenant identity. No N+1/entity/migration/new operation.

@@ -1,5 +1,13 @@
 # Jupiter Design System V2
 
+Operational Investigator optional caps stay inside the existing compact policy
+form, using a semantic fieldset without decorative cards/new navigation/colors.
+Blank and zero are distinct; micro-USD units and explicit per-million rates must
+be labeled. Incomplete/unpriced totals are never presented as complete spend.
+Wide usage evidence uses an internally scrolling keyboard-focusable table;
+fieldset min-width:0 prevents mobile document overflow. Existing Shabnam-first
+font/palette/touch-target conventions remain unchanged.
+
 DEC-061 Live Monitor uses a named focusable inner-scroll table(min1100px,
 max-height40rem), explicit App/env context, compact expandable descriptions/
 Issue titles and separate lifetime statistics. UTC times normalize to ISO Z,

@@ -47,6 +47,7 @@ beforeAll(async()=>{
   await database.pool.query(await readFile(new URL('../../../apps/api/migrations/070_observability_alert_delivery.sql',import.meta.url),'utf8'));
   await database.pool.query(await readFile(new URL('../../../apps/api/migrations/071_observability_critical_rule.sql',import.meta.url),'utf8'));
   await database.pool.query(await readFile(new URL('../../../apps/api/migrations/072_observability_self_metrics.sql',import.meta.url),'utf8'));
+  await database.pool.query(await readFile(new URL('../../../apps/api/migrations/073_observability_ai_operational_limits.sql',import.meta.url),'utf8'));
   root=(await registry.bootstrap({issuer:'acceptance',subject:'local-admin',displayName:'Local admin'},'Acceptance bootstrap')).principalId;
   ordinary=await registry.principal({issuer:'reference-identity',subject:'operator',displayName:'Scoped operator'});
   appA=(await registry.createApplication(root,{slug:'application-a',name:'A',allowedOrigins:['https://consumer.example.test']})).id;
@@ -570,7 +571,30 @@ describe('independent operational AI with real PostgreSQL',()=>{
   const config={enabled:true,externalProcessingAllowed:false,endpoint:'http://127.0.0.1:9999/v1',model:'fixture-model',credential:'acceptance-only-provider-key',monthlyTokenBudget:budget,maxOutputTokens:128,maxContextBytes:2048,maxConcurrent:4,reason:'Explicit AI acceptance activation'};
   return{scope,service,config};
  }
- async function claimed(service:InvestigatorService,id:string){const jobs=await service.queue.claim(randomUUID(),50,['INVESTIGATE']);const job=jobs.find(j=>j.dedupe_key===`ai:${id}`);expect(job).toBeDefined();return job!;}
+ async function claimed(service:InvestigatorService,id:string){
+  // Prior scheduler fixtures may leave more than one bounded page due. Only
+  // prioritize this generated job; retain real claim/lease/auth and batch caps.
+  await database.worker(c=>c.query("UPDATE observability.jobs SET available_at='1998-01-01T00:00:00Z' WHERE kind='INVESTIGATE' AND dedupe_key=$1 AND status='PENDING'",[`ai:${id}`]));
+  const job=(await service.queue.claim(randomUUID(),1,['INVESTIGATE']))[0];expect(job).toBeDefined();expect(job.dedupe_key).toBe(`ai:${id}`);return job;
+ }
+ it('enforces nullable operational cost schema and immutable attempt rate snapshots without repricing legacy attempts',async()=>{
+  const {scope,service,config}=await fixture(validProvider);await service.configure(root,scope.applicationId,config);
+  const read=()=>database.control(async c=>(await c.query('SELECT monthly_request_limit,monthly_estimated_cost_micros,input_rate_micros_per_million,output_rate_micros_per_million FROM observability.ai_configurations WHERE application_id=$1',[scope.applicationId])).rows[0]);
+  expect(await read()).toEqual({monthly_request_limit:null,monthly_estimated_cost_micros:null,input_rate_micros_per_million:null,output_rate_micros_per_million:null});
+  await expect(database.control(c=>c.query('UPDATE observability.ai_configurations SET monthly_estimated_cost_micros=1 WHERE application_id=$1',[scope.applicationId]))).rejects.toThrow('ai_explicit_cost_rates');
+  const inv=await service.request(root,scope,'DAILY',null,'cost-schema');
+  const attempt=await database.worker(async c=>(await c.query<{id:string}>("INSERT INTO observability.ai_attempts(application_id,environment_id,tenant_reference,investigation_id,attempt,period_start,reserved_tokens,provider_code,model,input_rate_micros_per_million,output_rate_micros_per_million,reserved_cost_micros) VALUES($1,$2,$3,$4,1,date_trunc('month',now()),100,'FIXTURE','fixture',1000000,2000000,200) RETURNING id",[scope.applicationId,scope.environmentId,scope.tenantReference,inv.id])).rows[0]);
+  await expect(database.worker(c=>c.query('UPDATE observability.ai_attempts SET input_rate_micros_per_million=0 WHERE id=$1',[attempt.id]))).rejects.toThrow('immutable operational AI ledger');
+  await expect(database.worker(c=>c.query("UPDATE observability.ai_attempts SET status='SETTLED',input_tokens=10,output_tokens=10,settled_at=now() WHERE id=$1",[attempt.id]))).rejects.toThrow('ai_attempt_cost_settlement');
+  await database.worker(c=>c.query("UPDATE observability.ai_attempts SET status='UNKNOWN',outcome='FIXTURE_UNCERTAIN',settled_at=now() WHERE id=$1",[attempt.id]));
+  await expect(database.worker(c=>c.query("UPDATE observability.ai_attempts SET status='SETTLED',input_tokens=10,output_tokens=10,estimated_cost_micros=201,settled_at=now() WHERE id=$1",[attempt.id]))).rejects.toThrow('ai_attempt_cost_settlement');
+  await expect(database.worker(c=>c.query("UPDATE observability.ai_attempts SET status='SETTLED',input_tokens=10,output_tokens=10,estimated_cost_micros=29,settled_at=now() WHERE id=$1",[attempt.id]))).rejects.toThrow('ai_attempt_cost_value');
+  await database.worker(c=>c.query("UPDATE observability.ai_attempts SET status='SETTLED',input_tokens=10,output_tokens=10,estimated_cost_micros=30,settled_at=now() WHERE id=$1",[attempt.id]));
+  await expect(database.worker(c=>c.query('UPDATE observability.ai_attempts SET estimated_cost_micros=20 WHERE id=$1',[attempt.id]))).rejects.toThrow('immutable operational AI ledger');
+  // Unpriced existing-style attempts remain unpriced, not a fabricated zero.
+  await database.worker(c=>c.query("INSERT INTO observability.ai_attempts(application_id,environment_id,tenant_reference,investigation_id,attempt,period_start,reserved_tokens,provider_code,model,status,input_tokens,output_tokens,settled_at) VALUES($1,$2,$3,$4,2,date_trunc('month',now()),100,'FIXTURE','legacy','SETTLED',10,10,now())",[scope.applicationId,scope.environmentId,scope.tenantReference,inv.id]));
+  const ledger=await database.worker(async c=>(await c.query("SELECT reserved_cost_micros,estimated_cost_micros FROM observability.ai_attempts WHERE investigation_id=$1 AND attempt=2",[inv.id])).rows[0]);expect(ledger).toEqual({reserved_cost_micros:null,estimated_cost_micros:null});
+ });
  it('defaults disabled and stores only encrypted credential with metadata-only audit',async()=>{
   const {scope,service,config}=await fixture(validProvider);
   expect(await service.configuration(root,scope.applicationId)).toMatchObject({enabled:false,hasCredential:false});
@@ -581,6 +605,58 @@ describe('independent operational AI with real PostgreSQL',()=>{
   expect(data.credential_ciphertext).not.toContain(config.credential);
   await expect(service.configure(ordinary,scope.applicationId,config)).rejects.toThrow('OPERATIONAL_ACCESS_DENIED');
   await expect(database.scoped({...scope,actorReference:'ai-user'},c=>c.query('SELECT credential_ciphertext FROM observability.ai_configurations'))).rejects.toThrow();
+ });
+ it('preserves omitted optional ceilings and supports explicit reset through strict authenticated HTTP',async()=>{
+  const {scope,service,config}=await fixture(validProvider),api=new HubHttpApi(database,registry,ingestion,{verify:async token=>token==='root-identity-placeholder'?{issuer:'acceptance',subject:'local-admin',displayName:'Local admin'}:{issuer:'reference-identity',subject:'operator',displayName:'Scoped operator'}},undefined,service),path=`/operations/applications/${scope.applicationId}/ai/configuration`,request={clientKey:'optional-ai-limits',authorization:'Bearer root-identity-placeholder',path};
+  expect((await api.dispatch({...request,method:'PUT',body:{...config,monthlyRequestLimit:3,monthlyEstimatedCostMicros:100000,inputRateMicrosPerMillion:1000000,outputRateMicrosPerMillion:2000000}})).status).toBe(200);
+  expect((await api.dispatch({...request,method:'GET'})).body).toMatchObject({monthlyRequestLimit:3,monthlyEstimatedCostMicros:'100000',inputRateMicrosPerMillion:'1000000',outputRateMicrosPerMillion:'2000000'});
+  const cipher=()=>database.control(async c=>(await c.query('SELECT credential_ciphertext FROM observability.ai_configurations WHERE application_id=$1',[scope.applicationId])).rows[0].credential_ciphertext);const old=await cipher();
+  await service.configure(root,scope.applicationId,{...config,credential:undefined});expect(await cipher()).toBe(old);expect(await service.configuration(root,scope.applicationId)).toMatchObject({monthlyRequestLimit:3,monthlyEstimatedCostMicros:'100000'});
+  for(const extra of [{monthlyRequestLimit:'3'},{monthlyRequestLimit:-1},{monthlyEstimatedCostMicros:1,inputRateMicrosPerMillion:null,outputRateMicrosPerMillion:null},{unknownLimit:1}])expect((await api.dispatch({...request,method:'PUT',body:{...config,...extra}})).status).toBe(400);
+  expect((await api.dispatch({...request,authorization:'Bearer scoped-identity-placeholder',method:'PUT',body:config})).status).toBe(403);
+  await service.configure(root,scope.applicationId,{...config,credential:undefined,monthlyRequestLimit:null,monthlyEstimatedCostMicros:null,inputRateMicrosPerMillion:null,outputRateMicrosPerMillion:null});expect(await cipher()).toBe(old);expect(await service.configuration(root,scope.applicationId)).toMatchObject({monthlyRequestLimit:null,monthlyEstimatedCostMicros:null,inputRateMicrosPerMillion:null,outputRateMicrosPerMillion:null});
+ });
+ it('atomically enforces one monthly provider request across environments without duplicate dispatch',async()=>{
+  let release=()=>{},start=()=>{},calls=0;const waiting=new Promise<void>(resolve=>release=resolve),began=new Promise<void>(resolve=>start=resolve);
+  const {scope,service,config}=await fixture({analyze:async input=>{calls++;start();await waiting;return validProvider.analyze(input);}});await service.configure(root,scope.applicationId,{...config,monthlyRequestLimit:1});
+  const other={...scope,environmentId:(await registry.createEnvironment(root,scope.applicationId,{key:'second',kind:'TEST'})).id,tenantReference:'other-tenant'};expect((await ingestion.ingest({events:[event({...other,actorReference:'other-user'})]},{...other,actorReference:'other-user'})).acknowledgements[0].status).toBe('ACCEPTED');
+  const a=await service.request(root,scope,'DAILY',null,'request-cap-a'),b=await service.request(root,other,'DAILY',null,'request-cap-b');const jobs=await service.queue.claim(randomUUID(),50,['INVESTIGATE']),jobA=jobs.find(j=>j.dedupe_key===`ai:${a.id}`)!,jobB=jobs.find(j=>j.dedupe_key===`ai:${b.id}`)!;const first=service.execute(jobA);
+  try{await began;await service.execute(jobB);expect(calls).toBe(1);expect((await service.list(root,other))[0]).toMatchObject({status:'BUDGET_DENIED',failure_code:'AI_REQUEST_LIMIT_EXHAUSTED'});}finally{release();await first;}
+  expect(await service.execute(jobA)).toBe(false);expect(calls).toBe(1);expect((await service.usage(root,scope))[0].attempts).toBe(1);expect(await service.usage(root,other)).toEqual([]);
+ });
+ it('holds estimated cost atomically and settles the original rate snapshot after configuration changes',async()=>{
+  let release=()=>{},start=()=>{},calls=0;const waiting=new Promise<void>(resolve=>release=resolve),began=new Promise<void>(resolve=>start=resolve);
+  const {scope,service,config}=await fixture({analyze:async input=>{calls++;start();await waiting;return validProvider.analyze(input);}}),priced={...config,inputRateMicrosPerMillion:1000000,outputRateMicrosPerMillion:2000000,monthlyEstimatedCostMicros:1000000};await service.configure(root,scope.applicationId,priced);
+  const a=await service.request(root,scope,'DAILY',null,'cost-a'),b=await service.request(root,scope,'DAILY',null,'cost-b'),jobs=await service.queue.claim(randomUUID(),50,['INVESTIGATE']),jobA=jobs.find(j=>j.dedupe_key===`ai:${a.id}`)!,jobB=jobs.find(j=>j.dedupe_key===`ai:${b.id}`)!;const first=service.execute(jobA);
+  try{await began;const held=Number((await service.usage(root,scope))[0].held_estimated_cost_micros);expect(held).toBeGreaterThan(40);await service.configure(root,scope.applicationId,{...priced,monthlyEstimatedCostMicros:held,inputRateMicrosPerMillion:10000000,outputRateMicrosPerMillion:20000000});await service.execute(jobB);expect(calls).toBe(1);expect((await service.list(root,scope)).find(row=>row.id===b.id)).toMatchObject({failure_code:'AI_COST_LIMIT_EXHAUSTED'});}finally{release();await first;}
+  expect((await service.usage(root,scope))[0]).toMatchObject({estimated_settled_cost_micros:'40',held_estimated_cost_micros:'0',unpriced_attempts:0});
+ });
+ it('counts unknown retries and reconciles cost only from the immutable original snapshot',async()=>{
+  let calls=0;const {scope,service,config}=await fixture({analyze:async()=>{calls++;throw Error('Controlled uncertain provider');}}),priced={...config,monthlyRequestLimit:1,monthlyEstimatedCostMicros:1000000,inputRateMicrosPerMillion:1000000,outputRateMicrosPerMillion:2000000};await service.configure(root,scope.applicationId,priced);
+  const inv=await service.request(root,scope,'DAILY',null,'unknown-priced'),first=await claimed(service,inv.id);await service.execute(first);const held=(await service.usage(root,scope))[0];expect(Number(held.held_estimated_cost_micros)).toBeGreaterThan(0);expect(held.estimated_settled_cost_micros).toBe('0');
+  await database.worker(c=>c.query("UPDATE observability.jobs SET available_at=now()-interval '1 second' WHERE id=$1 AND status='PENDING'",[first.id]));await service.execute(await claimed(service,inv.id));expect(calls).toBe(1);expect((await service.list(root,scope))[0].failure_code).toBe('AI_REQUEST_LIMIT_EXHAUSTED');
+  await service.configure(root,scope.applicationId,{...priced,inputRateMicrosPerMillion:10000000,outputRateMicrosPerMillion:20000000});const attempt=(await service.unknownAttempts(root,scope))[0];await expect(service.reconcile(root,scope,attempt.id,{inputTokens:0,outputTokens:attempt.reserved_tokens,reason:'Controlled counters exceed the original held cost'})).rejects.toThrow('AI_RECONCILIATION_DENIED');await service.reconcile(root,scope,attempt.id,{inputTokens:20,outputTokens:10,reason:'Verified fixture provider counters for reconciliation'});expect((await service.usage(root,scope))[0]).toMatchObject({attempts:1,estimated_settled_cost_micros:'40',held_estimated_cost_micros:'0'});
+ });
+ it('fails closed on unpriced current-month history without fabricating zero cost or weakening tenant isolation',async()=>{
+  let calls=0;const {scope,service,config}=await fixture({analyze:async input=>{calls++;return validProvider.analyze(input);}});await service.configure(root,scope.applicationId,config);const a=await service.request(root,scope,'DAILY',null,'unpriced-old');await service.execute(await claimed(service,a.id));
+  await service.configure(root,scope.applicationId,{...config,monthlyEstimatedCostMicros:1000000,inputRateMicrosPerMillion:1000000,outputRateMicrosPerMillion:2000000});const b=await service.request(root,scope,'DAILY',null,'unpriced-denial');await service.execute(await claimed(service,b.id));expect(calls).toBe(1);expect((await service.list(root,scope)).find(row=>row.id===b.id)?.failure_code).toBe('AI_COST_ESTIMATE_UNAVAILABLE');expect((await service.usage(root,scope))[0]).toMatchObject({unpriced_attempts:1,estimated_settled_cost_micros:'0'});
+  const viewer=await registry.principal({issuer:'cost-tenant',subject:randomUUID(),displayName:'Other tenant'}),other={...scope,tenantReference:'other'};await registry.grant(root,{...other,targetPrincipalId:viewer,role:'VIEWER',reason:'Cost isolation fixture'});expect(await service.usage(viewer,other)).toEqual([]);await expect(service.usage(viewer,scope)).rejects.toThrow('OPERATIONAL_ACCESS_DENIED');
+  await service.configure(root,scope.applicationId,{...config,monthlyEstimatedCostMicros:null});const c=await service.request(root,scope,'DAILY',null,'unpriced-explicit-reset');await service.execute(await claimed(service,c.id));expect(calls).toBe(2);
+ });
+ it('charges each actual priced retry once and never refunds the request count after validation failure',async()=>{
+  let calls=0;const {scope,service,config}=await fixture({analyze:async input=>{calls++;const response=await validProvider.analyze(input);return calls===1?{...response,output:{summary:'Rejected fixture output',insufficientEvidence:false,hypotheses:[{explanation:'Foreign evidence',confidence:.5,evidence:[{kind:'EVENT',id:randomUUID()}]}],recommendedActions:[]}}:response;}});await service.configure(root,scope.applicationId,{...config,monthlyRequestLimit:2,monthlyEstimatedCostMicros:1000000,inputRateMicrosPerMillion:1000000,outputRateMicrosPerMillion:2000000});
+  const inv=await service.request(root,scope,'DAILY',null,'priced-retry');const first=await claimed(service,inv.id);await service.execute(first);expect((await service.usage(root,scope))[0]).toMatchObject({attempts:1,estimated_settled_cost_micros:'40'});
+  await database.worker(c=>c.query("UPDATE observability.jobs SET available_at=now()-interval '1 second' WHERE id=$1 AND status='PENDING'",[first.id]));await service.execute(await claimed(service,inv.id));expect(calls).toBe(2);expect((await service.list(root,scope))[0].status).toBe('SUCCEEDED');expect((await service.usage(root,scope))[0]).toMatchObject({attempts:2,estimated_settled_cost_micros:'80',held_estimated_cost_micros:'0'});
+  expect(await service.request(root,scope,'DAILY',null,'priced-retry')).toEqual({id:inv.id,idempotent:true});const denied=await service.request(root,scope,'DAILY',null,'priced-third');await service.execute(await claimed(service,denied.id));expect(calls).toBe(2);expect((await service.list(root,scope)).find(row=>row.id===denied.id)?.failure_code).toBe('AI_REQUEST_LIMIT_EXHAUSTED');
+ });
+ it('holds priced usage unknown when provider input counts exceed the reserved input bound despite fitting the combined total',async()=>{
+  const {scope,service,config}=await fixture({analyze:async input=>({...await validProvider.analyze(input),inputTokens:Buffer.byteLength(input.system+input.evidence,'utf8')+513,outputTokens:0})});await service.configure(root,scope.applicationId,{...config,inputRateMicrosPerMillion:2000000,outputRateMicrosPerMillion:1000000,monthlyEstimatedCostMicros:1000000});const inv=await service.request(root,scope,'DAILY',null,'invalid-priced-counts');await service.execute(await claimed(service,inv.id));expect((await service.list(root,scope))[0].status).toBe('SUCCEEDED');const unknown=await service.unknownAttempts(root,scope);expect(unknown).toHaveLength(1);const usage=(await service.usage(root,scope))[0];expect(usage.estimated_settled_cost_micros).toBe('0');expect(Number(usage.held_estimated_cost_micros)).toBeGreaterThan(0);
+ });
+ it('keeps monthly ceilings UTC-based in a non-UTC connection and excludes prior-month unknown unpriced history',async()=>{
+  const {scope,service,config}=await fixture(validProvider);await service.configure(root,scope.applicationId,{...config,monthlyRequestLimit:1,monthlyEstimatedCostMicros:1000000,inputRateMicrosPerMillion:1000000,outputRateMicrosPerMillion:2000000});const historical=await service.request(root,scope,'DAILY',null,'previous-month');
+  await database.worker(c=>c.query("INSERT INTO observability.ai_attempts(application_id,environment_id,tenant_reference,investigation_id,attempt,period_start,reserved_tokens,provider_code,model,status,outcome,settled_at) VALUES($1,$2,$3,$4,1,(date_trunc('month',now() AT TIME ZONE 'UTC')-interval '1 month') AT TIME ZONE 'UTC',100000,'FIXTURE','legacy','UNKNOWN','HISTORICAL_FIXTURE',now())",[scope.applicationId,scope.environmentId,scope.tenantReference,historical.id]));await service.queue.complete(await claimed(service,historical.id));
+  const timezoneConnection=connectionString?(()=>{const url=new URL(connectionString);url.pathname=`/${databaseName}`;return{connectionString:url.toString()};})():{...connection,database:databaseName};const nonUtc=new HubDatabase({...timezoneConnection,options:'-c timezone=Asia/Tehran',max:1});
+  try{const timed=new InvestigatorService(nonUtc,new RegistryService(nonUtc),vault,validProvider,policy);const current=await timed.request(root,scope,'DAILY',null,'utc-current');await timed.execute(await claimed(timed,current.id));expect((await timed.list(root,scope)).find(row=>row.id===current.id)?.status).toBe('SUCCEEDED');const row=await nonUtc.worker(async c=>(await c.query("SELECT period_start=(date_trunc('month',now() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC') utc_month,extract(hour FROM period_start AT TIME ZONE 'UTC')::int utc_hour,estimated_cost_micros FROM observability.ai_attempts WHERE investigation_id=$1",[current.id])).rows[0]);expect(row).toEqual({utc_month:true,utc_hour:0,estimated_cost_micros:'40'});const usage=await timed.usage(root,scope);expect(usage[0]).toMatchObject({attempts:1,unpriced_attempts:0,estimated_settled_cost_micros:'40'});expect(usage[1].unpriced_attempts).toBe(1);}finally{await nonUtc.close();}
  });
  it('redacts technical evidence and persists one result under duplicate execution',async()=>{
   let calls=0;const {scope,service,config}=await fixture({analyze:async input=>{calls++;expect(input.evidence).not.toContain('acceptance-only-value');expect(input.system).toContain('UNTRUSTED');return validProvider.analyze(input);}});
@@ -760,17 +836,23 @@ describe('Hub registry/auth/atomic storage and real PostgreSQL isolation',()=>{
       // Legacy migration 001 creates a cluster-wide role unconditionally.
       // Substitute only that identifier for this isolated rehearsal so the
       // existing business runtime role is neither dropped nor modified.
-      let legacyApplication:string|undefined;
+      let legacyApplication:string|undefined,legacyAttempt:string|undefined;
       for(const file of files){
        if(file==='071_observability_critical_rule.sql'){
         legacyApplication=(await client.query<{id:string}>("INSERT INTO observability.applications(slug,name) VALUES('migration-critical-fixture','Migration acceptance') RETURNING id")).rows[0].id;
         await client.query("INSERT INTO observability.monitoring_rules(application_id,code,threshold,minimum_samples,enabled) VALUES($1,'ERROR_BURST',17,9,false)",[legacyApplication]);
        }
+       if(file==='073_observability_ai_operational_limits.sql'){
+        const env=(await client.query<{id:string}>("INSERT INTO observability.environments(application_id,key,kind) VALUES($1,'legacy-ai','TEST') RETURNING id",[legacyApplication])).rows[0].id;
+        const inv=(await client.query<{id:string}>("INSERT INTO observability.investigations(application_id,environment_id,kind,idempotency_key,status) VALUES($1,$2,'DAILY','legacy-unpriced','SUCCEEDED') RETURNING id",[legacyApplication,env])).rows[0].id;
+        legacyAttempt=(await client.query<{id:string}>("INSERT INTO observability.ai_attempts(application_id,environment_id,investigation_id,attempt,period_start,reserved_tokens,provider_code,model,status,input_tokens,output_tokens,settled_at) VALUES($1,$2,$3,1,date_trunc('month',now()),100,'FIXTURE','historical','SETTLED',20,10,now()) RETURNING id",[legacyApplication,env,inv])).rows[0].id;
+       }
        const sql=(await readFile(new URL(file,directory),'utf8')).replace(/\bjupiter_app\b/g,role);await client.query('BEGIN');try{await client.query(sql);await client.query('COMMIT');}catch(error){await client.query('ROLLBACK');throw error;}
       }
       const migrated=(await client.query('SELECT code,threshold,minimum_samples,enabled FROM observability.monitoring_rules WHERE application_id=$1 ORDER BY code',[legacyApplication])).rows;
       expect(migrated).toEqual([{code:'CRITICAL_EVENT',threshold:1,minimum_samples:1,enabled:true},{code:'ERROR_BURST',threshold:17,minimum_samples:9,enabled:false}]);
-      expect(files.at(-1)).toBe('072_observability_self_metrics.sql');expect(files.length).toBe(83);
+      expect(files.at(-1)).toBe('073_observability_ai_operational_limits.sql');expect(files.length).toBe(84);
+      expect((await client.query('SELECT status,input_tokens,output_tokens,input_rate_micros_per_million,output_rate_micros_per_million,reserved_cost_micros,estimated_cost_micros FROM observability.ai_attempts WHERE id=$1',[legacyAttempt])).rows[0]).toEqual({status:'SETTLED',input_tokens:20,output_tokens:10,input_rate_micros_per_million:null,output_rate_micros_per_million:null,reserved_cost_micros:null,estimated_cost_micros:null});
       expect((await client.query("SELECT count(*)::int total FROM information_schema.tables WHERE table_schema='observability'")).rows[0].total).toBe(27);
     }finally{await client.end();await admin.query('SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname=$1 AND pid<>pg_backend_pid()',[name]);await admin.query(`DROP DATABASE "${name}"`);if((await admin.query('SELECT 1 FROM pg_roles WHERE rolname=$1',[role])).rowCount)await admin.query(`DROP ROLE "${role}"`);}
   },30_000);

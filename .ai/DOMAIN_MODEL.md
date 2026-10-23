@@ -132,6 +132,13 @@ account-scoped source port rather than creating a business-ticket notification.
 
 ## Operational Investigator (GOAL-069)
 
+DEC-062 adds nullable monthly_request_limit/monthly_estimated_cost_micros and
+paired explicit input/output per-million micro-USD rates to existing App config.
+Attempt ledger adds immutable paired rate/reserved-cost snapshots plus a derived
+estimated_cost_micros settlement, with exact arithmetic/terminal constraints.
+Legacy attempts stay unpriced (null), never backfilled/revalued. No new entity,
+customer commercial relation, invoice or actual provider charge is introduced.
+
 Hub Application configuration owns encrypted provider credential, enablement,
 external-processing policy and combined monthly token budget. An Investigation
 is Application/environment/concrete-tenant scoped with kind, safe target,

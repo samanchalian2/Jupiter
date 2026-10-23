@@ -23,6 +23,20 @@
 
 ## Investigator operational configuration (DEC-059)
 
+- DEC-062 optional monthly request/cost caps: omission preserves, null removes,
+  zero is explicit. Every persisted provider-dispatch attempt, including retries
+  and UNKNOWN, counts once in its original UTC month across the whole App.
+- Cost is an estimate in USD micro-units; both explicit per-million input/output
+  rates required for a cap. Exact upward-rounded integer arithmetic/snapshot
+  rates govern reservation/settlement/reconciliation. No guessed price or refund
+  of request count; UNKNOWN cost/token holds persist. Unpriced current-month
+  non-released history denies new cost-capped dispatch, not an assumed zero.
+- Provider input counters beyond the conservative input bound remain UNKNOWN,
+  even if they fit combined input+output; reconciliation cannot exceed held cost.
+  Priced settlement math is also DB-constrained. Shared customer allowances,
+  manual tickets and ingestion are unchanged. Scoped cost sums are incomplete
+  whenever unpriced_attempts>0; they are never an invoice.
+
 - Same per-App policy governs all environments/tenants; scope selection never
   creates extra budget. Output128–4096,context2048–32768 bytes,concurrency1–4,
   periodic review300–86400 seconds; existing defaults1024/16000/1/300 preserved.
