@@ -13,6 +13,7 @@ import {CommandContext} from './command-context.js';
 import {IssueExplorerControls,initialIssueSelection,issueQuery,withoutIssueOrdering,type IssueGroup} from './IssueExplorerControls.js';
 import {incidentRoute,incidentHref,type IncidentRoute} from './incident-route.js';
 import {IncidentWorkspace} from './IncidentWorkspace.js';
+import {IncidentImpact} from './IncidentImpact.js';
 export { initialFilters, result, scopeQuery, type OperationsClient, type Filters } from './client.js';
 type Row = Record<string, unknown>;
 type Application = { id: string; name: string; slug: string; enabled: boolean };
@@ -25,7 +26,7 @@ Object.assign(labels,{critical_issues:'خطاهای بحرانی فعال',obser
 Object.assign(labels,{name:'نام برنامه',slug:'شناسهٔ مسیر',enabled:'وضعیت'});
 Object.assign(labels,{affected_releases:'نسخه‌های متأثر؛ شاهدهای نگه‌داری‌شده'});
 function text(value: unknown): string { if (value === null || value === undefined) return '—'; return typeof value === 'object' ? JSON.stringify(value) : String(value); }
-function DataFields({ row }: { row: Row }) { return <dl className="obs-fields">{Object.entries(row).filter(([,value]) => !Array.isArray(value)).map(([key,value]) => <div key={key}><dt>{labels[key] ?? key}</dt><dd dir="auto">{text(value)}</dd></div>)}</dl>; }
+function DataFields({ row }: { row: Row }) { return <dl className="obs-fields">{Object.entries(row).filter(([key,value]) => key!=='observed_impact'&&!Array.isArray(value)).map(([key,value]) => <div key={key}><dt>{labels[key] ?? key}</dt><dd dir="auto">{text(value)}</dd></div>)}</dl>; }
 function DataTable({ rows, open, label, compact=false,className='' }: { rows: Row[]; open?: (row: Row) => void;label?:string;compact?:boolean;className?:string }) {
   if (!rows.length) return <p className="obs-empty">داده‌ای برای این محدوده وجود ندارد.</p>;
   const columns = Object.keys(rows[0]).filter(key => !['id','tenant_reference','assigned_principal_id','issue_id','incident_id'].includes(key));
@@ -113,6 +114,7 @@ function ConsoleHome({client,initialSection,initialScope}:{client:OperationsClie
       {resource==='events'&&<CorrelationPanel client={client} scope={{applicationId,environmentId,tenantReference:typeof detail.tenant_reference==='string'?detail.tenant_reference:null}} seedEventId={String(detail.id)}/>}
       <header><h2>{text(detail.title??detail.subject??'جزئیات رویداد')}</h2><button className="secondary" onClick={()=>{detailGeneration.current++;setDetail(null);setBusy(false);setNotice('');}}>بستن</button></header>
       <DataFields row={detail}/>
+      {resource==='issues'&&<IncidentImpact kind="ISSUE" impact={detail.observed_impact&&typeof detail.observed_impact==='object'?detail.observed_impact as Row:{}}/>}
       {resource==='issues'&&<p className="hint">نسخه‌های متأثر از رویدادهای مرتبطِ هنوز نگه‌داری‌شده‌اند؛ حداکثر ۱۰۰ نسخه. نسخهٔ نامشخص با — نمایش داده می‌شود. تعداد، رویدادهای مشاهده‌شده است؛ علت قطعی خطا یا تاریخ استقرار نیست.</p>}
       {Object.entries(detail).filter(([,value])=>Array.isArray(value)).map(([key,value])=><section key={key}><h3>{({affected_releases:'نسخه‌های متأثر؛ شاهدهای نگه‌داری‌شده',events:'تاریخچهٔ رویدادها',activity:'تاریخچهٔ انسانی',replies:'پاسخ‌ها',feedback:'بازخورد مرتبط',issues:'خطاهای مرتبط',ai_findings:'یافته‌های AI؛ مستقل از تصمیم انسانی'} as Record<string,string>)[key]??key}</h3><DataTable rows={value as Row[]}/></section>)}
       {resource!=='events'&&<form className="obs-command" onSubmit={event=>void mutate(event)}>

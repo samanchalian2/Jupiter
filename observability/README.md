@@ -3,6 +3,10 @@
 Product-independent packages and PostgreSQL server adapters for GOAL-069.
 Implementation is IN PROGRESS; no complete platform claim is made.
 
+The [contract/SDK versioning policy](VERSIONING.md) distinguishes Event1.1
+(compatible1.0), HTTPv1, OpenAPI1.1.0 and private package0.1.0 versions, additive
+evolution, SemVer/breaking changes and forward-only migration/release checks.
+
 ## Optional operational AI ceilings
 
 The existing whole-App ADMIN AI configuration supports nullable

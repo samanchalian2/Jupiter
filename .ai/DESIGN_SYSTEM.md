@@ -324,6 +324,13 @@ remain in the release gate.
 
 ## Do / don't
 
+Observed impact panels use the existing compact semantic field grid and neutral
+surface, without extra decorative cards or new palette. Label lifetime Issue
+statistics, live retained observations and Incident rule-time snapshots separately.
+UTC timestamps stay LTR within RTL; long explicit feature codes wrap. Unknown is
+—, not0; zero observed evidence never means healthy. No automatic priority-score
+decoration or model-generated business-state treatment is introduced.
+
 The Hub Help adapter uses existing compact HelpTrigger/neutral surface tokens,
 44px minimum targets and a bounded plaintext reader. Position the reader within
 the viewport at desktop and mobile widths; document scrollWidth alone cannot

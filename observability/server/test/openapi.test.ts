@@ -8,6 +8,10 @@ import {randomUUID} from 'node:crypto';
 import {jsonSchema} from './openapi-schema.js';
 
 describe('public language-neutral OpenAPI',()=>{
+ it('documents complete retained Issue impact and never a cross-product count',()=>{
+  const ajv=new Ajv({strict:false});formats(ajv);const check=ajv.compile(jsonSchema(openApiDocument.components.schemas.IssueImpact) as object),sample={basis:'RETAINED_LINKED_EVENTS',occurrences:123,affectedUsers:2,affectedTenants:1,affectedApplications:1,tenantFreeEvents:0,affectedFeatureCount:1,affectedFeatures:['feature'],unknownFeatureEvents:0,observedFirstAt:'2026-10-01T00:00:00Z',observedLastAt:'2026-10-31T00:00:00Z',observedDurationMs:2592000000};expect(check(sample),JSON.stringify(check.errors)).toBe(true);
+  for(const invalid of [{...sample,affectedApplications:2},{...sample,basis:'LIFETIME'},{...sample,affectedFeatures:Array(21).fill('feature')},{...sample,observedFirstAt:'invalid'}])expect(check(invalid)).toBe(false);
+ });
  it('documents additive bounded observed Incident impact while preserving legacy unknowns',()=>{
   const validate=new Ajv({strict:false});formats(validate);const check=validate.compile(jsonSchema(openApiDocument.components.schemas.IncidentImpact) as object);
   expect(check({occurrences:4,affectedUsers:2,windowSeconds:60})).toBe(true);expect(check({})).toBe(true);

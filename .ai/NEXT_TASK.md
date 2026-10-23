@@ -4,7 +4,7 @@
 
 The entire approved objective remains active. Source of truth:
 `docs/GOAL_069_SPECIFICATION.md` (all sections and A–I Definition of Done),
-`docs/GOAL_069_EVIDENCE.md`, current state and DEC-038 through DEC-063.
+`docs/GOAL_069_EVIDENCE.md`, current state and DEC-038 through DEC-065.
 Historical GOAL-060 Personal Service is not renamed. Do not start another Goal.
 
 ### Latest implementation boundary
@@ -25,6 +25,36 @@ measurements and the performance flag enabled. Inspect
 latest Evidence for gates/runtime/remote commit.
 
 ### Remaining work — preserve the full original scope
+
+LATEST21037 TERMINATED0,508 full tests/all gates/BOTH fault scripts pass; no live
+local exec. Flagged real Python/C# follow-up82692 terminal0 + fresh C# build0/0
+closes missing reference-client branch separately (do NOT double-count508).
+Runtime Help concepts3/severity3/Console9, fresh375/1440 images and cleanup84/
+zero temp DB/zero attempts/enabled100000/optional-null verified. Scoped commit/
+push/current CI next. Then A15 actual HTTPS handler trusted cert/negative chain
+verification + stale OpenAPI description (no deployment), remaining66–73/A–I/
+all47 final audit. Original objective unchanged, no new Goal.
+
+ACTIVE21037 final-source gate, output/goal069-issue-impact-release.log; poll same
+handle, no concurrent runtime edits/builds. After terminal success MUST run actual
+C# build + targeted real HTTP parity with OBSERVABILITY_REFERENCE_CLIENTS=true,
+OBSERVABILITY_PYTHON=C:/Users/s.chalian/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/python.exe.
+Recent505/current commands omitted those flags; conditional branch is NOT a
+Vitest skip, so prior all-reference-in-full-gate claim corrected in Evidence.
+Then new artifacts/Help/cleanup/scoped delivery; no duplicate test count.
+
+LATEST DEC-065:A14 implemented with red→green123-row SQL/HTTP/deletion/scope test,
+Console38/OpenAPI7/typechecks and native9 focused passes. Prior941d1ff actual CI
+40019657321 SUCCESS. Run final-source full gate + both scripts, inspect new Issue
+impact375/1440 artifacts, slug-only publish concepts/severity/console Help,
+verify cleanup/local policy, scoped commit/push/current CI. No exec pending.
+Then continue original44–73/A–I/all47 audit, not a new Goal or host promotion.
+
+DELIVERY HANDOFF:941d1ffa94581c3ff666500bf0db0956027acdc5 pushed/remote verified.
+Actual CI40019657321 confirmed in_progress; poll exact public GitHub run (native
+GitHub tool currently unavailable; read-only REST GET works). No local exec.
+After CI result, implement A14 via ADR/red regression/scoped projection/native/
+full QC and continue44–73/A–I/all47 audit.505 gate is not whole-Goal completion.
 
 LATEST:98541 TERMINATED0,505 full tests/all gates/BOTH isolation scripts pass.
 DEC-064 runtime unchanged afterward; runtime Incident Helpv5 published/read;

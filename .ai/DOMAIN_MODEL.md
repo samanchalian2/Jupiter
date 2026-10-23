@@ -1,5 +1,11 @@
 # Domain Model
 
+DEC-065 adds Issue detail observed_impact, a read-only retained-link cohort with
+counts/users/tenants/Applications0–1, tenant-free/feature counts/list<=20 and UTC
+first-last/span. basis=RETAINED_LINKED_EVENTS; no entity/migration/persisted counter
+change. Existing lifetime occurrence/first-last and rule-time Incident snapshots
+remain distinct. Whole retained cohort is not the100 displayed Event rows.
+
 DEC-064 extends only the existing immutable-at-detection Incident impact JSON
 snapshot: exact Issue/App/environment/tenant retained window counts, distinct
 non-null tenants/tenant-free events, explicit string feature count/list<=20,

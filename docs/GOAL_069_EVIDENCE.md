@@ -4,7 +4,73 @@ Status: IN PROGRESS. Owner-approved plan supersedes the stale GOAL-060 identifie
 in the supplied specification. GOAL-060 Personal Service history is preserved.
 GOAL-059 remains BLOCKED; LOCAL evidence is not staging acceptance.
 
+## 2026-10-24 — DEC-065 retained Issue impact (LOCAL, in progress)
+
+Final-source21037 TERMINATED0, output/goal069-issue-impact-release.log ends
+GOAL069_ISSUE_IMPACT_RELEASE_EXIT=0:508 tests(180API/40Web/288Hub), all builds/
+lint/typechecks/migration/native/performance/actual compiled host+Web and BOTH
+fault scripts pass. Fresh Issue-impact375/1440 artifacts inspected: readable
+whole-cohort counts/UTC/no serialized JSON/no document overflow. External-client
+branch was not enabled INSIDE that serial run; the explicit follow-up below
+closes current-source client verification without changing/double-counting508.
+
+After gate, test-only external-client PASS/NOT_EXECUTED reporting added (no
+runtime change). Actual C# --no-restore Release build0 warnings/0 errors;
+explicit OBSERVABILITY_REFERENCE_CLIENTS=true and verified bundled Python ran
+the complete61-operation HTTP contract test (82692 TERMINATED0,1 pass/112
+intentional skips). output/goal069-issue-impact-reference.log records the actual
+Python/C# child-process PASS: lost-ACK retry/DUPLICATE/exactly one persisted row
+each, invalid credentials denied and no redirect followed. No provider/real key
+passed to children. This is separate actual execution, not an inference from508.
+
+Supported actor/slug-only LOCAL Help publication revised concepts v3, severity
+v3 and Console v9; all three normal public-service readbacks validate retained
+impact/100-row distinction/not-downtime/feature bound. Existing Incidentv5 left
+unchanged. Cleanup84 migrations/zero temporary databases/zero active attempts/
+enabled100000 and optional-null-policy-preserved true; owned3000/5174 absent.
+No runtime source edits after gate; source/Help/compatibility docs and test-only
+reporting included. Scoped delivery/current CI still pending. A15 HTTPS verified
+handshake/stale OpenAPI description and sections66–73/A–I/all47 final disposition
+remain open. No preview/main deployment or next Goal.
+
+Release-command audit correction: the recent505 and current21037 serial commands
+explicitly enabled Browser/performance, but omitted OBSERVABILITY_REFERENCE_CLIENTS
+and OBSERVABILITY_PYTHON. The external Python/C# branch is conditional INSIDE a
+passing HTTP-contract test, not a Vitest skip; therefore test count/no-skips does
+NOT prove those clients re-executed. Older explicit reference-client checkpoint
+remains historical, but recent 'reference clients in full gate' wording is too
+broad. After21037 terminates, rebuild actual C# example and rerun exact HTTP-
+contract test with both explicit flags/verified Python path; record it separately,
+do not inflate full-suite test count or waive this current-source check.
+
+Actual prior941d1ff CI40019657321 completed SUCCESS, exact head SHA verified.
+A14 section31 source gap reproduced: new >100-event test fails observed_impact
+undefined in output/goal069-issue-impact-red.log. New scoped read projection
+aggregates whole retained Issue/App/env/tenant cohort, not100 displayed Events;
+adds counts/unique users/tenants/Applications0–1/tenant-free/features<=20/unknown
+and UTC first-last/span, preserving lifetime counters and Incident snapshot.
+No entity/migration/business/AI/provider/auth contract or privilege change.
+
+Green focused SQL test proves123 occurrences/2 users despite100 displayed rows,
+24 features/list20, foreign-tenant exclusion, tenant-free bool-feature unknown,
+real HTTP VIEWER/revocation denial and fixture-only deletion23 then100 Events:
+observed123→100→0 with lifetime123 unchanged and null times for empty evidence.
+Console38/OpenAPI7 and typechecks pass. Native log
+output/goal069-issue-impact-native.log TERMINATED0:9 focused tests/111 deliberately
+skipped, includes real reusable Explorer readable counts/feature/UTC/no JSON dump,
+all four widths RTL/no document overflow, existing sort/group/current-grant/
+human-action/late-response and offline/reference flows. Additional focused
+artifact capture added AFTER this pass, to run with final gate. Help sources
+concepts/severity/Console updated; stale advice to change Incident severity and
+implied multiple-Issue relation corrected to actual UI/model. Runtime publication,
+full final-source gate/artifact inspection/cleanup/scoped delivery still pending.
+
 ## 2026-10-23 — DEC-064 observed Incident impact (LOCAL, in progress)
+
+Scoped delivery941d1ffa94581c3ff666500bf0db0956027acdc5 pushed and origin/main
+exact SHA verified. Actual push CI40019657321 confirmed in_progress; no remote
+success claim yet. No local test process remains. User gateway/training edits
+and output/tmp preserved unstaged; no target-host deployment.
 
 Final-source serial98541 TERMINATED0. Full output/goal069-incident-impact-release.log
 ends GOAL069_INCIDENT_IMPACT_RELEASE_EXIT=0:505 tests (180API/40Web/285Hub), all
@@ -2732,7 +2798,11 @@ Path abbreviations: O = `observability/`; A = `apps/api/`; W = `apps/web/`.
 S = `O/server/test/persistence.integration.test.ts` (actual PostgreSQL/HTTP);
 B = `O/server/test/browser-acceptance.ts` plus `offline-browser-acceptance.ts`;
 G = executed full `pnpm verify:release` with Browser/reference/performance flags.
-The latest executed G=423 tests, with the zero-exit actual-Web checkpoint above.
+Latest COMPLETED G=508 tests for DEC-065,21037 TERMINATED0 including actual
+compiled host/Web and both fault scripts. Explicit real Python/C# follow-up82692
+also passed separately; serial run omitted that conditional flag, so never infer
+it from a no-skips count. Historical505/941d1ff remains its own checkpoint.
+Remaining older row counts are dated to their named gate, not extra test totals.
 References to G below identify executed coverage, not tests merely present.
 
 | Required section | Implementation path | Tests executed | Actual result | Limitations / remaining proof |
@@ -2740,16 +2810,16 @@ References to G below identify executed coverage, not tests merely present.
 | 1. Initial Architecture Inventory | Architecture inventory table in this document; `.ai/DECISIONS.md` DEC-038 | Repo/package/worker inventory in Phase A | Existing modular host/pg queue and extraction boundary documented | Inventory alone proves no runtime behavior |
 | 2. Product-Agnostic Architecture | O/packages; O/server; Jupiter adapters in A/src/observability | G builds plus independent Browser/Python/C# execution | Generic consumers run without Jupiter user/ticket imports | Final requirement audit must still inspect every boundary |
 | 3. Package Boundaries | Six O/packages package.json/src trees | G package builds/typechecks/tests | Contracts/core/SDK/adapters build independently | No new public release/package registry publication claimed |
-| 4. Application Registry | O/server/src/registry.ts; W/src/PlatformPro.tsx | S registry/bootstrap/grants/revocation; B registry workflow | Scoped App/environment registration and current grants enforced | Full authenticated Jupiter admin workflow breadth remains |
+| 4. Application Registry | O/server/src/registry.ts; O/console/src Registry/Policy/Access controls; host adapter | S actual61-operation traversal/bootstrap/grants; B real Registry forms | Same-ID lifecycle, effective policy, one-time credentials and actor Audit pass | Generic controls plus actual Jupiter host; no customer IdP deployment claim |
 | 5. Event Contract | O/packages/contracts/src/index.ts | contracts contract.test.ts; S strict HTTP validation | Schema/version/field/scope constraints and safe reason codes tested | No arbitrary payload extension approved |
-| 6. OpenAPI | O/server/src/openapi.ts, http-api.ts | openapi.test.ts; S every documented operation over HTTP | 48 operations have actual request/response parity checks | Future routes must extend parity; no external SDK generation claim |
+| 6. OpenAPI | O/server/src/openapi.ts, http-api.ts | OpenAPI7 in G508; S every operation HTTP; flagged actual client follow-up | 61 operations have real request/response parity; additive observed impact contracts validated | A15 stale administration description still open; no generated external SDK claim |
 | 7. SDK Authentication Model | O/server/src/registry.ts; A/src/observability/hub-binding.service.ts | S expired/revoked/forged scope; B host session/mint/logout | Separate trusted-server, Browser and operational identities tested | Reference login is not Jupiter password-login acceptance |
-| 8. Database Model | A/migrations/063–072 observability migrations; O/server/src/database.ts | S RLS/FK/runtime immutability | Dedicated schema/roles and composite scopes operate in SQL | Shared logical row size is not physical disk isolation |
-| 9. Migrations | A/migrations, existing forward runner | S full clean-database rehearsal (83 files) | Forward chain runs; disposable DB/role removed | No preview/main or staging migration deployment here |
+| 8. Database Model | A/migrations/063–073; O/server/src/database.ts | S RLS/FK/immutability;073 legacy unpriced preservation | Dedicated roles/composite scopes and immutable rate/cost snapshots | Logical row bytes are not physical disk isolation |
+| 9. Migrations | A/migrations, supported forward runner | S clean84-migration rehearsal; actual compiled host observes84 | Forward chain passes; disposable DB/role removed;073 applied locally | No preview/main/staging migration deployment here |
 | 10. Tenant and Application Isolation | O/server/src/database.ts, registry.ts, http-api.ts | S cross-tenant/App/actor/current-grant SQL/HTTP denials | Scope checks and RLS deny unauthorized access | Final authenticated host roles audit remains |
-| 11. Frontend SDK | O/packages/browser-sdk/src/index.ts | 36 SDK tests; B real browser/network/quota; G | Bounded queue, ACK/replay/context/lifecycle validated | Memory fallback is not durable after page loss |
+| 11. Frontend SDK | O/packages/browser-sdk/src/index.ts | 47 SDK tests; B native quota/TTL/named recovery; G | Bounded queue/ACK/replay/context/lifecycle/configured retention verified | Memory fallback not durable after page loss |
 | 12. React Adapter | O/packages/react-adapter/src/index.tsx | Five tests in G421 and sixteen mounted Edge cases | Startup/capture/cleanup fault containment and reset pass focused/full QC | Not authenticated whole shell or SQL-event acceptance |
-| 13. Backend SDK | O/packages/node-sdk/src/index.ts | 12 Node tests; actual queued outage integration; G | Bounded async capture, real 10s timer failure/recovery, no business retry | In-memory Node queue is not a durable outbox |
+| 13. Backend SDK | O/packages/node-sdk/src/index.ts | 13 Node tests; real queued outage integration; G | Bounded async/byte batches, real10s timer recovery, no business retry | In-memory Node queue not a durable outbox |
 | 14. NestJS Adapter | O/packages/nestjs-adapter/src/index.ts | Nine adapter tests; actual controller HTTP; actual-main and authenticated Web tests in G423 | Original response/error preserved; actual main/AppModule/interceptor executes with real JWT and Browser client | Not arbitrary domain workflow coverage |
 | 15. .NET/Python Integration Examples | O/examples/csharp; O/examples/python | S reference-client flag launches real external processes | Actual JSON/HTTPS-contract clients ingest/replay against fixture | Loopback/local acceptance, not installed customer deployment |
 | 16. Offline IndexedDB | O/packages/browser-sdk/src/storage.ts | B native IndexedDB/real network/reload/QuotaExceededError | Journal persists offline, same IDs replay after reconnect | Offline static HTML/PWA availability not promised |
@@ -2758,15 +2828,15 @@ References to G below identify executed coverage, not tests merely present.
 | 19. Distributed Correlation | core trace helpers; A/src/observability/hub.interceptor.ts; W/src/JupiterObservability.tsx | Nest/Node/Web tests; B; actual-main and actual-Web host tests | Actual Browser→API manual-write BROWSER/SERVER records share outbound request/trace/verified tenant/actor | No blanket claim for every domain/provider distributed trace |
 | 20. Ingestion Reliability | O/server/src/ingestion.ts, queue.ts, http-api.ts | S concurrent/partial ACK/failed persistence/lease recovery | Atomic receipt/event/outbox and bounded retryable failure work | LOCAL pg fixture, not multi-host outage endurance |
 | 21. Fingerprinting | O/packages/core/src/index.ts; O/server/src/engine.ts | core fingerprint tests; S grouping/recurrence | Stable scope-aware grouping and distinct affected identities | Not a semantic AI deduplication system |
-| 22. Issue Engine | O/server/src/engine.ts | S real aggregation/reopen/atomic job completion | Persisted issue occurrences and histories reflect committed events | No blanket host capture coverage from engine tests |
-| 23. Incident Lifecycle | O/server/src/operations.ts, rules.ts | S authorized notes/assignment/transitions; B workspace | Human transitions and scoped incident operations tested | Final complete authenticated host review remains |
+| 22. Issue Engine | O/server/src/engine.ts/operations.ts | S aggregation/reopen/atomic completion; DEC-065123-row/deletion/HTTP/native in G508 | Lifetime state preserved; retained projection proves123 vs100 displayed/2 users/24 features bounded20 | Retained cohort not complete historical population or cross-App union |
+| 23. Incident Lifecycle | O/server/src/operations.ts/rules.ts; IncidentWorkspace | S scoped human actions/Audit; B independent and actual Jupiter standalone/embedded route | Current grants/human changes/navigation/read-only AI/DEC-064 impact pass G505 | Rule-time observations not downtime/unlimited history/model-driven state |
 | 24. Monitoring Rules | O/server/src/rules.ts | S ten actual persisted rule scenarios plus expected-rejection negatives | Rules create deduped scoped incidents/alerts; Browser CRITICAL not trusted | Controlled local event windows, not production incident SLO |
-| 25. Operations Dashboard | O/console/src; W/src/OperationsWorkspace.tsx | B four widths/live/filter/workflow; G Console tests | Shared Console RTL and scoped server projections operate | Full Jupiter role/mutation UI acceptance incomplete |
+| 25. Operations Dashboard | O/console/src; W/src/OperationsWorkspace.tsx | B required sections/management/four widths/current grants; actual Jupiter host; Console38 in G508 | Real HTTP/native Overview/live/Issue/Incident/analytics/Registry/AI/maintenance/impact evidence | No unrelated product-workflow blanket claim; final all-requirement verdict still open |
 | 26. Feedback | O/server/src/feedback.ts; W/src/FeedbackCenter.tsx | S own visibility/replies/triage; B offline/lost ACK; Help browser checkpoint | Own tracking, same-ID dedupe and internal-reply exclusion proven | Server tracking ACK, not local enqueue, is final registration |
 | 27. Analytics | O/server/src/operations.ts; O/console/src | S ten reports/1–10 products/current grants; B cache/late response | Real rates/rankings/history and explicit multi-product comparison | Timing uses one loaded App + empty App, not production SLO |
 | 28. AI Investigator | O/server/src/investigator.ts, ai-provider.ts | S controlled findings/scheduling; dated local GapGPT checkpoint | Schema-valid read-only findings cite authorized evidence | No external provider call in current regression gate |
 | 29. AI Security | O/server/src/investigator.ts, ai-provider.ts | S injection/citation/scope/credential policy; provider tests | Curated context, validation, explicit host policy; no tools/business writes | Model findings remain hypotheses requiring human review |
-| 30. AI Budget | O/server/src/investigator.ts; scoped ai_attempts/ledger | S atomic reserve/unknown/reconciliation/budget; local status check | Approved 100000 combined UTC-month budget enabled; unknown usage held | No fabricated actual usage or commercial allowance coupling |
+| 30. AI Budget | O/server/src/investigator.ts/operational-cost.ts; config/ledger073 | S atomic UTC tokens/request/cost/concurrency/retry/UNKNOWN/snapshot/reconciliation/legacy; native save/reset/zero dispatch | Approved100000 combined monthly tokens enabled; optional caps/rates null; unknown holds preserved | No guessed model price/invoice/fabricated usage or customer allowance coupling |
 | 31. Notifications | O/server/src/alerts.ts; A notification source adapter | S >1000 recipient paging/revocation/inbox/dedupe; Console tests | Durable principal-scoped inbox and bounded delivery operate | External notification deployment not proven by inbox tests |
 | 32. Retention | O/server/src/retention.ts | S bounded parent/child protection, retries/locks/failure; B maintenance | Scope-safe bounded purges, receipts/audit/active history protected | Not a backup/restore or physical disk reclamation proof |
 | 33. Telemetry Self-Health | O/server/src/self-monitoring.ts, diagnostics.ts | S report provenance/storage timeout/fairness; B health/counters | Automatic SDK/server reports and logical storage samples tested | Unknown observations stay unknown; not physical/whole-service health |
@@ -2777,12 +2847,12 @@ References to G below identify executed coverage, not tests merely present.
 | 38. Security Tests | Contracts/RLS/API/SDK/AI/security suites | S/G plus real Browser hostile actor/foreign identity | Auth/scope/redaction/injection/export/retention controls exercised | Full requirement-by-requirement and Jupiter host audit remains |
 | 39. Performance Measurements | O/server/test/performance-acceptance.ts, concurrent-performance.ts, browser-performance.ts; A/test/hub-workflow-performance.ts | G performance flag; actual 1000/200-event SQL/HTTP, 120 scopes, Browser caps | Bounded throughput/latency/overhead samples recorded in checkpoints | LOCAL only; sampled heap not peak RSS; full host load still unproven |
 | 40. Browser Responsive Acceptance | B shared Console; Help script; actual-host-browser.ts | Four widths 375/768/1024/1440 for Console/Help AND actual requester composer/detail; mounted fault fixtures | RTL/no document overflow; actual manual-write/trace/outage recovery and inspected synthetic screenshots | Not all unrelated Jupiter business workflows or every management mutation |
-| 41. Help Publication | docs/help/observability-*.md; A/scripts/publish-help-catalog.ts | Runtime slug-only publication; real Jupiter Help browser checkpoint | Eleven guides runtime-published with version history; later Console/offline revisions preserved | Revised offline wording not re-read in authenticated host after latest revision |
+| 41. Help Publication | docs/help/observability-*.md; supported publisher | Runtime actor/slug-only publication/public reader; actual Jupiter Help browser; Incident5/concepts3/severity3/Console9 readbacks | Eleven guides/history preserved; latest observed-impact/lifetime/snapshot/not-downtime text verified | No new Help engine/deployment; prior rendered triggers preserved |
 | 42. Known Limitations | Explicit dated limits in this document; .ai/NEXT_TASK.md | Source/evidence audit and actual gate inspections | No staging/promotion/PWA/physical-disk or blanket UI claims substituted | Actual AppModule + requester Web proof exists; remaining required process/management coverage must be determined in final requirement audit |
 | 43. Defects Found | Dated red tests in Evidence: storage, sampler, analytics, fetch, React | Red regressions and real mounted startup failure | Concrete defects distinguished from incorrect fixture assumptions | No count of hypothetical defects presented as acceptance |
 | 44. Defects Fixed | SDK/server/adapters and their paired regression paths above | Subsequent focused/full gates plus actual Browser checks | Earlier defects and React remediation pass bounded focused/full QC | This does not establish all remaining host workflows |
-| 45. Cleanup | Disposable S/A integration teardown; fresh Browser contexts; owned listeners | DB/role absence and actual-main original-role assertions, local status/listeners | G423 leaves zero temporary DBs/reservations; shared tenant/profile untouched | Do not delete unrelated output/tmp or pretend fixture teardown is backup proof |
-| 46. Quality Gates | package.json verify:release; exact logs/exit markers | G423 zero, actual-Web + both Browser fault scripts pass; git diff --check | Builds/lint/typechecks/tests and actual optional scenarios executed when flags set | No-test reference package is not counted as extra unit tests |
+| 45. Cleanup | Disposable S/A teardown incl observed disconnect wait; fresh Browser contexts/listeners | Main84/zero fixtureDB/zero attempts/enabled100000/absent3000+5174 after G508+flagged clients; actual host role assertions | Shared tenant/profile/key/budget/cohosted data unchanged; previous cleanup CI green | Preserve unrelated output/tmp; not backup or physical erasure proof |
+| 46. Quality Gates | package.json verify:release; exact logs/markers | G508 exit0/native/performance/both scripts/diff check; explicit Python/C# follow-up; prior941d1ff CI SUCCESS | Full current runtime508 pass; test-only observable client reporting independently re-executed | Current scoped delivery/CI and A15/final audit pending; no duplicate focused-test counts |
 | 47. Final Verdict | This Evidence; .ai/CURRENT_STATE.md and NEXT_TASK.md | Full-scope completion audit remains incomplete | IN PROGRESS; no next Goal, promotion or blanket acceptance | Must finish actual requirement audit and its concrete remaining gaps, not invent broad new prerequisites |
 
 ## Owner decisions

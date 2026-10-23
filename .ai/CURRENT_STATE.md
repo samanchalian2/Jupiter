@@ -1,5 +1,43 @@
 # Current State
 
+**2026-10-24 DEC-065 final QC:**21037 TERMINATED0,508 tests(180API/40Web/
+288Hub)/all builds/lint/typechecks/migration/native/performance/actual host+Web/
+BOTH fault scripts pass. Fresh Issue impact375/1440 images inspected. External
+client branch absent in serial run, explicitly corrected by C# fresh build0/0
+and flagged Python/C# actual HTTP parity follow-up82692 TERMINATED0(1 reused
+test,112 skipped), observable actual child-process PASS. Only test-reporting
+changed after full gate, no runtime source. Runtime Help concepts3/severity3/
+Console9 published/read; cleanup84/zero fixture DBs/zero attempts/enabled100000/
+optional-null unchanged; owned3000/5174 absent.83719 publication TERMINATED0.
+No live local exec. Scoped delivery/CI next; A15 TLS verified handshake and stale
+OpenAPI info.description pending, full66–73/A–I/all47 final audit open. No deploy.
+
+**2026-10-24 current gate21037 ACTIVE:** output/goal069-issue-impact-release.log;
+builds/lint/typechecks/Web/early native cases progressing. No runtime edits/builds
+until terminal. Release-command audit found missing external-client flags in
+recent505/current serial invocation: Python/C# conditional branch was NOT proven
+by those counts. After terminal, build C# and explicitly run HTTP parity test with
+OBSERVABILITY_REFERENCE_CLIENTS=true plus bundled verified Python path; separate
+actual follow-up evidence, no duplicate count. Prior reference evidence historical.
+Do not repeat blanket 'all reference clients ran' from recent full-suite count.
+
+**2026-10-24 DEC-065 active:** actual941d1ff CI40019657321 completed SUCCESS.
+A14 Issue retained-impact implemented after red>100-event regression; green SQL
+123/lifetime vs retained deletion/tenant-free/24 features bound20/revocation HTTP
+passes. Console38/OpenAPI7/typechecks and native9 focused/111 intentionally
+skipped pass; native actual Explorer four widths/no JSON dump/RTL/no overflow.
+Artifact capture was added afterward and requires final gate execution. No
+active local test handle. New Help sources await slug-only runtime publication.
+Full new-source gate/cleanup/delivery pending. Main84/100000 untouched; no deploy.
+
+**2026-10-23 delivery handoff:**941d1ffa94581c3ff666500bf0db0956027acdc5
+committed/pushed; origin/main exact SHA verified. Actual push CI40019657321 is
+CONFIRMED in_progress, not green; inspect this exact run before further action.
+No local exec remains. DEC-064505-test full release/all gates/both scripts,
+Helpv5, cleanup84/zero fixtures/zero attempts/enabled100000 verified. Remaining
+A14 Issue-impact projection + original44–73/A–I/all47 audit, same active Goal.
+Preserve user gateway/training edits/output/tmp. No deployment/next Goal.
+
 **2026-10-23 DEC-064 full QC finished:**98541 TERMINATED0;505 tests
 (180API/40Web/285Hub),all builds/lint/typechecks/migration/native/reference/
 performance/actual host+Web and BOTH isolation scripts pass; final-release log

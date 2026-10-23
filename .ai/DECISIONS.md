@@ -1,5 +1,29 @@
 # Architecture Decisions
 
+## DEC-065 — Retained-cohort Issue impact, separate from lifetime counters
+
+Source: original GOAL-069 section31/A14. Add observed_impact to Issue DETAIL
+only, computed after authorizing the exact Issue under current grants/RLS.
+No migration, new entity, lifetime counter rewrite, list-query expansion or
+cross-tenant/cross-App fingerprint merge. The aggregate covers ALL retained
+linked Events, not the100 displayed Events or100 affected-release rows.
+
+Use the exact Issue/App/environment/tenant composite; report observed occurrences,
+distinct non-null users/tenants/Applications, tenant-free count, explicit string
+feature count/list<=20/unknown-feature count, first/last UTC and observed span.
+Applications is0 for no retained evidence or1 for this exact Application, never
+a cross-product identity claim. No tenant or actor identifiers are returned.
+basis=RETAINED_LINKED_EVENTS documents that retention/sampling can reduce these
+counts while existing occurrence_count/first_seen/last_seen remain lifetime.
+No observations means0 observed counts/empty feature list/null first-last/span,
+not healthy service. Span is NOT downtime or time-to-resolution/priority score.
+
+Expose a compact readable Persian Impact panel, not serialized JSON. Keep
+Incident impact semantics unchanged: its rule-time snapshot is not this live
+retained-cohort projection. Additive OpenAPI/current-role checks and real >100
+Event/two-actor/foreign/tenant-free/deletion/revocation/HTTP/native acceptance
+must precede final-source full gates. Existing manual workflows and AI untouched.
+
 ## DEC-064 — Tenant-bound observed Incident impact snapshots
 
 Source: original GOAL-069 section13. Existing rule-time impact records only

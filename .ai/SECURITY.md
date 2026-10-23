@@ -1,5 +1,11 @@
 # Security and Privacy
 
+DEC-065 authorizes the exact Issue under existing scoped detail/current grants
+before whole retained-link aggregation, explicitly binding App/environment/Issue/
+tenant. No actor/tenant IDs or raw metadata are returned; feature codes are
+sanitized explicit strings only and list<=20. No new privilege or cross-product
+fingerprint union. Revocation still denies subsequent detail reads.
+
 DEC-064 impact aggregation requires exact composite Issue/App/environment plus
 IS NOT DISTINCT FROM tenant binding inside the existing worker transaction.
 Only explicit string featureCode values, <=20 sorted entries, are projected;

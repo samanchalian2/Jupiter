@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-10-24 — GOAL-069 retained Issue impact (IN PROGRESS)
+
+- DEC-065 adds exact scoped retained-cohort Issue impact, not100 displayed
+  Events; preserves lifetime counters/Incident snapshots. Red→green123-row/
+  2-actor/24-feature bounded20/deletion/tenant-free/current-grant HTTP proof.
+- Compact native Persian panel/UTC/no JSON dump, OpenAPI7/Console38;508-test
+  final-source full gates/BOTH scripts and actual host+Web/four widths pass.
+  Fresh375/1440 images inspected; no runtime change after gate.
+- QC command audit found optional Python/C# branch was not enabled in recent
+  serial gate. Corrected claims and added explicit PASS/NOT_EXECUTED reporting;
+  rebuilt C#0 warnings/errors, actual flagged child-process follow-up passes.
+- Runtime concepts3/severity3/Console9 Help revised/read, older history preserved.
+  Versioning policy now explicit; initial47-section index refreshed against
+  actual source/counts. Cleanup84/zero fixtures/zero attempts/enabled100000 pass.
+- Scoped delivery pending; A15 HTTPS verification/stale metadata and remaining
+  final audit open. No preview/main deployment/next Goal/user-file changes.
+
 ## 2026-10-23 — GOAL-069 observed Incident impact (IN PROGRESS)
 
 - Final-source serial98541 TERMINATED0:505 tests/all gates/BOTH fault scripts

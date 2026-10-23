@@ -79,7 +79,7 @@ Policy runtime Help v4 is published/read; access/credential workflows remain ope
 
 ## Audit work not finished
 
-### A13 — original section13 Incident impact completeness (new verified gap)
+### A13 — original section13 Incident impact completeness (LOCAL QC verified)
 
 Source inspection2026-10-23: MonitoringEngine records occurrences,affectedUsers,
 windowSeconds only; IncidentWorkspace renders only those three. No stored
@@ -89,10 +89,19 @@ DEC-064 selected before implementation: exact single-tenant observed counts,
 bounded explicit feature evidence and first/last observed span, never guessed
 downtime or a cross-tenant aggregate. No new Goal/entity/migration/priority engine.
 Implemented with focused real SQL/HTTP/native8+Console37/OpenAPI6 and typechecks;
-full new-source release gate/Help publication/delivery still pending. No waiver
-from existing499 green. Observed span is not measured service downtime.
+full505 gate/both scripts and Incident Helpv5 publication/readback passed;
+941d1ff delivered and actual CI40019657321 SUCCESS. No waiver from existing499
+green. Observed span is not measured service downtime.
 
-### A14 — section31 Issue impact projection (source gap, not yet implemented)
+### A14 — section31 Issue impact projection (LOCAL QC verified)
+
+2026-10-24 update: DEC-065 projection implemented; real123-event SQL/HTTP,
+deletion/lifetime preservation,24 features bound20, tenant-free/current-grant
+and actual native Explorer pass9 focused/111 intentional skips; Console38 and
+OpenAPI7/typechecks pass. New-source508 full gate21037 TERMINATED0/both scripts;
+explicit Python/C# follow-up, Help concepts3/severity3/Console9/readback/cleanup
+pass. Scoped delivery pending; historical gap description follows, superseded
+by this implemented evidence, not silently waived from an unrelated suite.
 
 Current Issue storage/list/detail has fingerprint, first/last, lifetime occurrence
 count, severity/status/assignment, related events, affected releases and activity.
@@ -106,11 +115,67 @@ same-fingerprint tenants or inventing cross-App identity. Record ADR before API
 addition, real >100-event/two-actor/tenant-free/foreign/current-grant tests and
 native detail assertions. Do not change runtime during active DEC-064 gate.
 
+### A15 — HTTPS handler verification and remaining contract documentation
+
+Section70 explicitly requires operational HTTPS/JSON ingestion. Existing generic
+createHubNodeHandler can mount on Node HTTPS, and external clients/probes require
+HTTPS except explicit loopback tests. But inspected executed fixtures use actual
+loopback HTTP, not a trusted TLS handshake. This is a LOCAL verification gap,
+not a demand for staging/production deployment or a new TLS service. After21037
+terminates, verify the existing handler through a temporary locally trusted test
+certificate: real authorized batch/ACK/duplicate/SQL and rejected untrusted or
+wrong-host certificate, without disabling TLS verification or changing OS trust.
+Generate/clean only ephemeral test keys, never commit/log real credentials.
+
+Source OpenAPI info.description still incorrectly says rotation administration
+is service-only; supported ADMIN HTTP routes now exist. Correct metadata after
+the active gate, preserving bootstrap/global-authority boundary and61 operations.
+Section61's actual current/previous-version regression already exists; explicit
+SemVer/breaking/additive/migration policy was missing and is now documented in
+observability/VERSIONING.md with current source values, no new published version.
+
+### Final-scope audit pass2026-10-24 — sections44–65 (not whole-Goal verdict)
+
+Inspected Investigator/provider/vault/queue/scheduler, alert delivery and Jupiter
+NotificationService adapter, self-metrics/runbooks, retention, generic Node HTTP
+handler, versioned contracts/tests/manifests and actual cross-domain adapter
+fixtures. Evidence below is the completed505 gate, dated earlier explicit real
+client execution and newer focused DEC-065; active21037 is not called green.
+
+| Requirement / exact semantics | Inspected implementation and executed proof | Disposition / boundary |
+| --- | --- | --- |
+| 44 evidence-grounded recurring errors/summaries/correlation/releases/common patterns/Feedback/hypotheses/confidence/actions/daily-weekly | Investigator.evidence curates target+30 retained Events+10 related Feedback, source/version/trace/request, bounded bytes; schedule ISSUE/INCIDENT/DAILY/WEEKLY; validateInvestigation references and output | Actual persisted findings/scheduler/manual requests/native readable hypotheses/actions; bounded recent samples are not complete statistics or causal proof. Scheduler day/week is cadence, not guaranteed full-day historical population |
+| 45 read-only analysis/human review | INVESTIGATOR_SYSTEM + tool-free provider request, strict schema output and no business/permission/code mutation port | Provider/core/SQL/native tests prove valid result and rejection/absence of tools; human transitions remain separate. Encryption/vault use is infrastructure-only, never model access to secrets |
+| 46 untrusted text/redaction/bounded curated context/validated output/no arbitrary tools or queries/external policy | safeEvidence + cleanOutput + schema evidence allowlist; exact provider hostname/HTTPS/redirect:error/128KiB response/timeout; App externalProcessingAllowed | Real SQL/provider/core injection/citation/size/scope/external-denial tests; adversarial feedback remains data. No guarantee a language model cannot produce a mistaken hypothesis; validated output never authorizes mutation |
+| 47 per-App AI/isolation/explicit cross-App permission only | exact App/environment/tenant target/evidence/config/ledger; generic grants; no cross-App provider-context operation exposed | Actual same-identity App A/B/tenant-denial/foreign citation tests. Cross-product analytics are explicitly authorized aggregates; no unapproved cross-App model context is created |
+| 48 frequency/budget/output/context/dedupe/backoff/usage/concurrency/autonomous schedules | review_interval_seconds300–86400, target daily/weekly keys, advisory App reservation lock, maxConcurrent1–4, finite queue retries, UNKNOWN held | Real scheduler/idempotency/concurrency/retry/UTC/unknown/reconciliation and native actual save/reload/late-context tests. Explicit enabled100000 local; no per-Event unconditional provider call or usage guess |
+| 49 operational vs customer commercial separation/provider outage continuity | independent Hub ai_attempts/config/provider injection; no CommercialService import in core; existing queue/rules/Feedback not gated by provider | Actual provider failure/zero customer settlement/manual ticket/service recovery and host outage tests; optional operational caps are not customer Smart Action charges |
+| 50 all alert sources/current scoped recipients/dedupe/flood/Jupiter existing notifications | rule alerts include critical/error-rate/user-impact/release/reopen/worker; pipeline15min windows/feedback human triage; AlertService leases/15s spacing/100-recipient continuation/current grants; HubBinding registerOperationalSource | SQL >1000-recipient paging/revocation/duplicate/repair and important Feedback tests; existing NotificationService operational inbox adapter tests. In-app is real; optional email/webhook not promised, no independent-channel availability during total host failure |
+| 51 all listed self-health metrics/no silent pipeline failure | SelfMonitoring provenance-separated server/SDK counters, queue/lag/issues/failed alerts/AI/retention/logical storage; scoped ADMIN UI, bounded diagnostics/fallback | Actual server failure+recovery/SDK lost-ACK/drop/expiry/quota/native self-health and storage timeout/fairness tests. Unknown stays unknown; logical bytes are not physical disk, SDK claims not server truth |
+| 52 health/readiness/external probe/error metrics/integration runbook, not staging gate | generic handler health/ready, examples/health-probe.mjs, EXTERNAL_MONITORING_RUNBOOK.md/self-health authenticated read; bounded host stdout codes | Actual probe/process healthy/unready/network tests and scoped counters. External scheduler/TLS/host monitoring deployment remains GOAL-059, not marked complete from LOCAL |
+| 53 per-App retention/defaults/safe idempotent bounded audited purge/no business Audit deletion | RetentionService/RETENTION_RUNBOOK:30/365/180/180 defaults, policy locks/100-row slices/continuation, pending aggregation/active Incident/AI/delivery protection, receipts8d | Actual SQL protected parent/child/failure rollback/retry/continuation/current-auth/native policy acceptance. No backup recovery/physical reclamation claim; existing canonical/business Audit untouched |
+| 54 bounded storage/indexes/time queries/Issue lookup/aggregates/pagination/retention | migrations063–073 indexes/composite keys; bounded31day/100row/50group reads,10s SQL deadline, fixed metadata fields; existing targeted load/performance tests | Actual1000-event/200 concurrent-event/dashboard/retention timings; new Issue impact bounded exact Issue aggregate rather than100-row sample. No speculative partitioning added or production query plan guarantee |
+| 55 async bounded failure isolation/backoff/no recursion/memory bounds/worker/business exact-once | Browser/Node fixed queues/attempt12, isolated metric journal, shared helper capture guards, generic Nest single subscription, Jupiter fetch sole dispatch/React contained effects/worker fallback | Red→green regressions plus actual mounted scripts/AppModule/manual ticket/provider retry single settlement/zero automatic intake submit. Total process outage cannot promise delivery; memory queue is finite, not durable |
+| 56 every auth/isolation/forgery/expiry/revocation/export/Feedback/operational role case | Registry/hash/parent-child credentials/current authorization/RLS and browser trusted-backend mint; explicit App mappings only | SQL/HTTP/native current-role/foreign/anonymous/expired/revoked/invalid origin and export tests. CORS supplemental, never grants authority |
+| 57 twenty real Browser scenarios | Existing explicit twenty-case table in Evidence, Browser/offline/lifecycle/quota/Feedback/auth/same-ID replay paths | Native Edge/network/IndexedDB actually executed in505 and newer focused9. Offline HTML/PWA and physical deletion while storage inaccessible are not guaranteed; incompatible identity never replayed as another user |
+| 58 ten controlled cross-domain errors/expected business denials | Generic Nest controlled ticket/auth/config/AI/Assist/external routes; React native boundary; real directory/lifecycle worker and queued AI provider failure; actual compiled draft exception | Existing nine adapter cases plus real worker/provider/host/native evidence classify safely. Adapter route fixtures do not claim deliberate live-provider failures for every domain; original requirement permits controlled fixtures |
+| 59 independent reference mandatory full flow | independent verified Browser backend/App B/config/env/SDK/failure/offline/replay/dedupe/Console/grants and explicit A/B separation, no Jupiter business imports | Actual native reference and PostgreSQL evidence covers named flow. Python/C# branch in recent505/current21037 command NOT executed; explicit current-source follow-up required before final certification |
+| 60 Jupiter integration/no unrelated domain coupling | host adapters in A/src/observability and W observability/fetch/App shell; NotificationService and existing Help only host-side | Actual compiled AppModule and authenticated requester/platform native flows, manual ticket exact-once/automatic trace/network replay; personal/commercial/AI regression tests. No cohosted data, broad role promotion or new business lifecycle |
+| 61 schema/current+previous/API/SDK SemVer/additive/breaking/migrations | contracts emits1.1 accepts1.0/1.1 and rejects2.0, OpenAPI1.1.0/HTTPv1, private packages0.1.0; new VERSIONING.md | Existing contract+actual HTTP tests prove runtime compatibility; explicit policy now documented. A15 stale OpenAPI administration description still needs correction after gate; no new package publication |
+| 62 Persian-first/theme/fonts/RTL/responsive/accessibility/no doc overflow | reusable Console semantic CSS + host tokens/Shabnam fallback; native four-width/keyboards/44px/internal scrolling and bounded Help reader rectangles | Actual reference and authenticated Jupiter 375/768/1024/1440, inspected images/mounted tests. New DEC-065 impact artifacts require inspection after active gate; no palette/navigation replacement |
+| 63 eleven runtime published guides/version history/real triggers | docs/help eleven registry-validated slugs; supported actor publisher; actual Jupiter Help/reader/trigger native checkpoint; recent Incidentv5 readback | Existing runtime history preserved; DEC-065 concepts/severity/Console revisions still source-only pending gate then explicit publication/readback. Stale guidance about editing severity/multiple-Issue relation corrected |
+| 64 every performance measurement/real LOCAL results/no fabricated SLO | PERFORMANCE.md and actual server load/concurrent/window/dashboard/retention/sampling/AI scheduling/Browser quota/Node CPU + product read/write boundary fixtures | Actual measured samples only, with shared-process CPU/heap and loaded-App limitations stated. Existing original requirement asks LOCAL measurement, not invented10-loaded-products or production SLO prerequisites |
+| 65 named security acceptance list/no shortcuts | shared allowlist/redaction/SQL roles/HTTP grants, AI output/evidence/host policy, strict bounds/rates/receipts/CSV, retention, offline identity/fault containment | Actual synthetic-secret/malicious text/cross-scope/forged/revoked/oversize/rate/duplicate/Feedback/export/injection/retention/non-disclosure/native regressions. A15 HTTPS verified-handshake evidence still pending, not waived by an https example string |
+
+Sections66–73/phase A–I/DoD/all47 index/final report remain open. A14 full new-
+source gate and A15 verification follow-ups must finish; this audit is not a
+completion declaration or a request for staging deployment.
+
 ### Final-scope audit pass2026-10-23 — sections31–43 (not whole-Goal verdict)
 
 | Original requirement | Current source and actual execution boundary | Disposition |
 | --- | --- | --- |
-| 31 Issue aggregation lifetime/unique impact/releases/state/related evidence | IssueEngine.aggregate atomically increments occurrence, first/last and regression/reopen; Operations detail has100 retained Events/100 releases/activity/feedback; actual3-occurrence/2-actor SQL test | **A14 OPEN:** detail lacks whole retained-cohort users/tenant/App/impact. Do not certify from Overview or its100 displayed Events. Fingerprint/occurrence/reopen/releases independently proven |
+| 31 Issue aggregation lifetime/unique impact/releases/state/related evidence | IssueEngine atomic lifetime state/reopen; DEC-065 whole retained-cohort detail impact separate from100 displayed Events, releases/activity/feedback | **A14 LOCAL QC VERIFIED:** actual123-event/2-actor/24-feature bounded20/tenant-free/foreign/revocation/deletion regression and native Explorer/full508 pass. Retained observations are not complete historical population or cross-App merge |
 | 32 controlled Incident lifecycle/actor/time/reason/activity/Audit/human final decision | core transition matrix + locked IssueEngine.transitionIncident/Operations management; native human status/assignment/note exact three actor Audits and current permitted transitions | Existing actual SQL/native/workspace evidence, including invalid transition/unauthorized denial; AI results read-only. All allowed statuses are controlled, not forced sequential UI-only steps |
 | 33 independent configurable rules/minimum/cooldown/dedupe/baseline/low traffic | MonitoringEngine rule validation/minimum samples/cooldown/exact Issue lock, normal403/untrusted critical, release baseline/change and denominator-based ERROR_RATE; all rule-code persisted evidence tests | Implemented and locally executed; release count alone not a regression. AI unavailable does not gate evaluation. Baseline is observed previous window, not trained seasonal forecasting |
 | 34 bounded near-real-time worker cadence/dashboard updates | approved PostgreSQL queue override, DEC-050 scheduler10000–300000/default60000, immediate first attempt/throttled failure; controlled visible-tab10s live polling with pause/detail protection | Actual compiled two-cohort timer/worker and native11-second pause/resume/read protection. Polling is chosen rather than inventing a required SSE channel; no production real-time/SLO claim |
@@ -120,7 +185,7 @@ native detail assertions. Do not change runtime during active DEC-064 gate.
 | 38 shared generic Console plus Jupiter host/required ten sections | reusable console index navigation has all named operational sections plus Inbox/self-health; generic OperationsClient; independent Browser host and actual Jupiter /operations + platform embedding | Actual authenticated independent and full Jupiter native executions; core has no Jupiter cookie/domain dependency. Host sidebar is not a replacement for Console scope checks |
 | 39 every Overview metric/filter/real observations | DEC-052 exact filtered Event cohort, denominator operations, current-state counters, observed health/releases/high-impact/AI; bounded semantic panels and shared filters | A05 real SQL/HTTP/explicit UNKNOWN/13-release bound plus four-width keyboard/native evidence. No-events is unknown, not uptime100%; current counters explicitly separate from filtered metrics |
 | 40 latest scoped Events/related Issue lifetime count/dates/correlation/pause | DEC-061 opt-in includeIssue≤100 authorized Event IDs, LiveEventTable, timer pause/resume/open-detail guard | Actual default compatibility/same-fingerprint tenant SQL and native one→two count/null relation/11s no-poll/resume/four-width/internal keyboard scroll. Unknown relation is not zero |
-| 41 Issue search/filter/group/order/drilldown/timeline/releases/human actions | DEC-056 whole-filter grouping/order, exact release/category Event cohort, IssueExplorerControls; current-grant management and related arrays | Named SQL/HTTP/native search/sort/group/page/release and real assignment/status/note Audit evidence retained. A14 additional Issue impact is still open, not hidden by this workflow acceptance |
+| 41 Issue search/filter/group/order/drilldown/timeline/releases/human actions | DEC-056 query controls/current grants and related arrays; DEC-065 whole retained impact | Named SQL/HTTP/native sort/group/page/release/human Audit and new impact assertions pass508; no claim from only100 displayed Events |
 | 42 independent addressable Incident with all required panels/AI-vs-human | DEC-057/058 distinct route/workspace, exact composite detail/current grants, independent human_notes100 separate from activity100, bounded AI20/Audit100; DEC-064 impact extension | Actual independent and embedded Jupiter direct link/reload/Back plus populated AI/feedback/human/revocation/four widths, recent-note flood acceptance. New impact full gate ongoing; earlier workspace green not a waiver |
 | 43 all named analytics/time/release/authorized products/CSV | Operations analytics10 reports + Overview trend + explicit1–10 App productComparison, bounded31day/50ranked/750hour windows; csvCell formula safety/export auth | Actual SQL/HTTP/OpenAPI/native each table/scope and product comparison/current grant/late-response tests; actual measured one1000-event App + emptyApp sample, not ten fully loaded products or production capacity claim |
 

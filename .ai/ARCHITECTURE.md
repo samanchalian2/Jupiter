@@ -1,5 +1,12 @@
 # System Architecture
 
+DEC-064/065 extend existing scoped read models only: Incident retains immutable
+rule-time observed impact; Issue detail computes live retained-link impact over
+the exact authorized Issue/App/environment/tenant, independent of100 displayed
+Events. No new entity/migration/service or lifetime counter mutation. Both use
+bounded explicit feature projections and truthful UTC observed spans, not outage
+duration/automatic priority. Compatibility policy is observability/VERSIONING.md.
+
 DEC-062 extends the existing operational Investigator (migration073, no new
 service/operation/provider contract) with optional per-App UTC-month attempt/
 estimated-USD-cost ceilings. Existing advisory lock covers all environments and

@@ -1,5 +1,17 @@
 # Business Rules
 
+## Retained Issue impact (DEC-065)
+
+- Issue detail impact uses ALL retained linked Events in the exact scope, not
+  its100 displayed Event rows. Lifetime occurrence_count/first-last are untouched.
+- Retention/sampling can reduce observed counts; no retained evidence means0
+  observed counts/null times, never proof of healthy service. Unknown is not0.
+- Distinct users/tenants/Applications are observations; Applications0–1 is only
+  the exact App. Tenant-free Events are separate, no external identities exposed.
+- Explicit string features count across retained cohort, list sorted/distinct
+  <=20. First/last UTC span is not downtime/resolution/operational priority.
+- Incident remains a rule-time snapshot, not this live Issue projection.
+
 ## Observed Incident impact (DEC-064)
 
 - Snapshot only on rule detection, in its exact Issue/App/environment/tenant
