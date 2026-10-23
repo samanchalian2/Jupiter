@@ -1,5 +1,11 @@
 # Domain Model
 
+DEC-064 extends only the existing immutable-at-detection Incident impact JSON
+snapshot: exact Issue/App/environment/tenant retained window counts, distinct
+non-null tenants/tenant-free events, explicit string feature count/list<=20,
+unknown-feature events and first/last occurrence/span. No new entity or migration;
+legacy missing fields remain unknown. Observed span is not measured downtime.
+
 DEC-061 LiveEventRow is an opt-in Event read projection with related_issue:null
 or fixed Issue id/title/status/severity/lifetime occurrence_count/first-last.
 No new entity/history and no denormalized counters. Legacy EventRow stays.

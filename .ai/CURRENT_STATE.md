@@ -1,5 +1,47 @@
 # Current State
 
+**2026-10-23 DEC-064 full QC finished:**98541 TERMINATED0;505 tests
+(180API/40Web/285Hub),all builds/lint/typechecks/migration/native/reference/
+performance/actual host+Web and BOTH isolation scripts pass; final-release log
+ends GOAL069_INCIDENT_IMPACT_RELEASE_EXIT=0. Fresh375/1440 images inspected.
+Slug-only supported runtime Help observability-incidents v5 published/read all
+flags true. Cleanup main84/zero fixture databases/zero active attempts/enabled
+100000/optional-null-policy-preserved verified; shared3000/5174 absent. No runtime
+change after gate. No local exec pending. Scoped delivery/remote CI next; A14
+Issue-impact + remaining44–73/A–I/all47 audit remain OPEN. No deployment/next Goal.
+
+**2026-10-23 live final-source gate:** exec98541 CONFIRMED ACTIVE, log
+output/goal069-incident-impact-release.log. Builds/lint/typechecks/Web passed;
+Hub149 including native/performance now passed; API suite now running in pnpm's
+dependency order (earlier API-pass wording was premature). Poll same handle;
+do not rerun/rebuild/change runtime until terminal. DEC-064 new runtime source
+uncommitted; Help runtime publication/delivery after success. Audit source gap
+A14: Issue detail lacks its own users/tenants/App/impact cohort projection;
+recorded concrete next work, not waived by Overview/analytics. Original final
+audit31–73/A–I/all47 remains active. No next Goal/deployment.
+
+**2026-10-23 DEC-064 in progress:** last pushed32493f3 actual CI40005956276
+completed SUCCESS, exact head SHA verified. New Incident impact SQL/HTTP test
+reproduced missing tenant/features/time facts, then passed with same-scope
+snapshot implementation. Console37 tests, OpenAPI6 and server/Console typechecks
+pass. Focused native-3 log TERMINATED0:8 pass/110 deliberately skipped, includes
+actual authenticated Incident at375/768/1024/1440 RTL/no document overflow and
+snapshot isolation/stability.375 screenshot inspected. First native run lacked
+bundled Chromium; existing msedge channel used. Second run exposed stale Console
+dist; rebuilt supported package before final native pass, no authorization relaxed.
+Full final-source gate/Help publication/delivery still pending. No active test
+handle. Main local84/enabled100000 unchanged; no preview/main deployment.
+
+**2026-10-23 handoff (GOAL-069 ACTIVE):** cleanup correction32493f3247aea50a5dfc4d6f0fe63a679a8264e7
+pushed and origin/main SHA verified. Actual push CI40005956276 is CONFIRMED
+in_progress; inspect exact run before further action/claim, no local exec pending.
+Prior bd875d8 CI40005268830 FAILED teardown57P01, not green. Test-only correction
+passed CI-mode141/6 optional skipped+typecheck; production499 full gate remains.
+Safe post-push local84/zero temp DBs/zero active attempts/enabled100000 verified;
+optional-null/Helpv4-v3 already read. No preview/main deployment. Full audit
+sections1–10 recorded;11–73/A–I/47 index/A01/A07 signoff remain. Preserve unrelated
+gateway LF-only/training document/output/tmp; no subagents/chat transfer.
+
 **2026-10-23 CI cleanup remediation verified locally:**80123 TERMINATED0,
 full CI-mode Hub141 pass/6 explicitly optional skipped(147 total), no unhandled
 error; server typecheck/diffcheck pass. Production source unchanged since499

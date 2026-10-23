@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-10-23 — GOAL-069 observed Incident impact (IN PROGRESS)
+
+- Final-source serial98541 TERMINATED0:505 tests/all gates/BOTH fault scripts
+  pass. Actual compiled host/Web/four-width/reference/performance/rehearsal run;
+  fresh375/1440 screenshots inspected. Runtime Incident Helpv5 published/read,
+  cleanup84/zero fixtures/zero attempts/enabled100000/optional-null verified.
+- Scoped delivery pending; A14 Issue-impact source gap and remaining44–73/A–I/
+  all47 audit still open. No deployment/next Goal or post-gate runtime edits.
+
+- Prior cleanup commit32493f3 actual CI40005956276 completed SUCCESS.
+- DEC-064 fills section13 gap with exact tenant-bound rule-time observed users/
+  tenants/explicit features and UTC first-last span; no migration/backfill or
+  invented downtime/priority. Legacy unknowns remain unknown.
+- Red→green real SQL/HTTP snapshot stability and isolation; OpenAPI6, Console37,
+  typechecks and actual native Incident four widths pass.375/1440 screenshots
+  inspected; no document overflow. Full final-source gate currently active.
+- Persian Help source updated; runtime slug-only publication and scoped delivery
+  still pending. Original audit11–30 recorded, remainder still open. Local only.
+
 ## 2026-10-23 — GOAL-069 operational ceilings QC checkpoint (IN PROGRESS)
 
 -499-test full functional release, builds/lint/typechecks/rehearsal/native/

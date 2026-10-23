@@ -1,5 +1,17 @@
 # Business Rules
 
+## Observed Incident impact (DEC-064)
+
+- Snapshot only on rule detection, in its exact Issue/App/environment/tenant
+  window. Do not mutate earlier Incident snapshots when new evidence arrives.
+- Distinct non-null tenant count is separate from tenant-free Event count;
+  absent/blank/non-string featureCode means unknown, never an inferred feature.
+- Explicit feature list is sorted/distinct<=20; feature count covers all retained
+  cohort codes. First/last UTC and their span are observations, not downtime or
+  time-to-resolution. Legacy missing values remain unknown, not zero/healthy.
+- Technical severity, observed business-impact facts and human response priority
+  remain separate. No automatic priority score or model-driven state change.
+
 ## Live Monitor observations (DEC-061)
 
 - includeIssue=true|false is accepted only on Event list. Default/false keeps

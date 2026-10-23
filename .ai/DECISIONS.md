@@ -1,5 +1,31 @@
 # Architecture Decisions
 
+## DEC-064 — Tenant-bound observed Incident impact snapshots
+
+Source: original GOAL-069 section13. Existing rule-time impact records only
+occurrences/affectedUsers/windowSeconds; add observed tenant/feature/time facts
+inside that SAME Incident JSON snapshot, not a new scoring/lifecycle service.
+No migration or re-computation of historical Incidents. Existing snapshots keep
+missing fields unknown; never backfill zero/healthy or infer an outage duration.
+
+For a newly detected Incident, one bounded-scope aggregate over its existing
+Issue links and the same transaction-time rule window/exact App/env/tenant gives
+affectedTenants (distinct non-null opaque tenant refs), tenantFreeEvents,
+affectedFeatureCount, <=20 sorted distinct supplied safeMetadata.featureCode
+values, unknownFeatureEvents, observedFirstAt/observedLastAt and observedDurationMs.
+First/last are min/max occurred_at; duration is the observed span, null when no
+observations, NOT measured downtime/time-to-resolution/window length. Feature
+count is complete within the retained cohort; the displayed list is bounded and
+may be partial. No cross-tenant union, arbitrary metadata dump, artificial name,
+capability inference from operation labels or invented operational priority.
+
+Technical severity remains separate from observed business-impact facts; human
+triage/status/assignment determine response, not an AI-derived priority score.
+Additive documented impact properties preserve legacy shape/unknown fields.
+Native Persian workspace labels/explanation must distinguish all these concepts.
+Require real SQL two-tenant/tenant-free/unknown-feature/over20-feature/time-span/
+snapshot-stability and HTTP/OpenAPI/native assertions before final full gates.
+
 ## DEC-063 — Stable Help domain relevance on a fresh catalog
 
 Actual clean CI PostgreSQL acceptance exposes an existing search ranking defect:

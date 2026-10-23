@@ -79,6 +79,88 @@ Policy runtime Help v4 is published/read; access/credential workflows remain ope
 
 ## Audit work not finished
 
+### A13 — original section13 Incident impact completeness (new verified gap)
+
+Source inspection2026-10-23: MonitoringEngine records occurrences,affectedUsers,
+windowSeconds only; IncidentWorkspace renders only those three. No stored
+affected-tenant/feature/observed-duration evidence exists, despite section13.
+Overview impact metrics do not substitute the Incident rule-time snapshot.
+DEC-064 selected before implementation: exact single-tenant observed counts,
+bounded explicit feature evidence and first/last observed span, never guessed
+downtime or a cross-tenant aggregate. No new Goal/entity/migration/priority engine.
+Implemented with focused real SQL/HTTP/native8+Console37/OpenAPI6 and typechecks;
+full new-source release gate/Help publication/delivery still pending. No waiver
+from existing499 green. Observed span is not measured service downtime.
+
+### A14 — section31 Issue impact projection (source gap, not yet implemented)
+
+Current Issue storage/list/detail has fingerprint, first/last, lifetime occurrence
+count, severity/status/assignment, related events, affected releases and activity.
+Aggregation tests prove3 occurrences/2 actors, and Overview/analytics expose
+cohort impact. But Issue detail itself does not return affectedUsers/Tenants/
+Applications or an explicit observed-impact projection. Neither the Overview nor
+a count taken only from the bounded100 detail Events proves section31's full
+Issue cohort fields. Add a scoped retained-link aggregate and readable detail
+projection with explicit lifetime-vs-retained distinction, without merging
+same-fingerprint tenants or inventing cross-App identity. Record ADR before API
+addition, real >100-event/two-actor/tenant-free/foreign/current-grant tests and
+native detail assertions. Do not change runtime during active DEC-064 gate.
+
+### Final-scope audit pass2026-10-23 — sections31–43 (not whole-Goal verdict)
+
+| Original requirement | Current source and actual execution boundary | Disposition |
+| --- | --- | --- |
+| 31 Issue aggregation lifetime/unique impact/releases/state/related evidence | IssueEngine.aggregate atomically increments occurrence, first/last and regression/reopen; Operations detail has100 retained Events/100 releases/activity/feedback; actual3-occurrence/2-actor SQL test | **A14 OPEN:** detail lacks whole retained-cohort users/tenant/App/impact. Do not certify from Overview or its100 displayed Events. Fingerprint/occurrence/reopen/releases independently proven |
+| 32 controlled Incident lifecycle/actor/time/reason/activity/Audit/human final decision | core transition matrix + locked IssueEngine.transitionIncident/Operations management; native human status/assignment/note exact three actor Audits and current permitted transitions | Existing actual SQL/native/workspace evidence, including invalid transition/unauthorized denial; AI results read-only. All allowed statuses are controlled, not forced sequential UI-only steps |
+| 33 independent configurable rules/minimum/cooldown/dedupe/baseline/low traffic | MonitoringEngine rule validation/minimum samples/cooldown/exact Issue lock, normal403/untrusted critical, release baseline/change and denominator-based ERROR_RATE; all rule-code persisted evidence tests | Implemented and locally executed; release count alone not a regression. AI unavailable does not gate evaluation. Baseline is observed previous window, not trained seasonal forecasting |
+| 34 bounded near-real-time worker cadence/dashboard updates | approved PostgreSQL queue override, DEC-050 scheduler10000–300000/default60000, immediate first attempt/throttled failure; controlled visible-tab10s live polling with pause/detail protection | Actual compiled two-cohort timer/worker and native11-second pause/resume/read protection. Polling is chosen rather than inventing a required SSE channel; no production real-time/SLO claim |
+| 35 all Feedback categories/fields/tracking/own state independent of ticketing | validateFeedback, FeedbackService authenticated actor/no tenant required, unique logical ID/hash/tracking, actor RLS/public-vs-internal responses; FeedbackCenter | Real tenant-free HTTP identity/isolation/idempotency/response tests and actual Jupiter reader/submit native evidence; no ticket automatically created |
+| 36 explicit offline action/pending/authenticated replay/ACK/disclosure/no drafts | FeedbackCenter submits explicit button only, local notice/memory warning; SDK same-scope journal+ACK; actual offline/failed reload/duplicate/lost-ACK/auth denial tests | Executed true Browser storage/network and same tracking/one SQL record. Memory fallback is warned, not promised across reload; half-written form text is not automatically persisted |
+| 37 evidence-based Feedback correlation without invented causality | submit validates owned relatedEventId; Issue/Incident detail joins exact linked Events; Investigator target evidence includes only Feedback linked to the same Issue in exact App/env/tenant | Actual correlation/isolation SQL + populated Incident native fixture. It is an explicit evidence relation, not an automatic temporal/AI cause claim or implicit tenant union |
+| 38 shared generic Console plus Jupiter host/required ten sections | reusable console index navigation has all named operational sections plus Inbox/self-health; generic OperationsClient; independent Browser host and actual Jupiter /operations + platform embedding | Actual authenticated independent and full Jupiter native executions; core has no Jupiter cookie/domain dependency. Host sidebar is not a replacement for Console scope checks |
+| 39 every Overview metric/filter/real observations | DEC-052 exact filtered Event cohort, denominator operations, current-state counters, observed health/releases/high-impact/AI; bounded semantic panels and shared filters | A05 real SQL/HTTP/explicit UNKNOWN/13-release bound plus four-width keyboard/native evidence. No-events is unknown, not uptime100%; current counters explicitly separate from filtered metrics |
+| 40 latest scoped Events/related Issue lifetime count/dates/correlation/pause | DEC-061 opt-in includeIssue≤100 authorized Event IDs, LiveEventTable, timer pause/resume/open-detail guard | Actual default compatibility/same-fingerprint tenant SQL and native one→two count/null relation/11s no-poll/resume/four-width/internal keyboard scroll. Unknown relation is not zero |
+| 41 Issue search/filter/group/order/drilldown/timeline/releases/human actions | DEC-056 whole-filter grouping/order, exact release/category Event cohort, IssueExplorerControls; current-grant management and related arrays | Named SQL/HTTP/native search/sort/group/page/release and real assignment/status/note Audit evidence retained. A14 additional Issue impact is still open, not hidden by this workflow acceptance |
+| 42 independent addressable Incident with all required panels/AI-vs-human | DEC-057/058 distinct route/workspace, exact composite detail/current grants, independent human_notes100 separate from activity100, bounded AI20/Audit100; DEC-064 impact extension | Actual independent and embedded Jupiter direct link/reload/Back plus populated AI/feedback/human/revocation/four widths, recent-note flood acceptance. New impact full gate ongoing; earlier workspace green not a waiver |
+| 43 all named analytics/time/release/authorized products/CSV | Operations analytics10 reports + Overview trend + explicit1–10 App productComparison, bounded31day/50ranked/750hour windows; csvCell formula safety/export auth | Actual SQL/HTTP/OpenAPI/native each table/scope and product comparison/current grant/late-response tests; actual measured one1000-event App + emptyApp sample, not ten fully loaded products or production capacity claim |
+
+Remaining44–73/A–I/all47 evidence/final report still require item-level
+reconciliation; A14 remains concrete implementation work in this same Goal.
+
+### Final-scope audit pass2026-10-23 — sections11–30 (not whole-Goal verdict)
+
+Inspected the original bullets and current contracts/core/Browser/React/Node/
+Nest, ingestion, database, queue, Registry and Operations source, not just test
+names. Historical executed native/SQL/host records below remain evidence at
+their actual scope. DEC-064 full new-source regression is running separately;
+do not use the prior499 count to sign off its runtime change.
+
+| Requirement and concrete boundary | Inspected implementation / executed evidence | Disposition |
+| --- | --- | --- |
+| 11 versioned typed/bounded UTC Event, trusted identity, column storage | contracts validateEvent/validateBatch; core enforceScope; ingestion parses then sanitizes and revalidates, fixed events columns/server received timestamp/fingerprint; actual SQL/HTTP contract and spoof rejection fixtures | Source and actual scoped ingestion evidence present; backend credentials require the consumer to authenticate their supplied actor/tenant, not a claim that Hub can authenticate arbitrary external users |
+| 12 all seven categories and representative capture paths | contracts categories; Browser resource/JS/rejection/connectivity/performance, React boundary, Nest HTTP, product worker outcome hooks and FeedbackService; actual mounted/native/host failure and feedback fixtures | Implemented category/capture paths verified; domain-specific metadata is explicit, never inspection of raw forms or arbitrary job payloads |
+| 13 technical severity vs observed impact vs human response, ordinary denials/untrusted critical | core transitions, existing rule tests for normal403/Browser critical, IncidentWorkspace human controls; new DEC-064 SQL/HTTP/native snapshot fields | Real gap reproduced/remediated in this pass; focused8+Console37 pass, full new-source gate pending. Observed first/last span is explicitly NOT measured downtime or a priority score; retain this measurement limitation |
+| 14 generic configurable tree-shakeable Browser capture/queue/lifecycle | BrowserSdk configuration/capture/start/shutdown, package sideEffects:false; named configuration/retention/sampling/queue/native recovery tests and topological builds | Existing source/execution cover all named options; bounded batches,20 performance entries/callback, no per-event synchronous request. Tree-shaking declaration/build is not a production bundle-size SLO |
+| 15 React isolation and API/context/error/feedback hooks | generic SDK-only Provider/useObservability/useRouteContext/ErrorBoundary, no Jupiter domain dependency; Web fetch integration and mounted16-fault/native scripts | Source + executed actual mounted isolation/route/form continuity. Feedback uses generic SDK hook/context, not a new domain-coupled widget |
+| 16 batching/retry/redaction/correlation Node and Nest without response change | NodeSdk pending bounds/attempt12/timeout, generic resolver/interceptor/observeJob, exact-once observable and worker fault tests | Existing unit/SQL/process/native host evidence verifies controlled failure/recovery and unchanged consumer result; main product AppModule is exercised separately, not inferred from adapter tests |
+| 17 real neutral .NET/Python examples and OpenAPI/auth/batch/error/retry | examples README/clients; public61-operation schema/traversal, actual Python and compiled C# process tests | Executed supported client acceptance; no claim of full production SDKs for these languages or Java |
+| 18 IndexedDB safe envelope/expiry/bounds/ACK/degradation | Browser queue/store/retry code, DEC-044/048/049; actual offline reload/lost ACK/quota/data-write tests and same-ID SQL verification | Durable when IndexedDB works; memory fallback explicitly not durability, inaccessible storage cannot promise physical erasure |
+| 19 all named automatic triggers with trusted connectivity | SDK start/online/visibility plus scoped probe/activity notifications, DEC-051; no-start/no-manual-flush native fixture independently proves probe/activity, failed probe and delayed same-ID ACK | Implemented; optional Background Sync not required/enabled. navigator.onLine only hints a flush, does not establish authorized API success |
+| 20 logout/account/tenant/expiry/revocation/shared device | exact scope partition + credential renewal/quarantine/drop lifecycle, native twenty-case Evidence map and real HTTP/IndexedDB foreign replay tests | Executed identity transitions; no persistent credential, no replay as new identity; unavailable storage deletion remains explicitly best-effort |
+| 21 safe automatic frontend capture/no recursive logging | Browser start observes safe fixed error fields/resource enum (not DOM/resource URL), sanitized Error stack, bounded queue/internal diagnostics, generic React component code and safe fetch labels | Unit/mounted/native capture and faulty-SDK scripts exercise failure isolation. Ticket/input/chat bodies never instrumented; redaction is a last layer, not permission to collect raw payloads |
+| 22 worker/backend/dependency failure + outage fallback | generic Node captureException/observeJob; product worker enumerated operations/outcomes, HubBinding diagnostics; Node safe structured fallback, queue retry/outcome/compiled-host SQL outage tests | Actual product provider/worker/retry/manual-flow recovery recorded. Complete PostgreSQL failure cannot be durably stored there; fallback is structured stderr/logger, not a false DB-delivery claim |
+| 23 W3C-compatible trace chain without scope bypass | core parseTraceparent/newTrace, generic Nest headers/Node context, Jupiter fetch trace propagation, Operations correlation exact authorized seed tenant binding | Actual shared Browser/SERVER trace and independent correlation native chain; identifiers never authorize. This is correlation evidence, not an inferred complete span topology or OTel collector deployment |
+| 24 atomic receive→auth→validate→sanitize→receipt/event/job pipeline | HTTP authenticated credential dispatch, IngestionService.persist receipt+event+AGGREGATE in same scoped transaction; Queue.complete aggregation+completion single transaction | Real concurrent/lost-ACK/idempotent/rollback/lease tests; PostgreSQL outbox chosen by approved preamble, not dual-write to an external queue |
+| 25 partial ACK, limits/backpressure/idempotency/bounded failure | batch50/524288B/Event16384B; strict API limiter; one persistence timeout switches remaining valid entries to RETRYABLE; finite SDK12 retries, fixed queue count/bytes | Actual HTTP overload/malformed/atomic/isolation plus saturated Browser and real business-write continuity/performance evidence. Not a hard production latency SLO |
+| 26 logical tables/data-safe migrations/RLS | dedicated observability schema foundation063→073, fixed application/env/composite FKs, receipt/activity/grant/aggregate models; full84 migration rehearsal and legacy073 preservation | Existing executed migrations/rehearsal prove forward compatibility locally; no external/production migration or cohosted data touched |
+| 27 exact App/environment/opaque tenant and explicit multi-product exports | HubDatabase scoped role+SET LOCAL; Registry authorize; Operations bounded scopes/comparison/export and dedicated worker/control roles | Real same-ID A/B tenant SQL/HTTP/current-grant/revocation/cross-product comparison tests; global control identity is explicit policy, never automatic tenant membership escalation |
+| 28 generic operational roles mapped only by host | contracts OPERATIONAL_ROLES; Registry generic issuer/subject/grants; Jupiter adapter explicit platform mapping; access administration actor/reason/Audit and managed/manual separation | Actual grant/credential native and host requester/admin isolation tests; App ADMIN cannot bootstrap global authority or access another App implicitly |
+| 29 centralized allowlist/redaction/AI re-redaction/separate feedback policy | core redactText/sanitizeStack/sanitizeEvent, strict metadata keys, Browser prequeue + server sanitization, Investigator evidence/output controls; Feedback textual disclosure/audience rule | Secret synthetic corpus/parity tests and native offline disclosure checks; content not collected by auto instrumentation, no claim that a regex can guarantee arbitrary text has no personal data |
+| 30 deterministic versioned fingerprint, random IDs excluded/unrelated distinct | core fingerprint V1 canonical app/env/service/exception/code/operation/route/normalized first5 frames; stored fingerprint_version; scope grouping separate from hash | Actual core equivalent-random-ID/frame-line and distinct-operation/exception/App tests plus tenant-separated SQL aggregation; same fingerprint never unifies tenants |
+
+Remaining31–73/A–I/all47 evidence/final report still require item-level
+reconciliation. These rows do not mark the complete Goal accepted.
+
 ### Final-scope audit pass2026-10-23 — sections1–10 (not whole-Goal verdict)
 
 Re-read original sections1–10 and approved preamble against current source after

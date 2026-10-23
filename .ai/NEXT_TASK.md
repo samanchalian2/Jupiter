@@ -26,6 +26,37 @@ latest Evidence for gates/runtime/remote commit.
 
 ### Remaining work — preserve the full original scope
 
+LATEST:98541 TERMINATED0,505 full tests/all gates/BOTH isolation scripts pass.
+DEC-064 runtime unchanged afterward; runtime Incident Helpv5 published/read;
+main84/zero temp DBs/zero attempts/enabled100000/optional-null unchanged, owned
+listeners absent. No exec pending. Scoped commit/push/remote SHA/CI next; then
+ADR/red regression and actual A14 Issue-impact remediation plus remaining44–73/
+A–I/all47 audit. Do not treat505 or previous remote CI as whole-Goal acceptance.
+
+CURRENT live handle98541/output/goal069-incident-impact-release.log, confirmed
+running API after builds/lint/typechecks/Web and Hub149 success. Poll
+same handle; no concurrent runtime edits/rebuild/restart. Then cleanup/Help/scoped
+delivery if green. New A14 source gap in working audit: Issue detail needs actual
+retained-cohort users/tenants/App/impact, not counts from its100 displayed Events.
+ADR/red regression/native verification required after current gate terminates.
+
+Latest: DEC-064 same-scope observed Incident impact implemented; focused SQL/
+HTTP/OpenAPI/native8 pass, Console37 and typechecks pass. Continue full final-source
+gate + both isolation scripts, inspect new screenshots, publish only revised
+observability-incidents Help through supported local actor path, verify cleanup,
+then scoped delivery. Actual CI40005956276 for prior32493f3 is SUCCESS, not pending.
+Original11–73/A–I/all47 final audit still open. No next Goal or host promotion.
+
+CURRENT HANDOFF:32493f3247aea50a5dfc4d6f0fe63a679a8264e7 cleanup fix pushed,
+origin/main equal. Actual push CI40005956276 CONFIRMED in_progress. Poll exact run
+(read-only GitHub generic fetch; PR-only wrapper insufficient); no local exec
+handles. Do not restart on observation timeout. If CI passes, record actual result,
+then continue final original-scope audit11–73/A–I/all47 Evidence, A01/A07. Prior
+bd875d8 CI failed57P01 teardown; corrected test-only disconnect wait passed141
+CI-mode/6 optional skips+typecheck. Functional499 gate still passed. Local84/
+zero fixture DBs/zero attempts/100000 unchanged,Help AIv4+limitsv3 verified.
+No deployment/next Goal or unrelated edits.
+
 IMMEDIATE: CI-mode full Hub80123 TERMINATED0:141 passed/6 optional skipped, no
 unhandled errors; typecheck/diffcheck pass. Commit/push only test cleanup helper/
 teardown+2 tests and own docs/README correction, inspect new actual push run.

@@ -2,6 +2,22 @@
 
 ## GOAL-069 — Observability Hub continuation (IN PROGRESS)
 
+Latest DEC-064 final-source98541 TERMINATED0,505 tests/all gates/BOTH isolation
+scripts pass. Runtime Incident Helpv5 published/read, final375/1440 images
+inspected, cleanup84/zero temp DBs/zero active attempts/enabled100000 preserved.
+Scoped delivery pending; no runtime edit after gate/no deployment. A14 Issue
+impact and full remaining44–73/A–I/all47 audit remain mandatory, same Goal.
+
+2026-10-23 DEC-064 addresses original section13 observed Incident impact with
+exact scoped snapshots, bounded explicit features and UTC observed span (not
+downtime). Focused SQL/HTTP/native8, Console37/OpenAPI6/typechecks pass,375/1440
+screenshots inspected, no document overflow at375/768/1024/1440. Final-source
+full release98541 currently active: Hub149/Web40 pass, API still running; both
+fault scripts/Help publication/cleanup/scoped delivery follow terminal success.
+Prior32493f3 actual CI40005956276 SUCCESS. Full original-source audit progresses
+through43 with A14 Issue-impact projection gap explicitly OPEN. No next Goal,
+preview/main promotion, main budget/key change or cohosted application mutation.
+
 2026-10-23 A12 functional499-test full release/all gates/both fault scripts pass.
 LOCAL073 applied/84 total, null optional defaults/live100000 policy preserved.
 Help AIv4/limitsv3 published/read. Only stale host test-log counter changed after

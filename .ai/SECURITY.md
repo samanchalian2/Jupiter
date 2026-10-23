@@ -1,5 +1,11 @@
 # Security and Privacy
 
+DEC-064 impact aggregation requires exact composite Issue/App/environment plus
+IS NOT DISTINCT FROM tenant binding inside the existing worker transaction.
+Only explicit string featureCode values, <=20 sorted entries, are projected;
+no tenant IDs, arbitrary metadata or inferred feature names are exposed. Existing
+detail RLS/current grants authorize the snapshot; historical data is not rewritten.
+
 DEC-061 joins only bounded already authorized Event IDs with exact composite
 App/environment/Event/tenant identity and existing RLS/current grants. Same
 fingerprint in another tenant cannot supply an Issue count. No raw body, stack,

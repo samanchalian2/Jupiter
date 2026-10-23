@@ -4,7 +4,57 @@ Status: IN PROGRESS. Owner-approved plan supersedes the stale GOAL-060 identifie
 in the supplied specification. GOAL-060 Personal Service history is preserved.
 GOAL-059 remains BLOCKED; LOCAL evidence is not staging acceptance.
 
+## 2026-10-23 — DEC-064 observed Incident impact (LOCAL, in progress)
+
+Final-source serial98541 TERMINATED0. Full output/goal069-incident-impact-release.log
+ends GOAL069_INCIDENT_IMPACT_RELEASE_EXIT=0:505 tests (180API/40Web/285Hub), all
+builds/lint/typechecks,84 migration rehearsal, independent Browser/reference
+clients/performance, actual compiled Jupiter/API/authenticated Web and BOTH
+fetch/React isolation scripts pass. Nothing skipped as a substitute for native
+acceptance. Fresh375/1440 final screenshots inspected. No runtime change after
+this gate. Supported actor/slug-only local runtime publication revised only
+observability-incidents to version5; public Help service readback independent/
+Audit/human/read-only-AI/recent-notes/observed-impact flags all true. Main readback
+84 migrations/zero temporary databases/zero active attempts/enabled100000 and
+optional-null/live-policy-preserved true; shared3000/5174 listeners absent.
+No provider call or preview/main deployment. Scoped commit/push still pending;
+A14 Issue-impact projection and full44–73/A–I/all47 final audit remain OPEN.
+
+Actual prior push CI40005956276 completed SUCCESS for exact32493f3247aea50a5dfc4d6f0fe63a679a8264e7.
+This does not cover the following new uncommitted runtime source.
+Original section13 audit found only occurrences/users/window persisted. New
+red integration output/goal069-incident-impact-red.log fails specifically for
+missing tenant/feature/time fields. New same-transaction exact composite Issue/
+App/environment/tenant aggregate snapshots distinct non-null tenants, tenant-free
+count, explicit string feature count/list<=20/unknown count and observed first/
+last/span. No new entity/migration/history rewrite or invented priority/downtime.
+Feature list filters non-string/blank values, no arbitrary metadata exposure.
+
+Green SQL/HTTP test verifies25 occurrences/3 users/24 features bounded20/one
+unknown/2400ms actual span; foreign tenant, tenant-free and out-of-window evidence
+excluded; tenant-free single observation has zero span; scoped VIEWER real HTTP
+can read only its tenant; later evidence does not mutate existing snapshot.
+OpenAPI additive optional properties preserve old snapshots and validate bounds.
+Console37 tests (including two new legacy-unknown/valid-zero/UTC/escape/list-bound
+tests), OpenAPI6 and API-independent server/Console typechecks pass.
+
+output/goal069-incident-impact-native-3.log TERMINATED0:8 focused tests pass,
+110 intentionally skipped. Actual msedge page verifies explicit feature/count/
+UTC/single-event zero span, no foreign feature, readable not-downtime explanation,
+existing real human transitions/Audit, native navigation and scope/revocation.
+375/768/1024/1440 all RTL and document width exactly viewport.375 screenshot
+inspected. First native attempt failed absent bundled Chromium; existing channel
+msedge is used, not downloaded. Second failed stale built Console; package build
+restored current source before third success. Neither failure is called passing.
+Full new-source release gate, runtime revised Help, cleanup and delivery pending;
+whole Goal original-scope audit remains IN PROGRESS. No provider call/deployment.
+
 ## 2026-10-21 — Optional operational ceilings / DEC-062 (LOCAL, in progress)
+
+Cleanup fix32493f3247aea50a5dfc4d6f0fe63a679a8264e7 pushed; origin/main SHA
+verified equal. Actual new push CI40005956276 CONFIRMED in_progress, NOT yet
+success. Post-push LOCAL84/zero temporary DBs/zero active attempts/enabled100000
+safe readback verified. No local test handle active. Full Goal audit remains.
 
 Cleanup remediation LOCAL rerun80123 TERMINATED0: full CI-mode Hub141 passed,
 6 browser/performance cases intentionally optional/skipped(147 total), no

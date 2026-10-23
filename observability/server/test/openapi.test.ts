@@ -8,6 +8,12 @@ import {randomUUID} from 'node:crypto';
 import {jsonSchema} from './openapi-schema.js';
 
 describe('public language-neutral OpenAPI',()=>{
+ it('documents additive bounded observed Incident impact while preserving legacy unknowns',()=>{
+  const validate=new Ajv({strict:false});formats(validate);const check=validate.compile(jsonSchema(openApiDocument.components.schemas.IncidentImpact) as object);
+  expect(check({occurrences:4,affectedUsers:2,windowSeconds:60})).toBe(true);expect(check({})).toBe(true);
+  expect(check({affectedTenants:0,tenantFreeEvents:1,affectedFeatures:['explicit-feature'],observedDurationMs:0,observedFirstAt:null,observedLastAt:null})).toBe(true);
+  for(const invalid of [{affectedFeatures:Array(21).fill('feature')},{affectedFeatures:[false]},{observedDurationMs:-1},{observedFirstAt:'invalid'},{affectedFeatures:['x'.repeat(257)]}])expect(check(invalid)).toBe(false);
+ });
  it('validates the complete document with no remote reference resolution',async()=>{
   const document=await SwaggerParser.validate(structuredClone(openApiDocument) as never,{resolve:{external:false}});
   expect(document.openapi).toBe('3.0.3');
