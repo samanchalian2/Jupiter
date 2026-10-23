@@ -11,8 +11,10 @@ process crash. A production backend needs a durable outbox and its own redaction
 Download `GET /api/v1/observability/openapi.json` from your Hub host. The canonical
 document is exported as `openApiDocument` by `@observability/server`; the HTTP
 route and tests use that exact object. It documents the currently executable
-HTTP operations only. Trusted bootstrap/grant/rotation service ports are not
-misrepresented as public endpoints. OpenAPI 3.0.3 is used for broad generator
+HTTP operations only. Scoped grant and integration-key management, including
+rotation/revocation, now have documented ADMIN HTTP/Console workflows; trusted
+bootstrap/global-authority ports remain deployment-owned, not public endpoints.
+OpenAPI 3.0.3 is used for broad generator
 compatibility: [official specification](https://spec.openapis.org/oas/v3.0.3.html).
 
 An authorized Hub administrator creates an Application and its environment, then

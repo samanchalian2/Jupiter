@@ -6,6 +6,31 @@ GOAL-059 remains BLOCKED; LOCAL evidence is not staging acceptance.
 
 ## 2026-10-21 — Optional operational ceilings / DEC-062 (LOCAL, in progress)
 
+Cleanup remediation LOCAL rerun80123 TERMINATED0: full CI-mode Hub141 passed,
+6 browser/performance cases intentionally optional/skipped(147 total), no
+unhandled errors. Server typecheck/diffcheck pass. No production-source changes
+since499 functional gate; post-gate changes are test-only reporting/cleanup and
+the two new cleanup tests, each re-executed. New remote delivery/result required.
+
+2026-10-23 actual bd875d8 CI40005268830/job120591458216 FAILS on an uncaught
+57P01 administrator termination during generated-DB teardown, despite all Hub
+test assertions passing. Source diagnosis: pg-pool resolves end after removing
+clients from its array but their socket end callbacks may still be pending;
+old afterAll immediately pg_terminate_backend those exact sessions. This explains
+the observed closing-client error; no business/host database was terminated.
+Test teardown now waits for observed zero exact-generated-DB sessions (bounded5s)
+before normal DROP, fails a real leak rather than swallowing Pool errors. Two
+unit cases verify delayed closure and timeout/invalid observation. No production
+pool/error policy/authorization/test assertion weakened. Full CI-mode Hub rerun
+80123 is active, output/goal069-operational-limits-ci-cleanup.log; new scoped
+push/remote CI proof still required. Prior499 functional gate is not CI success.
+
+Implementation bd875d8ff564b96fef0bc89d1b69d301aa79a874 committed/pushed;
+origin/main SHA verified equal. Actual new push CI40005268830 confirmed
+in_progress, not yet success. LOCAL84/zero fixtures/zero attempts/live100000 and
+Helpv4/v3 already verified. No local active test handles; whole original audit
+continues with sections1–10 source/execution reconciliation in working audit.
+
 2026-10-23 final follow-up49879 TERMINATED0/all3 actual host cases,
 output/goal069-operational-limits-host-metadata.log: observed84 count now correct,
 normal password/JWT/membership, real outage/manual/trace/Incident/embedded four-

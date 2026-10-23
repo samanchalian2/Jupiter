@@ -19,6 +19,7 @@ import {browserAcceptance} from './browser-acceptance.js';
 import {NodeSdk} from '../../packages/node-sdk/src/index.js';
 import {performanceAcceptance} from './performance-acceptance.js';
 import {defaultIngestionPolicy,ingestionExclusion} from '../src/ingestion-policy.js';
+import {waitForFixtureDisconnect} from './database-cleanup.js';
 
 // Real PostgreSQL, in an isolated temporary database. This test never migrates
 // the configured business database and never imports a Jupiter module.
@@ -58,7 +59,7 @@ beforeAll(async()=>{
   const api=new HubHttpApi(database,registry,ingestion,{verify:async token=>{if(token==='root-identity-placeholder')return{issuer:'acceptance',subject:'local-admin',displayName:'Local admin'};if(token==='scoped-identity-placeholder')return{issuer:'reference-identity',subject:'operator',displayName:'Scoped operator'};if(token==='unassigned-identity-placeholder')return{issuer:'management-unassigned',subject:'unassigned',displayName:'Unassigned operator'};throw new Error('invalid');}});
   httpServer=createHubServer(api);await new Promise<void>(resolve=>httpServer.listen(0,'127.0.0.1',resolve));const address=httpServer.address();if(!address||typeof address==='string')throw new Error('HTTP fixture failed');endpoint=`http://127.0.0.1:${address.port}/api/v1/observability`;
 },30_000);
-afterAll(async()=>{if(httpServer){httpServer.closeAllConnections();await new Promise<void>((resolve,reject)=>httpServer.close(error=>error?reject(error):resolve()));}await database?.close();if(created){await admin.query('SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname=$1 AND pid<>pg_backend_pid()',[databaseName]);await admin.query(`DROP DATABASE "${databaseName}"`);}await admin.end();},30_000);
+afterAll(async()=>{try{if(httpServer){httpServer.closeAllConnections();await new Promise<void>((resolve,reject)=>httpServer.close(error=>error?reject(error):resolve()));}await database?.close();if(created){await waitForFixtureDisconnect(async()=>Number((await admin.query('SELECT count(*)::int n FROM pg_stat_activity WHERE datname=$1 AND pid<>pg_backend_pid()',[databaseName])).rows[0].n));await admin.query(`DROP DATABASE "${databaseName}"`);}}finally{await admin.end();}},30_000);
 const event=(extra:Partial<TelemetryEvent>={}):TelemetryEvent=>({eventId:randomUUID(),schemaVersion:'1.1',applicationId:appA,environmentId:envA,occurredAt:new Date().toISOString(),source:'BROWSER',category:'FRONTEND',severity:'ERROR',eventCode:'ui.render_failed',normalizedMessage:'Controlled error',actorReference:'userA',tenantReference:'shared-tenant-id',...extra});
 const scope=()=>({applicationId:appA,environmentId:envA,actorReference:'userA',tenantReference:'shared-tenant-id',source:'BROWSER' as const});
 // Whole-cohort analytics fixtures use an explicit DB-observed inclusive window,

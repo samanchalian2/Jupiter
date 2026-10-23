@@ -79,6 +79,30 @@ Policy runtime Help v4 is published/read; access/credential workflows remain ope
 
 ## Audit work not finished
 
+### Final-scope audit pass2026-10-23 — sections1–10 (not whole-Goal verdict)
+
+Re-read original sections1–10 and approved preamble against current source after
+bd875d8. Evidence references below are the499-test functional gate, focused
+actual-host3 follow-up and earlier named native execution records, not just
+directory names. Remaining sections11–73/A–I/47-section cross-check is still open.
+
+| Sections / concrete obligation | Authoritative current source / observed proof | Verdict and boundary |
+| --- | --- | --- |
+| 1 execution/local-only/Goal identity and2 architecture principles | Approved preamble/DEC-038; `.ai/CURRENT_STATE.md`; scoped delivery commits/remote SHA; no host promotion | Local continuation verified, GOAL-059 separate; full Goal/phase completion NOT claimed |
+| 3 existing-system audit | Evidence Architecture inventory (Nest/React/HTTP/worker/pg queue/RLS/auth/AI/commercial/Help/test boundaries); host adapters reuse existing services | Inventory documented; its runtime claims rely on actual AppModule/Worker/Browser tests, not inventory alone |
+| 4 product-agnostic core and host mapping only in adapters | generic HubDatabase/Registry/HTTP/SDK identity, `apps/api/src/observability` mapping; independent verified Browser backend and actual Python/C# processes | Observed independent consumers work without Jupiter business imports/cookies; no customer-domain FK or role copied into Hub |
+| 5 existing infrastructure with independent deployment capability/no new speculative stack | generic constructor-provided DB/provider/vault/identity interfaces, PostgreSQL outbox per approved override, versioned HTTP endpoint examples | Reuse/portable boundary verified in independent fixtures, not a claim that a separate production service was deployed |
+| 6 six reusable package boundaries/no public publish | contracts/core/browser-sdk/react-adapter/node-sdk/nestjs-adapter manifests/source, topological builds/typechecks/unit tests and independent reference | Builds/tests executed; no npm/registry publication requested or performed |
+| 7 App/environment/opaque-tenant/actor/Event/Issue/Incident/Feedback/Investigation | dedicated observability schema/RLS/composite FKs, generic principals and typed contracts; actual A/B same-identifier isolation SQL/HTTP/AI/native | Same opaque identifiers never confer cross-App/tenant access; normal trusted ingestion mapping still required |
+| 8 full14-item Registry/new-App creation/disabled-ingest/Audit | A01 inventory and2026-10-23 reconciliation below; RegistryConfiguration/IngestionPolicy/AccessCredentials plus existing Rules/Maintenance/Investigator controls | Source and executed actual HTTP/native management behaviors present; final A01 signoff must retain identity/read-only key semantics and concrete RLS/current-grant/Audit proof |
+| 9 versioned/documented/strict/idempotent/rate-limited/language-neutral/no Jupiter session dependence | public OpenAPI61-operation actual HTTP traversal, real parallel/lost-ACK receipts, native120/min pacing, Python/C# reference runs | Contract/workflows verified locally; Java is standard HTTP compatibility, not a promised Java SDK. Loopback acceptance is not public TLS deployment |
+| 10 Browser vs Server credential security | Registry hashed parent/child tokens, Browser5min scope from trusted backend, Server scoped/revocable keys; native issue/rotate/revoke/parent invalidation/one-time secret and origin/auth SQL tests | No permanent Browser secret; origin auxiliary only. Actual default key/public metadata never authorizes actor/tenant; secrets excluded from evidence/source |
+
+Developer example README contained stale pre-DEC-055 text implying grant/rotation
+are still service-only. Corrected documentation to the actual supported ADMIN
+HTTP/Console boundary; bootstrap/global authority remains deployment-owned.
+No public contract/code/deployment changed in that documentation correction.
+
 ### 2026-10-23 reconciliation of the remaining A01/A07 boundaries
 
 This is a fresh source/test-scope review, not a completion certificate. The

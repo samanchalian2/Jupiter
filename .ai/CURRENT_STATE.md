@@ -1,5 +1,32 @@
 # Current State
 
+**2026-10-23 CI cleanup remediation verified locally:**80123 TERMINATED0,
+full CI-mode Hub141 pass/6 explicitly optional skipped(147 total), no unhandled
+error; server typecheck/diffcheck pass. Production source unchanged since499
+functional gate; only test teardown/helper+2 tests corrected afterward. Cleanup
+fix scoped push/new actual remote CI still required. No local process pending.
+
+**2026-10-23 actual CI follow-up (not green):** bd875d8 push CI40005268830/
+job120591458216 TERMINATED FAILURE despite all Hub assertions passing: uncaught
+57P01 terminating connection due administrator command during fixture teardown.
+Installed pg-pool _pulseQueue resolves end when client array empties; _remove
+awaits socket end callback separately. Existing afterAll immediately terminates
+remaining generated-DB sessions, racing closing sockets (mechanism consistent
+with exact CI error). Test-only teardown now waits for observed zero pg_stat_activity
+sessions before ordinary DROP, bounded5s; a real leak fails, no error swallowed,
+no rate/auth/production pool change. Two cleanup tests added. Exact CI-mode full
+Hub test suite80123 ACTIVE/log goal069-operational-limits-ci-cleanup. Poll before
+scoped fix commit/push/actual CI. Functional499 gate remains passed, remote
+current implementation NOT accepted yet. Main84/100000 unchanged.
+
+**2026-10-23 pushed implementation:** bd875d8ff564b96fef0bc89d1b69d301aa79a874
+push successful and origin/main SHA verified. Actual CI40005268830 confirmed
+in_progress; inspect exact run, not previous1d1259b success. No local exec handle.
+Unrelated gateway/training edits/output/tmp preserved. Began actual original-scope
+sections1–10 reconciliation in working audit; remaining11–73/A–I/47 index is NOT
+signed off. Found/fixed only stale developer README pre-DEC-055 grant/rotation
+wording; runtime/API unchanged. Local84/zero fixtures/zero attempts/100000 stable.
+
 **2026-10-23 ready for scoped delivery:** Host metadata follow-up49879 TERMINATED0,
 all3 actual compiled host/native cases pass with observed migrations84. No local
 test handle remains. Final cleanup readback84/zero temporary DBs/zero active AI

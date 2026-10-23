@@ -26,6 +26,29 @@ latest Evidence for gates/runtime/remote commit.
 
 ### Remaining work — preserve the full original scope
 
+IMMEDIATE: CI-mode full Hub80123 TERMINATED0:141 passed/6 optional skipped, no
+unhandled errors; typecheck/diffcheck pass. Commit/push only test cleanup helper/
+teardown+2 tests and own docs/README correction, inspect new actual push run.
+Production499 functional gate remains, but do NOT call bd875d8 CI success.
+Then continue original audit11–73/A–I/47 index/A01/A07 final signoff.
+
+LATEST CI correction:40005268830/job120591458216 terminal FAILURE, uncaught57P01
+at generated-DB teardown after all Hub assertions passed. No remote-green claim.
+Test-only waitForFixtureDisconnect observes zero sessions (bounded5s) before DROP,
+not pg_terminate_backend racing pg-pool closing sockets; no suppressed errors or
+production change. Two unit cases test delayed closure/leak detection. Full
+CI-mode Hub80123/log goal069-operational-limits-ci-cleanup ACTIVE; poll same
+handle, then typecheck/scoped commit/push/reinspect actual new run. Whole audit
+continues after this real CI gate correction; main84/live100000 preserved.
+
+IMMEDIATE current delivery:bd875d8ff564b96fef0bc89d1b69d301aa79a874 pushed,
+origin/main SHA verified; actual CI40005268830 confirmed in_progress. Poll exact
+run until authoritative terminal; do not rerun from an observation timeout.
+No local tests active. Working final audit now re-read sections1–10 with concrete
+source/execution/boundaries; continue11–73/A–I/all47 Evidence and finalize A01/A07,
+not another automatic test-count-only completion. Developer example README stale
+grant/rotation service-only wording corrected in docs. No new runtime change.
+
 LATEST2026-10-23: Host metadata49879 TERMINATED0/all3 cases,observed84. Cleanup:
 84 local migrations/zero temporary DBs/zero active AI attempts/enabled100000;
 optional defaults null/live policy/Help AIv4+limitsv3 readback PASS. No live local
