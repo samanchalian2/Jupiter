@@ -1,10 +1,95 @@
 # GOAL-069 — Observability Hub Evidence
 
-Status: IN PROGRESS. Owner-approved plan supersedes the stale GOAL-060 identifier
+Status: LOCAL IMPLEMENTATION/ACCEPTANCE VERIFIED; final delivery handoff. Owner-approved plan supersedes the stale GOAL-060 identifier
 in the supplied specification. GOAL-060 Personal Service history is preserved.
 GOAL-059 remains BLOCKED; LOCAL evidence is not staging acceptance.
 
+## 2026-10-24 — Final all-flags LOCAL acceptance and cleanup
+
+Final-source56046 TERMINATED0, output/goal069-final-acceptance-release.log ends
+GOAL069_FINAL_ACCEPTANCE_RELEASE_EXIT=0. Fresh C# Release build0 warnings/errors;
+Browser=true/msedge, performance=true, REFERENCE_CLIENTS=true, verified bundled
+Python and Git OpenSSL explicit in the SAME serial run.513 tests pass:
+180API/40Web/99 SDK-core-adapters/156 server/38 Console. Every workspace build,
+lint/typecheck,84 migration rehearsal/RLS/current-grant isolation, public61-route
+HTTP/OpenAPI parity, verified HTTPS/four roles, real Python/C# processes, actual
+Edge offline/quota/reload/ACK/identity/reference and measured performance cases,
+actual compiled Jupiter AppModule/Web/worker/manual ticket/embedded platform
+and BOTH real fetch/React fault scripts pass. No runtime edits after this gate.
+Earlier serial external-client omission is corrected by actual PASS observed
+inside this final run, not inferred from test count. Vite retains its non-fatal
+>500KiB chunk warning; no unrelated bundling change or threshold hiding.
+
+Full requirement audit maps sections1–73/A–I/all32 DoD bullets and47 Evidence
+fields to inspected source/actual tests/results/limits. A01–A16 concrete gaps are
+remediated or verified; no smaller foundation-only milestone substituted. Final
+normal delivery/hash/current CI attestation is the handoff; owner independent
+audit remains distinct. Previous IN PROGRESS/open statements are historical
+checkpoints, superseded by this final LOCAL result rather than deleted failures.
+
+Final normal readbacks:84 migrations,27 Hub tables,zero temporary databases AND
+roles,zero active AI reservations; enabled100000 combined UTC-month token budget,
+gpt-6-luna/encrypted credential presence preserved, optional caps/rates all null.
+Eleven RUNTIME published guides readable via normal public audience and valid
+feature/route mappings: console9,incidents5,applications5,AI4,concepts3,severity3,
+offline3,AI-limits3,privacy2,integration2,feedback2. Existing history/unrelated Help
+preserved. Ephemeral TLS directories0; owned3000/5174 absent. No real provider
+call, secret readback/log/commit, OS trust change, shared tenant role fixture,
+preview/main/Arandi deployment or next Goal. User gateway/training/output/tmp/
+legacyAGENTS left untouched. UI source unchanged since inspected375/1440 final
+Issue/Incident images; final native four widths remain current-source evidence.
+
+Measured LOCAL examples from this exact run:1000-event ingestion314.23 events/s,
+batch p95362.60ms; sequential aggregation1000 in5471.44ms, shared-process CPU1423ms;
+dashboard p9549.18ms; retention100 rows62.68ms; AI scheduling26.51ms/11 jobs,
+repeated0 jobs/provider calls0. Actual ticket queue p95 baseline10.76ms vs
+observed13.99ms(20 alternating pairs,difference3.23ms), identical responses and
+one saturated saved-view write. Browser default500 queue fills/reloads/replays
+500 exact IDs; byte cap accepts169 large envelopes/2085798B. These are sampled
+LOCAL in-process/fixture observations, not production SLO/peak RSS/Postgres CPU,
+physical storage or ten loaded products. All such measurement limits preserved.
+
+## 2026-10-24 — HTTPS and explicit operational roles (LOCAL, in progress)
+
+Actual previous1b49a13 CI40022346510 completed SUCCESS, exact head SHA verified.
+A15 uses the existing exported Node handler on a real local HTTPS server, no
+new production listener/API/configuration. OpenSSL creates one-day synthetic
+localhost key/certificate only in a guarded OS temporary directory; each client
+explicitly trusts its certificate with rejectUnauthorized:true. Untrusted and
+wrong-host chains reject before any HTTP handler invocation; trusted transport
+without bearer gets401, authorized batch gets ACCEPTED then DUPLICATE with one
+real SQL Event. Finally removes directory/key/cert and verifies ENOENT; OS trust
+and shared listeners unchanged. Temp prefix readback count0.
+
+First TLS fixture failed reading response.socket after Node detached it at end;
+capture authorized state at response time instead, retaining actual strict TLS
+verification. First role fixture sent malformed POST without body scope and got
+400; corrected to the documented environment/tenant body, no API guard relaxed.
+Also assert all generated Events ACK, including separate valid foreign-env send,
+instead of ignoring a rejected third event. These are fixture defects, not
+product authorization fixes. Failed logs preserved locally.
+
+A16 actual HTTP/SQL matrix explicitly runs ADMIN/OPERATOR/ANALYST/VIEWER:
+all exact-grant reads200; foreign App/environment/tenant and revoked grants403;
+human mutation only ADMIN/OPERATOR, AI request all except VIEWER, whole-App
+configuration only ADMIN. Tenant-bound ADMIN alone cannot configure whole App;
+explicit whole-App grant is issued/revoked for comparison. Real human/config
+Audit uses that principal; denied cases leave Issue OPEN/no activity, no provider
+call/ai_attempt. Only disposable fixture automation/jobs are disabled/cleaned.
+No real role, secret, customer allowance or business tenant is changed.
+
+output/goal069-security-final-focused.log TERMINATED0:12 pass/113 intentionally
+skipped (7 OpenAPI,4 roles,1 HTTPS). Server typecheck/diffcheck pass. OpenAPI
+description now matches61 supported ADMIN management operations while bootstrap/
+global authority stay service-only; metadata correction, no endpoint/shape change.
+Full final-source all-flags release still required before final certification.
+
 ## 2026-10-24 — DEC-065 retained Issue impact (LOCAL, in progress)
+
+Delivered1b49a1370992e47c9a7f563e45929ba1e864b0ed, origin/main exact SHA
+verified. Actual new push CI40022346510 confirmed in_progress, not success yet.
+No local exec/fixture DB/active attempt; enabled100000 preserved. User-owned
+gateway/training edits/output/tmp left untouched. No host promotion/next Goal.
 
 Final-source21037 TERMINATED0, output/goal069-issue-impact-release.log ends
 GOAL069_ISSUE_IMPACT_RELEASE_EXIT=0:508 tests(180API/40Web/288Hub), all builds/
@@ -2798,25 +2883,26 @@ Path abbreviations: O = `observability/`; A = `apps/api/`; W = `apps/web/`.
 S = `O/server/test/persistence.integration.test.ts` (actual PostgreSQL/HTTP);
 B = `O/server/test/browser-acceptance.ts` plus `offline-browser-acceptance.ts`;
 G = executed full `pnpm verify:release` with Browser/reference/performance flags.
-Latest COMPLETED G=508 tests for DEC-065,21037 TERMINATED0 including actual
-compiled host/Web and both fault scripts. Explicit real Python/C# follow-up82692
-also passed separately; serial run omitted that conditional flag, so never infer
-it from a no-skips count. Historical505/941d1ff remains its own checkpoint.
-Remaining older row counts are dated to their named gate, not extra test totals.
+Latest COMPLETED G=513 tests,56046 TERMINATED0 with ALL explicit flags, actual
+compiled host/Web, verified HTTPS/four roles, Python/C# and both fault scripts.
+Historical508/505 remain their own checkpoints; external-client omission there
+was explicitly corrected, never inferred from a no-skips count. Every row below
+is revalidated against final current source/result; named older counts locate
+historical evidence, not extra final tests. No new runtime change after G513.
 References to G below identify executed coverage, not tests merely present.
 
 | Required section | Implementation path | Tests executed | Actual result | Limitations / remaining proof |
 | --- | --- | --- | --- | --- |
 | 1. Initial Architecture Inventory | Architecture inventory table in this document; `.ai/DECISIONS.md` DEC-038 | Repo/package/worker inventory in Phase A | Existing modular host/pg queue and extraction boundary documented | Inventory alone proves no runtime behavior |
-| 2. Product-Agnostic Architecture | O/packages; O/server; Jupiter adapters in A/src/observability | G builds plus independent Browser/Python/C# execution | Generic consumers run without Jupiter user/ticket imports | Final requirement audit must still inspect every boundary |
+| 2. Product-Agnostic Architecture | O/packages; O/server; host adapters | G513 builds/independent Browser/Python/C# and final source audit | Generic consumers operate without Jupiter domain imports/session | Host integration is explicit, no customer deployment/IdP claim |
 | 3. Package Boundaries | Six O/packages package.json/src trees | G package builds/typechecks/tests | Contracts/core/SDK/adapters build independently | No new public release/package registry publication claimed |
 | 4. Application Registry | O/server/src/registry.ts; O/console/src Registry/Policy/Access controls; host adapter | S actual61-operation traversal/bootstrap/grants; B real Registry forms | Same-ID lifecycle, effective policy, one-time credentials and actor Audit pass | Generic controls plus actual Jupiter host; no customer IdP deployment claim |
 | 5. Event Contract | O/packages/contracts/src/index.ts | contracts contract.test.ts; S strict HTTP validation | Schema/version/field/scope constraints and safe reason codes tested | No arbitrary payload extension approved |
-| 6. OpenAPI | O/server/src/openapi.ts, http-api.ts | OpenAPI7 in G508; S every operation HTTP; flagged actual client follow-up | 61 operations have real request/response parity; additive observed impact contracts validated | A15 stale administration description still open; no generated external SDK claim |
+| 6. OpenAPI | O/server/src/openapi.ts/http-api.ts | OpenAPI7 and61-route actual HTTP/clients in G513 | Current management metadata/impact/parity validated; bootstrap/global boundary intact | No generated external SDK or package release claim |
 | 7. SDK Authentication Model | O/server/src/registry.ts; A/src/observability/hub-binding.service.ts | S expired/revoked/forged scope; B host session/mint/logout | Separate trusted-server, Browser and operational identities tested | Reference login is not Jupiter password-login acceptance |
 | 8. Database Model | A/migrations/063–073; O/server/src/database.ts | S RLS/FK/immutability;073 legacy unpriced preservation | Dedicated roles/composite scopes and immutable rate/cost snapshots | Logical row bytes are not physical disk isolation |
 | 9. Migrations | A/migrations, supported forward runner | S clean84-migration rehearsal; actual compiled host observes84 | Forward chain passes; disposable DB/role removed;073 applied locally | No preview/main/staging migration deployment here |
-| 10. Tenant and Application Isolation | O/server/src/database.ts, registry.ts, http-api.ts | S cross-tenant/App/actor/current-grant SQL/HTTP denials | Scope checks and RLS deny unauthorized access | Final authenticated host roles audit remains |
+| 10. Tenant and Application Isolation | generic database/Registry/HTTP, host adapter | G513 actual four-role incl ANALYST/foreign/current revoke and authenticated host | Scope checks/RLS/current role/actor Audit operate | No role promotion/foreign App access implicit from product membership |
 | 11. Frontend SDK | O/packages/browser-sdk/src/index.ts | 47 SDK tests; B native quota/TTL/named recovery; G | Bounded queue/ACK/replay/context/lifecycle/configured retention verified | Memory fallback not durable after page loss |
 | 12. React Adapter | O/packages/react-adapter/src/index.tsx | Five tests in G421 and sixteen mounted Edge cases | Startup/capture/cleanup fault containment and reset pass focused/full QC | Not authenticated whole shell or SQL-event acceptance |
 | 13. Backend SDK | O/packages/node-sdk/src/index.ts | 13 Node tests; real queued outage integration; G | Bounded async/byte batches, real10s timer recovery, no business retry | In-memory Node queue not a durable outbox |
@@ -2831,7 +2917,7 @@ References to G below identify executed coverage, not tests merely present.
 | 22. Issue Engine | O/server/src/engine.ts/operations.ts | S aggregation/reopen/atomic completion; DEC-065123-row/deletion/HTTP/native in G508 | Lifetime state preserved; retained projection proves123 vs100 displayed/2 users/24 features bounded20 | Retained cohort not complete historical population or cross-App union |
 | 23. Incident Lifecycle | O/server/src/operations.ts/rules.ts; IncidentWorkspace | S scoped human actions/Audit; B independent and actual Jupiter standalone/embedded route | Current grants/human changes/navigation/read-only AI/DEC-064 impact pass G505 | Rule-time observations not downtime/unlimited history/model-driven state |
 | 24. Monitoring Rules | O/server/src/rules.ts | S ten actual persisted rule scenarios plus expected-rejection negatives | Rules create deduped scoped incidents/alerts; Browser CRITICAL not trusted | Controlled local event windows, not production incident SLO |
-| 25. Operations Dashboard | O/console/src; W/src/OperationsWorkspace.tsx | B required sections/management/four widths/current grants; actual Jupiter host; Console38 in G508 | Real HTTP/native Overview/live/Issue/Incident/analytics/Registry/AI/maintenance/impact evidence | No unrelated product-workflow blanket claim; final all-requirement verdict still open |
+| 25. Operations Dashboard | O/console/src; W/src/OperationsWorkspace.tsx | B required sections/management/four widths/current grants; actual Jupiter host; Console38 in G513 | Real backend/native Overview/live/Issue/Incident/analytics/Registry/AI/maintenance/impact | No blanket acceptance for unrelated product workflows |
 | 26. Feedback | O/server/src/feedback.ts; W/src/FeedbackCenter.tsx | S own visibility/replies/triage; B offline/lost ACK; Help browser checkpoint | Own tracking, same-ID dedupe and internal-reply exclusion proven | Server tracking ACK, not local enqueue, is final registration |
 | 27. Analytics | O/server/src/operations.ts; O/console/src | S ten reports/1–10 products/current grants; B cache/late response | Real rates/rankings/history and explicit multi-product comparison | Timing uses one loaded App + empty App, not production SLO |
 | 28. AI Investigator | O/server/src/investigator.ts, ai-provider.ts | S controlled findings/scheduling; dated local GapGPT checkpoint | Schema-valid read-only findings cite authorized evidence | No external provider call in current regression gate |
@@ -2842,18 +2928,18 @@ References to G below identify executed coverage, not tests merely present.
 | 33. Telemetry Self-Health | O/server/src/self-monitoring.ts, diagnostics.ts | S report provenance/storage timeout/fairness; B health/counters | Automatic SDK/server reports and logical storage samples tested | Unknown observations stay unknown; not physical/whole-service health |
 | 34. Independent Reference Application | O/examples/browser/backend.ts, src/main.tsx | B authenticated independent frontend/backend/SQL | Second App integrates without Jupiter sessions/domain imports | Controlled reference auth, not production IdP deployment |
 | 35. Reusability Acceptance | O/examples and generic HTTP packages | Real Browser reference + actual Python/C# via S/G | Multiple independent clients use the generic public contract | No package-registry publishing or all ecosystems claimed |
-| 36. Cross-Application Isolation | Registry/database/ingestion/operations/Investigator | S App A/B same opaque identities; forged credentials/export/AI denial | App identity never joins private data across Apps | Final contract audit remains separate from case count |
+| 36. Cross-Application Isolation | Registry/database/ingestion/operations/Investigator | S/G513 A/B same opaque identities/foreign credential/export/AI plus explicit four-role current-grant matrix | No private cross-App union/authorization by identifiers | Shared authorized comparison uses fixed aggregate scopes, not model context union |
 | 37. Offline Browser Tests | B and twenty-case section-57 map above | Actual Edge network/IndexedDB/quota/expiry/Feedback/foreign partition | All twenty mapped cases have concrete observed assertions | Fixture-age expiry, not a 48h wall-clock soak |
-| 38. Security Tests | Contracts/RLS/API/SDK/AI/security suites | S/G plus real Browser hostile actor/foreign identity | Auth/scope/redaction/injection/export/retention controls exercised | Full requirement-by-requirement and Jupiter host audit remains |
+| 38. Security Tests | Contracts/RLS/API/SDK/AI/security/HTTPS/roles | S/G513 native hostile identity/TLS/roles plus source/DoD audit | All named security checks exercised without broad grants/TLS bypass | Synthetic controlled cases not a claim of general penetration-test certification |
 | 39. Performance Measurements | O/server/test/performance-acceptance.ts, concurrent-performance.ts, browser-performance.ts; A/test/hub-workflow-performance.ts | G performance flag; actual 1000/200-event SQL/HTTP, 120 scopes, Browser caps | Bounded throughput/latency/overhead samples recorded in checkpoints | LOCAL only; sampled heap not peak RSS; full host load still unproven |
 | 40. Browser Responsive Acceptance | B shared Console; Help script; actual-host-browser.ts | Four widths 375/768/1024/1440 for Console/Help AND actual requester composer/detail; mounted fault fixtures | RTL/no document overflow; actual manual-write/trace/outage recovery and inspected synthetic screenshots | Not all unrelated Jupiter business workflows or every management mutation |
 | 41. Help Publication | docs/help/observability-*.md; supported publisher | Runtime actor/slug-only publication/public reader; actual Jupiter Help browser; Incident5/concepts3/severity3/Console9 readbacks | Eleven guides/history preserved; latest observed-impact/lifetime/snapshot/not-downtime text verified | No new Help engine/deployment; prior rendered triggers preserved |
-| 42. Known Limitations | Explicit dated limits in this document; .ai/NEXT_TASK.md | Source/evidence audit and actual gate inspections | No staging/promotion/PWA/physical-disk or blanket UI claims substituted | Actual AppModule + requester Web proof exists; remaining required process/management coverage must be determined in final requirement audit |
+| 42. Known Limitations | dated limits/final summary; NEXT_TASK | original full audit/G513/results inspection | LOCAL/retention/sampling/fallback/provider-hypothesis/measurement/deployment boundaries explicit | No functional local blocker; independent owner audit and GOAL-059 separate |
 | 43. Defects Found | Dated red tests in Evidence: storage, sampler, analytics, fetch, React | Red regressions and real mounted startup failure | Concrete defects distinguished from incorrect fixture assumptions | No count of hypothetical defects presented as acceptance |
-| 44. Defects Fixed | SDK/server/adapters and their paired regression paths above | Subsequent focused/full gates plus actual Browser checks | Earlier defects and React remediation pass bounded focused/full QC | This does not establish all remaining host workflows |
-| 45. Cleanup | Disposable S/A teardown incl observed disconnect wait; fresh Browser contexts/listeners | Main84/zero fixtureDB/zero attempts/enabled100000/absent3000+5174 after G508+flagged clients; actual host role assertions | Shared tenant/profile/key/budget/cohosted data unchanged; previous cleanup CI green | Preserve unrelated output/tmp; not backup or physical erasure proof |
-| 46. Quality Gates | package.json verify:release; exact logs/markers | G508 exit0/native/performance/both scripts/diff check; explicit Python/C# follow-up; prior941d1ff CI SUCCESS | Full current runtime508 pass; test-only observable client reporting independently re-executed | Current scoped delivery/CI and A15/final audit pending; no duplicate focused-test counts |
-| 47. Final Verdict | This Evidence; .ai/CURRENT_STATE.md and NEXT_TASK.md | Full-scope completion audit remains incomplete | IN PROGRESS; no next Goal, promotion or blanket acceptance | Must finish actual requirement audit and its concrete remaining gaps, not invent broad new prerequisites |
+| 44. Defects Fixed | named paired regression paths/core/SDK/Console/adapters | final G513 after earlier red→green/unit/SQL/native/actual host checks | Concrete gaps A01–A16 remediated or verification strengthened, prior failures retained | Never equate a fixture correction with production defect or unlimited workflow coverage |
+| 45. Cleanup | disposable teardown/current readbacks/guarded TLS finally | postG51384/27 tables/zero fixture DBs+roles/attempts/TLS dirs,100000 intact/owned listeners absent | Shared tenant/profile/key/budget/cohosted data unchanged | Preserve unrelated output/tmp; no backup/physical erasure proof |
+| 46. Quality Gates | verify:release/all flags/exact terminal marker | G513 exit0/all named native/reference/performance/host scenarios+BOTH scripts/diff; previous1b49a13 CI SUCCESS | Final current-source local gates verified; no runtime edit after | Final commit/remote SHA/current CI in delivery handoff; no duplicate focused counts |
+| 47. Final Verdict | final summary/full requirement+32-DoD+phase audit/.ai | final513/current source/runtime Help/cleanup/results | LOCAL implementation/acceptance verified; stop after normal delivery for owner independent audit | Not staging/deployment; final actual hash/remote verification reported in handoff |
 
 ## Owner decisions
 
@@ -2873,7 +2959,11 @@ References to G below identify executed coverage, not tests merely present.
 
 ## Final verdict
 
-IN PROGRESS. Full implementation and acceptance are not yet established.
+LOCAL implementation/acceptance VERIFIED by final513 all-flags gate, full original
+requirement audit and cleanup. Normal final commit/push/remote SHA/current CI
+attestation is the handoff; wait for owner independent audit afterward. No next
+Goal, preview/main deployment or GOAL-059 completion. Earlier IN PROGRESS notes
+below are historical execution records, not remaining functional work.
 
 ## Human operational controls checkpoint — LOCAL, 2026-10-17
 

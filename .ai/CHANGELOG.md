@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-10-24 — GOAL-069 final LOCAL acceptance verified
+
+- Reconciled original1–73/A–I/all32 DoD and47 Evidence fields against source and
+  actual execution. Existing handler verified over real local TLS/hostname;
+  negative untrusted/wrong-host handshake denies before HTTP, authorized batch
+  ACK/replay one SQL row, synthetic key/cert removed/no OS trust changes.
+- Explicit actual HTTP ADMIN/OPERATOR/ANALYST/VIEWER matrix verifies scoped reads,
+  human mutations/AI request/admin-only config, foreign/revoked denial and actor
+  Audit with zero provider calls. OpenAPI stale administration wording corrected.
+- Final all-flags56046 TERMINATED0:513 tests(180API/40Web/99 SDK-core-adapters/
+  156 server/38 Console),all builds/lint/typechecks/84 migration rehearsal/native/
+  performance/real external clients/actual compiled host+Web/BOTH scripts pass.
+- Cleanup84/27 tables/zero fixture DBs+roles/attempts/TLS dirs, unchanged100000
+  policy,11 runtime Help/public reader/mapping verified. No runtime edits afterward.
+- NEXT_TASK consolidated to independent owner review; prior failed checkpoints
+  retained in Evidence/Git, not live tasks. Normal final delivery/CI attestation
+  follows; no deployment, next Goal or GOAL-059 completion claim.
+
 ## 2026-10-24 — GOAL-069 retained Issue impact (IN PROGRESS)
 
 - DEC-065 adds exact scoped retained-cohort Issue impact, not100 displayed

@@ -45,6 +45,7 @@ describe('public language-neutral OpenAPI',()=>{
   expect((openApiDocument.components.schemas.ServerCredential.properties as Record<string,{writeOnly?:boolean}>).token.writeOnly).toBeUndefined();
  });
  it('advertises implemented management commands but never bootstrap or global role administration',()=>{
+  expect(openApiDocument.info.description).toContain('documented ADMIN HTTP routes');expect(openApiDocument.info.description).toContain('bootstrap and global authority');expect(openApiDocument.info.description).not.toContain('global-grant/rotation');
   expect(Object.keys(openApiDocument.paths).some(path=>/bootstrap|global-grants|super-admin|transfer|self-monitor/.test(path))).toBe(false);
   const base='/operations/applications/{applicationId}';for(const[path,method]of [[`${base}/access-grants`,'get'],[`${base}/access-grants`,'post'],[`${base}/access-grants/{grantId}/revoke`,'post'],[`${base}/credentials`,'get'],[`${base}/credentials/{credentialId}/rotate`,'post'],[`${base}/credentials/{credentialId}/revoke`,'post'],['/operations/identity','get']])expect(openApiDocument.paths[path]).toHaveProperty(method);
   expect(openApiDocument.paths['/operations/applications/{applicationId}/issues/{issueId}']).toHaveProperty('get');expect(openApiDocument.paths['/operations/applications/{applicationId}/issues/{issueId}']).toHaveProperty('post');

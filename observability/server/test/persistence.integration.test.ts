@@ -20,6 +20,8 @@ import {NodeSdk} from '../../packages/node-sdk/src/index.js';
 import {performanceAcceptance} from './performance-acceptance.js';
 import {defaultIngestionPolicy,ingestionExclusion} from '../src/ingestion-policy.js';
 import {waitForFixtureDisconnect} from './database-cleanup.js';
+import {httpsAcceptance} from './https-acceptance.js';
+import {roleMatrixAcceptance} from './role-matrix-acceptance.js';
 
 // Real PostgreSQL, in an isolated temporary database. This test never migrates
 // the configured business database and never imports a Jupiter module.
@@ -67,6 +69,12 @@ const scope=()=>({applicationId:appA,environmentId:envA,actorReference:'userA',t
 const analyticsFixtureWindow=async()=>{const end=await database.worker(async c=>(await c.query("SELECT date_trunc('millisecond',clock_timestamp())+interval '1 millisecond' window_end")).rows[0].window_end as Date);return{from:new Date(end.getTime()-86400000).toISOString(),to:end.toISOString()};};
 
 describe('bounded scoped analytics reports',()=>{
+ it.each(['ADMIN','OPERATOR','ANALYST','VIEWER'] as const)('enforces the actual HTTP current-scope operational role matrix for %s',async role=>{await roleMatrixAcceptance(database,registry,ingestion,root,role);});
+ it('serves real HTTPS JSON ingestion with verified certificates and rejects untrusted transport before authorization',async()=>{
+  const applicationId=(await registry.createApplication(root,{slug:`tls-${randomUUID()}`,name:'HTTPS fixture'})).id,environmentId=(await registry.createEnvironment(root,applicationId,{key:'tls',kind:'TEST'})).id,credential=await registry.issueServerCredential(root,applicationId,environmentId,'Temporary HTTPS acceptance credential'),message=event({applicationId,environmentId,source:'SERVER',eventCode:'tls.verified'});
+  const api=new HubHttpApi(database,registry,ingestion,{verify:async()=>{throw Error('No operations identity in TLS ingestion fixture');}});await httpsAcceptance(api,credential.token,{events:[message]});
+  const rows=await database.worker(c=>c.query('SELECT event_id FROM observability.events WHERE application_id=$1 AND environment_id=$2',[applicationId,environmentId]));expect(rows.rows).toEqual([{event_id:message.eventId}]);await registry.revokeCredential(root,applicationId,credential.credentialId,'HTTPS fixture cleanup');
+ });
  it('projects complete retained Issue impact beyond the displayed hundred without merging tenant identities',async()=>{
   const applicationId=(await registry.createApplication(root,{slug:`issue-impact-${randomUUID()}`,name:'Retained Issue impact'})).id,environmentId=(await registry.createEnvironment(root,applicationId,{key:'impact',kind:'TEST'})).id,target={applicationId,environmentId,tenantReference:'issue-impact-a'},engine=new IssueEngine(database,registry),ops=new OperationsService(database,registry),base=Date.now()-20000;
   const samples=Array.from({length:123},(_,i)=>event({...target,source:'SERVER',category:'BACKEND',eventCode:'issue.impact.retained',normalizedMessage:'Whole retained Issue cohort',actorReference:i<23?'older-actor':'recent-actor',occurredAt:new Date(base+i*100).toISOString(),safeMetadata:{featureCode:i<23?`older-feature-${String(i).padStart(2,'0')}`:'recent-feature'}}));

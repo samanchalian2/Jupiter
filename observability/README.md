@@ -1,11 +1,24 @@
 # Observability Hub
 
 Product-independent packages and PostgreSQL server adapters for GOAL-069.
-Implementation is IN PROGRESS; no complete platform claim is made.
+Implementation and GOAL-069 LOCAL acceptance are verified; owner independent
+audit remains separate. This is not GOAL-059 Staging or a deployment claim.
 
 The [contract/SDK versioning policy](VERSIONING.md) distinguishes Event1.1
 (compatible1.0), HTTPv1, OpenAPI1.1.0 and private package0.1.0 versions, additive
 evolution, SemVer/breaking changes and forward-only migration/release checks.
+
+The existing exported `createHubNodeHandler(api)` can be mounted on a Node HTTPS
+server with deployment-owned TLS options, or behind the approved host's TLS
+termination. `createHubServer(api)` is the internal plain-HTTP convenience host;
+never expose that transport publicly without the approved HTTPS boundary.
+LOCAL acceptance mounts the same handler on an ephemeral HTTPS listener, trusts
+only its temporary certificate in each test client, rejects unknown/wrong-host
+certificates and verifies actual authorized ACK/replay/SQL. It changes no OS trust
+store or target host and deletes its synthetic key/certificate. Tests require
+OpenSSL (`OBSERVABILITY_OPENSSL` may select its executable); TLS1.2 is the test
+minimum, not a newly deployed production TLS configuration. See the external
+monitoring runbook; LOCAL verification is not GOAL-059 TLS acceptance.
 
 ## Optional operational AI ceilings
 
@@ -143,9 +156,11 @@ Operational AI now has a host-injected provider/vault, Application-bound AES-GCM
 credential storage, combined monthly token reservation/settlement, curated
 evidence validation, deduplicated scheduler and independent Console panel.
 Unknown provider usage remains held. Human reconciliation and independent
-real-Browser reference/offline acceptance are implemented. Full scale/performance,
-remaining host/Worker breadth and the final specification audit are unfinished; inspect Evidence, not this inventory,
-before claiming complete platform delivery.
+real-Browser reference/offline acceptance are implemented. The final original-
+scope LOCAL audit and513-test all-flags release cover authenticated compiled
+Jupiter host/Web/Worker, independent clients, security and measured performance;
+see Evidence for precise limits. This is not arbitrary production-scale/SLO,
+customer deployment or installed external monitoring acceptance.
 
 - `packages/contracts`: versioned JSON event/feedback/AI contracts and limits.
 - `packages/core`: privacy, canonical digest, fingerprint, trace and lifecycle.

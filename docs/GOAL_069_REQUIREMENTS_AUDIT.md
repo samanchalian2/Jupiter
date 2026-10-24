@@ -1,10 +1,94 @@
-# GOAL-069 — Working requirement audit (IN PROGRESS)
+# GOAL-069 — Requirement audit (LOCAL verified; delivery handoff)
 
-This is a requirement-to-source audit, not a completion certificate or replacement
-specification. `GOAL_069_SPECIFICATION.md` including its approved preamble remains
-authoritative. The existing 47-section Evidence index locates execution records;
-its existence and the 423-test baseline do not prove every required feature.
-No requirement is waived because an existing suite does not assert it.
+`GOAL_069_SPECIFICATION.md` including its approved preamble remains authoritative.
+All original sections1–73/phasesA–I/32 DoD items and47 Evidence fields have been
+reconciled against inspected current source and actual execution, not the older
+423 baseline. No requirement is waived because a previous suite lacked a check.
+Final all-flags56046 TERMINATED0:513 tests/all gates/both fault scripts. Local
+cleanup/runtime Help/current configuration verified; no runtime edit afterward.
+Only normal final commit/push/remote SHA/CI handoff remains. Owner independent
+audit is separate. Older open findings below are HISTORICAL where superseded
+by this final disposition; they are preserved to explain red→green remediation.
+
+## 2026-10-24 final disposition preparation — sections66–73 / A–I / DoD
+
+Final all-flags56046 TERMINATED0:513 tests(180API/40Web/99 SDK-core-adapters/
+156 server/38 Console),actual TLS/roles/external clients/native/performance/host/
+Web/migration and both fault scripts pass. Readback84 migrations/27 Hub tables/
+zero temporary databases/roles/attempts/TLS directories, preserved100000 policy,
+eleven published runtime Help guides and absent shared listeners all verified.
+Reviewed unchanged UI source and inspected prior final-source images; no new
+UI/runtime change after the gate. All implementation/QC obligations below are
+LOCAL verified; normal delivery/remote CI is the final handoff, not a waiver or
+another functional milestone. Original full scope remains intact.
+
+| Phase66 | Original obligation / authoritative implementation | Current proof and remaining condition |
+| --- | --- | --- |
+| A Audit/architecture | inventory, generic domains/package boundaries/ADRs/contract/security | Sections1–10 source inventory and DEC-038–065 inspected; explicit preamble overrides stale historical Redis suggestion |
+| B Reusable foundation | six packages, Registry, auth/strict public ingestion | actual generic HTTP/PostgreSQL/OpenAPI61; real HTTPS/four-role matrix pass final513 all-flags gate |
+| C Persistence/capture | fixed PostgreSQL columns/RLS/Frontend/Backend/Worker | full84 rehearsal, actual compiled AppModule/Web and real lifecycle/queued provider service capture |
+| D Offline recovery | durable IDs/IndexedDB/finite retry/ACK/idempotency/identity | actual twenty native cases, quota, reload, lost ACK, named automatic probes/activity and scope purge; no guarantee beyond available storage |
+| E Issue/Incident | deterministic fingerprint, aggregation/reopen, human lifecycle, AI-independent rules | actual SQL/HTTP/native; DEC-064/065 truthful distinct snapshot/retained impact and lifetime state verified |
+| F Console | all named operational sections and usable filters/details/analytics | real generic and actual Jupiter standalone/embedded four widths, keyboard/44px/internal scroll, exact-scope/late-result checks |
+| G Investigator | provider/vault, curated evidence, no tools, independent budget/scheduling | actual SQL/provider/native caps/scheduler/UNKNOWN reconciliation/injection/zero customer charge; explicit local100000 unchanged |
+| H Multiple Apps | independent Browser backend/client and language-neutral clients/isolation | actual native independent reference; explicit Python/C# child processes/lost-ACK/dedupe/redirect denial; no Jupiter business imports |
+| I Acceptance | security/performance/browser/Help/docs/cleanup/final QC | final513 all-flags/both scripts pass, runtime11 Help/cleanup/source/images verified; final normal delivery/remote CI handoff remains |
+
+### Every section70 DoD bullet — implementation/evidence map
+
+| # | Original required capability | Authoritative proof to retain |
+| --- | --- | --- |
+| 1 | Core independent of Jupiter | generic package imports/interfaces/DB/identity/provider ports plus independent verified reference and Python/C# processes |
+| 2 | Generic Browser SDK | browser-sdk source/manifests,47 tests and actual native capture/offline/network fixtures |
+| 3 | React adapter works | five tests plus16 real mounted failure/recovery cases, actual Jupiter integration |
+| 4 | Node/Nest adapters work |13 Node/9 Nest tests, real10s timer/outage, actual compiled AppModule/lifecycle/QueueWorker services |
+| 5 | Operational HTTPS/JSON ingestion | existing exported handler mounted on real TLS, trusted cert/hostname, untrusted+wrong-host rejection before HTTP, auth401/ACK/duplicate/one SQL row; no target deployment |
+| 6 | Actual OpenAPI | OpenAPI3.0.3/schema validation and actual61-operation HTTP request/response traversal; metadata now matches supported admin routes |
+| 7 | Multiple independent Apps register | supported Registry HTTP/UI with independent App/env IDs/lifecycle/grants; native independent A/B fixture |
+| 8 | Auth/data isolation valid | current grants/hashed parent-child credentials/RLS/composite scope, actual four-role matrix incl ANALYST/configuration/foreign/revocation/Audit |
+| 9 | Frontend errors captured | actual Browser JS/rejection/resource/network/performance/React boundary, sanitized payload and actual captured host request |
+| 10 | Backend errors captured | real failed draft/controller/SQL→SDK→HTTP→Event→Issue in actual compiled host |
+| 11 | Worker errors captured | lifecycle directory enumeration/SQL failure, real queued review/intake/voice retries/dead-letter, safe automation actor and source |
+| 12 | Requests traceable | W3C parent/new span/header context, actual Browser/SERVER trace and independent retained Browser/SERVER/WORKER chain; seed-bound request/trace/current role tests |
+| 13 | IndexedDB queue works | native storage/offline/reload/quota/Event+Feedback envelopes and actual SQL replay, data/metric journal failure isolation |
+| 14 | Replay idempotent | atomic receipt/event/job, parallel/lost ACK/native reload and Python/C# lost-ACK exact one-row assertions |
+| 15 | Logout/tenant switch protects offline data | twenty-case native identity lifecycle, verified backend revocation/current credential, no replay as another identity; unavailable-storage erasure not promised |
+| 16 | PostgreSQL persistence | dedicated observability schema27 tables/roles/composite FKs,84 forward migrations and actual SQL acceptance |
+| 17 | Real Issue aggregation | atomic lease+aggregate commit, unique cohort, lifetime occurrence vs distinct actors/reopen; retained >100-event impact/deletion/native details |
+| 18 | Real Incident management | rule detection, controlled locked transitions/activity/Audit/assignment/recent notes, distinct native route/reload/Back and human-vs-AI panels |
+| 19 | Active rule engine | actual persisted ten rules/minimum/baseline/cooldown/dedupe/expected-rejection tests; actual compiled worker configured10s two-cohort detection |
+| 20 | Operational Feedback | authenticated tenant-free/tenant user own tracking/replies/privacy/idempotency, actual offline native send/lost ACK and host Help/Feedback flow |
+| 21 | Real dashboard/analytics | filtered cohort rates/trends/health/releases/impact/AI, ten bounded reports/explicit1–10-product comparison/CSV; actual HTTP/native timings/scopes |
+| 22 | Valid evidence-grounded AI | curated target/Event/Feedback byte bound, strict permitted references/confidence/actions/schema, actual provider/SQL findings and readable native panels |
+| 23 | Read-only/budget-bounded AI | no tools/mutation port, App atomic UTC token/request/estimated-cost holds/UNKNOWN/rate snapshots/reconciliation/current roles; independent of customer allowances |
+| 24 | Alert dedupe | all rule/pipeline/important Feedback sources, durable scoped inbox,100-recipient continuation/current grant/spacing/repair and existing Jupiter notification adapter |
+| 25 | Retention/redaction tested | real bounded parent/child/active-reference/Audit/receipt purge regressions; central prequeue/server/AI masking and synthetic secrets/CSV/log-injection tests |
+| 26 | Hub failure does not break primary product | actual full AppModule Hub SQL outage/manual one OPEN ticket, fetch sole-dispatch/React mounted faults, retry release/single settlement/provider failure |
+| 27 | Independent reference tested | verified independent Browser frontend+backend/App B/config/env/SDK/offline/replay/Console/current grants without Jupiter user/session/domain imports |
+| 28 | A/B isolation proven | actual forged App credentials/current grants/same opaque identities/foreign CSV/AI/correlation/native switches/late-response denial |
+| 29 | Every viewport passes | actual native375/768/1024/1440 generic Console/Issue/Incident/Registry/AI/analytics/Help and authenticated Jupiter shell/detail/embedded workflow, inspected images |
+| 30 | Persian Help published | eleven runtime registry-valid guides; supported slug-only revisions/history/public service readback; actual Jupiter Help/trigger browser checkpoint, no Help engine change |
+| 31 | Complete Evidence |47 named fields each path/tests/result/limits, preserved failed/green records, final513 results/disposition/current index and38-field final handoff map |
+| 32 | All quality gates pass |56046 TERMINATED0/all explicit flags513/both scripts; cleanup/Help/source/diff check verified; normal delivered hash/current remote CI attested in final handoff |
+
+### Sections67–73 delivery checklist
+
+-67: Evidence47-field index inspected/revised against source with final513
+  current-source counts and actual result/limits, not a names-only list.
+-68: architecture/domain/security/rules/decisions/design/current/next/changelog/
+  upgrade records updated; retain explicit GOAL-059 BLOCKED and LOCAL≠staging.
+-69: all named local gates in the final successful serial run, every optional
+  flag explicit; external-client PASS actually observed, not inferred from count.
+-70: all32 DoD items mapped and LOCAL implementation/QC verified above; only
+  normal delivery attestation remains. No invented production SLO/scale gate.
+-71: no fake dashboard, broad grants, raw payloads, CORS-as-auth, model mutation,
+  guaranteed offline delivery, staging claim, hidden blocker or next Goal.
+-72: preserve unrelated files, scan staged changes/ignored credentials, normal
+  main commit/push/remote SHA verification; exact final delivered hash comes from
+  Git, never a predicted/self-referential Markdown commit hash.
+-73: provide all38 required report fields after actual final results/delivery,
+  including limits, counts, Help, final commit/remote proof; then stop for owner
+  independent audit. Do not start the next Goal.
 
 ## 2026-10-19 targeted findings
 
@@ -117,6 +201,12 @@ native detail assertions. Do not change runtime during active DEC-064 gate.
 
 ### A15 — HTTPS handler verification and remaining contract documentation
 
+FINAL2026-10-24: existing handler real verified TLS/hostname/negative untrusted
+chain before HTTP,401/ACK/duplicate/one SQL Event passes final513 all-flags gate.
+Ephemeral key/cert removed and temp prefix0, no OS trust/deployment. Stale OpenAPI
+description corrected/tested;61 operations unchanged. VERSIONING.md policy/current
+previous contract tests verified. Historical missing-proof description follows.
+
 Section70 explicitly requires operational HTTPS/JSON ingestion. Existing generic
 createHubNodeHandler can mount on Node HTTPS, and external clients/probes require
 HTTPS except explicit loopback tests. But inspected executed fixtures use actual
@@ -133,6 +223,25 @@ the active gate, preserving bootstrap/global-authority boundary and61 operations
 Section61's actual current/previous-version regression already exists; explicit
 SemVer/breaking/additive/migration policy was missing and is now documented in
 observability/VERSIONING.md with current source values, no new published version.
+
+### A16 — explicit selected operational-role matrix verification
+
+FINAL2026-10-24: all four roles explicitly pass real verified-identity HTTP/SQL
+read/mutation/AI/config/foreign scope/current-revocation/real-actor Audit tests
+inside final513 all-flags gate. Scoped ADMIN cannot configure whole App without
+explicit whole-App ADMIN grant; no provider call/attempt. Fixture grants revoked
+and automation disabled, disposable databases/roles0 after cleanup. Historical
+coverage gap below is superseded, not inferred from root access.
+
+Source section56 requires operational roles to enforce scope. Current source
+implements ADMIN/OPERATOR/ANALYST/VIEWER via exact role allowlists/current grants.
+Existing acceptance explicitly exercises ADMIN/VIEWER management and OPERATOR
+inbox, but no explicit ANALYST test was found. Before final certification add a
+controlled actual HTTP/SQL four-role matrix: authorized read, human mutation,
+AI request vs ADMIN-only configuration, foreign App/environment/tenant denial,
+and revoked grant denial. Use real generic verified fixture principals and
+existing scoped API/DB, no production mapping or permission change. Do not infer
+ANALYST operation from root super-admin successes or a grep/allowlist alone.
 
 ### Final-scope audit pass2026-10-24 — sections44–65 (not whole-Goal verdict)
 
