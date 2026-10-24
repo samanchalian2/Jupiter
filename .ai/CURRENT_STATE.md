@@ -1,5 +1,22 @@
 # Current State
 
+## 2026-10-24 — Owner-authorized GOAL-069 preview/main rollout complete
+
+Following explicit owner instruction, runtime fe64140be8ba96405117d554a0f895b5323ea247
+is deployed on preview172.20.190.16:8088 and main https://jupiter.arandi.io.
+Both existing Jupiter databases advanced73→84 migrations/27 Hub tables; backups,
+preview restore/migration rehearsal and fixture cleanup verified. Same Linux
+artifact checksum on both. API/worker/readiness/Web and authenticated Hub/Help
+pass; unauthenticated operations401. Eleven Hub Help articles published on each.
+gpt-6-luna/encrypted credential/100000-token UTC budget enabled independently per
+deployment, not a shared cross-host cap. No customer data replacement/membership
+promotion/Arandi change; Arandi200, active, unchanged pre-rollout start timestamps.
+Main free disk~2.9GiB/93% used warrants follow-up; no cleanup performed. Main
+platform-only account's tenant-route denial preserved. No next Goal started.
+Evidence: docs/GOAL_069_DEPLOYMENT.md. GOAL-059 remains independently BLOCKED;
+preview HTTP operational rollout is not formal staging acceptance. Earlier
+LOCAL-only/no-deployment notes below describe the prior authorized scope.
+
 ## 2026-10-24 — GOAL-069 LOCAL implementation and acceptance complete
 
 Original sections1–73/phasesA–I/all32 DoD items and47 Evidence fields reconciled

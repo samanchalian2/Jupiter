@@ -1,5 +1,15 @@
 # GOAL-069 — Observability Hub Evidence
 
+## 2026-10-24 — Subsequent authorized preview/main deployment
+
+After the LOCAL-only acceptance below, the owner explicitly authorized both
+target deployments. Exact fe64140 runtime is live on preview and main; same
+artifact checksum,84 migrations/27 tables,eleven published Help guides and
+authenticated browser/HTTP smoke verified, with unchanged Arandi. Detailed
+backup/rehearsal/permissions/budgets/rollback/disk limitations are recorded in
+`GOAL_069_DEPLOYMENT.md`. GOAL-059 remains BLOCKED. Older no-deployment statements
+are historical to LOCAL acceptance, not the current deployed state.
+
 Status: LOCAL IMPLEMENTATION/ACCEPTANCE VERIFIED; final delivery handoff. Owner-approved plan supersedes the stale GOAL-060 identifier
 in the supplied specification. GOAL-060 Personal Service history is preserved.
 GOAL-059 remains BLOCKED; LOCAL evidence is not staging acceptance.

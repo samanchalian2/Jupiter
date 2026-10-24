@@ -1,5 +1,15 @@
 # Jupiter Master Upgrade Plan
 
+## GOAL-069 — Preview/main deployed by owner instruction (2026-10-24)
+
+After LOCAL acceptance, owner explicitly requested both deployments. Exact
+fe64140 runtime/same Linux artifact now live at172.20.190.16:8088 and canonical
+jupiter.arandi.io; each Jupiter DB84 migrations/27 Hub tables,11 Hub Help guides.
+Protected backups/rehearsal, authenticated smoke/readiness/anonymous denial and
+unchanged Arandi verified. See docs/GOAL_069_DEPLOYMENT.md for scope/budgets/disk/
+rollback. This supersedes prior LOCAL-only deployment boundary only for this
+rollout. GOAL-059 remains separate BLOCKED; no next Goal started.
+
 ## GOAL-069 — LOCAL implementation and acceptance verified (2026-10-24)
 
 Original1–73/A–I/all32 DoD/all47 Evidence reconciled with actual source/results.

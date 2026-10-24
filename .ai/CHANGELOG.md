@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-10-24 — GOAL-069 owner-authorized deployment
+
+- Deployed exact fe64140 runtime to preview and canonical main using the same
+  Linux-built artifact; existing Jupiter data retained,73→84 forward migrations.
+- Protected backups plus outside-host encrypted copies; actual preview restore/
+  migration rehearsal/cleanup. Previous releases and environment rollback kept.
+- Explicit audited existing-admin bootstrap, distinct environments, encrypted
+  approved AI configuration and eleven supported runtime Help publications.
+- Authenticated browser Hub/Help/Platform checks, readiness200 and anonymous401;
+  Arandi unchanged/active200. Main disk2.9GiB/93% used recorded, no cleanup.
+- docs/GOAL_069_DEPLOYMENT.md records exact verification/limitations. No next
+  Goal, production fixture suite or formal GOAL-059 completion claim.
+
 ## 2026-10-24 — GOAL-069 final LOCAL acceptance verified
 
 - Reconciled original1–73/A–I/all32 DoD and47 Evidence fields against source and

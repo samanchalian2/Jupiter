@@ -1,10 +1,12 @@
 # Next Task
 
-## Await independent owner audit — no next Goal scheduled
+## Await owner review — GOAL-069 deployed; no next Goal scheduled
 
-GOAL-069 implementation and LOCAL acceptance are complete. The current handoff
-finishes normal commit/push, exact remote SHA and CI verification before the
-Goal is closed. Do not start another Goal without the Product Owner's direction.
+GOAL-069 implementation and LOCAL acceptance are complete; runtime fe64140 was
+committed/pushed with actual CI success. Following the owner's explicit later
+instruction, preview and main deployment are also complete. See
+docs/GOAL_069_DEPLOYMENT.md for live URLs, backups, smoke checks and limitations.
+Do not start another Goal without the Product Owner's direction.
 
 Source of truth:
 - docs/GOAL_069_SPECIFICATION.md — original sections1–73, A–I and all32 DoD items.
@@ -34,8 +36,9 @@ are absent; acceptance did not leave a shared server running.
 ### Permanent boundaries for owner review and future work
 
 - GOAL-059 remains BLOCKED. LOCAL GOAL-069 acceptance is NOT staging acceptance.
-  No preview172.20.190.16 or main-host deployment was performed or authorized by
-  this Goal. Preserve the co-hosted Arandi application/database.
+  The initial Goal was LOCAL-only; the owner subsequently authorized and received
+  preview172.20.190.16/main deployment on2026-10-24. Preserve the co-hosted Arandi
+  application/database. Future releases still require deployment instruction.
 - Jupiter development API3000/Web5174;5173 belongs to another application.
   Before any later restart, identify the exact owned process and active attempts.
 - Keep PostgreSQL durable outbox/leases and generic Hub identities. No business
