@@ -1,0 +1,16 @@
+import {readFileSync} from 'node:fs';
+import assert from 'node:assert/strict';
+const guide=readFileSync('deploy/arandi-guide/src/content/jupiter-guide.fa.md','utf8');
+const component=readFileSync('deploy/arandi-guide/src/components/jupiter/JupiterGuide.tsx','utf8');
+const sections=new Map(guide.split(/^## /m).slice(1).map(x=>{const at=x.indexOf('\n');return[x.slice(0,at).trim(),x.slice(at+1)];}));
+for(const title of ['Hero','ژوپیتر چیست و چه مسئله‌ای را حل می‌کند؟','امکانات ژوپیتر در یک نگاه','مسیر اول: راه‌اندازی ژوپیتر برای مدیر یا مالک سازمان','مسیر دوم: استفاده روزمره برای کاربران سازمان','مسیر سوم: راهنمای کاربر مستقل','رفع اشکال سریع','پرسش‌های متداول','CTA پایانی'])assert(sections.get(title)?.trim(),title);
+for(const stale of ['تیکت شخصی خارج از سازمان در Jupiter ثبت نمی‌شود','تیکت فقط در فضای یک سازمان ثبت','ثبت و مشاهده تیکت پس از عضویت یا ایجاد سازمان امکان‌پذیر','این بخش تکمیلی را در Accordion نمایش بده'])assert(!guide.includes(stale),stale);
+for(const term of ['فضای شخصی','تأیید ایمیل','بسته‌ها و خدمات','پشتیبانی انسانی','گزارش‌های من','شناسه پیگیری','نگهداری موقت','مرکز پایش','Event','Incident','Smart Action','بررسی انسان','حریم خصوصی'])assert(guide.includes(term),term);
+assert(component.includes('شروع استفاده شخصی'));
+assert(!component.includes('نسخهٔ ۱۵ صفحه‌ای'));
+assert(!component.includes('دریافت عضویت یا ثبت سازمان'));
+assert(component.includes('<details className={styles.advanced}><summary>راهنمای تکمیلی مسئول مجاز پایش'));
+assert(guide.includes('حداقل ۱۰ نویسه'));
+assert(guide.includes('https://jupiter.arandi.io/operations'));
+assert(!/sk-[A-Za-z0-9_-]{16,}|postgres(?:ql)?:\/\//.test(guide+component));
+console.log('Website guide content/paths/FAQ/monitoring/progressive disclosure/security checks PASS');

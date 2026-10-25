@@ -2,6 +2,11 @@
 
 ## Await owner review — GOAL-069 deployed; no next Goal scheduled
 
+Subsequent owner-requested website guide AND PDF corrections were published on
+2026-10-25; see docs/WEBSITE_GUIDE_REFRESH_20261025.md and deploy/arandi-guide.
+This educational maintenance did not start another product Goal or modify
+Jupiter runtime/database. Await owner's next instruction.
+
 GOAL-069 implementation and LOCAL acceptance are complete; runtime fe64140 was
 committed/pushed with actual CI success. Following the owner's explicit later
 instruction, preview and main deployment are also complete. See

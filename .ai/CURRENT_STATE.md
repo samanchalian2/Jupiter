@@ -1,5 +1,19 @@
 # Current State
 
+## 2026-10-25 — Public Jupiter guide and PDF corrected/published
+
+Owner-requested post-GOAL-069 education maintenance complete: arandi.io Jupiter
+guide now teaches actual independent personal use and reporting/offline caveats,
+plus optional authorized monitoring. FAQ/selection/journey corrected. Reviewed
+27-page PDF at existing public URL matches local SHA e95fd53c…f95e4b5. Scoped
+source/PDF overlay retained in deploy/arandi-guide; full evidence and rollback
+in docs/WEBSITE_GUIDE_REFRESH_20261025.md. Website54 tests/typecheck/default
+Turbopack build/content checks/live375/768/1024/1440 pass; no document overflow.
+Arandi website authorized release switch only, no database/role/Nginx/Jupiter
+runtime change. Existing preview Arandi DB-login issue not modified. Temporary
+transfer archives removed; backups/previous release retained. No next product
+Goal or cross-chat/cloud task started; user-owned prompt/gateway edits preserved.
+
 ## 2026-10-24 — Owner-authorized GOAL-069 preview/main rollout complete
 
 Following explicit owner instruction, runtime fe64140be8ba96405117d554a0f895b5323ea247

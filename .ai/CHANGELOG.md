@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-10-25 — Website guide/PDF maintenance after GOAL-069
+
+- Corrected independent-use instructions/FAQ/card/journey and organization signup
+  entry; added product reporting, safe offline behavior and authorized monitoring.
+- Published synchronized guide and27-page embedded-font PDF at existing Arandi
+  URLs, with protected rollback and no database changes. Scoped source overlay,
+  PDF renderer and content regression check retained in repository.
+- Website54 tests/typecheck/Turbopack production build and public four-width RTL/
+  overflow/TOC/disclosure checks pass; exact public PDF hash verified. Previous
+  releases/backups retained; task-created transfer archives cleaned up. Evidence:
+  docs/WEBSITE_GUIDE_REFRESH_20261025.md. No next Goal/cross-chat transfer.
+
 ## 2026-10-24 — GOAL-069 owner-authorized deployment
 
 - Deployed exact fe64140 runtime to preview and canonical main using the same
