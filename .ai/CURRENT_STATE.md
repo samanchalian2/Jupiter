@@ -11,11 +11,14 @@ navigation, intrinsic owner-select overflow and non-Platform denied-route render
 Full API191 passed/2 optional skipped; Web60 passed; both typechecks/builds and
 diffcheck pass. Four widths375/768/1024/1440 RTL/no final document overflow.
 Two temporary orgs/three accounts/application/tickets removed with normal FK/RLS
-unchanged; generated credential file removed. Original Saba fingerprints and
-Arandi start/restarts unchanged. Six Help revisions published/history retained.
+unchanged; generated credential file removed. Backup comparison proves87 original
+Saba tenant tables unchanged; normal Worker warning/breach for overdue5141 advanced
+alert fields/Audit/notifications only, not rolled back. Arandi start/restarts unchanged.
+Six Help revisions published/history retained; authorized final readback PASS.
 Guide/PDF28-page pending-publication edition prepared, not published to arandi.io.
-Preview candidate goal070-saba-v5 active; main remains unchanged. Delivery commit/
-remote CI are verified separately from actual Git output, not predicted here.
+Preview candidate goal070-saba-v5 active; main remains unchanged. Actual runtime
+source3cd85c4 verified across286 files, pushed and CI40453875707 SUCCESS. Final
+documentation-only follow-up does not alter that tested runtime.
 Evidence: docs/GOAL_070_EVIDENCE.md. No next Goal or chat transfer;059 independent.
 Preserve unrelated user gateway/training/output/tmp/legacy AGENTS.md.txt edits.
 

@@ -21,6 +21,9 @@
   and co-hosted Arandi unchanged. Six runtime Help revisions retained.
 - Main/Arandi guide publication excluded; no next Goal. Actual Git delivery/CI
   recorded in the final handoff. Full evidence: docs/GOAL_070_EVIDENCE.md.
+- Runtime3cd85c4 pushed, exact remote verified, CI40453875707 SUCCESS; Preview286
+  source files match it. Backup comparison87 original tenant tables unchanged;
+  overdue5141 normal Worker alert timestamps/Audit/notifications advanced and retained.
 
 ## 2026-10-25 — Website guide/PDF maintenance after GOAL-069
 

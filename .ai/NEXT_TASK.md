@@ -4,8 +4,9 @@
 
 Owner-approved P0→P1→P2 implementation and separate Saba Preview acceptance pass;
 see docs/GOAL_070_EVIDENCE.md for exact gates, limitations, restoration and source
-archive. Complete only actual scoped Git delivery/CI verification for this handoff.
-Then stop. Await explicit authorization before main rollout, public guide/PDF
+archive. Runtime3cd85c4 pushed and CI40453875707 completed SUCCESS; no runtime change
+after that gate. Final evidence-only follow-up records natural SLA alert progression.
+Stop. Await explicit authorization before main rollout, public guide/PDF
 publication, email activation or a new Goal. Existing Saba data and Arandi preserved.
 Preview remains HTTP with delivery disabled; no claim of production mail acceptance.
 

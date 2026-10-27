@@ -198,9 +198,18 @@ application/transitions/memberships/setup/tickets and three generated users remo
 Ignored generated credential file deleted. Permanent Audit and Help/history retained;
 explicit cleanup Audit recorded. No original password reset.
 
-Before/after fingerprints MATCH: both original Saba orgs,4 accounts,4 memberships/
-5 roles,9 categories/24 subcategories, team/calendar/SLA/rule/setup, original tickets
-5140/5141 and checked messages/activity/clocks. Original active ownerless azla stays.
+At initial cleanup all checked fingerprints matched: both original Saba orgs,
+4 accounts,4 memberships/5 roles,9 categories/24 subcategories, team/calendar/SLA/
+rule/setup, original tickets5140/5141 and checked messages/activity/clocks.
+Final readback after the live Worker continued naturally differs in SLA alert fields:
+ticket5141 warning04:12:35.681Z, breach/escalation04:42:35.722Z on2026-10-27.
+These are normal overdue-ticket events, not fixture writes; they were NOT rolled
+back to avoid duplicate alerts. A second restore of the pre-release backup into
+disposable jupiter_goal070_final_compare proves87 tenant tables byte-equivalent
+(including original internal notes, assignments and team memberships). Only
+audit_logs, user_notifications and ticket_sla_clocks differ; excluding warning_at/
+breached_at/escalated_at, clock business fields are identical. Compare DB dropped.
+Evidence: output/goal070-backup-compare.json. Original active ownerless azla stays.
 Arandi active, start2026-10-10 07:46:49UTC/NRestarts0 unchanged. No arandi_platform/
 codex_test DB query/write, shared role/ACL change, main or Arandi publication.
 Two old RESERVED AI actions retained unchanged, no acceptance AI consumption.
@@ -224,3 +233,18 @@ Final Preview about6GiB free. Unrelated gateway/training/output/tmp/AGENTS.md.tx
   and provider acceptance are not successful delivery or verified email.
 - No next Goal, main rollout, retroactive flag, implicit owner promotion, provider/
   commercial contract change or original tenant rewrite.
+
+### Actual Git delivery and final runtime verification
+
+Code commit3cd85c4d83e3d27c9a23b0461a7a7a6e75626126 pushed; origin/main exact SHA
+verified at that delivery. GitHub CI40453875707 completed SUCCESS: full workspace
+build, lint, typecheck, isolated migration and tests. URL:
+https://github.com/samanchalian2/Jupiter/actions/runs/40453875707
+No runtime code changed after that green commit; this follow-up records evidence only.
+286 runtime-source/migration/Help files on Preview match that code commit after
+line-ending normalization. RELEASE_COMMIT records the actual code SHA. API/worker
+restarted on the final candidate, readiness PASS, Arandi unchanged. Final admin
+Help readback confirms the six published revisions (3/3/3/4/3/3 by slug), while the
+reader correctly returns404 for a role-ineligible article; audience rules unchanged.
+Temporary fixture credentials absent; only original Saman personal/Saba memberships
+remain in the Browser chooser. User-owned dirty edits remain uncommitted.
