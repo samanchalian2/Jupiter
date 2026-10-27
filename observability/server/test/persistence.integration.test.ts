@@ -891,7 +891,7 @@ describe('Hub registry/auth/atomic storage and real PostgreSQL isolation',()=>{
       }
       const migrated=(await client.query('SELECT code,threshold,minimum_samples,enabled FROM observability.monitoring_rules WHERE application_id=$1 ORDER BY code',[legacyApplication])).rows;
       expect(migrated).toEqual([{code:'CRITICAL_EVENT',threshold:1,minimum_samples:1,enabled:true},{code:'ERROR_BURST',threshold:17,minimum_samples:9,enabled:false}]);
-      expect(files.at(-1)).toBe('073_observability_ai_operational_limits.sql');expect(files.length).toBe(84);
+      expect(files.at(-1)).toBe('074_first_login_password.sql');expect(files.length).toBe(85);
       expect((await client.query('SELECT status,input_tokens,output_tokens,input_rate_micros_per_million,output_rate_micros_per_million,reserved_cost_micros,estimated_cost_micros FROM observability.ai_attempts WHERE id=$1',[legacyAttempt])).rows[0]).toEqual({status:'SETTLED',input_tokens:20,output_tokens:10,input_rate_micros_per_million:null,output_rate_micros_per_million:null,reserved_cost_micros:null,estimated_cost_micros:null});
       expect((await client.query("SELECT count(*)::int total FROM information_schema.tables WHERE table_schema='observability'")).rows[0].total).toBe(27);
     }finally{await client.end();await admin.query('SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname=$1 AND pid<>pg_backend_pid()',[name]);await admin.query(`DROP DATABASE "${name}"`);if((await admin.query('SELECT 1 FROM pg_roles WHERE rolname=$1',[role])).rowCount)await admin.query(`DROP ROLE "${role}"`);}

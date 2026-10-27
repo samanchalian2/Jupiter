@@ -1,3 +1,4 @@
+import { provisionSetupOrganization } from '../organization/setup-provisioning.js';
 import { BadRequestException, ConflictException, ForbiddenException, HttpException, HttpStatus, Inject, Injectable, NotFoundException, Optional } from '@nestjs/common';
 import { createHash, randomBytes } from 'node:crypto';
 import { PoolClient } from 'pg';
@@ -5,6 +6,7 @@ import { hashPassword } from '../auth/password.js';
 import { DatabaseService } from '../database/database.service.js';
 import { VERIFICATION_NOTIFICATION_DELIVERY, VerificationNotificationDelivery } from './verification-notification.service.js';
 import { PersonalWorkspaceService } from '../personal-workspaces/personal-workspace.service.js';
+import { verificationDeliveryReadiness } from './verification-readiness.js';
 
 type ApplicationStatus = 'DRAFT' | 'SUBMITTED' | 'UNDER_REVIEW' | 'NEEDS_INFORMATION' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
 type DeliveryStatus = 'DELIVERED' | 'PENDING_CONFIGURATION' | 'FAILED';
@@ -40,6 +42,15 @@ export class OrganizationApplicationService {
     @Inject(VERIFICATION_NOTIFICATION_DELIVERY) private readonly verificationDelivery: VerificationNotificationDelivery,
     @Optional() private readonly personalWorkspaces?: PersonalWorkspaceService,
   ) {}
+
+  async verificationReadiness(userId: string) {
+    await this.platform(userId);
+    const outcomes = (await this.database.query<{status:string;count:number}>(
+      `SELECT status,count(*)::int count FROM public_account_verification_deliveries
+       WHERE created_at>now()-interval '24 hours' GROUP BY status`,
+    )).rows;
+    return { ...verificationDeliveryReadiness(), recentOutcomes: outcomes };
+  }
 
   async createPublicAccount(input: { email?: string; displayName?: string; password?: string }) {
     const email = this.email(input.email);
@@ -81,7 +92,7 @@ export class OrganizationApplicationService {
          WHERE user_id=$1 AND identity_type='EMAIL_PASSWORD' AND organization_id IS NULL AND status='ACTIVE'
          FOR UPDATE`, [userId],
       )).rows[0];
-      if (!identity) throw new NotFoundException('A public email identity was not found.');
+      if (!identity) throw new NotFoundException('این حساب هویت ایمیل عمومی ندارد. برای ثبت سازمان با مدیر پلتفرم هماهنگ کنید.');
       if (identity.email_verified_at) return { verified: true as const };
       const recent = (await client.query<{id:string}>(
         `SELECT id FROM public_account_verification_tokens
@@ -129,7 +140,7 @@ export class OrganizationApplicationService {
        WHERE i.user_id=$1 AND i.identity_type='EMAIL_PASSWORD' AND i.organization_id IS NULL AND i.status='ACTIVE'`, [userId],
     );
     const row = result.rows[0];
-    if (!row) throw new NotFoundException('A public email identity was not found.');
+    if (!row) throw new NotFoundException('این حساب هویت ایمیل عمومی ندارد. برای ثبت سازمان با مدیر پلتفرم هماهنگ کنید.');
     return { email: row.email, emailVerified: Boolean(row.email_verified_at), verificationDeliveryStatus: row.delivery_status ?? 'PENDING_CONFIGURATION' };
   }
 
@@ -259,16 +270,11 @@ export class OrganizationApplicationService {
         )).rows[0];
         if (prior || (application.status === 'APPROVED' && application.provisioned_organization_id)) return this.approvedResult(client, application);
         if (application.status !== 'UNDER_REVIEW') throw new BadRequestException('Only an application under review can be approved.');
-        const organization = (await client.query<{id:string;slug:string;name:string;status:string}>(
-          `INSERT INTO organizations(name,slug,status) VALUES($1,$2,'setup') RETURNING id,slug,name,status`, [application.organization_name,approvedSlug],
-        )).rows[0];
-        const membership = (await client.query<{id:string}>(
-          `INSERT INTO memberships(organization_id,user_id,status) VALUES($1,$2,'active') RETURNING id`, [organization.id,application.applicant_user_id],
-        )).rows[0];
-        await client.query(
-          `INSERT INTO membership_roles(membership_id,role_id)
-           SELECT $1,id FROM roles WHERE code IN ('ORG_OWNER','ORG_ADMIN') ON CONFLICT DO NOTHING`, [membership.id],
-        );
+        const organization = await provisionSetupOrganization(client, {
+          name: application.organization_name, slug: approvedSlug,
+          legalName: typeof application.details.legalName === 'string' ? application.details.legalName : undefined,
+          ownerUserId: application.applicant_user_id, actorUserId: userId,
+        });
         const updated = (await client.query<ApplicationRow>(
           `UPDATE organization_applications
            SET status='APPROVED',reviewed_by_user_id=$2,review_note=$3,reviewed_at=now(),provisioned_organization_id=$4,updated_at=now()

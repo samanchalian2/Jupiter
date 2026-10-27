@@ -29,7 +29,8 @@ export async function withAutomaticHubOutage(input:{
    // Wait for the REAL existing timer, without calling flush or changing cadence.
    await vi.waitFor(()=>expect(failures).toBeGreaterThan(0),{timeout:15000,interval:50});
    expect(sdk!.stats().queued).toBeGreaterThan(0);expect(sdk!.stats().queued).toBeLessThanOrEqual(500);
-   expect(fallbackCodes).toContain('INGESTION_UNAVAILABLE');expect(delivered).toBe(0);
+   // Receiving a request precedes the SDK reading its 503 and calling fallback.
+   await vi.waitFor(()=>expect(fallbackCodes).toContain('INGESTION_UNAVAILABLE'),{timeout:5000,interval:50});expect(delivered).toBe(0);
   });
   // All intake settlements and explicit ticket submission have completed while
   // Hub remained unavailable. Reconnect and let the next real timer deliver.

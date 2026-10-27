@@ -1,5 +1,24 @@
 # Current State
 
+## 2026-10-27 — GOAL-070 implementation / Preview acceptance complete
+
+Saba P0→P1→P2 corrections implemented under DEC-066; migration074/85 total passes
+LOCAL and restored Preview rehearsal, applied only to Preview Jupiter. Global
+applicant route/CTA/history, honest delivery, atomic SETUP+owner, SLA V2, scoped
+search/refresh, Wizard6/4/0, Persian Owner, new→Composer and first-password boundary
+verified. Actual Browser acceptance also fixed HTTP UUID generation, Wizard SPA
+navigation, intrinsic owner-select overflow and non-Platform denied-route rendering.
+Full API191 passed/2 optional skipped; Web60 passed; both typechecks/builds and
+diffcheck pass. Four widths375/768/1024/1440 RTL/no final document overflow.
+Two temporary orgs/three accounts/application/tickets removed with normal FK/RLS
+unchanged; generated credential file removed. Original Saba fingerprints and
+Arandi start/restarts unchanged. Six Help revisions published/history retained.
+Guide/PDF28-page pending-publication edition prepared, not published to arandi.io.
+Preview candidate goal070-saba-v5 active; main remains unchanged. Delivery commit/
+remote CI are verified separately from actual Git output, not predicted here.
+Evidence: docs/GOAL_070_EVIDENCE.md. No next Goal or chat transfer;059 independent.
+Preserve unrelated user gateway/training/output/tmp/legacy AGENTS.md.txt edits.
+
 ## 2026-10-25 — Public Jupiter guide and PDF corrected/published
 
 Owner-requested post-GOAL-069 education maintenance complete: arandi.io Jupiter

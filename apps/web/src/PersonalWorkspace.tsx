@@ -208,6 +208,7 @@ export function PersonalDashboard({ actor }: { actor: Actor }) {
       />
       {data.error && <Alert variant="danger">{data.error}</Alert>}
       <div className="personal-quick-actions">
+        <a className="ui-button secondary" href="/organization-applications">درخواست ثبت سازمان</a>
         <Link className="ui-button primary" to="/tickets/new">
           <TicketPlus size={17} />
           ثبت تیکت جدید
@@ -320,7 +321,7 @@ export function PersonalServices({ actor }: { actor: Actor }) {
         actor.organizationId,
         {
           method: "POST",
-          headers: { "idempotency-key": crypto.randomUUID() },
+          headers: { "idempotency-key": requestKey() },
           body: JSON.stringify({ packageId: item.id }),
         },
       )) as PaymentOrder;
@@ -644,3 +645,4 @@ export function PersonalServices({ actor }: { actor: Actor }) {
     </section>
   );
 }
+import { requestKey } from './requestKey';

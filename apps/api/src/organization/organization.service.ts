@@ -1,10 +1,13 @@
-import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException, Optional, ServiceUnavailableException } from '@nestjs/common';
+import { setTemporaryPassword } from '../auth/temporary-password.js';
+import { BadRequestException, ConflictException, ForbiddenException, Inject, Injectable, NotFoundException, Optional, ServiceUnavailableException } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service.js';
 import { hashPassword } from '../auth/password.js';
 import { AttachmentStorage } from '../attachments/attachment-storage.js';
 import { createHash, randomUUID } from 'node:crypto';
 import { OrganizationAccessPolicy } from './organization-access.policy.js';
 import { OrganizationSetupService } from './organization-setup.service.js';
+
+import { provisionSetupOrganization } from './setup-provisioning.js';
 
 type Actor = { userId: string; organizationId: string; roles: string[] };
 type MemberInput = { email: string; username?: string; displayName: string; password?: string; roles: string[] };
@@ -65,10 +68,10 @@ export class OrganizationService {
     const roles = this.validRoles(input.roles);
     const password = input.password;
     const username = this.username(input.username);
-    if (!/^\S+@\S+\.\S+$/.test(input.email ?? '') || !input.displayName?.trim() || !password || password.length < 10) throw new BadRequestException('Provide a valid email, name, and a temporary password of at least 10 characters.');
+    if (!/^\S+@\S+\.\S+$/.test(input.email ?? '') || !input.displayName?.trim() || !password || password.length < 10 || password.length > 200) throw new BadRequestException('Provide a valid email, name, and a temporary password of at least 10 characters.');
     try { return await this.database.withOrganization(actor.organizationId, async (client) => {
       const existing = (await client.query<{ id: string }>('SELECT id FROM users WHERE email=$1', [input.email.toLowerCase()])).rows[0];
-      const user = existing ?? (await client.query<{id:string}>('INSERT INTO users(email,username,display_name,password_hash) VALUES($1,$2,$3,$4) RETURNING id', [input.email.toLowerCase(), username ?? null, input.displayName.trim(), await hashPassword(password)])).rows[0];
+      const user = existing ?? (await client.query<{id:string}>('INSERT INTO users(email,username,display_name,password_hash,must_change_password) VALUES($1,$2,$3,$4,true) RETURNING id', [input.email.toLowerCase(), username ?? null, input.displayName.trim(), await hashPassword(password)])).rows[0];
       if (existing) await client.query('UPDATE users SET display_name=$1,username=COALESCE($2,username),updated_at=now() WHERE id=$3', [input.displayName.trim(), username ?? null, user.id]);
       const member = (await client.query<{id:string}>('INSERT INTO memberships(organization_id,user_id,status) VALUES($1,$2,\'active\') ON CONFLICT(organization_id,user_id) DO UPDATE SET status=\'active\' RETURNING id', [actor.organizationId,user.id])).rows[0];
       await this.replaceRoles(client, member.id, roles);
@@ -99,8 +102,7 @@ export class OrganizationService {
     return this.database.withOrganization(actor.organizationId, async (client) => {
       const member = (await client.query<{user_id:string}>('SELECT user_id FROM memberships WHERE id=$1', [membershipId])).rows[0];
       if (!member) throw new NotFoundException('Member not found.');
-      await client.query('UPDATE users SET password_hash=$1,updated_at=now() WHERE id=$2', [await hashPassword(password), member.user_id]);
-      await client.query('UPDATE refresh_sessions SET revoked_at=now() WHERE user_id=$1 AND revoked_at IS NULL', [member.user_id]);
+      await setTemporaryPassword(client,member.user_id,await hashPassword(password));
       await this.audit(client, actor, 'member.password_reset', 'membership', membershipId);
       return { ok: true };
     });
@@ -284,13 +286,56 @@ export class OrganizationService {
 
   private catalogKind(kind: string) { if (!catalogTables.has(kind)) throw new NotFoundException('Unknown catalog.'); }
   private suggestionTable(kind:string) { if(!suggestionKinds.has(kind)||kind==='subcategory') throw new BadRequestException('Invalid suggestion kind.'); return `${kind}s`; }
-  private async replaceRoles(client: { query(query: string, values?: unknown[]): Promise<unknown> }, membershipId: string, roles: string[]) { await client.query('DELETE FROM membership_roles WHERE membership_id=$1',[membershipId]); await client.query('INSERT INTO membership_roles(membership_id,role_id) SELECT $1,id FROM roles WHERE code=ANY($2::text[])',[membershipId,roles]); }
+  private async replaceRoles(client: { query(query: string, values?: unknown[]): Promise<unknown> }, membershipId: string, roles: string[]) { await client.query("DELETE FROM membership_roles mr USING roles r WHERE mr.membership_id=$1 AND mr.role_id=r.id AND r.code<>'ORG_OWNER'",[membershipId]); await client.query('INSERT INTO membership_roles(membership_id,role_id) SELECT $1,id FROM roles WHERE code=ANY($2::text[])',[membershipId,roles]); }
   private async platform(userId:string) { const user=(await this.database.query<{is_platform_admin:boolean}>('SELECT is_platform_admin FROM users WHERE id=$1 AND is_active=true',[userId])).rows[0]; if(!user?.is_platform_admin) throw new ForbiddenException(); }
-  async platformOrganizations(userId:string) { await this.platform(userId); return (await this.database.query('SELECT id,slug,name,status,workspace_type,created_at,archived_at,archive_reason FROM organizations ORDER BY created_at DESC')).rows; }
+  async platformOrganizations(userId:string) { await this.platform(userId); return (await this.database.query(`SELECT o.id,o.slug,o.name,o.legal_name,o.status,o.workspace_type,o.created_at,o.archived_at,o.archive_reason,     EXISTS(SELECT 1 FROM memberships m JOIN users u ON u.id=m.user_id JOIN membership_roles mr ON mr.membership_id=m.id JOIN roles r ON r.id=mr.role_id WHERE m.organization_id=o.id AND m.status='active' AND u.is_active=true AND r.code='ORG_OWNER') AS has_active_owner     FROM organizations o ORDER BY o.created_at DESC`)).rows; }
+  async createSetupOrganization(actorUserId: string, input: {name:string;slug:string;legalName?:string;initialOwnerUserId:string}, key: string) {
+    await this.platform(actorUserId);
+    if(typeof input.name!=='string'||typeof input.slug!=='string'||typeof input.initialOwnerUserId!=='string'||(input.legalName!==undefined&&typeof input.legalName!=='string'))throw new BadRequestException('اطلاعات سازمان باید متن معتبر باشد.');
+    const name=input.name?.trim(),slug=input.slug?.trim();
+    if(!name||name.length<2||name.length>160||!/^[a-z0-9-]{3,63}$/.test(slug??'')||!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(input.initialOwnerUserId??'')||!key||key.length>160) throw new BadRequestException('نام، شناسهٔ سازمان، مالک اولیه و کلید درخواست معتبر لازم است.');
+    const fingerprint=createHash('sha256').update(JSON.stringify({name,slug,legalName:input.legalName?.trim()||null,owner:input.initialOwnerUserId})).digest('hex');
+    try {
+      return await this.database.transaction(async client=>{
+        await client.query('SELECT pg_advisory_xact_lock(hashtextextended($1,0))',[`setup-provision:${actorUserId}:${key}`]);
+        const previous=(await client.query<{target_id:string;metadata:{fingerprint:string}}>("SELECT target_id,metadata FROM audit_logs WHERE actor_user_id=$1 AND action='platform.organization_setup_created' AND metadata->>'idempotencyKey'=$2",[actorUserId,key])).rows[0];
+        if(previous){
+          if(previous.metadata.fingerprint!==fingerprint)throw new ConflictException('این کلید درخواست برای اطلاعات دیگری استفاده شده است.');
+          return (await client.query('SELECT id,name,slug,status FROM organizations WHERE id=$1',[previous.target_id])).rows[0];
+        }
+        const organization=await provisionSetupOrganization(client,{name,slug,legalName:input.legalName,ownerUserId:input.initialOwnerUserId,actorUserId});
+        await client.query("INSERT INTO audit_logs(organization_id,actor_user_id,action,target_type,target_id,metadata) VALUES($1,$2,'platform.organization_setup_created','organization',$1,$3::jsonb)",[organization.id,actorUserId,JSON.stringify({idempotencyKey:key,fingerprint,initialOwnerUserId:input.initialOwnerUserId})]);
+        return organization;
+      });
+    } catch(cause) {
+      if(cause&&typeof cause==='object'&&'code' in cause&&cause.code==='23505') throw new ConflictException('شناسهٔ سازمان قبلاً استفاده شده است.');
+      throw cause;
+    }
+  }
   async createPlatformOrganization(userId: string, input: { name: string; slug: string }) { await this.platform(userId); if(!input.name?.trim() || !/^[a-z0-9-]{3,63}$/.test(input.slug ?? '')) throw new BadRequestException('Organization name and slug are invalid.'); const result=(await this.database.query<{id:string;name:string;slug:string;status:string}>('INSERT INTO organizations(name,slug) VALUES($1,$2) RETURNING id,name,slug,status',[input.name.trim(),input.slug.trim()])); await this.database.query('INSERT INTO audit_logs(actor_user_id,action,target_type,target_id,metadata) VALUES($1,\'platform.organization_created\',\'organization\',$2,$3)',[userId,result.rows[0].id,{slug:input.slug.trim()}]); return result.rows[0]; }
   async platformUsers(userId: string) { await this.platform(userId); return (await this.database.query('SELECT id,email,display_name,is_platform_admin,is_active,created_at FROM users ORDER BY display_name')).rows; }
-  async createPlatformUser(actorUserId: string, input: { email: string; username?: string; displayName: string; password: string; isPlatformAdmin?: boolean }) { await this.platform(actorUserId); if(!/^\S+@\S+\.\S+$/.test(input.email ?? '') || !input.displayName?.trim() || !input.password || input.password.length<10) throw new BadRequestException('Provide valid user details and a password of at least 10 characters.'); try { const result=(await this.database.query<{id:string;email:string;display_name:string;is_platform_admin:boolean;is_active:boolean}>('INSERT INTO users(email,username,display_name,password_hash,is_platform_admin) VALUES($1,$2,$3,$4,$5) RETURNING id,email,display_name,is_platform_admin,is_active',[input.email.toLowerCase(),this.username(input.username)??null,input.displayName.trim(),await hashPassword(input.password),input.isPlatformAdmin??false])).rows[0]; await this.database.query('INSERT INTO audit_logs(actor_user_id,action,target_type,target_id,metadata) VALUES($1,\'platform.user_created\',\'user\',$2,$3)',[actorUserId,result.id,{isPlatformAdmin:result.is_platform_admin}]); return result; } catch (cause) { this.usernameConflict(cause); } }
-  async updatePlatformUser(actorUserId: string, targetUserId: string, input: { displayName?: string; username?: string; isPlatformAdmin?: boolean; isActive?: boolean; password?: string }) { await this.platform(actorUserId); if(targetUserId===actorUserId && (input.isActive===false || input.isPlatformAdmin===false)) throw new BadRequestException('You cannot remove your own platform access.'); if(input.password !== undefined && (input.password.length < 10 || input.password.length > 200)) throw new BadRequestException('Password must be between 10 and 200 characters.'); const { password, ...auditInput } = input; try { const passwordHash=password ? await hashPassword(password) : null; const result=(await this.database.query<{id:string;email:string;display_name:string;is_platform_admin:boolean;is_active:boolean}>('UPDATE users SET display_name=COALESCE($1,display_name),username=COALESCE($2,username),is_platform_admin=COALESCE($3,is_platform_admin),is_active=COALESCE($4,is_active),password_hash=COALESCE($5,password_hash),updated_at=now() WHERE id=$6 RETURNING id,email,display_name,is_platform_admin,is_active',[input.displayName?.trim()||null,this.username(input.username)??null,input.isPlatformAdmin??null,input.isActive??null,passwordHash,targetUserId])).rows[0]; if(!result) throw new NotFoundException('Platform user not found.'); if(passwordHash) await this.database.query('UPDATE refresh_sessions SET revoked_at=now() WHERE user_id=$1 AND revoked_at IS NULL',[targetUserId]); await this.database.query('INSERT INTO audit_logs(actor_user_id,action,target_type,target_id,metadata) VALUES($1,\'platform.user_updated\',\'user\',$2,$3)',[actorUserId,targetUserId,{...auditInput,passwordChanged:Boolean(passwordHash)}]); return result; } catch (cause) { this.usernameConflict(cause); } }
+  async createPlatformUser(actorUserId: string, input: { email: string; username?: string; displayName: string; password: string; isPlatformAdmin?: boolean }) {
+    await this.platform(actorUserId);
+    if(!/^\\S+@\\S+\\.\\S+$/.test(input.email??'')||!input.displayName?.trim()||!input.password||input.password.length<10||input.password.length>200)throw new BadRequestException('Provide valid user details and a temporary password of 10–200 characters.');
+    try{return await this.database.transaction(async client=>{
+      const user=(await client.query<{id:string;email:string;display_name:string;is_platform_admin:boolean;is_active:boolean}>('INSERT INTO users(email,username,display_name,password_hash,is_platform_admin,must_change_password) VALUES($1,$2,$3,$4,$5,true) RETURNING id,email,display_name,is_platform_admin,is_active',[input.email.toLowerCase(),this.username(input.username)??null,input.displayName.trim(),await hashPassword(input.password),input.isPlatformAdmin??false])).rows[0];
+      await client.query("INSERT INTO audit_logs(actor_user_id,action,target_type,target_id,metadata) VALUES($1,'platform.user_created','user',$2,$3)",[actorUserId,user.id,{isPlatformAdmin:user.is_platform_admin,temporaryPassword:true}]);
+      return user;
+    });}catch(cause){this.usernameConflict(cause);}
+  }
+  async updatePlatformUser(actorUserId:string,targetUserId:string,input:{displayName?:string;username?:string;isPlatformAdmin?:boolean;isActive?:boolean;password?:string}) {
+    await this.platform(actorUserId);
+    if(targetUserId===actorUserId&&(input.isActive===false||input.isPlatformAdmin===false))throw new BadRequestException('You cannot remove your own platform access.');
+    if(input.password!==undefined&&(input.password.length<10||input.password.length>200))throw new BadRequestException('Password must be between 10 and 200 characters.');
+    const {password,...auditInput}=input;
+    try{return await this.database.transaction(async client=>{
+      if(password)await setTemporaryPassword(client,targetUserId,await hashPassword(password));
+      const user=(await client.query<{id:string;email:string;display_name:string;is_platform_admin:boolean;is_active:boolean}>('UPDATE users SET display_name=COALESCE($1,display_name),username=COALESCE($2,username),is_platform_admin=COALESCE($3,is_platform_admin),is_active=COALESCE($4,is_active),updated_at=now() WHERE id=$5 RETURNING id,email,display_name,is_platform_admin,is_active',[input.displayName?.trim()||null,this.username(input.username)??null,input.isPlatformAdmin??null,input.isActive??null,targetUserId])).rows[0];
+      if(!user)throw new NotFoundException('Platform user not found.');
+      await client.query("INSERT INTO audit_logs(actor_user_id,action,target_type,target_id,metadata) VALUES($1,'platform.user_updated','user',$2,$3)",[actorUserId,targetUserId,{...auditInput,passwordChanged:Boolean(password),temporaryPassword:Boolean(password)}]);
+      return user;
+    });}catch(cause){this.usernameConflict(cause);}
+  }
   async setOrganizationStatus(userId:string, organizationId:string, status:'active'|'suspended') {
     await this.platform(userId);
     if(!['active','suspended'].includes(status))throw new BadRequestException('وضعیت فضای کاری معتبر نیست.');
@@ -381,7 +426,7 @@ export class OrganizationService {
       const previous=(await client.query<{payload_hash:string;result:object}>('SELECT payload_hash,result FROM organization_user_imports WHERE organization_id=$1 AND idempotency_key=$2',[actor.organizationId,idempotencyKey])).rows[0];
       if(previous){if(previous.payload_hash!==payloadHash)throw new BadRequestException('این کلید قبلاً با محتوای دیگری استفاده شده است.');return previous.result;}
       const resultRows=[] as {row:number;email:string;status:string}[];
-      for(const row of parsed){const existing=(await client.query<{id:string}>('SELECT id FROM users WHERE email=$1',[row.email])).rows[0];const user=existing??(await client.query<{id:string}>('INSERT INTO users(email,username,display_name,password_hash) VALUES($1,$2,$3,$4) RETURNING id',[row.email,row.username??null,row.displayName,await hashPassword(row.password)])).rows[0];if(existing)await client.query('UPDATE users SET display_name=$1,username=COALESCE($2,username),updated_at=now() WHERE id=$3',[row.displayName,row.username??null,user.id]);const member=(await client.query<{id:string}>('INSERT INTO memberships(organization_id,user_id,status) VALUES($1,$2,\'active\') ON CONFLICT(organization_id,user_id) DO UPDATE SET status=\'active\' RETURNING id',[actor.organizationId,user.id])).rows[0];await this.replaceRoles(client,member.id,this.validRoles(row.roles));resultRows.push({row:row.row,email:row.email,status:existing?'UPDATED':'CREATED'});}
+      for(const row of parsed){const existing=(await client.query<{id:string}>('SELECT id FROM users WHERE email=$1',[row.email])).rows[0];const user=existing??(await client.query<{id:string}>('INSERT INTO users(email,username,display_name,password_hash,must_change_password) VALUES($1,$2,$3,$4,true) RETURNING id',[row.email,row.username??null,row.displayName,await hashPassword(row.password)])).rows[0];if(existing)await client.query('UPDATE users SET display_name=$1,username=COALESCE($2,username),updated_at=now() WHERE id=$3',[row.displayName,row.username??null,user.id]);const member=(await client.query<{id:string}>('INSERT INTO memberships(organization_id,user_id,status) VALUES($1,$2,\'active\') ON CONFLICT(organization_id,user_id) DO UPDATE SET status=\'active\' RETURNING id',[actor.organizationId,user.id])).rows[0];await this.replaceRoles(client,member.id,this.validRoles(row.roles));resultRows.push({row:row.row,email:row.email,status:existing?'UPDATED':'CREATED'});}
       const result={created:resultRows.filter(row=>row.status==='CREATED').length,updated:resultRows.filter(row=>row.status==='UPDATED').length,rows:resultRows};
       await client.query('INSERT INTO organization_user_imports(organization_id,idempotency_key,payload_hash,result,created_by_user_id) VALUES($1,$2,$3,$4,$5)',[actor.organizationId,idempotencyKey,payloadHash,JSON.stringify(result),actor.userId]);
       await this.audit(client,actor,'members.csv_imported','organization',actor.organizationId,{created:result.created,updated:result.updated,rowCount:resultRows.length});return result;

@@ -5,6 +5,11 @@ import { normalizePlatformSearch, paginatePlatformItems } from './PlatformAdminU
 import type { Actor } from './App';
 
 describe('platform organization review and responsive lists', () => {
+  it('constrains intrinsic owner-option width inside the compact creation form',()=>{
+    const styles=readFileSync(new URL('./styles.css',import.meta.url),'utf8');
+    expect(styles).toMatch(/\.platform-inline-create select\s*\{[^}]*min-width:\s*0;[^}]*max-width:\s*100%;[^}]*width:\s*100%/);
+    expect(styles).toContain('.platform-inline-create > label { min-width: 0; }');
+  });
   it('manages personal and organization workspaces through explicit reversible paths',()=>{
     const source=readFileSync(new URL('./PlatformPro.tsx',import.meta.url),'utf8');
     expect(source).toContain('سازمان‌ها و فضاهای کاری');
@@ -56,7 +61,7 @@ describe('platform organization review and responsive lists', () => {
     expect(source).toContain('reason.trim().length >= 10');
     expect(source).toContain('acknowledged');
     expect(source).toContain('selected.workspace_type !== "PERSONAL"');
-    expect(source).toContain('"idempotency-key": crypto.randomUUID()');
+    expect(source).toContain('"idempotency-key": requestKey()');
     expect(source).toContain('${pending.organization.id}/${pending.mode}');
     expect(source).toContain('بازیابی در حالت معلق');
   });

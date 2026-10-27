@@ -1,5 +1,23 @@
 # Security and Privacy
 
+## GOAL-070 / DEC-066 identity and onboarding
+
+Applicant endpoints remain self-only irrespective of membership/URL. Platform
+delivery diagnostics and ownerless metadata need an active Platform Admin. Initial
+owner selection is explicit/transactional, never an implicit legacy promotion.
+Similar names are review warnings, not identity/merge authority.
+
+Temporary-password challenges are purpose/audience-bound, ten-minute, non-access
+credentials with no refresh session. Completion locks the active user, validates
+version/flag, changes local credential(s), revokes sessions, increments version and
+audits once. Existing users default false/version0; legacy versionless JWTs require
+version0. Reset invalidates prior access immediately, not only the UI. No AD
+writeback. Passwords/challenges never enter URL, log, browser persistence or Audit
+metadata. Client epochs/result guards discard obsolete identity completions.
+
+Delivery diagnostics contain fixed safe outcomes/configuration flags, never secrets
+or provider error text. Preview email remains disabled; no hosted test-token bypass.
+
 DEC-065 authorizes the exact Issue under existing scoped detail/current grants
 before whole retained-link aggregation, explicitly binding App/environment/Issue/
 tenant. No actor/tenant IDs or raw metadata are returned; feature codes are

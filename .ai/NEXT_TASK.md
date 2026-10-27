@@ -1,6 +1,15 @@
 # Next Task
 
-## Await owner review — GOAL-069 deployed; no next Goal scheduled
+## GOAL-070 accepted on Preview — no next Goal authorized
+
+Owner-approved P0→P1→P2 implementation and separate Saba Preview acceptance pass;
+see docs/GOAL_070_EVIDENCE.md for exact gates, limitations, restoration and source
+archive. Complete only actual scoped Git delivery/CI verification for this handoff.
+Then stop. Await explicit authorization before main rollout, public guide/PDF
+publication, email activation or a new Goal. Existing Saba data and Arandi preserved.
+Preview remains HTTP with delivery disabled; no claim of production mail acceptance.
+
+The notes below describe the completed predecessor and remain historical context.
 
 Subsequent owner-requested website guide AND PDF corrections were published on
 2026-10-25; see docs/WEBSITE_GUIDE_REFRESH_20261025.md and deploy/arandi-guide.

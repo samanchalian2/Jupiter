@@ -3,6 +3,7 @@ import { Plus, Search, SlidersHorizontal, X } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import type { Actor, Ticket } from "./App";
 import { request } from "./App";
+import { createLatestResultGuard, ticketFilterStorageKey } from "./workspaceState";
 import { TicketComposer } from "./TicketComposer";
 import { TicketDetailPro } from "./TicketDetailPro";
 import { Button, ConfirmDialog, EmptyState, PageHeader } from "./ui";
@@ -49,11 +50,14 @@ export function TicketWorkspacePro({
     ["ORG_ADMIN", "SUPERVISOR"].includes(role),
   );
   const ticketId = location.pathname.match(/^\/tickets\/([^/]+)$/)?.[1];
-  const storageKey = `jupiter.ticket-filters.${actor.organizationId}.${staff ? "staff" : "requester"}`;
+  const storageKey = ticketFilterStorageKey(actor.session.user.id, actor.organizationId, actor.membership.workspace_type, staff);
+  const queueGuard=useRef(createLatestResultGuard());
+  const ticketGuard=useRef(createLatestResultGuard());
+  useEffect(()=>()=>{queueGuard.current.invalidate();ticketGuard.current.invalidate();},[]);
   const savedFilters = () => {
     try {
       return JSON.parse(
-        sessionStorage.getItem(storageKey) ?? "null",
+        (storageKey ? sessionStorage.getItem(storageKey) : null) ?? "null",
       ) as Filters | null;
     } catch {
       return null;
@@ -76,13 +80,15 @@ export function TicketWorkspacePro({
   const [selected, setSelected] = useState<Ticket | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [composerOpen, setComposerOpen] = useState(!staff);
+  const [composerOpen, setComposerOpen] = useState(!staff || new URLSearchParams(location.search).get("compose")==="1");
+  useEffect(()=>{if(new URLSearchParams(location.search).get("compose")==="1")setComposerOpen(true);},[location.search]);
   const [notice, setNotice] = useState("");
   const [pendingBulk, setPendingBulk] = useState("");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const filtersCloseRef = useRef<HTMLButtonElement>(null);
 
   const loadQueue = () => {
+    const current=queueGuard.current.begin();
     setLoading(true);
     setError("");
     const query = new URLSearchParams({
@@ -102,6 +108,7 @@ export function TicketWorkspacePro({
       request("/tickets/tags", actor.session, actor.organizationId),
     ])
       .then(([next, nextViews, nextTags]) => {
+        if(!current())return;
         const data = next as Queue;
         setQueue(data);
         setViews(nextViews as View[]);
@@ -109,28 +116,30 @@ export function TicketWorkspacePro({
         setChecked((current) =>
           current.filter((id) => data.items.some((ticket) => ticket.id === id)),
         );
-        sessionStorage.setItem(storageKey, JSON.stringify(filters));
+        if(storageKey)sessionStorage.setItem(storageKey, JSON.stringify(filters));
       })
-      .catch((cause) =>
+      .catch((cause) => current() &&
         setError(
           cause instanceof Error ? cause.message : "دریافت تیکت‌ها ناموفق بود.",
         ),
       )
-      .finally(() => setLoading(false));
+      .finally(() => {if(current())setLoading(false);});
   };
   const loadTicket = () => {
+    const current=ticketGuard.current.begin();
     if (!ticketId) {
       setSelected(null);
       return;
     }
     setLoading(true);
     request(`/tickets/${ticketId}`, actor.session, actor.organizationId)
-      .then((value) => setSelected(value as Ticket))
+      .then((value) => {if(current())setSelected(value as Ticket);})
       .catch((cause) => {
+        if(!current())return;
         setError(cause instanceof Error ? cause.message : "تیکت پیدا نشد.");
         setSelected(null);
       })
-      .finally(() => setLoading(false));
+      .finally(() => {if(current())setLoading(false);});
   };
   useEffect(() => {
     loadQueue();

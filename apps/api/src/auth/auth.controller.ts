@@ -15,6 +15,10 @@ export class AuthController {
     const identifier = body.identifier ?? body.email;
     if (!identifier || !body.password) throw new UnauthorizedException('Invalid credentials');
     const result = await this.auth.login(identifier, body.password);
+    if ('passwordChangeRequired' in result) {
+      response.clearCookie('jupiter_refresh', this.cookieOptions());
+      return result;
+    }
     this.writeRefreshCookie(response, result.refreshToken);
     return this.publicSession(result);
   }
@@ -49,7 +53,14 @@ export class AuthController {
     return this.auth.updateProfile(payload.sub, body);
   }
 
-  private publicSession(result: Awaited<ReturnType<AuthService['login']>>) { return { accessToken: result.accessToken, user: result.user }; }
+  @Post('password/first-login')
+  async firstLogin(@Body() body: { passwordChangeToken?: string; nextPassword?: string }, @Res({ passthrough: true }) response: CookieResponse) {
+    const result = await this.auth.completeFirstLogin(body.passwordChangeToken ?? '', body.nextPassword ?? '');
+    this.writeRefreshCookie(response, result.refreshToken);
+    return this.publicSession(result);
+  }
+
+  private publicSession(result: Awaited<ReturnType<AuthService['refresh']>>) { return { accessToken: result.accessToken, user: result.user }; }
   private readCookie(raw: string | undefined, name: string, required = true) {
     const value = raw?.split(';').map((part) => part.trim()).find((part) => part.startsWith(`${name}=`))?.slice(name.length + 1);
     if (!value && required) throw new UnauthorizedException('Session expired. Please sign in again.');

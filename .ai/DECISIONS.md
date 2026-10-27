@@ -1,5 +1,39 @@
 # Architecture Decisions
 
+## DEC-066 — Safe onboarding completion and first-login password boundary
+
+Owner approved GOAL-070 on 2026-10-26. Organization applications remain applicant-
+owned and independent of personal/organization membership at the global
+`/organization-applications` route. Existing statuses, verified-public-identity
+submission policy, tenant RLS and approval transaction remain unchanged.
+Delivery acceptance is not inbox delivery or email verification; disabled/failed
+delivery has explicit safe UI projections and no hosted test-verification bypass.
+
+Platform gains an additive SETUP-with-initial-owner provisioning command, with
+explicit owner, idempotency and one transaction for organization/membership/roles/
+Audit. Existing quick-active command stays compatible, explicitly separated in UI.
+Legacy ownerless tenants are never automatically promoted or lifecycle-reverted.
+Optional legal_name is descriptive metadata, not a unique tenant identity or a
+merge key. It is captured on new SETUP provisioning/approved applications and
+shown only in authorized Platform prechecks; legacy organizations default null.
+
+New admin-created local passwords and future explicit admin resets require a
+first-login change. Existing users default unrestricted; Directory users and
+membership reuse do not acquire a password requirement implicitly. A ten-minute
+purpose-bound challenge is not an access token and creates no refresh session.
+The dedicated password change transaction clears the flag, increments credential
+version and revokes previous sessions before issuing a normal session. Normal
+access verification checks active status/current credential version/required-change
+flag; versionless legacy access is valid only at credential version zero. New
+passwords follow the existing 10–200 character policy. Passwords/challenges never
+enter URLs, logs, persisted browser storage or Audit metadata. No AD writeback.
+
+Client filters are partitioned by user/tenant/workspace/view. Account/scope switches
+invalidate late asynchronous completions, including session refresh; old unscoped
+filter values are not migrated into a different identity. Static tickets/new routes
+redirect to the existing composer, before UUID detail routing; server authorization
+still owns all ticket access. No lifecycle/provider/commercial boundary changes.
+
 ## DEC-065 — Retained-cohort Issue impact, separate from lifetime counters
 
 Source: original GOAL-069 section31/A14. Add observed_impact to Issue DETAIL

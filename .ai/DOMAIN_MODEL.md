@@ -1,5 +1,16 @@
 # Domain Model
 
+## GOAL-070 additions (DEC-066)
+
+User gains must_change_password=false and credential_version=0 through migration074;
+these govern local password access without splitting existing identities. New
+temporary passwords/resets set the flag; successful initial change clears it and
+increments version. Password challenge is short-lived and not a persisted session.
+SETUP provisioning reuses Organization, Membership, membership roles and Audit in
+one transaction. No parallel owner/entity or tenant identity is introduced.
+Organization gains optional legal_name descriptive metadata (migration074), not
+a unique key. Existing tenants remain null; no bulk normalization or merge.
+
 DEC-065 adds Issue detail observed_impact, a read-only retained-link cohort with
 counts/users/tenants/Applications0–1, tenant-free/feature counts/list<=20 and UTC
 first-last/span. basis=RETAINED_LINKED_EVENTS; no entity/migration/persisted counter

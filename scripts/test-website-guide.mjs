@@ -12,5 +12,8 @@ assert(!component.includes('دریافت عضویت یا ثبت سازمان'));
 assert(component.includes('<details className={styles.advanced}><summary>راهنمای تکمیلی مسئول مجاز پایش'));
 assert(guide.includes('حداقل ۱۰ نویسه'));
 assert(guide.includes('https://jupiter.arandi.io/operations'));
+for(const term of ['پیش‌بررسی ضروری','نام حقوقی','شناسهٔ آدرس','SMTP یا Webhook','پیکربندی‌نشده','/organization-applications','سیاست‌های SLA','تغییر رمز','پیام‌رسان عمومی','کاربر درخواست‌کننده یادداشت داخلی را نمی‌بیند','اختیاری رد شده'])assert(guide.includes(term),term);
+assert(!guide.includes('ابتدا «ساخت پیش‌نویس درخواست» را بزنید'));
+assert(!guide.includes('«ارسال برای بررسی» را انتخاب کنید'));
 assert(!/sk-[A-Za-z0-9_-]{16,}|postgres(?:ql)?:\/\//.test(guide+component));
 console.log('Website guide content/paths/FAQ/monitoring/progressive disclosure/security checks PASS');

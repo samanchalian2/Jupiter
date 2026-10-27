@@ -1,5 +1,11 @@
 # Jupiter website guide overlay
 
+GOAL-070 pending-publication edition: onboarding/SLA/password/delivery instructions
+and Preview-labeled PDF are being aligned with the remediation release. The public
+Arandi website is NOT updated by this Goal. Publish source/PDF only together with
+the corresponding Jupiter main release, after its separate authorization. Historical
+2026-10-25 publication evidence below describes the prior edition.
+
 This is the reviewed Jupiter-guide-only content/component/PDF overlay for
 `https://arandi.io/knowledge/jupiter-guide?lang=fa`. It is not another website,
 an Arandi database copy, or a replacement application. The owner requested this

@@ -35,7 +35,7 @@ beforeAll(async()=>{
  const url=new URL(databaseUrl());url.pathname=`/${name}`;const connectionString=url.toString(),pool=new Pool({connectionString,max:4});
  try{
   const directory=join(process.cwd(),'migrations');
-  const files=(await readdir(directory)).filter(file=>file.endsWith('.sql')).sort();expect(files).toHaveLength(84);
+  const files=(await readdir(directory)).filter(file=>file.endsWith('.sql')).sort();expect(files).toHaveLength(85);
   for(const file of files)await pool.query((await readFile(join(directory,file),'utf8')).replace(/\bjupiter_app\b/g,role));
   // Same tenant transaction/RLS implementation, with only the rehearsal role name
   // substituted for this disposable DB. Never change the shared business role.
@@ -157,7 +157,15 @@ describe('actual lifecycle worker with real product services and PostgreSQL/HTTP
   const events=await hub.worker(async c=>(await c.query("SELECT event_id,source,category,event_code,operation_name,actor_reference,tenant_reference,normalized_message FROM observability.events WHERE application_id=$1 AND environment_id=$2",[appId,environmentId])).rows);
   const lifecycleEvents=events.filter(event=>event.operation_name==='directory.schedule_due');expect(lifecycleEvents).toHaveLength(1);expect(lifecycleEvents[0]).toMatchObject({source:'WORKER',category:'WORKER',event_code:'worker.job_failed',operation_name:'directory.schedule_due',actor_reference:null,tenant_reference:null});
   expect(JSON.stringify(warnings)).not.toContain('directory_connectors');expect(JSON.stringify(warnings)).toContain('PRODUCT_WORKER_FAILED');
-  const engine=new IssueEngine(hub,registry);for(const job of await engine.queue.claim(randomUUID(),10,['AGGREGATE']))expect(await engine.aggregate(job)).toBe(true);
+  const engine=new IssueEngine(hub,registry);
+  // Prior real-worker scenarios can leave more than ten jobs: drain actual work.
+  let drained=false;
+  for(let batch=0;batch<20;batch++){
+   const jobs=await engine.queue.claim(randomUUID(),50,['AGGREGATE']);
+   if(!jobs.length){drained=true;break;}
+   for(const job of jobs)expect(await engine.aggregate(job)).toBe(true);
+  }
+  expect(drained).toBe(true);
   expect(await hub.worker(async c=>(await c.query("SELECT count(*)::int total FROM observability.issues i JOIN observability.issue_events link ON link.issue_id=i.id AND link.application_id=i.application_id JOIN observability.events e ON e.event_id=link.event_id AND e.application_id=link.application_id AND e.environment_id=link.environment_id WHERE i.application_id=$1 AND e.operation_name='directory.schedule_due'",[appId])).rows[0].total)).toBe(1);
   expect(await runLifecycleWorkerCycle(services)).toBe(true);expect(sdk.stats().queued).toBe(0);
   expect((await database.query<{id:string}>('SELECT id FROM organizations WHERE id=$1',[organizationId])).rows).toHaveLength(1);

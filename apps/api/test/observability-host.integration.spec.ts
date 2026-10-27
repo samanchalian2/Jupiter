@@ -26,7 +26,7 @@ beforeAll(async()=>{
  const configured=new URL(databaseUrl());if(!['localhost','127.0.0.1','[::1]'].includes(configured.hostname))throw Error('LOCAL disposable host acceptance only');
  await admin.connect();connected=true;priorRole=await roleSnapshot();expect(JSON.parse(priorRole)).toHaveLength(1);
  await admin.query(`CREATE DATABASE "${name}"`);created=true;configured.pathname=`/${name}`;pool=new Pool({connectionString:configured.toString(),max:4});
- const files=(await readdir(join(process.cwd(),'migrations'))).filter(file=>file.endsWith('.sql')).sort();expect(files).toHaveLength(84);
+ const files=(await readdir(join(process.cwd(),'migrations'))).filter(file=>file.endsWith('.sql')).sort();expect(files).toHaveLength(85);
  for(const file of files){let sql=await readFile(join(process.cwd(),'migrations',file),'utf8');
   // The actual process uses the existing production role name. Grant statements
   // affect ONLY newly created objects in this disposable DB; no cluster role,
@@ -125,7 +125,7 @@ describe('actual compiled Jupiter main/AppModule process',()=>{
   expect((await fetch(`${base}/auth/refresh`,{method:'POST',headers:{cookie:user.cookie}})).status).toBe(401);
   await fetch(`${base}/auth/logout`,{method:'POST',headers:{cookie:operator.cookie}});
   expect((await pool!.query('SELECT 1 FROM refresh_sessions WHERE user_id=ANY($1::uuid[]) AND revoked_at IS NULL',[[requester,platformAdmin]])).rowCount).toBe(0);
-  expect(executedMigrations).toBe(84);console.log(JSON.stringify({event:'observability.actual_appmodule_host',result:'PASS',process:'dist/main.js',migrations:executedMigrations,auth:'REAL_PASSWORD_JWT_MEMBERSHIP',failedDraft:'500_ZERO_TICKETS_EVENT_ISSUE',hubOutage:'REAL_TABLE_UNAVAILABLE_TIMER_ATTEMPT',manualSubmit:'ONE_OPEN_TICKET',commercialEntries:0,sessions:'REVOKED',limits:'Disposable database; real compiled AppModule/API/SDK/worker HTTP process. No browser shell, provider call or process-crash recovery claim.'}));
+  expect(executedMigrations).toBe(85);console.log(JSON.stringify({event:'observability.actual_appmodule_host',result:'PASS',process:'dist/main.js',migrations:executedMigrations,auth:'REAL_PASSWORD_JWT_MEMBERSHIP',failedDraft:'500_ZERO_TICKETS_EVENT_ISSUE',hubOutage:'REAL_TABLE_UNAVAILABLE_TIMER_ATTEMPT',manualSubmit:'ONE_OPEN_TICKET',commercialEntries:0,sessions:'REVOKED',limits:'Disposable database; real compiled AppModule/API/SDK/worker HTTP process. No browser shell, provider call or process-crash recovery claim.'}));
   }finally{await Promise.all([user.cookie,operator.cookie].map(cookie=>fetch(`${base}/auth/logout`,{method:'POST',headers:{cookie}})));}
  },60000);
  it.runIf(process.env.OBSERVABILITY_BROWSER_ACCEPTANCE==='true')('runs authenticated actual Web/manual ticket/automatic trace acceptance without touching shared tenants',async()=>{

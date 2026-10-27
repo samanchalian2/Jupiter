@@ -2,6 +2,8 @@ import { Body, Controller, Get, Headers, NotFoundException, Param, Post, Query, 
 import { AuthService } from '../auth/auth.service.js';
 import { OrganizationApplicationService } from './organization-application.service.js';
 import { LocalVerificationNotificationDelivery } from './verification-notification.service.js';
+import { verificationDeliveryReadiness } from './verification-readiness.js';
+import { publicAccountVerificationDeliveryMode } from '../config.js';
 
 @Controller('public/accounts')
 export class PublicAccountController {
@@ -9,6 +11,8 @@ export class PublicAccountController {
 
   @Post()
   create(@Body() body: { email?: string; displayName?: string; password?: string }) { return this.applications.createPublicAccount(body); }
+  @Get('verification/readiness')
+  readiness() { return verificationDeliveryReadiness(); }
   @Post('verify-email')
   verify(@Body() body: { token?: string }) { return this.applications.verifyEmail(body.token ?? ''); }
   @Post('verification/resend')
@@ -17,7 +21,7 @@ export class PublicAccountController {
   status(@Headers('authorization') authorization?: string) { return this.userId(authorization).then((userId) => this.applications.publicAccountStatus(userId)); }
   @Get('test/verification-deliveries')
   async testDelivery(@Query('email') email?: string, @Headers('authorization') authorization?: string) {
-    if (process.env.NODE_ENV === 'production') throw new NotFoundException();
+    if (process.env.NODE_ENV === 'production' || publicAccountVerificationDeliveryMode() !== 'LOCAL_TEST') throw new NotFoundException();
     if (!email) throw new NotFoundException();
     const account = await this.applications.publicAccountStatus(await this.userId(authorization));
     if (account.email.toLowerCase() !== email.trim().toLowerCase()) throw new NotFoundException();
@@ -62,6 +66,11 @@ export class OrganizationApplicationController {
 @Controller('platform/organization-applications')
 export class PlatformOrganizationApplicationController {
   constructor(private readonly applications: OrganizationApplicationService, private readonly auth: AuthService) {}
+
+  @Get('verification-readiness')
+  readiness(@Headers('authorization') authorization?: string) {
+    return this.userId(authorization).then((userId) => this.applications.verificationReadiness(userId));
+  }
 
   @Get()
   list(@Query('status') status: 'SUBMITTED' | 'UNDER_REVIEW' | 'NEEDS_INFORMATION' | 'APPROVED' | 'REJECTED' | 'CANCELLED' | undefined, @Headers('authorization') authorization?: string) {

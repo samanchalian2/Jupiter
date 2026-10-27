@@ -91,6 +91,7 @@ export class TicketService {
   }
 
   async get(actor: Actor, ticketId: string) {
+    if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(ticketId))throw new NotFoundException('تیکت در دسترس نیست.');
     return this.database.withOrganization(actor.organizationId, async (client) => {
       const worker = actor.roles.some((role) => managerRoles.has(role));
       const expert = actor.roles.includes('EXPERT');

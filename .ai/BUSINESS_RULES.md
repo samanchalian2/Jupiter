@@ -1,5 +1,21 @@
 # Business Rules
 
+## GOAL-070 onboarding completion (DEC-066)
+
+- Organization applications remain applicant-owned despite personal/organization
+  memberships. Submission needs verified public email; review statuses stay exact.
+- DELIVERED means transport accepted, not Inbox receipt/verification. Disabled and
+  failed delivery are explicit; configuration validation is not a network test.
+- Direct standard Platform provisioning creates SETUP + initial owner/admin +
+  Audit atomically/idempotently. Legacy quick-active stays separate; existing
+  ownerless organizations are not auto-promoted or lifecycle-reverted.
+- New admin-issued local/CSV passwords and future resets require first change.
+  Existing-account membership reuse does not reset credentials. Challenges grant
+  no normal access; completion/replay/reset follow the credential-version boundary.
+- Ticket filters include user/tenant/workspace/view and discard stale completions.
+  tickets/new opens the existing composer. Wizard counts optional skips separately;
+  readiness remains server-owned and Persian role labels never grant Owner.
+
 ## Retained Issue impact (DEC-065)
 
 - Issue detail impact uses ALL retained linked Events in the exact scope, not

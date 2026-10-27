@@ -1,5 +1,13 @@
 # Jupiter Master Upgrade Plan
 
+## GOAL-070 — Saba onboarding implemented / Preview accepted (2026-10-27)
+
+Owner-approved P0→P1→P2/DEC-066/migration074 delivered to Preview only. API191,
+Web60, typechecks/builds,85-migration rehearsal and authenticated four-width
+acceptance/cleanup pass. Original Saba/Arandi preserved; six Help revisions published.
+Guide/PDF pending public publication. No main/email activation/legacy promotion
+or next Goal. Evidence: docs/GOAL_070_EVIDENCE.md.059 independently blocked.
+
 ## GOAL-069 — Preview/main deployed by owner instruction (2026-10-24)
 
 After LOCAL acceptance, owner explicitly requested both deployments. Exact

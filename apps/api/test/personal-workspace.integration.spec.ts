@@ -119,6 +119,7 @@ describe('GOAL-061 personal workspace foundation', () => {
     flowUserId=created.id;
     await expect(applications.verifyEmail(notification!.token)).resolves.toEqual({verified:true});
     const session=await new AuthService(database,{signAsync:async()=> 'access-token'} as never,workspaces).login(email,'personal-flow-password');
+    if ('passwordChangeRequired' in session) throw new Error('Self-registered account unexpectedly restricted');
     expect(session.user.memberships).toEqual([
       expect.objectContaining({workspace_type:'PERSONAL',organization_status:'active',role_codes:['REQUESTER']}),
     ]);

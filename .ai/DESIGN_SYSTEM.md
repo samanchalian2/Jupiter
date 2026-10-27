@@ -1,5 +1,19 @@
 # Jupiter Design System V2
 
+GOAL-070 keeps onboarding/SLA inside existing compact semantic surfaces, palette
+and Shabnam-first stack. Global organization-application entry is a normal link
+from personal actions, chooser and account menu, not another navigation system.
+Delivery state distinguishes unconfigured/failed/transport-accepted from verified.
+Wizard summarizes COMPLETE/optional SKIPPED/pending; backend readiness is separate.
+Owner is translated only for display, never added to ordinary assignable roles.
+The temporary-password screen replaces normal login content until server-issued
+session exists; it has no normal tenant controls or decorative new shell.
+Wizard routing must consume router location, including return from administration.
+Request keys use cryptographic-byte fallback on HTTP Preview, not randomUUID alone.
+Compact Platform create labels/selects have min-width0 and bounded width: long owner
+options must not expand document width. Non-Platform account switches on a retained
+Platform URL show an explicit denied state, never an empty router-basename mismatch.
+
 Operational Investigator optional caps stay inside the existing compact policy
 form, using a semantic fieldset without decorative cards/new navigation/colors.
 Blank and zero are distinct; micro-USD units and explicit per-million rates must

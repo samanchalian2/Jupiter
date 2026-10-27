@@ -1,3 +1,4 @@
+import { VerificationDeliveryHealth } from './VerificationDeliveryHealth';
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import type { Actor } from "./App";
@@ -22,6 +23,8 @@ type Organization = {
   slug: string;
   status: "setup" | "active" | "suspended" | "archived";
   workspace_type?: "ORGANIZATION" | "PERSONAL";
+  has_active_owner?: boolean;
+  legal_name?: string | null;
   created_at: string;
   archived_at?: string | null;
   archive_reason?: string | null;
@@ -84,7 +87,7 @@ const applicationLabel: Record<ApplicationStatus, string> = {
   REJECTED: "ردشده",
   CANCELLED: "لغوشده",
 };
-const reviewKey = () => crypto.randomUUID();
+const reviewKey = () => requestKey();
 
 export async function beginPlatformApplicationReview(
   actor: Actor,
@@ -265,6 +268,7 @@ export function PlatformPro({ actor }: { actor: Actor }) {
         <Organizations
           actor={actor}
           organizations={organizations}
+          users={users}
           onSaved={saved}
           onError={setError}
         />
@@ -377,7 +381,7 @@ function PlatformApplications({
   const reviewRef = useRef<HTMLElement | null>(null);
   const filtered = applications.filter((application) => {
     const query = normalizePlatformSearch(listState.query);
-    const haystack = normalizePlatformSearch(`${application.organizationName} ${application.contactName} ${application.applicant.email ?? ""} ${application.preferredSlug ?? ""} ${application.assignedSlug ?? ""}`);
+    const haystack = normalizePlatformSearch(`${application.organizationName} ${typeof application.details.legalName==="string"?application.details.legalName:""} ${application.contactName} ${application.applicant.email ?? ""} ${application.preferredSlug ?? ""} ${application.assignedSlug ?? ""}`);
     return (!query || haystack.includes(query)) && (listState.status === "ALL" || application.status === listState.status);
   });
   const paged = paginatePlatformItems(filtered, listState.page, listState.pageSize);
@@ -439,6 +443,7 @@ function PlatformApplications({
   return (
     <div className="admin-stack">
       <section className="card">
+        <VerificationDeliveryHealth actor={actor}/>
         <SectionHeader title="صف درخواست‌های سازمان" description="تأیید فقط پس از بررسی انجام می‌شود و سازمان تازه را در وضعیت «راه‌اندازی» ایجاد می‌کند." as="h3" />
         <PlatformFilterToolbar
           state={listState}
@@ -629,16 +634,21 @@ function PlatformApplications({
 function Organizations({
   actor,
   organizations,
+  users,
   onSaved,
   onError,
 }: {
   actor: Actor;
   organizations: Organization[];
+  users: User[];
   onSaved: (message: string) => void;
   onError: (message: string) => void;
 }) {
   const listState = usePlatformListState("organization");
-  const [form, setForm] = useState({ name: "", slug: "" });
+  const [form, setForm] = useState({ name: "", slug: "", legalName: "", initialOwnerUserId: "" });
+  const [quickActive,setQuickActive]=useState(false);
+  const [creating,setCreating]=useState(false);
+  const createKey=useRef(requestKey());
   const [createOpen, setCreateOpen] = useState(false);
   const [selected, setSelected] = useState<Organization | null>(null);
   const [pending, setPending] = useState<Organization | null>(null);
@@ -648,21 +658,24 @@ function Organizations({
   } | null>(null);
   const create = async (event: FormEvent) => {
     event.preventDefault();
+    if(creating)return;
+    setCreating(true);
     try {
       await request(
-        "/admin/platform/organizations",
+        quickActive ? "/admin/platform/organizations" : "/admin/platform/organizations/setup",
         actor.session,
         actor.organizationId,
-        { method: "POST", body: JSON.stringify(form) },
+        { method: "POST", headers:{"idempotency-key":createKey.current}, body: JSON.stringify(form) },
       );
-      setForm({ name: "", slug: "" });
+      createKey.current=requestKey();
+      setForm({ name: "", slug: "", legalName: "", initialOwnerUserId: "" });
       setCreateOpen(false);
-      onSaved("سازمان جدید ساخته شد.");
+      onSaved(quickActive?"سازمان فعال بدون مالک ساخته شد؛ تعیین مالک اقدام جداگانه است.":"سازمان در وضعیت راه‌اندازی همراه مالک اولیه ساخته شد.");
     } catch (cause) {
       onError(
         cause instanceof Error ? cause.message : "ساخت سازمان ناموفق بود.",
       );
-    }
+    } finally {setCreating(false);}
   };
   const toggle = async () => {
     if (!pending) return;
@@ -696,8 +709,8 @@ function Organizations({
           : "راه‌اندازی";
   const filtered = organizations.filter((organization) => {
     const query = normalizePlatformSearch(listState.query);
-    return (!query || normalizePlatformSearch(`${organization.name} ${organization.slug}`).includes(query)) &&
-      (listState.status === "ALL" ? organization.status !== "archived" : listState.status === "PERSONAL" || listState.status === "ORGANIZATION" ? organization.workspace_type === listState.status && organization.status !== "archived" : organization.status === listState.status);
+    return (!query || normalizePlatformSearch(`${organization.name} ${organization.legal_name??""} ${organization.slug}`).includes(query)) &&
+      (listState.status === "OWNERLESS" ? organization.workspace_type !== "PERSONAL" && organization.has_active_owner === false && organization.status !== "archived" : listState.status === "ALL" ? organization.status !== "archived" : listState.status === "PERSONAL" || listState.status === "ORGANIZATION" ? organization.workspace_type === listState.status && organization.status !== "archived" : organization.status === listState.status);
   });
   const paged = paginatePlatformItems(filtered, listState.page, listState.pageSize);
   return (
@@ -712,17 +725,22 @@ function Organizations({
           />
           {createOpen && (
             <form onSubmit={create} className="compact-form platform-inline-create">
-              <label>نام سازمان<input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} required /></label>
-              <label>Slug یکتا<input dir="ltr" value={form.slug} onChange={(event) => setForm({ ...form, slug: event.target.value.toLowerCase() })} placeholder="acme-support" required /></label>
-              <button>ساخت سازمان</button>
+              <p className="hint">پیش از ساخت، نام حقوقی/نمایشی و شناسه را در فهرست جست‌وجو کنید. نام مشابه لزوماً سازمان یکسان نیست؛ شناسهٔ آدرس باید یکتا باشد.</p><label>نام نمایشی سازمان<input minLength={2} maxLength={160} value={form.name} onChange={(event) => {setForm({ ...form, name: event.target.value });createKey.current=requestKey();}} required /></label>
+              <label>نام حقوقی (اختیاری)<input value={form.legalName} maxLength={160} onChange={event=>{setForm({...form,legalName:event.target.value});createKey.current=requestKey();}} disabled={quickActive}/></label><label>شناسهٔ یکتای آدرس (slug)<input dir="ltr" value={form.slug} onChange={(event) => {setForm({ ...form, slug: event.target.value.toLowerCase() });createKey.current=requestKey();}} placeholder="acme-support" required /></label>
+              <label>مالک اولیه<select value={form.initialOwnerUserId} onChange={event=>{setForm({...form,initialOwnerUserId:event.target.value});createKey.current=requestKey();}} disabled={quickActive} required={!quickActive}><option value="">یک حساب فعال را انتخاب کنید</option>{users.filter(user=>user.is_active).map(user=><option key={user.id} value={user.id}>{user.display_name} — {user.email}</option>)}</select></label>
+              {organizations.some(org=>org.slug===form.slug||form.name.trim().length>1&&normalizePlatformSearch(org.name)===normalizePlatformSearch(form.name))&&<p className="hint">سازمان مشابه یا شناسهٔ موجود پیدا شد؛ پیش از ساخت، سابقه را بررسی کنید.</p>}
+              <label><input type="checkbox" checked={quickActive} onChange={event=>{setQuickActive(event.target.checked);createKey.current=requestKey();}}/>گزینهٔ پیشرفته: ساخت فوری ACTIVE بدون مالک</label>
+              {quickActive&&<p className="error" role="status">این مسیر Wizard و مالک اولیه ایجاد نمی‌کند. تنها در صورت نیاز آگاهانه از آن استفاده کنید.</p>}
+              <button disabled={creating}>{creating?'در حال ساخت…':quickActive?'ساخت فعال بدون مالک':'ایجاد SETUP همراه مالک'}</button>
             </form>
           )}
           <PlatformFilterToolbar
             state={listState}
             searchLabel="جست‌وجوی سازمان"
-            searchPlaceholder="نام یا Slug سازمان"
+            searchPlaceholder="نام نمایشی، حقوقی یا شناسهٔ آدرس"
             statusOptions={[
               { value: "active", label: "فعال" }, { value: "setup", label: "راه‌اندازی" },
+              { value: "OWNERLESS", label: "سازمان بدون مالک فعال" },
               { value: "PERSONAL", label: "فضای شخصی" }, { value: "ORGANIZATION", label: "سازمانی" },
               { value: "suspended", label: "معلق" }, { value: "archived", label: "حذف امن" },
             ]}
@@ -746,7 +764,7 @@ function Organizations({
                     <td data-label="وضعیت">
                       <span className={`status-pill ${org.status}`}>
                         {label(org.status)}
-                      </span>
+                      </span>{org.workspace_type!=="PERSONAL"&&org.has_active_owner===false&&<small> · بدون مالک فعال</small>}
                     </td>
                     <td data-label="عملیات">
                       <button className="secondary" type="button" onClick={() => setSelected(org)} aria-expanded={selected?.id === org.id}>مدیریت</button>
@@ -853,7 +871,7 @@ function OrganizationArchiveDialog({
         actor.organizationId,
         {
           method: "POST",
-          headers: { "idempotency-key": crypto.randomUUID() },
+          headers: { "idempotency-key": requestKey() },
           body: JSON.stringify({ slug, reason: reason.trim() }),
         },
       );
@@ -1624,3 +1642,4 @@ function AuditList({ audit }: { audit: Audit[] }) {
     </section>
   );
 }
+import { requestKey } from './requestKey';

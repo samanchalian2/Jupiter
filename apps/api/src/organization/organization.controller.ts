@@ -53,6 +53,7 @@ export class OrganizationController {
 
   @Get('platform/organizations') platformOrganizations(@Headers('authorization') a?:string) { return this.platform(a).then(user=>this.organizations.platformOrganizations(user.sub)); }
   @Post('platform/organizations') createPlatformOrganization(@Body() body:{name:string;slug:string},@Headers('authorization') a?:string) { return this.platform(a).then(user=>this.organizations.createPlatformOrganization(user.sub,body)); }
+  @Post('platform/organizations/setup') createSetupOrganization(@Body() body:{name:string;slug:string;legalName?:string;initialOwnerUserId:string},@Headers('idempotency-key') key:string|undefined,@Headers('authorization') a?:string) { return this.platform(a).then(user=>this.organizations.createSetupOrganization(user.sub,body,key??'')); }
   @Get('platform/users') platformUsers(@Headers('authorization') a?:string) { return this.platform(a).then(user=>this.organizations.platformUsers(user.sub)); }
   @Post('platform/users') createPlatformUser(@Body() body:{email:string;username?:string;displayName:string;password:string;isPlatformAdmin?:boolean},@Headers('authorization') a?:string) { return this.platform(a).then(user=>this.organizations.createPlatformUser(user.sub,body)); }
   @Post('platform/users/:id') updatePlatformUser(@Param('id') id:string,@Body() body:{displayName?:string;username?:string;isPlatformAdmin?:boolean;isActive?:boolean;password?:string},@Headers('authorization') a?:string) { return this.platform(a).then(user=>this.organizations.updatePlatformUser(user.sub,id,body)); }

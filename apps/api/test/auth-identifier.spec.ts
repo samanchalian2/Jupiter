@@ -5,15 +5,18 @@ import { hashPassword } from '../src/auth/password.js';
 describe('Authentication identifiers', () => {
   it('uses one normalized lookup for username or email and includes organization names in the session', async () => {
     const calls: Array<{sql:string;values?:unknown[]}> = [];
-    const database = { query: async (sql:string, values?:unknown[]) => {
+    const query = async (sql:string, values?:unknown[]) => {
       calls.push({sql,values});
       if (sql.startsWith('SELECT id,email,display_name,password_hash')) return { rows:[{id:'user',email:'person@example.test',display_name:'Person',password_hash:await hashPassword('a-safe-password'),is_platform_admin:false}] };
+      if (sql.includes('FROM users WHERE id=$1')) return { rows:[{id:'user',email:'person@example.test',display_name:'Person',is_platform_admin:false}] };
       if (sql.includes('FROM memberships m JOIN organizations')) return { rows:[{organization_id:'org',organization_name:'سازمان نمونه',role_codes:['REQUESTER']}] };
       if (sql.startsWith('INSERT INTO refresh_sessions')) return { rows:[{id:'refresh'}] };
       return { rows:[] };
-    } };
+    };
+    const database = { query, transaction:async(work:(client:unknown)=>Promise<unknown>)=>work({query}) };
     const service = new AuthService(database as never, { signAsync: async ()=>'token' } as never);
     const result = await service.login('  PERSON  ', 'a-safe-password');
+    if ('passwordChangeRequired' in result) throw new Error('Legacy user unexpectedly restricted');
     expect(calls[0].values).toEqual(['person']);
     expect(result.user.memberships[0]).toMatchObject({organization_name:'سازمان نمونه'});
   });

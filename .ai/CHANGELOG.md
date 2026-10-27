@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-10-27 — GOAL-070 implemented / Preview accepted
+
+- Added membership-independent applicant route/entry, honest delivery states and
+  safe configuration/outcome diagnostics; local-test inbox stays development-only.
+- Added atomic/idempotent SETUP + initial owner/admin provisioning and ownerless
+  Platform projection; preserved quick-active and existing tenant lifecycle.
+- Restored SLA policy editor, account-scoped filters/result guards, Wizard skip
+  counts, Persian owner label and tickets/new composer compatibility.
+- Added first-login password challenge/version invalidation and migration074;
+  existing users default unrestricted. Actual compiled HTTP regression tests added.
+- Updated Help/guide sources and prepared Preview-labeled PDF (not public release).
+- Full API gate found two old Worker test synchronization defects; fixed async
+  503 fallback observation and complete aggregation draining without dropping checks.
+- Preview migration/restore and authenticated Saba acceptance complete at four widths.
+  Additional actual-Preview fixes: HTTP-compatible request keys, router-reactive
+  Wizard administration, bounded owner select and safe non-Platform denied route.
+- API191 pass/2 optional skipped; Web60 pass, typechecks/builds/diffcheck pass.
+  Two orgs/three users and temporary credentials cleaned; original Saba fingerprints
+  and co-hosted Arandi unchanged. Six runtime Help revisions retained.
+- Main/Arandi guide publication excluded; no next Goal. Actual Git delivery/CI
+  recorded in the final handoff. Full evidence: docs/GOAL_070_EVIDENCE.md.
+
 ## 2026-10-25 — Website guide/PDF maintenance after GOAL-069
 
 - Corrected independent-use instructions/FAQ/card/journey and organization signup
