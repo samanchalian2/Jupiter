@@ -1,5 +1,12 @@
 # Current State
 
+## 2026-11-05 — Missing username warning (LOCAL)
+
+Organization member create/edit now warns inline for blank username: email-only
+login and display name is not a login identifier. Create success notice states
+actual submitted login identifier. Optional username preserved, no API/data
+changes. Three render/notice regressions and Web67 pass; not deployed yet.
+
 ## 2026-11-05 — Password minimum8 (LOCAL)
 
 Owner-requested DEC-068 changes password creation/reset/profile/CSV/first-login

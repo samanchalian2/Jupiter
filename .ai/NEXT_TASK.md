@@ -1,5 +1,8 @@
 # Next Task
 
+LOCAL missing-username warnings and password8 await matching runtime release;
+do not claim these Web changes on main before publication/acceptance.
+
 Password minimum8 local implementation done under DEC-068; validate/release
 matching Preview/main runtime before claiming live minimum8. Do not promote070
 implicitly or reset any existing password. GitHub connectivity remains unresolved.
