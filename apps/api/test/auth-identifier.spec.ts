@@ -3,7 +3,7 @@ import { AuthService } from '../src/auth/auth.service.js';
 import { hashPassword } from '../src/auth/password.js';
 
 describe('Authentication identifiers', () => {
-  it('uses one normalized lookup for username or email and includes organization names in the session', async () => {
+  it.each(['  PERSON  ','person','PeRsOn'])('normalizes username/email case and includes organization names: %s', async (identifier) => {
     const calls: Array<{sql:string;values?:unknown[]}> = [];
     const query = async (sql:string, values?:unknown[]) => {
       calls.push({sql,values});
@@ -16,7 +16,7 @@ describe('Authentication identifiers', () => {
     };
     const database = { query, transaction:async(work:(client:unknown)=>Promise<unknown>)=>work({query}) };
     const service = new AuthService(database as never, { signAsync: async ()=>'token' } as never);
-    const result = await service.login('  PERSON  ', 'a-safe-password');
+    const result = await service.login(identifier, 'a-safe-password');
     if ('passwordChangeRequired' in result) throw new Error('Legacy user unexpectedly restricted');
     expect(calls[0].values).toEqual(['person']);
     expect(result.user.memberships[0]).toMatchObject({organization_name:'سازمان نمونه'});

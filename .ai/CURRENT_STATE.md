@@ -1,5 +1,12 @@
 # Current State
 
+## 2026-11-05 — Username login investigation
+
+Reported member had display name but no username initially; concurrent user edit
+assigned a username before guarded repair, so no data change made. Case-insensitive
+login already implemented; five identifier regressions pass. No password reset
+or password-login claim. See docs/USERNAME_LOGIN_CHECK_20261105.md.
+
 ## 2026-11-05 — Membership discovery RLS remediation
 
 Main runtime narrowly patched auth membership discovery and tenant actor lookup;
