@@ -1,5 +1,25 @@
 # Architecture Decisions
 
+## DEC-067 — RLS-preserving authenticated membership discovery
+
+Runtime credentials enforce tenant RLS; an unscoped membership query must not
+be used to assemble a login/refresh session or resolve a tenant actor. Discovery
+uses only the server-authenticated user ID and enumerates existing nonarchived
+organization IDs internally, reads that user's active membership under each
+transaction-local tenant context, then restores the incoming context. No foreign
+membership, organization list, elevated DB role or new privilege is returned.
+Actor lookup scopes to the requested tenant AND verified token subject, so a
+forged tenant header still denies. No RLS policy/function/grant/schema change.
+
+This maintenance choice reuses existing context-scoped database operations and
+avoids a privileged SECURITY DEFINER function or session-user RLS exception.
+Trade-off: two DB round trips per nonarchived organization at login/refresh,
+not per ordinary API request. Suitable for the present deployment; large-tenant
+scaling requires measured redesign under a separate ADR, not silent elevation.
+Legacy session shape, membership role assignments, archived/suspended lifecycle
+and first-password/refresh checks remain unchanged. Caller transaction is reused;
+failure relies on rollback to clear local context. No SQL interpolation of IDs.
+
 ## DEC-066 — Safe onboarding completion and first-login password boundary
 
 Owner approved GOAL-070 on 2026-10-26. Organization applications remain applicant-

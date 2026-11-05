@@ -6,6 +6,7 @@ import { DatabaseService } from '../database/database.service.js';
 import { hashPassword, verifyPassword } from './password.js';
 import { PersonalWorkspaceService } from '../personal-workspaces/personal-workspace.service.js';
 import { notifySessionRevocation } from '../observability/security-events.js';
+import {readSessionMemberships} from './membership-discovery.js';
 
 type User={id:string;email:string|null;display_name:string;is_platform_admin:boolean;must_change_password:boolean;credential_version:number};
 type PasswordUser=User&{password_hash:string};
@@ -74,9 +75,7 @@ export class AuthService {
     if(token){const rows=(await this.database.query<{user_id:string}>('UPDATE refresh_sessions SET revoked_at=now() WHERE token_hash=$1 AND revoked_at IS NULL RETURNING user_id',[this.hashToken(token)])).rows;for(const row of rows)notifySessionRevocation(row.user_id);}
   }
   private async memberships(userId:string,client?:PoolClient) {
-    return (await this.query<Membership>(
-      "SELECT m.organization_id,o.name AS organization_name,o.slug AS organization_slug,o.status AS organization_status,o.workspace_type,array_remove(array_agg(r.code ORDER BY r.code),NULL) AS role_codes FROM memberships m JOIN organizations o ON o.id=m.organization_id LEFT JOIN membership_roles mr ON mr.membership_id=m.id LEFT JOIN roles r ON r.id=mr.role_id WHERE m.user_id=$1 AND m.status='active' AND o.status<>'archived' GROUP BY m.organization_id,o.name,o.slug,o.status,o.workspace_type ORDER BY o.workspace_type DESC,o.name",[userId],client,
-    )).rows;
+    return readSessionMemberships(this.database,userId,client);
   }
   private async passwordUser(identifier:string) {
     const legacy=(await this.database.query<PasswordUser>('SELECT id,email,display_name,password_hash,is_platform_admin,must_change_password,credential_version FROM users WHERE (email=$1 OR username=$1) AND password_hash IS NOT NULL AND is_active=true',[identifier])).rows[0];

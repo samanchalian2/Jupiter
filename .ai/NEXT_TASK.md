@@ -1,5 +1,8 @@
 # Next Task
 
+Membership RLS remediation deployed main; verify visually when Work Browser is
+enabled. Retry pending GitHub push when network available; preserve other edits.
+
 2026-11-05 latest: automatic application approval slug narrowly deployed main.
 Work Browser access disabled; await enablement for authenticated UI acceptance.
 GitHub443 inaccessible; retry pending local commit push when reachable. Preserve

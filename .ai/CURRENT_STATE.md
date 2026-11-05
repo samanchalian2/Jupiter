@@ -1,5 +1,15 @@
 # Current State
 
+## 2026-11-05 — Membership discovery RLS remediation
+
+Main runtime narrowly patched auth membership discovery and tenant actor lookup;
+DEC-067 preserves tenant RLS. Actual affected account login/refresh returned four
+memberships; setup wizard, members and personal tickets200; unrelated tenant401.
+Test session revoked. Isolated PostgreSQL migration85 and focused7 tests pass,
+including real jupiter_app RLS, foreign tenant and revocation; Web64/typechecks
+pass. No customer memberships or other application data changed. Browser use
+disabled, so authenticated visual acceptance not claimed. See evidence below.
+
 ## 2026-11-05 — Main application approval RLS hotfix
 
 Further follow-up: main409 traced to reused explicit suggestion. Auto unique

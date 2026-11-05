@@ -1401,3 +1401,9 @@ Web63 tests/typecheck/build pass; scoped main static overlay/hash verified.
 Main approve500 fixed by scoped transaction context for membership and platform/
 tenant Audit writes; no RLS relaxation or full GOAL070 promotion. Actual runtime
 approval/retry/owner membership rollback test passes; customer requests untouched.
+# 2026-11-05 — Tenant membership visibility repair
+
+DEC-067 scopes authenticated membership discovery and tenant actor authorization
+without relaxing RLS. Affected account login/refresh and setup/member/ticket APIs
+verified on main; isolated database regression and Web64 tests pass.
+

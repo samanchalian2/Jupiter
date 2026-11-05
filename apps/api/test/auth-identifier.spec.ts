@@ -9,7 +9,8 @@ describe('Authentication identifiers', () => {
       calls.push({sql,values});
       if (sql.startsWith('SELECT id,email,display_name,password_hash')) return { rows:[{id:'user',email:'person@example.test',display_name:'Person',password_hash:await hashPassword('a-safe-password'),is_platform_admin:false}] };
       if (sql.includes('FROM users WHERE id=$1')) return { rows:[{id:'user',email:'person@example.test',display_name:'Person',is_platform_admin:false}] };
-      if (sql.includes('FROM memberships m JOIN organizations')) return { rows:[{organization_id:'org',organization_name:'سازمان نمونه',role_codes:['REQUESTER']}] };
+      if (sql.startsWith('SELECT id FROM organizations')) return {rows:[{id:'org'}]};
+      if (sql.includes('FROM memberships m JOIN organizations')) return { rows:[{organization_id:'org',organization_name:'سازمان نمونه',workspace_type:'ORGANIZATION',role_codes:['REQUESTER']}] };
       if (sql.startsWith('INSERT INTO refresh_sessions')) return { rows:[{id:'refresh'}] };
       return { rows:[] };
     };
