@@ -1,5 +1,10 @@
 # Business Rules
 
+Application approval defaults to the deterministic unique address `org-{application UUID}`
+when slug is omitted/blank. Platform UI generates this automatically instead of
+reusing the applicant's potentially already-assigned suggestion. Existing explicit
+API slug callers remain compatible; conflicts still deny without partial writes.
+
 ## GOAL-070 onboarding completion (DEC-066)
 
 - Organization applications remain applicant-owned despite personal/organization

@@ -1,10 +1,20 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it, vi } from 'vitest';
-import { beginPlatformApplicationReview } from './PlatformPro';
+import { beginPlatformApplicationReview, applicationApprovalSlug } from './PlatformPro';
 import { normalizePlatformSearch, paginatePlatformItems } from './PlatformAdminUi';
 import type { Actor } from './App';
 
 describe('platform organization review and responsive lists', () => {
+  it('generates stable unique slugs per application rather than reusing an applicant suggestion',()=>{
+    const a='00000000-0000-4000-8000-000000000001', b='00000000-0000-4000-8000-000000000002';
+    expect(applicationApprovalSlug(a)).toBe('org-'+a);
+    expect(applicationApprovalSlug(a)).not.toBe(applicationApprovalSlug(b));
+    expect(applicationApprovalSlug(a.toUpperCase())).toBe(applicationApprovalSlug(a));
+    expect(applicationApprovalSlug(a)).toMatch(/^[a-z0-9-]{3,63}$/);
+    const source=readFileSync(new URL('./PlatformPro.tsx',import.meta.url),'utf8');
+    expect(source).toContain('setSlug(application.assignedSlug ?? applicationApprovalSlug(application.id))');
+    expect(source).toContain('{reviewError&&<p className="error" role="alert">');
+  });
   it('constrains intrinsic owner-option width inside the compact creation form',()=>{
     const styles=readFileSync(new URL('./styles.css',import.meta.url),'utf8');
     expect(styles).toMatch(/\.platform-inline-create select\s*\{[^}]*min-width:\s*0;[^}]*max-width:\s*100%;[^}]*width:\s*100%/);

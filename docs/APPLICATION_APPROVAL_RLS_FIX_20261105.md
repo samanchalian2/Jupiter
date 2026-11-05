@@ -50,3 +50,29 @@ matches local artifact. Public page and JS200; API active. Previous static tree
 backed up at /srv/jupiter/approval-web-before-20261105.tar.gz; old hashed assets
 retained for existing sessions. No service restart/database mutation for UI fix.
 No authenticated browser acceptance claimed: Work browser automation unavailable.
+
+## Automatic approval identifier follow-up
+
+New main logs09:52:47/51/55 UTC show409, not500: explicit slug already assigned.
+The administrator had approved earlier repeated applications; their suggested
+slug is not a unique identifier for another organization. No request was reset.
+
+Platform UI now generates `org-{application UUID}` read-only, never copying
+preferredSlug for approval. Optional omitted/blank API slug uses the same stable
+fallback; explicit slug API clients remain supported/conflict-protected. Review
+errors display inside the selected review form rather than only off-screen.
+No arbitrary pending request was approved and no duplicate customer data deleted.
+
+Web64 tests/typecheck/build pass. API2 focused regression tests pass (first fixture
+attempt used an invalid idempotency key, corrected to UUID); typecheck rerun after
+fixing test-only required delivery constructor argument. Actual deployed service
+rollback integration PASS: automatic approval, idempotent retry, two owner roles,
+explicit-conflict409/no application mutation, nonadmin403 and NULL-context tenant
+membership invisibility. Fixtures rolled back; temporary server script removed.
+
+Main API narrow compiled overlay updated; main fe64140+scoped Web build deployed.
+index-CESIjuqH.js SHA2568598f4ee4d0077fb5e8a750b5f870fced30cfc25ab3aa209bb119c0d0615648e
+matches local file; public asset200/readiness200. No migration/Arandi changes or
+full070 rollout. Browser inventory again reports disabled in Work settings; owner
+asked to enable. This is NOT an authenticated browser acceptance claim.
+GitHub push currently fails: cannot connect github.com443. Local commits retained.

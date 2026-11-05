@@ -1390,6 +1390,10 @@
   allowlisted media validation, and short-lived signed URLs.
 # 2026-11-05 — Application approval RLS hotfix
 
+Automatic unique org-applicationUUID approval address + inline errors; existing
+explicit API callers preserved. Narrow main rollout, rollback auto/conflict/role/
+isolation acceptance pass; Browser disabled and GitHub443 unavailable explicitly.
+
 Follow-up: prevent implicit repeat organization applications after approval;
 add explicit organization entry/another-organization intent and focus refresh.
 Web63 tests/typecheck/build pass; scoped main static overlay/hash verified.

@@ -1,5 +1,10 @@
 # Next Task
 
+2026-11-05 latest: automatic application approval slug narrowly deployed main.
+Work Browser access disabled; await enablement for authenticated UI acceptance.
+GitHub443 inaccessible; retry pending local commit push when reachable. Preserve
+customer duplicate requests; do not autoapprove/delete or start next Goal.
+
 2026-11-05 maintenance: main approval RLS hotfix applied with rollback-only
 acceptance; see docs/APPLICATION_APPROVAL_RLS_FIX_20261105.md. Await owner
 verification of their real pending application. No next Goal authorized.

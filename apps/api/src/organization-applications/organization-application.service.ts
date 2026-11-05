@@ -257,7 +257,7 @@ export class OrganizationApplicationService {
     await this.platform(userId);
     if (!uuidPattern.test(applicationId)) throw new BadRequestException('Application identifier is invalid.');
     const key = this.idempotencyKey(idempotencyKey);
-    const approvedSlug = this.approvedSlug(slug);
+    const approvedSlug = this.approvedSlug(slug?.trim() || `org-${applicationId.toLowerCase()}`);
     const reviewNote = this.reviewNote(note, false);
     try {
       return await this.database.transaction(async (client) => {

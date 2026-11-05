@@ -89,6 +89,8 @@ const applicationLabel: Record<ApplicationStatus, string> = {
 };
 const reviewKey = () => requestKey();
 
+export const applicationApprovalSlug = (id: string) => 'org-' + id.toLowerCase();
+
 export async function beginPlatformApplicationReview(
   actor: Actor,
   application: PlatformApplication,
@@ -378,6 +380,7 @@ function PlatformApplications({
   const [note, setNote] = useState("");
   const [slug, setSlug] = useState("");
   const [busy, setBusy] = useState(false);
+  const [reviewError,setReviewError] = useState("");
   const reviewRef = useRef<HTMLElement | null>(null);
   const filtered = applications.filter((application) => {
     const query = normalizePlatformSearch(listState.query);
@@ -388,7 +391,8 @@ function PlatformApplications({
   const open = (application: PlatformApplication) => {
     setSelected(application);
     setNote(application.reviewNote ?? "");
-    setSlug(application.assignedSlug ?? application.preferredSlug ?? "");
+    setReviewError("");
+    setSlug(application.assignedSlug ?? applicationApprovalSlug(application.id));
     requestAnimationFrame(() => reviewRef.current?.scrollIntoView({behavior:"smooth",block:"start"}));
   };
   const startReview = async (application: PlatformApplication) => {
@@ -406,6 +410,7 @@ function PlatformApplications({
     action: "start-review" | "request-information" | "reject" | "approve",
   ) => {
     if (!selected) return;
+    setReviewError("");
     setBusy(true);
     try {
       const body =
@@ -431,6 +436,7 @@ function PlatformApplications({
           : "وضعیت درخواست به‌روزرسانی شد.",
       );
     } catch (cause) {
+      setReviewError(cause instanceof Error ? cause.message : "به‌روزرسانی درخواست ناموفق بود.");
       onError(
         cause instanceof Error
           ? cause.message
@@ -560,6 +566,7 @@ function PlatformApplications({
           )}
           {selected.status === "UNDER_REVIEW" && (
             <>
+              {reviewError&&<p className="error" role="alert">{reviewError}</p>}
               <label>
                 پیام برای متقاضی
                 <textarea
@@ -571,16 +578,15 @@ function PlatformApplications({
                 />
               </label>
               <label>
-                شناسهٔ تخصیص‌داده‌شده برای تأیید
+                شناسهٔ خودکار سازمان
                 <input
                   dir="ltr"
                   value={slug}
-                  onChange={(event) =>
-                    setSlug(event.target.value.toLowerCase())
-                  }
+                  readOnly
                   pattern="[a-z0-9-]{3,63}"
-                  placeholder="acme-support"
+                  aria-describedby="automatic-organization-slug-help"
                 />
+                <small id="automatic-organization-slug-help">شناسهٔ یکتا خودکار ساخته می‌شود؛ نیازی به ورود دستی نیست.</small>
               </label>
               <div className="inline-actions">
                 <button
