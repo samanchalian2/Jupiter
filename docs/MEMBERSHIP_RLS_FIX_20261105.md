@@ -18,5 +18,6 @@ archived, inactive and revoked memberships tested under runtime RLS. Web64 tests
 API/Web typecheck and API build passed. An initial direct integration run was
 rejected by its deliberate disposable-database guard; isolated rerun passed.
 Full API suite previously had one stale mock failure, corrected; no successful
-complete rerun output was retained. Work Browser unavailable: no visual acceptance
+complete rerun subsequently passed: 46 files, 197 passed, 2 skipped, isolated
+database removed and shared roles unchanged. Work Browser unavailable: no visual acceptance
 claim. No credentials or tokens included here. User-owned unrelated changes kept.
