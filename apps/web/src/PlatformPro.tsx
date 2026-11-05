@@ -1195,7 +1195,7 @@ function PlatformUsers({
             <form onSubmit={create} className="compact-form platform-inline-create">
               <label>نام<input value={form.displayName} onChange={(event) => setForm({ ...form, displayName: event.target.value })} required /></label>
               <label>ایمیل<input type="email" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} required /></label>
-              <label>رمز موقت<input type="password" minLength={10} value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} required /></label>
+              <label>رمز موقت<input type="password" minLength={8} value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} required /></label>
               <label className="check-label"><input type="checkbox" checked={form.isPlatformAdmin} onChange={(event) => setForm({ ...form, isPlatformAdmin: event.target.checked })} />دسترسی مدیر پلتفرم</label>
               <button>افزودن کاربر</button>
             </form>
@@ -1278,7 +1278,7 @@ function PlatformUsers({
             <button
               type="button"
               onClick={saveManagement}
-              disabled={password.length > 0 && password.length < 10}
+              disabled={password.length > 0 && password.length < 8}
             >
               ذخیره
             </button>

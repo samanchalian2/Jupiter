@@ -1,5 +1,13 @@
 # Architecture Decisions
 
+## DEC-068 — Owner-approved minimum password length 8
+
+Owner explicitly requests minimum8 instead of10 for public account creation,
+organization/platform user creation, reset, CSV, profile and first-login change.
+Maximum200 where enforced, hashing, exact password case sensitivity, temporary
+password flow, session revocation and directory credentials remain unchanged.
+No existing password is reset. Non-password10-character reason limits unchanged.
+
 ## DEC-067 — RLS-preserving authenticated membership discovery
 
 Runtime credentials enforce tenant RLS; an unscoped membership query must not

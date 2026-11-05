@@ -68,7 +68,7 @@ export class OrganizationService {
     const roles = this.validRoles(input.roles);
     const password = input.password;
     const username = this.username(input.username);
-    if (!/^\S+@\S+\.\S+$/.test(input.email ?? '') || !input.displayName?.trim() || !password || password.length < 10 || password.length > 200) throw new BadRequestException('Provide a valid email, name, and a temporary password of at least 10 characters.');
+    if (!/^\S+@\S+\.\S+$/.test(input.email ?? '') || !input.displayName?.trim() || !password || password.length < 8 || password.length > 200) throw new BadRequestException('Provide a valid email, name, and a temporary password of at least 8 characters.');
     try { return await this.database.withOrganization(actor.organizationId, async (client) => {
       const existing = (await client.query<{ id: string }>('SELECT id FROM users WHERE email=$1', [input.email.toLowerCase()])).rows[0];
       const user = existing ?? (await client.query<{id:string}>('INSERT INTO users(email,username,display_name,password_hash,must_change_password) VALUES($1,$2,$3,$4,true) RETURNING id', [input.email.toLowerCase(), username ?? null, input.displayName.trim(), await hashPassword(password)])).rows[0];
@@ -98,7 +98,7 @@ export class OrganizationService {
 
   async resetMemberPassword(actor: Actor, membershipId: string, password: string) {
     this.memberAdmin(actor);
-    if (!password || password.length < 10) throw new BadRequestException('Temporary password must be at least 10 characters.');
+    if (!password || password.length < 8) throw new BadRequestException('Temporary password must be at least 8 characters.');
     return this.database.withOrganization(actor.organizationId, async (client) => {
       const member = (await client.query<{user_id:string}>('SELECT user_id FROM memberships WHERE id=$1', [membershipId])).rows[0];
       if (!member) throw new NotFoundException('Member not found.');
@@ -316,7 +316,7 @@ export class OrganizationService {
   async platformUsers(userId: string) { await this.platform(userId); return (await this.database.query('SELECT id,email,display_name,is_platform_admin,is_active,created_at FROM users ORDER BY display_name')).rows; }
   async createPlatformUser(actorUserId: string, input: { email: string; username?: string; displayName: string; password: string; isPlatformAdmin?: boolean }) {
     await this.platform(actorUserId);
-    if(!/^\\S+@\\S+\\.\\S+$/.test(input.email??'')||!input.displayName?.trim()||!input.password||input.password.length<10||input.password.length>200)throw new BadRequestException('Provide valid user details and a temporary password of 10–200 characters.');
+    if(!/^\\S+@\\S+\\.\\S+$/.test(input.email??'')||!input.displayName?.trim()||!input.password||input.password.length<8||input.password.length>200)throw new BadRequestException('Provide valid user details and a temporary password of 8–200 characters.');
     try{return await this.database.transaction(async client=>{
       const user=(await client.query<{id:string;email:string;display_name:string;is_platform_admin:boolean;is_active:boolean}>('INSERT INTO users(email,username,display_name,password_hash,is_platform_admin,must_change_password) VALUES($1,$2,$3,$4,$5,true) RETURNING id,email,display_name,is_platform_admin,is_active',[input.email.toLowerCase(),this.username(input.username)??null,input.displayName.trim(),await hashPassword(input.password),input.isPlatformAdmin??false])).rows[0];
       await client.query("INSERT INTO audit_logs(actor_user_id,action,target_type,target_id,metadata) VALUES($1,'platform.user_created','user',$2,$3)",[actorUserId,user.id,{isPlatformAdmin:user.is_platform_admin,temporaryPassword:true}]);
@@ -326,7 +326,7 @@ export class OrganizationService {
   async updatePlatformUser(actorUserId:string,targetUserId:string,input:{displayName?:string;username?:string;isPlatformAdmin?:boolean;isActive?:boolean;password?:string}) {
     await this.platform(actorUserId);
     if(targetUserId===actorUserId&&(input.isActive===false||input.isPlatformAdmin===false))throw new BadRequestException('You cannot remove your own platform access.');
-    if(input.password!==undefined&&(input.password.length<10||input.password.length>200))throw new BadRequestException('Password must be between 10 and 200 characters.');
+    if(input.password!==undefined&&(input.password.length<8||input.password.length>200))throw new BadRequestException('Password must be between 8 and 200 characters.');
     const {password,...auditInput}=input;
     try{return await this.database.transaction(async client=>{
       if(password)await setTemporaryPassword(client,targetUserId,await hashPassword(password));
@@ -415,7 +415,7 @@ export class OrganizationService {
   private importRows(rows: unknown[]) {
     if(!Array.isArray(rows)||rows.length<1||rows.length>500) throw new BadRequestException('فایل باید بین ۱ تا ۵۰۰ ردیف داشته باشد.');
     const seen=new Set<string>();
-    return rows.map((raw,index)=>{const row=raw as Record<string,unknown>;const email=typeof row.email==='string'?row.email.trim().toLowerCase():'';const displayName=typeof row.displayName==='string'?row.displayName.trim():'';const username=this.username(typeof row.username==='string'?row.username:undefined);const password=typeof row.password==='string'?row.password:'';const roles=Array.isArray(row.roles)?row.roles.filter((role):role is string=>typeof role==='string'):['REQUESTER'];const errors:string[]=[];if(!/^\S+@\S+\.\S+$/.test(email))errors.push('ایمیل نامعتبر است.');if(displayName.length<2||displayName.length>120)errors.push('نام نمایشی نامعتبر است.');if(password.length<10||password.length>200)errors.push('رمز موقت باید ۱۰ تا ۲۰۰ نویسه باشد.');try{this.validRoles(roles);}catch{errors.push('نقش‌ها نامعتبرند.');}if(seen.has(email))errors.push('ایمیل در فایل تکراری است.');seen.add(email);return {row:index+2,email,displayName,username,password,roles,errors};});
+    return rows.map((raw,index)=>{const row=raw as Record<string,unknown>;const email=typeof row.email==='string'?row.email.trim().toLowerCase():'';const displayName=typeof row.displayName==='string'?row.displayName.trim():'';const username=this.username(typeof row.username==='string'?row.username:undefined);const password=typeof row.password==='string'?row.password:'';const roles=Array.isArray(row.roles)?row.roles.filter((role):role is string=>typeof role==='string'):['REQUESTER'];const errors:string[]=[];if(!/^\S+@\S+\.\S+$/.test(email))errors.push('ایمیل نامعتبر است.');if(displayName.length<2||displayName.length>120)errors.push('نام نمایشی نامعتبر است.');if(password.length<8||password.length>200)errors.push('رمز موقت باید ۸ تا ۲۰۰ نویسه باشد.');try{this.validRoles(roles);}catch{errors.push('نقش‌ها نامعتبرند.');}if(seen.has(email))errors.push('ایمیل در فایل تکراری است.');seen.add(email);return {row:index+2,email,displayName,username,password,roles,errors};});
   }
   async previewMemberImport(actor:Actor,rows:unknown[]) { this.memberAdmin(actor); const parsed=this.importRows(rows); return {valid:parsed.every(row=>!row.errors.length),rows:parsed.map(({password,...row})=>({...row,action:row.errors.length?'ERROR':'CREATE_OR_UPDATE'}))}; }
   async confirmMemberImport(actor:Actor,rows:unknown[],idempotencyKey?:string) {

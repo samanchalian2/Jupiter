@@ -1,5 +1,9 @@
 # Security and Privacy
 
+DEC-068: owner-approved local password minimum is8 characters. Passwords remain
+case-sensitive; hashing/session controls unchanged. This lowers the previous
+minimum10; users should still prefer longer unique passwords.
+
 ## GOAL-070 / DEC-066 identity and onboarding
 
 Applicant endpoints remain self-only irrespective of membership/URL. Platform

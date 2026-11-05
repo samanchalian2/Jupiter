@@ -1,5 +1,9 @@
 # Next Task
 
+Password minimum8 local implementation done under DEC-068; validate/release
+matching Preview/main runtime before claiming live minimum8. Do not promote070
+implicitly or reset any existing password. GitHub connectivity remains unresolved.
+
 Membership RLS remediation deployed main; verify visually when Work Browser is
 enabled. Retry pending GitHub push when network available; preserve other edits.
 

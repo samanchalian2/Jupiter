@@ -1,5 +1,12 @@
 # Current State
 
+## 2026-11-05 — Password minimum8 (LOCAL)
+
+Owner-requested DEC-068 changes password creation/reset/profile/CSV/first-login
+and Web validators from10 to8. Existing passwords untouched; nonpassword reason
+limits retained. Focused boundary2 and Web64 tests pass. Not yet deployed to
+Preview/main; deployment requires matching legacy runtime overlay, not full070.
+
 ## 2026-11-05 — Username login investigation
 
 Reported member had display name but no username initially; concurrent user edit

@@ -36,7 +36,7 @@ export class AuthService {
   }
   async completeFirstLogin(token:string,nextPassword:string) {
     if(typeof token!=='string'||!token||token.length>4096)throw new UnauthorizedException('درخواست تغییر رمز معتبر نیست.');
-    if(typeof nextPassword!=='string'||nextPassword.length<10||nextPassword.length>200)throw new BadRequestException('رمز جدید باید بین ۱۰ و ۲۰۰ کاراکتر باشد.');
+    if(typeof nextPassword!=='string'||nextPassword.length<8||nextPassword.length>200)throw new BadRequestException('رمز جدید باید بین ۸ و ۲۰۰ کاراکتر باشد.');
     let claims:Claims;
     try{claims=await this.jwt.verifyAsync<Claims>(token,{audience:'jupiter-first-login'});}catch{throw new UnauthorizedException('مهلت تغییر رمز تمام شده است؛ دوباره وارد شوید.');}
     if(claims.purpose!==challengePurpose||!claims.sub||!Number.isInteger(claims.credentialVersion))throw new UnauthorizedException('درخواست تغییر رمز معتبر نیست.');
@@ -104,7 +104,7 @@ export class AuthService {
         const identity=(await client.query<{id:string;password_hash:string}>("SELECT id,password_hash FROM authentication_identities WHERE user_id=$1 AND identity_type='EMAIL_PASSWORD' AND organization_id IS NULL AND status='ACTIVE'",[userId])).rows[0];
         const currentHash=user.password_hash??identity?.password_hash;
         if(!currentHash||!input.currentPassword||!(await verifyPassword(input.currentPassword,currentHash)))throw new UnauthorizedException('Current password is invalid');
-        if(typeof input.nextPassword!=='string'||input.nextPassword.length<10||input.nextPassword.length>200)throw new BadRequestException('Password must be between 10 and 200 characters');
+        if(typeof input.nextPassword!=='string'||input.nextPassword.length<8||input.nextPassword.length>200)throw new BadRequestException('Password must be between 8 and 200 characters');
         const hash=await hashPassword(input.nextPassword);
         await client.query('UPDATE users SET password_hash=CASE WHEN password_hash IS NULL THEN NULL ELSE $2 END,display_name=COALESCE($3,display_name),credential_version=credential_version+1,updated_at=now() WHERE id=$1',[userId,hash,displayName??null]);
         if(identity)await client.query('UPDATE authentication_identities SET password_hash=$2,updated_at=now() WHERE id=$1',[identity.id,hash]);
