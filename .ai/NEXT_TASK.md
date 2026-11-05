@@ -1,5 +1,11 @@
 # Next Task
 
+Owner deferred GitHub push: do not retry until user says connection restored.
+Browser now enabled; actual owner navigation acceptance recorded in
+docs/UNIFIED_MAIN_BROWSER_20261105.md. Test-5 current tenant has category blocker,
+not requester role issue. Owner requested workspace deletion, exact scope asked;
+no archive/suspend/data removal until clarified. Preserve current sahra tenant.
+
 ## Owner policy 2026-11-05 — publish completed features to main by default
 
 Owner explicitly authorizes ALL completed features on main and future normal
