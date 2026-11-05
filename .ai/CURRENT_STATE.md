@@ -2,6 +2,12 @@
 
 ## 2026-11-05 — Main application approval RLS hotfix
 
+Follow-up: logs confirm approved requests stayed approved; implicit new-request
+form caused repeat submissions. Applicant selection/approved CTA/explicit new
+organization intent/focus refresh fixed in current source and narrow fe64140
+main static overlay. Web63/typecheck/build pass; public artifact hash verified.
+No customer duplicate cleanup or full070 rollout. Same evidence document below.
+
 Owner-reported approve500 traced to missing new-tenant context on membership
 INSERT in deployed fe64140. Scoped transaction-local context fix deployed only
 to main application service; policies unchanged. Runtime approval/owner roles/

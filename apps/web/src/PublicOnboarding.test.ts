@@ -1,5 +1,23 @@
 import { describe, expect, it, vi } from 'vitest';
-import { PublicSession, sendOrganizationApplication } from './PublicOnboarding';
+import { PublicSession, sendOrganizationApplication, selectCurrentApplication } from './PublicOnboarding';
+
+describe('approved application landing',()=>{
+  const approved={id:'approved',status:'APPROVED',assignedSlug:'approved-org'} as Parameters<typeof selectCurrentApplication>[0][number];
+  it('keeps approved organization as current instead of implicitly opening a blank form',()=>{
+    expect(selectCurrentApplication([approved])).toBe(approved);
+  });
+  it('opens a new application only after an explicit request for another organization',()=>{
+    expect(selectCurrentApplication([approved],true)).toBeNull();
+  });
+  it('preserves pending applications ahead of approved history, even on another-organization intent',()=>{
+    for(const status of ['DRAFT','NEEDS_INFORMATION','UNDER_REVIEW','SUBMITTED']){
+      const pending={...approved,id:'pending',status} as typeof approved;
+      expect(selectCurrentApplication([approved,pending])).toBe(pending);
+      expect(selectCurrentApplication([approved,pending],true)).toBe(pending);
+    }
+    expect(selectCurrentApplication([{...approved,status:'REJECTED'},{...approved,status:'CANCELLED'}])).toBeNull();
+  });
+});
 
 const session: PublicSession = {
   accessToken: 'test-access',

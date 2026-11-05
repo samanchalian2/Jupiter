@@ -1390,6 +1390,10 @@
   allowlisted media validation, and short-lived signed URLs.
 # 2026-11-05 — Application approval RLS hotfix
 
+Follow-up: prevent implicit repeat organization applications after approval;
+add explicit organization entry/another-organization intent and focus refresh.
+Web63 tests/typecheck/build pass; scoped main static overlay/hash verified.
+
 Main approve500 fixed by scoped transaction context for membership and platform/
 tenant Audit writes; no RLS relaxation or full GOAL070 promotion. Actual runtime
 approval/retry/owner membership rollback test passes; customer requests untouched.

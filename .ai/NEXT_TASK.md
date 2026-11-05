@@ -4,6 +4,10 @@
 acceptance; see docs/APPLICATION_APPROVAL_RLS_FIX_20261105.md. Await owner
 verification of their real pending application. No next Goal authorized.
 
+Follow-up approved-landing UI deployed narrowly to main; no implicit new form.
+User should reload applicant tab and enter an already-approved organization.
+Existing duplicate pending requests intentionally preserved, not auto-approved.
+
 ## GOAL-070 accepted on Preview — no next Goal authorized
 
 Owner-approved P0→P1→P2 implementation and separate Saba Preview acceptance pass;
