@@ -8,8 +8,13 @@ publication without repeat permission, except an explicitly named feature marked
 notes for completed product features. Preserve tests/backups/rollback/isolation;
 never treat this as authority to change customer roles/data, ignore secrets,
 publish unfinished features or modify co-hosted Arandi. Exclude dirty unrelated
-user edits. Active: build current integrated candidate on Preview, rehearse main
-Jupiter backup migration074 then publish complete API/Web/worker/Help to main.
+user edits. Integrated main API/Web/worker/Help publication and backup rehearsal
+are COMPLETE: current=/srv/jupiter/releases/unified-20261105, migration85,
+readiness200. See docs/UNIFIED_MAIN_20261105.md. Await owner usage feedback;
+GitHub network push and Work Browser visual acceptance remain unresolved.
+
+All older LOCAL/pending/no070-publication instructions below are HISTORICAL and
+superseded for this completed product release, not new work to repeat.
 
 Registration/password8 authorized main publication complete; see
 docs/REGISTRATION_MAIN_20261105.md. Await new user issue; pending GitHub network
