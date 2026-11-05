@@ -1,5 +1,16 @@
 # Next Task
 
+## Owner policy 2026-11-05 — publish completed features to main by default
+
+Owner explicitly authorizes ALL completed features on main and future normal
+publication without repeat permission, except an explicitly named feature marked
+"فعلاً این روی سرور اصلی منتشر نشود". This supersedes earlier Preview-only/no-main
+notes for completed product features. Preserve tests/backups/rollback/isolation;
+never treat this as authority to change customer roles/data, ignore secrets,
+publish unfinished features or modify co-hosted Arandi. Exclude dirty unrelated
+user edits. Active: build current integrated candidate on Preview, rehearse main
+Jupiter backup migration074 then publish complete API/Web/worker/Help to main.
+
 Registration/password8 authorized main publication complete; see
 docs/REGISTRATION_MAIN_20261105.md. Await new user issue; pending GitHub network
 push and Work Browser visual check remain external limitations. No next Goal.

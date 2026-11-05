@@ -1,5 +1,16 @@
 # Current State
 
+## 2026-11-05 — Complete integrated main product publication
+
+Owner now authorizes completed-feature main release by default except explicit
+feature hold. Main switched from fe64140 overlays to unified-20261105 matching
+current tracked API/Web/worker source (dirty gateway/training excluded from HEAD).
+Migration074/85 total applied after main Jupiter backup/restore rehearsal PASS.
+Login4 memberships/setup/members and actual SLA routes200. Runtime Help17 revised,
+13 unchanged/history preserved. Arandi start/restarts unchanged. Source/release
+hashes and limitations in docs/UNIFIED_MAIN_20261105.md. No customer Go-Live or
+role changes; old LOCAL/no070 publication notes below are superseded.
+
 ## 2026-11-05 — Authorized registration/password main publication
 
 Owner explicitly authorized main publication. Minimum8 + username warnings +
