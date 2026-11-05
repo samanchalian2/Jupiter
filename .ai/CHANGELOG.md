@@ -1406,3 +1406,7 @@ approval/retry/owner membership rollback test passes; customer requests untouche
 DEC-067 scopes authenticated membership discovery and tenant actor authorization
 without relaxing RLS. Affected account login/refresh and setup/member/ticket APIs
 verified on main; isolated database regression and Web64 tests pass.
+# 2026-11-05 — Authorized main registration/password release
+
+Published pending minimum8/username/member-admin guidance via scoped main
+overlays. Readiness/asset/hash/password boundaries pass; no Arandi/data changes.

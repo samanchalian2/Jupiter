@@ -1,5 +1,9 @@
 # Next Task
 
+Registration/password8 authorized main publication complete; see
+docs/REGISTRATION_MAIN_20261105.md. Await new user issue; pending GitHub network
+push and Work Browser visual check remain external limitations. No next Goal.
+
 LOCAL member/admin registration guidance joins pending username warning and
 password8 release. Verify matching runtime and publish only with scoped deployment.
 

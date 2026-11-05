@@ -1,5 +1,14 @@
 # Current State
 
+## 2026-11-05 — Authorized registration/password main publication
+
+Owner explicitly authorized main publication. Minimum8 + username warnings +
+member/admin guidance deployed as scoped legacy fe64140 overlays, retaining
+prior approved/membership repairs. No full070 rollout, migration, user/password/
+role/organization lifecycle mutation or Arandi change. Readiness/asset200 and
+deployed password boundaries pass. Evidence docs/REGISTRATION_MAIN_20261105.md.
+Earlier LOCAL-only notices below are superseded for these specific changes.
+
 ## 2026-11-05 — Member/admin registration guidance (LOCAL)
 
 Required name/email/password/role guidance, role explanations and explicit
