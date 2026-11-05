@@ -1,5 +1,13 @@
 # Current State
 
+## 2026-11-05 — Member/admin registration guidance (LOCAL)
+
+Required name/email/password/role guidance, role explanations and explicit
+organization-admin scope warning added to member creation. Pre-submit validation
+explains each missing/invalid field; errors repeat beside form. Optional username
+email fallback preserved. Web71 tests pass; no API/tenant permission change.
+Not deployed; part of pending local registration/password UI release.
+
 ## 2026-11-05 — Missing username warning (LOCAL)
 
 Organization member create/edit now warns inline for blank username: email-only

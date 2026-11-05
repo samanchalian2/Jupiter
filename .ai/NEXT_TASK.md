@@ -1,5 +1,8 @@
 # Next Task
 
+LOCAL member/admin registration guidance joins pending username warning and
+password8 release. Verify matching runtime and publish only with scoped deployment.
+
 LOCAL missing-username warnings and password8 await matching runtime release;
 do not claim these Web changes on main before publication/acceptance.
 
