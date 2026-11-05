@@ -10,3 +10,6 @@ server failures also show beside form. API and authorization unchanged.
 Four new validation/render tests and full Web71 pass. Typecheck/build checked in
 handoff. LOCAL only; no existing users, passwords or roles changed. Existing
 pending minimum8 backend rollout still required before Web release to main.
+
+Final combined regression gate: API201 passed/2 optional skipped across47 files;
+isolated migration85 and cleanup PASS. Web71 passed as previously recorded.
