@@ -1,5 +1,13 @@
 # Current State
 
+## 2026-11-05 — Admin/settings button spacing published
+
+Scoped shared8px wrapping action gaps for Platform/org administration, Wizard,
+account settings/dialogs; legacy adjacent button/link spacing fallback RTL-safe,
+semantic groups exclude duplicate margins. Palette/control size unchanged.
+Web72/typecheck/build pass; final CSS main hash verified/public200. Evidence
+docs/ADMIN_BUTTON_SPACING_20261105.md. Self-service DEC-070 still separate pending.
+
 ## 2026-11-05 — Default IT category published
 
 DEC-069 default IT_SERVICES category for empty ORGANIZATION SETUP catalogs:

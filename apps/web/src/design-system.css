@@ -872,3 +872,27 @@ html[data-ui-theme='dark'] button.secondary {
   background: var(--color-brand-active);
   border-color: var(--color-brand-active);
 }
+
+/* Compact action spacing: shared by Platform/Organization administration and settings. */
+:where(.platform-pro, .admin-console, .setup-workspace, .account-menu, .dialog-layer)
+  :where(.inline-actions, .table-actions, .member-actions, .button-row, .public-actions, .dialog-actions, .appearance-preview-row) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Legacy action siblings outside a semantic action group still need breathing room.
+   Logical margins preserve RTL. Rows with gap are excluded to avoid double spacing. */
+:where(.platform-pro, .admin-console, .setup-workspace, .account-menu, .dialog-layer)
+  :not(:where(.inline-actions, .table-actions, .member-actions, .button-row, .public-actions, .dialog-actions, .appearance-preview-row))
+  > :is(button, a.ui-button) + :is(button, a.ui-button) {
+  margin-inline-start: 8px;
+  margin-block-start: 4px;
+}
+
+:where(.platform-pro, .admin-console, .setup-workspace, .account-menu, .dialog-layer)
+  :where(.inline-actions, .table-actions, .member-actions, .button-row, .public-actions, .dialog-actions, .appearance-preview-row)
+  > :is(button, a.ui-button) {
+  margin: 0;
+}

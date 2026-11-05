@@ -1,5 +1,11 @@
 # Jupiter Design System V2
 
+Admin/settings action groups use8px horizontal/vertical gap with wrapping; shared
+groups cover inline/table/member/button-row/dialog/appearance-preview controls.
+Legacy adjacent buttons/semantic button-links receive logical RTL-safe spacing
+only outside these groups, preventing double gap. Do not solve spacing by growing
+buttons, changing colors/weight or shrinking accessible touch targets.
+
 GOAL-070 keeps onboarding/SLA inside existing compact semantic surfaces, palette
 and Shabnam-first stack. Global organization-application entry is a normal link
 from personal actions, chooser and account menu, not another navigation system.
