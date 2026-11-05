@@ -4,6 +4,7 @@ import { CommercialService } from '../commercial/commercial.service.js';
 import { NotificationService } from '../notifications/notification.service.js';
 import { OrganizationAccessPolicy } from './organization-access.policy.js';
 import type { PoolClient } from 'pg';
+import {ensureDefaultTicketCategory} from './default-ticket-category.js';
 
 type Actor={userId:string;organizationId:string;roles:string[]};
 type Step='PROFILE'|'STRUCTURE'|'TICKET_CONFIGURATION'|'SLA'|'USERS'|'DIRECTORY'|'AI'|'ASSIST'|'APPEARANCE'|'REVIEW';
@@ -50,6 +51,7 @@ export class OrganizationSetupService {
   private warnings(data:Awaited<ReturnType<OrganizationSetupService['snapshot']>>) { const result:string[]=[]; if(!data.teams)result.push('تیم یا ساختار فعال تعریف نشده است.'); if(!data.slas)result.push('SLA فعال تعریف نشده است.'); if(data.members<=1)result.push('کاربر فعال دیگری افزوده نشده است.'); if(!data.connector)result.push('Connector دایرکتوری پیکربندی نشده است.'); else if(data.connector.status!=='PAIRED')result.push('Connector دایرکتوری هنوز متصل نیست.'); if(!data.ai)result.push('هوش مصنوعی برای سازمان فعال نیست.'); if(!data.assist)result.push('Jupiter Assist فعال نیست.'); if(!(data.setting as any)?.logo_storage_key)result.push('لوگوی سازمان تنظیم نشده است.'); return result; }
   private first(states:Record<Step,State>) { return steps.find(step=>step!=='REVIEW'&&states[step]!=='COMPLETE'&&states[step]!=='SKIPPED')??'REVIEW'; }
   private async reconcile(c:PoolClient,a:Actor) {
+    if(a.roles.some(role=>role==='ORG_OWNER'||role==='ORG_ADMIN'))await ensureDefaultTicketCategory(c,a.organizationId,a.userId);
     const progress=(await c.query<{step_states:Record<string,State>;version:number;started_at:string;completed_at:string|null}>('SELECT step_states,version,started_at,completed_at FROM organization_setup_progress WHERE organization_id=$1 FOR UPDATE',[a.organizationId])).rows[0];
     const data=await this.snapshot(c,a.organizationId); const owner=await this.ownerExists(c,a.organizationId); const current=(progress?.step_states??{}) as Record<string,State>; const result=this.states(current,data,owner); const currentStep=this.first(result.states);
     if(!progress) { await c.query("INSERT INTO organization_setup_progress(organization_id,current_step,step_states,started_at) VALUES($1,$2,$3,now())",[a.organizationId,currentStep,JSON.stringify(result.states)]); await this.audit(c,a,'ORGANIZATION_SETUP_STARTED'); }

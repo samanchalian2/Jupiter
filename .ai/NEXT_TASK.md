@@ -1,5 +1,9 @@
 # Next Task
 
+Latest owner request default IT category COMPLETE on main. Ramin tenant now ready
+with no blockers; owner may explicitly Go-Live. Prior category-prerequisite notes
+below superseded. No automatic activation or requester role change. GitHub hold.
+
 Current maintenance complete: completed product published main, owner Browser
 navigation verified, Ramin now only current sahra organization after authorized
 archive. Workspace deletion ambiguity resolved by explicit owner instruction.

@@ -1,5 +1,9 @@
 # Business Rules
 
+DEC-069: empty organizational SETUP catalogs receive IT_SERVICES / خدمات فناوری
+اطلاعات by default with Audit. No custom catalog overwrite; no active/personal/
+archived changes; explicit Owner Go-Live still required.
+
 Application approval defaults to the deterministic unique address `org-{application UUID}`
 when slug is omitted/blank. Platform UI generates this automatically instead of
 reusing the applicant's potentially already-assigned suggestion. Existing explicit

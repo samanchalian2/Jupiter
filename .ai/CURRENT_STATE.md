@@ -1,5 +1,14 @@
 # Current State
 
+## 2026-11-05 — Default IT category published
+
+DEC-069 default IT_SERVICES category for empty ORGANIZATION SETUP catalogs:
+new provisioning and authorized Wizard reconcile. Existing catalogs preserved;
+owner Go-Live explicit. Main3 compiled modules deployed/backed up; real affected
+tenant two Wizard reads200 readytrue/blockers[], category exactly1. No lifecycle
+or role change. API52 focused/integration tests, migration85/cleanup and API
+typecheck/build pass. No GitHub push per owner hold.
+
 ## 2026-11-05 — Owner-authorized Ramin workspace cleanup complete
 
 Owner explicitly requested all Ramin workspaces without sahra removed. Scoped

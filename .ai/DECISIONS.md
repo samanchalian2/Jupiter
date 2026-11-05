@@ -1,5 +1,15 @@
 # Architecture Decisions
 
+## DEC-069 — Safe default ticket category during SETUP
+
+Owner requests a default IT-services category rather than manual prerequisite.
+New SETUP provisioning and authorized owner/admin Wizard reconciliation ensure
+one IT_SERVICES category only if the organization's catalog is empty. Existing
+catalogs, active/personal/archived tenants are untouched. Organization row lock,
+unique key, tenant RLS and Audit preserve concurrent/idempotent creation. This
+reuses existing category entity; no migration. Go-Live remains explicit Owner
+action with other profile/readiness checks unchanged. No automatic role upgrade.
+
 ## DEC-068 — Owner-approved minimum password length 8
 
 Owner explicitly requests minimum8 instead of10 for public account creation,
