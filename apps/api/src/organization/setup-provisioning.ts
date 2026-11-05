@@ -10,6 +10,8 @@ export async function provisionSetupOrganization(client: PoolClient, input: {nam
   const organization=(await client.query<{id:string;slug:string;name:string;status:string}>(
     "INSERT INTO organizations(name,slug,status,legal_name) VALUES($1,$2,'setup',$3) RETURNING id,slug,name,status",[input.name,input.slug,legalName],
   )).rows[0];
+  // RLS is enforced for runtime credentials: scope dependent writes to this new tenant.
+  await client.query('SELECT set_config($1, $2, true)', ['app.organization_id', organization.id]);
   const membership=(await client.query<{id:string}>("INSERT INTO memberships(organization_id,user_id,status) VALUES($1,$2,'active') RETURNING id",[organization.id,input.ownerUserId])).rows[0];
   const roles=await client.query("INSERT INTO membership_roles(membership_id,role_id) SELECT $1,id FROM roles WHERE code IN ('ORG_OWNER','ORG_ADMIN') RETURNING role_id",[membership.id]);
   if(roles.rowCount!==2)throw new Error('Required organization roles are not provisioned.');

@@ -281,7 +281,9 @@ export class OrganizationApplicationService {
            WHERE id=$1 RETURNING ${applicationColumns}`,
           [applicationId,userId,reviewNote,organization.id],
         )).rows[0];
+        await client.query('SELECT set_config($1, $2, true)', ['app.organization_id', '']);
         await this.transitionAudit(client,applicationId,userId,application.status,'APPROVED',key,{ reviewNotePresent: Boolean(reviewNote), provisioned: true });
+        await client.query('SELECT set_config($1, $2, true)', ['app.organization_id', organization.id]);
         await client.query(
           `INSERT INTO audit_logs(organization_id,actor_user_id,action,target_type,target_id,metadata)
            VALUES($1,$2,'organization.provisioned','organization',$1,$3::jsonb)`, [organization.id,userId,JSON.stringify({ applicationId, slug: organization.slug, initialOwnerUserId: application.applicant_user_id })],

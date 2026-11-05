@@ -1,5 +1,9 @@
 # Next Task
 
+2026-11-05 maintenance: main approval RLS hotfix applied with rollback-only
+acceptance; see docs/APPLICATION_APPROVAL_RLS_FIX_20261105.md. Await owner
+verification of their real pending application. No next Goal authorized.
+
 ## GOAL-070 accepted on Preview — no next Goal authorized
 
 Owner-approved P0→P1→P2 implementation and separate Saba Preview acceptance pass;

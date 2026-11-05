@@ -1388,3 +1388,9 @@
   ticket activity history, and recipient-scoped SSE notifications.
 - Added S3-compatible attachment adapter, secure attachment metadata workflow,
   allowlisted media validation, and short-lived signed URLs.
+# 2026-11-05 — Application approval RLS hotfix
+
+Main approve500 fixed by scoped transaction context for membership and platform/
+tenant Audit writes; no RLS relaxation or full GOAL070 promotion. Actual runtime
+approval/retry/owner membership rollback test passes; customer requests untouched.
+

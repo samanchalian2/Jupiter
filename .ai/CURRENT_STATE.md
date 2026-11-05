@@ -1,5 +1,13 @@
 # Current State
 
+## 2026-11-05 — Main application approval RLS hotfix
+
+Owner-reported approve500 traced to missing new-tenant context on membership
+INSERT in deployed fe64140. Scoped transaction-local context fix deployed only
+to main application service; policies unchanged. Runtime approval/owner roles/
+same-key retry PASS in rollback-only fixture; no customer request modified.
+Evidence: docs/APPLICATION_APPROVAL_RLS_FIX_20261105.md. No full070 promotion.
+
 ## 2026-10-27 — GOAL-070 implementation / Preview acceptance complete
 
 Saba P0→P1→P2 corrections implemented under DEC-066; migration074/85 total passes
