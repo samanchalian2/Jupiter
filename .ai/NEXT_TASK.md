@@ -1,5 +1,12 @@
 # Next Task
 
+Current maintenance complete: completed product published main, owner Browser
+navigation verified, Ramin now only current sahra organization after authorized
+archive. Workspace deletion ambiguity resolved by explicit owner instruction.
+Await new work. Do not push until owner says connectivity restored. Do not change
+requester role or activate tenant: category prerequisite still needs owner input.
+Earlier pending cleanup/Browser-unavailable notes below are historical.
+
 Owner deferred GitHub push: do not retry until user says connection restored.
 Browser now enabled; actual owner navigation acceptance recorded in
 docs/UNIFIED_MAIN_BROWSER_20261105.md. Test-5 current tenant has category blocker,
