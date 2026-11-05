@@ -1393,4 +1393,3 @@
 Main approve500 fixed by scoped transaction context for membership and platform/
 tenant Audit writes; no RLS relaxation or full GOAL070 promotion. Actual runtime
 approval/retry/owner membership rollback test passes; customer requests untouched.
-

@@ -15,7 +15,7 @@ Only jupiter-main-api restarted; no Arandi database/service/config changes.
 
 Validation:
 - Regression setup-provisioning-rls.spec.ts PASS (1 test).
-- API typecheck PASS; API build run separately (see handoff).
+- API typecheck and API build PASS.
 - Actual deployed service + runtime DB credentials transaction smoke PASS:
   temporary applicant/application → approve → owner/admin roles → same-key retry.
 - Explicit ROLLBACK and absence of fixture organization confirmed PASS.
