@@ -1,5 +1,18 @@
 # Architecture Decisions
 
+## DEC-070 — Owner-authorized self-service organization onboarding
+
+Owner requests no manual Platform approval for new user/org registration. New
+self-service creation must bind authenticated verified applicant as initial
+Owner/Admin, use idempotent atomic provisioning with safe editable defaults and
+preserve isolation. Do not autoapprove historical applications, fake email
+verification, assign privileged roles to ordinary members or enable paid services.
+Activation, if folded into explicit organization creation, must reuse canonical
+lifecycle/readiness code; never change tenant lifecycle through login/GET. Existing
+manual review APIs/status codes remain compatible for historical requests.
+See docs/SELF_SERVICE_ONBOARDING_20261105.md for scope and acceptance; this ADR
+authorizes implementation design, not a claim of implementation or deployment.
+
 ## DEC-069 — Safe default ticket category during SETUP
 
 Owner requests a default IT-services category rather than manual prerequisite.

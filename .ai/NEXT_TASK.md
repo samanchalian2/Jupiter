@@ -1,5 +1,11 @@
 # Next Task
 
+ACTIVE owner-requested self-service onboarding: remove Platform approval for new
+org submissions, safe defaults and minimal holds. DEC-070 +
+docs/SELF_SERVICE_ONBOARDING_20261105.md record review/acceptance. Implementation,
+tests/Preview/main publication still pending. Preserve email proof/isolation,
+legacy applications and no paid-service autoenablement. GitHub remains deferred.
+
 Latest owner request default IT category COMPLETE on main. Ramin tenant now ready
 with no blockers; owner may explicitly Go-Live. Prior category-prerequisite notes
 below superseded. No automatic activation or requester role change. GitHub hold.
