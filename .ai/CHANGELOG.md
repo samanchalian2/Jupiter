@@ -1406,4 +1406,3 @@ approval/retry/owner membership rollback test passes; customer requests untouche
 DEC-067 scopes authenticated membership discovery and tenant actor authorization
 without relaxing RLS. Affected account login/refresh and setup/member/ticket APIs
 verified on main; isolated database regression and Web64 tests pass.
-
