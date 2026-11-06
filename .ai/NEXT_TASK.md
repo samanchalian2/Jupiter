@@ -1,12 +1,13 @@
 # Next Task
 
-ACTIVE 2026-11-07 owner-approved Direct organization Assist routing (DEC-071).
-Finish regression/security/browser acceptance, Help, docs and Preview/main release
-for docs/ASSIST_ROUTING_20261107.md. Self-service organization onboarding below is
-separate pending work, not part of this execution. Mobile explicitly deferred.
-Owner restored GitHub authorization; last connection failed, retry after gates.
+COMPLETE 2026-11-07 Direct organization Assist routing (DEC-071): local gates,
+four-width authenticated Browser/cleanup, Preview/main release and Help pass.
+Evidence docs/ASSIST_ROUTING_20261107.md. Stop; await owner's next instruction.
+Self-service organization onboarding below remains separate PENDING work; mobile
+explicitly deferred. GitHub connection restored and implementation pushed;
+older GitHub hold/failure notes below are historical, not current instructions.
 
-ACTIVE owner-requested self-service onboarding: remove Platform approval for new
+PENDING owner-requested self-service onboarding: remove Platform approval for new
 org submissions, safe defaults and minimal holds. DEC-070 +
 docs/SELF_SERVICE_ONBOARDING_20261105.md record review/acceptance. Implementation,
 tests/Preview/main publication still pending. Preserve email proof/isolation,

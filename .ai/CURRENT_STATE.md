@@ -1,13 +1,15 @@
 # Current State
 
-## 2026-11-07 — Direct organization Assist implementation IN PROGRESS
+## 2026-11-07 — Direct organization Assist ACCEPTED / published
 
 DEC-071/migration075 adds explicit org self-service consent, case-bound delegation
-and tenant submission receipts. Atomic final-submit API, visible disabled routing
-choice, settings and Platform reply workspace implemented locally. Focused real
-compiled HTTP/API51 and Web76 passed at intermediate gates; full final regression,
-Help runtime publication, four-width Browser and Preview/main release pending.
-No existing customer policy, capacity, role or lifecycle has been changed.
+and tenant submission receipts. Atomic final-submit/batch API, visible disabled
+routing choice, settings and Platform public reply workspace complete. API214
+(2 optional skips), Web77, typechecks/builds/diff-check and86 migrations pass.
+Authenticated four-width Browser workflow/cleanup pass; Preview/main published
+at releases/assist-routing-20261107 with Jupiter-only restore rehearsals/backups.
+Help jupiter-assist revised once on each. Arandi unchanged. No customer consent,
+capacity, role or lifecycle changed. Evidence docs/ASSIST_ROUTING_20261107.md.
 
 ## 2026-11-05 — Admin/settings button spacing published
 

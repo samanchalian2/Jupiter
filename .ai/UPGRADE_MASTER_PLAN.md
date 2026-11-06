@@ -2,9 +2,10 @@
 
 ## 2026-11-07 — Direct organization Assist routing
 
-Owner-approved DEC-071 implementation/local acceptance in progress. Evidence
+Owner-approved DEC-071 implementation/acceptance COMPLETE. Evidence
 docs/ASSIST_ROUTING_20261107.md; additive migration075. No mobile development or
-self-service organization registration implementation included. Release pending.
+self-service organization registration implementation included. Preview/main and
+Help published, API214/Web77 and authenticated responsive workflow/cleanup pass.
 
 ## GOAL-070 — Saba onboarding implemented / Preview accepted (2026-10-27)
 

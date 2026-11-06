@@ -1,5 +1,11 @@
 # System Architecture
 
+DEC-071: AssistRoutingModule shares consent/atomic case routing between Ticket
+and Assist modules. TicketActorModule exports the unchanged authenticated tenant
+membership resolver independently of commands; Commercial, Notification and
+PersonalCapacity depend on it, avoiding a cycle. No new ticket lifecycle, AI
+provider contract, parallel support product or broader tenant role is introduced.
+
 DEC-064/065 extend existing scoped read models only: Incident retains immutable
 rule-time observed impact; Issue detail computes live retained-link impact over
 the exact authorized Issue/App/environment/tenant, independent of100 displayed

@@ -1,6 +1,6 @@
 # Organization-authorized direct Assist — implementation evidence
 
-Status: IN PROGRESS. No Preview/main publication yet.
+Status: ACCEPTED. Preview and main published; runtime Help revised on both.
 
 ## Approved behavior
 
@@ -33,11 +33,21 @@ unchanged actor discovery from ticket commands to avoid DI cycles.
   compiled process gate exposed Notification module cycle; actor-only import fixed
   and actual compiled HTTP tests subsequently passed.
 
-## Remaining
+## Final gates
 
-Complete final API/Web checks, expiry/revocation/batch/isolation coverage, responsive
-authenticated browser acceptance, Preview/main deployment with scoped backups,
-runtime Help publication, commit/push and final evidence. No completion claim yet.
+- Full API:49 files,214 passed,2 optional skipped (performance/full auxiliary
+  browser branches); no failures. Includes actual compiled HTTP/AppModule and
+  worker fault/recovery tests, not just mocks. Final targeted Assist/legacy45 pass.
+- Web:16 files,77 passed; API/Web typecheck and production builds PASS.
+- Migration rehearsal86, disposable cleanup/shared role comparison PASS.
+- Eight routing integration tests cover denial rollback, direct queue, concurrent
+  submit/ACCEPT, request hash mismatch, zero preaccept charge, exact-once settlement,
+  restricted denial, grant expiry/revocation, public-only projection, completion
+  Audit/revocation, package suspension, batch routing/replay/rollback and receipt RLS.
+- Manual route keeps organization autoassignment; new Jupiter submissions skip
+  organization autoassignment. Existing internal visibility/permissions unchanged.
+- git diff --check PASS. Unrelated gateway/training edits and output/tmp excluded
+  from commits/releases. No new production credential or customer role/policy set.
 
 ## Authenticated local Browser acceptance
 
@@ -64,3 +74,52 @@ the previous metadata projection, so ticket numbers were blank during that sessi
 All temporary Browser tabs closed, viewport reset, fixture API and local Vite
 stopped. Runner confirms disposable database removed and cluster roles unchanged;
 all synthetic accounts/memberships/tickets/grants/sessions removed with that DB.
+
+## Deployment and restoration
+
+Base source adfd01f archive SHA256
+a96193f6eb222a9e9516a358837117e9f43241e0db073fb2725e21c76b797d5e;
+2473a4e refinement (explicit grant-ending Audit/personal UI preservation) and
+cc2c727 HTTP-safe Composer UUID wiring applied with scoped source/runtime backups.
+Jupiter source, not dirty gateway/training edits, compiled on Linux. Dependencies
+reused from the previously installed Jupiter releases; no package/service changes
+to Arandi. Build warning remains the existing >500kB Web bundle advisory.
+
+- Preview current: /opt/jupiter/releases/assist-routing-20261107.
+  Backup /opt/jupiter/backups/assist-routing-20261106T215402Z.
+- Main current: /srv/jupiter/releases/assist-routing-20261107.
+  Backup /srv/jupiter/backups/assist-routing-20261106T215619Z.
+- Each backup contains Jupiter-only pg_dump, previous release and readiness/
+  migration/restore evidence. Each was restored to a narrowly named temporary
+  database, migration075 rehearsed to86, then rehearsal database dropped before
+  live application. Previous release rollback retains additive compatible schema.
+- Additional assist-final-refinement-before.tar and assist-http-before.tar under
+  each Jupiter backups directory preserve the scoped runtime/static refinements.
+- Both hosts:86 migrations,0 non-null self_service_enabled rows after publication;
+  no customer consent silently enabled. API/worker/Arandi active. Arandi start time
+  and restart count unchanged through initial switch and final API refinement.
+  PostgreSQL service and non-Jupiter databases never restarted/modified.
+- Runtime publication: jupiter-assist0 created/1 revised/0 unchanged on each host,
+  using existing active local Platform Admin through supported publisher. No other
+  Help article changed. CRLF env-file sourcing failed before publication; corrected
+  to Node's --env-file parser without editing/exposing either environment file.
+- Public main index/assets/readiness200; new availability endpoint denies anonymous
+  access401 as expected. Final Web JS index-BiQWTbsf.js SHA256
+  28c1616d7efcdb62479f56efbd0a1a8342f311ed22e1add8dc0596d7fc1b6e4a
+  matches local/public; CSS index-CPTCbt79.css also matched.
+  Final Assist module SHA256
+  1ee895304a4010f44aabdaa5934c4a935f18f02d8e0e481d62051a69bd49cd42
+  matches tested local module on Preview/main.
+
+## Boundaries
+
+Four-width authenticated business acceptance was LOCAL/disposable, not a mutation
+of a hosted customer tenant. Hosted acceptance is compiled artifact/readiness/schema/
+Help smoke evidence, not a real paid customer support case. No external support
+operator SLA or instant notification delivery claim. Notifications are durable in
+the existing tenant inbox; browser reload demonstrated delivery. Existing Platform
+console is used for registered support operators; no new broad support role or
+navigation created. Both hosts retain old release/backups for recovery. Preview's
+Arandi backup/readiness units were already failed on initial inventory; they were
+not changed or mistaken for Jupiter deployment failures. GOAL-059 staging and
+self-service organization registration remain outside this execution.
