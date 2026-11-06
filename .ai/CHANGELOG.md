@@ -1410,3 +1410,10 @@ verified on main; isolated database regression and Web64 tests pass.
 
 Published pending minimum8/username/member-admin guidance via scoped main
 overlays. Readiness/asset/hash/password boundaries pass; no Arandi/data changes.
+# 2026-11-07 — Direct organization Assist routing (local acceptance)
+
+DEC-071/migration075: org-admin/owner consent, visible disabled team selector,
+atomic/replay-safe final submit and batch routing, case-bound24h support grants,
+exact-once acceptance, public replies and completion revocation. Legacy policies
+and personal support preserved. Local authenticated four-width workflow and
+temporary DB cleanup pass; Preview/main publication and final gates pending.

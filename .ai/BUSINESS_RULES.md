@@ -1,5 +1,12 @@
 # Business Rules
 
+DEC-071: Explicit ORG_ADMIN/ORG_OWNER self-service Assist permission queues new
+user-selected requests directly. Disabled choice remains visible with safe reason.
+Commercial capacity/entitlement independent; ACCEPT alone consumes one package
+unit. Legacy null permission preserves policy semantics, including zero-capacity
+queueing. Switch-off blocks new direct requests, not existing queue/accepted cases.
+Final submission and case creation atomic/idempotent; draft/AI analysis never route.
+
 DEC-069: empty organizational SETUP catalogs receive IT_SERVICES / خدمات فناوری
 اطلاعات by default with Audit. No custom catalog overwrite; no active/personal/
 archived changes; explicit Owner Go-Live still required.

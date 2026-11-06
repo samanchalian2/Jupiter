@@ -1,5 +1,13 @@
 # Security and Privacy
 
+DEC-071: organization consent is tenant-scoped and audited, never commercial
+activation. A direct case snapshots consent to one non-restricted ticket; registered
+active assigned support agent receives 24h case-linked ROUTED_ONLY permission on
+ACCEPT, revocable and ended on completion. Restricted access remains explicit.
+Support API exposes only public ticket/message projections, no internal notes.
+Submission receipts are RLS-scoped by organization/user/key and bind a request
+hash; they are not authorization and never bypass current authenticated membership.
+
 DEC-068: owner-approved local password minimum is8 characters. Passwords remain
 case-sensitive; hashing/session controls unchanged. This lowers the previous
 minimum10; users should still prefer longer unique passwords.

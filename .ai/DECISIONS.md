@@ -1322,3 +1322,23 @@ directly to `ACTIVE`, so service restoration remains an explicit second action.
 Both transitions have immutable history plus actor-bearing audit records. A
 future physical purge requires a separate retention/export/legal design and is
 not implied by archival.
+# DEC-071 — Organization-authorized direct Assist routing
+
+2026-11-07, owner approved. Extend Jupiter Assist, not personal support or ticket
+lifecycle. A new nullable organization self-service switch preserves legacy
+request policies until an authorized ORG_ADMIN/ORG_OWNER explicitly changes it.
+Enabled requests queue directly. Commercial eligibility/capacity remain separate;
+only ACCEPT consumes capacity. Final ticket submission and Assist case creation
+share the tenant transaction. Additive optional inputs preserve old clients.
+
+AssistRoutingModule is a narrow dependency shared by TicketModule and AssistModule
+to avoid a circular dependency. It owns organization consent and case routing,
+not actor discovery: TicketActorModule exports the unchanged membership resolver
+independently of ticket commands; Commercial, Notification and PersonalCapacity controllers
+depend on that resolver instead of TicketModule, preserving checks and contracts.
+not commercial settlement. New direct cases snapshot ticket-only delegation;
+ACCEPT by an active registered support agent may create a 24-hour ROUTED_ONLY
+grant. Restricted tickets need existing explicit permission. Automatically issued
+grants are linked to the case, revocable and ended on completion. No membership,
+internal-note or whole-organization access is granted. Existing queued/accepted
+cases survive switch-off; new requests do not. No bulk tenant mutation.

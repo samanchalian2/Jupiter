@@ -873,6 +873,13 @@ html[data-ui-theme='dark'] button.secondary {
   border-color: var(--color-brand-active);
 }
 
+/* Assist routing uses native radios and readable inline denial reasons. */
+.assist-routing { margin-block: 12px; padding: 12px; border: 1px solid var(--border); border-radius: 8px; min-width: 0; }
+.assist-routing > label { display: flex; align-items: center; gap: 8px; min-height: 44px; font-weight: 400; }
+.assist-routing input[type="radio"] { width: 18px; height: 18px; flex: 0 0 18px; margin: 0; }
+.assist-routing .hint, .assist-ticket-request .hint { margin-block: 4px; max-width: 60ch; overflow-wrap: anywhere; }
+.assist-case-workspace { margin-block: 16px; min-width: 0; }
+
 /* Compact action spacing: shared by Platform/Organization administration and settings. */
 :where(.platform-pro, .admin-console, .setup-workspace, .account-menu, .dialog-layer)
   :where(.inline-actions, .table-actions, .member-actions, .button-row, .public-actions, .dialog-actions, .appearance-preview-row) {

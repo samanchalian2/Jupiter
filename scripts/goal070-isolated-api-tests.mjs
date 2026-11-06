@@ -21,7 +21,7 @@ try{
   await admin.query(`CREATE DATABASE "${name}"`);created=true;
   source.pathname=`/${name}`;db=new Client({connectionString:source.toString()});await db.connect();
   const files=(await readdir(resolve(api,'migrations'))).filter(file=>file.endsWith('.sql')).sort();
-  if(files.length!==85||files.at(-1)!=='074_first_login_password.sql')throw Error('Unexpected migration chain');
+  if(files.length!==86||files.at(-1)!=='075_assist_request_routing.sql')throw Error('Unexpected migration chain');
   await db.query('CREATE TABLE schema_migrations(name text PRIMARY KEY,applied_at timestamptz NOT NULL DEFAULT now())');
   for(const file of files){
     let sql=await readFile(resolve(api,'migrations',file),'utf8');

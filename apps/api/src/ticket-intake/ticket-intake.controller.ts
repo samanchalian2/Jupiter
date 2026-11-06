@@ -71,13 +71,17 @@ export class TicketIntakeController {
     return this.intakes.get(await this.actors.fromHeaders(authorization,organizationId),id);
   }
 
+  @Post('tickets/requests')
+  async request(@Headers('authorization') a:string|undefined,@Headers('x-organization-id') o:string|undefined,@Headers('idempotency-key') key:string,@Body() body:import('../tickets/ticket.service.js').CreateDraftData&{intakeSessionId?:string;supportTeam?:'ORGANIZATION'|'JUPITER'}) {
+    return this.intakes.createRequest(await this.actors.fromHeaders(a,o),body,key);
+  }
   @Post('tickets/drafts')
   async draft(@Headers('authorization') authorization?:string,@Headers('x-organization-id') organizationId?:string,@Body() body:{title:string;description:string;priority?:string;departmentId?:string;categoryId?:string;subcategoryId?:string;locationId?:string;disciplineId?:string;customFields?:Record<string,unknown>;tags?:Array<{id?:string;name?:string;kind?:'DOMAIN'|'SERVICE_ASSET'|'ISSUE_TYPE'|'IMPACT_SCOPE'|'CONTEXT'|'OTHER'}>;intakeSessionId?:string}={title:'',description:''}) {
     return this.intakes.createDraft(await this.actors.fromHeaders(authorization,organizationId),body);
   }
 
   @Post('tickets/intake-batches')
-  async batch(@Headers('authorization') authorization?:string,@Headers('x-organization-id') organizationId?:string,@Body() body:{title:string;description:string;priority?:string;departmentId?:string;categoryId?:string;subcategoryId?:string;locationId?:string;disciplineId?:string;customFields?:Record<string,unknown>;tags?:Array<{id?:string;name?:string;kind?:'DOMAIN'|'SERVICE_ASSET'|'ISSUE_TYPE'|'IMPACT_SCOPE'|'CONTEXT'|'OTHER'}>;intakeSessionId:string;secondaryProposalIds?:string[]}={title:'',description:'',intakeSessionId:''}) {
-    return this.intakes.createBatch(await this.actors.fromHeaders(authorization,organizationId),body);
+  async batch(@Headers('authorization') authorization?:string,@Headers('x-organization-id') organizationId?:string,@Headers('idempotency-key') key?:string,@Body() body:{title:string;description:string;priority?:string;departmentId?:string;categoryId?:string;subcategoryId?:string;locationId?:string;disciplineId?:string;customFields?:Record<string,unknown>;tags?:Array<{id?:string;name?:string;kind?:'DOMAIN'|'SERVICE_ASSET'|'ISSUE_TYPE'|'IMPACT_SCOPE'|'CONTEXT'|'OTHER'}>;intakeSessionId:string;secondaryProposalIds?:string[];supportTeam?:'ORGANIZATION'|'JUPITER'}={title:'',description:'',intakeSessionId:''}) {
+    return this.intakes.createBatch(await this.actors.fromHeaders(authorization,organizationId),body,key);
   }
 }

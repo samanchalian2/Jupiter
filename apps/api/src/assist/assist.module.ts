@@ -3,6 +3,7 @@ import { AuthModule } from '../auth/auth.module.js'; import { TicketModule } fro
 import { CommercialModule } from '../commercial/commercial.module.js'; import { NotificationModule } from '../notifications/notification.module.js';
 import { AssistController } from './assist.controller.js';
 import { AssistService } from './assist.service.js'; import { AssistCapacityService } from './assist-capacity.service.js';
+import { AssistRoutingModule } from './assist-routing.module.js';
 
-@Module({ imports: [AuthModule,TicketModule,CommercialModule,NotificationModule], controllers: [AssistController], providers: [AssistService,AssistCapacityService], exports: [AssistService,AssistCapacityService] })
+@Module({ imports: [AuthModule,TicketModule,CommercialModule,NotificationModule,AssistRoutingModule], controllers: [AssistController], providers: [AssistService,AssistCapacityService], exports: [AssistService,AssistCapacityService] })
 export class AssistModule {}

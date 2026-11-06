@@ -6,6 +6,7 @@ import { applyIntakeSuggestions, blocksManualSubmit, intakeFailureMessage, intak
 import { Button, Card, ConfirmDialog } from './ui';
 import { beginVoiceRecording, prepareVoiceCapture, type VoiceRecordingHandle } from './voiceRecording';
 import { ContextualHelpTrigger } from './ContextualHelp';
+import { SupportTeamSelector, type SupportTeam } from './AssistRouting';
 
 type Catalog = { id: string; name: string; category_id?: string };
 type CustomField = { field_key:string; label:string; field_type:'TEXT'|'NUMBER'|'DATE'|'SELECT'|'BOOLEAN'; options:unknown[]; is_required:boolean };
@@ -23,6 +24,8 @@ export function TicketComposer({ actor, onCreated, onCancelled }: { actor:Actor;
   const [catalogs,setCatalogs]=useState<{departments:Catalog[];categories:Catalog[];subcategories:Catalog[];locations:Catalog[];disciplines:Catalog[]}>({departments:[],categories:[],subcategories:[],locations:[],disciplines:[]});
   const [customFields,setCustomFields]=useState<CustomField[]>([]);
   const [tagVocabulary,setTagVocabulary]=useState<TicketTag[]>([]);
+  const [supportTeam,setSupportTeam]=useState<SupportTeam>('ORGANIZATION');
+  const submissionRef=useRef<{key:string;payload:string}|null>(null);
   const [form,setForm]=useState<TicketFormState>(initialForm);
   const [messageDraft,setMessageDraft]=useState('');
   const [customTagDraft,setCustomTagDraft]=useState('');
@@ -177,9 +180,12 @@ export function TicketComposer({ actor, onCreated, onCancelled }: { actor:Actor;
       const usableIntake=intake&&!processingStatuses.has(intake.status)?intake.id:undefined;
       if(recording)throw new Error('برای ثبت صدای ضبط‌شده، ابتدا پیام را ارسال کنید یا صدا را حذف کنید.');
       const finalDescription=form.description.trim()||intake?.description||messageDraft.trim();
-      const payload={...form,description:finalDescription,departmentId:form.departmentId||undefined,categoryId:form.categoryId||undefined,subcategoryId:form.subcategoryId||undefined,locationId:form.locationId||undefined,disciplineId:form.disciplineId||undefined,intakeSessionId:usableIntake};
-      if(secondaryProposalIds.length){const result=await request('/tickets/intake-batches',actor.session,actor.organizationId,{method:'POST',body:JSON.stringify({...payload,secondaryProposalIds})}) as {primary:{id:string;ticketNumber:number};secondary:Array<{ticketNumber:number}>};let notice=`${1+result.secondary.length} درخواست با موفقیت ثبت شد.`;if(file){try{await upload(result.primary.id,file);}catch{notice+=' پیوست فقط برای درخواست اصلی بارگذاری نشد.';}}onCreated(result.primary.id,notice);}
-      else {const draft=await request('/tickets/drafts',actor.session,actor.organizationId,{method:'POST',body:JSON.stringify(payload)}) as {id:string};await request(`/tickets/${draft.id}/submit`,actor.session,actor.organizationId,{method:'POST'});let notice='درخواست شما با موفقیت ثبت شد.';if(file){try{await upload(draft.id,file);}catch{notice='درخواست ثبت شد، اما پیوست بارگذاری نشد؛ می‌توانید آن را در جزئیات تیکت دوباره اضافه کنید.';}}onCreated(draft.id,notice);}
+      const payload={...form,supportTeam,description:finalDescription,departmentId:form.departmentId||undefined,categoryId:form.categoryId||undefined,subcategoryId:form.subcategoryId||undefined,locationId:form.locationId||undefined,disciplineId:form.disciplineId||undefined,intakeSessionId:usableIntake};
+      const fingerprint=JSON.stringify({...payload,secondaryProposalIds});
+      if(!submissionRef.current||submissionRef.current.payload!==fingerprint)submissionRef.current={key:idempotencyKey(),payload:fingerprint};
+      const headers={'idempotency-key':submissionRef.current.key};
+      if(secondaryProposalIds.length){const result=await request('/tickets/intake-batches',actor.session,actor.organizationId,{method:'POST',headers,body:JSON.stringify({...payload,secondaryProposalIds})}) as {primary:{id:string;ticketNumber:number};secondary:Array<{ticketNumber:number}>};let notice=`${1+result.secondary.length} درخواست با موفقیت ثبت شد.`;if(file){try{await upload(result.primary.id,file);}catch{notice+=' پیوست فقط برای درخواست اصلی بارگذاری نشد.';}}onCreated(result.primary.id,notice);}
+      else {const draft=await request('/tickets/requests',actor.session,actor.organizationId,{method:'POST',headers,body:JSON.stringify(payload)}) as {id:string};let notice='درخواست شما با موفقیت ثبت شد.';if(file){try{await upload(draft.id,file);}catch{notice='درخواست ثبت شد، اما پیوست بارگذاری نشد؛ می‌توانید آن را در جزئیات تیکت دوباره اضافه کنید.';}}onCreated(draft.id,notice);}
     }catch(cause){setError(cause instanceof Error?cause.message:'ثبت درخواست ناموفق بود.');}finally{setSubmitBusy(false);}
   };
   const submit=(event:FormEvent)=>{
@@ -243,6 +249,8 @@ export function TicketComposer({ actor, onCreated, onCancelled }: { actor:Actor;
         <fieldset className="ticket-tag-field"><legend><span className="field-label-row"><span>هشتگ‌ها</span>{aiBadge('tags')}</span></legend><p className="hint">حداکثر ۵ هشتگ؛ معمولاً حوزه خدمت، تجهیز/خدمت و نوع مسئله.</p><div className="tag-picker">{tagVocabulary.map(tag=><button key={tag.id??`${tag.kind}-${tag.name}`} type="button" className={form.tags.some(item=>item.id===tag.id)?'selected':''} onClick={()=>toggleTag(tag)}>#{tag.name}</button>)}</div><div className="custom-tag-entry"><label className="sr-only" htmlFor="custom-ticket-tag">افزودن هشتگ جدید</label><input id="custom-ticket-tag" maxLength={51} value={customTagDraft} onChange={event=>{setCustomTagDraft(event.target.value);setCustomTagError('');}} onKeyDown={event=>{if(event.key==='Enter'){event.preventDefault();addCustomTag();}}} placeholder="افزودن هشتگ جدید…"/><button type="button" onClick={addCustomTag} disabled={!customTagDraft.trim()||form.tags.length>=5}>افزودن</button></div><p className="custom-tag-hint">هشتگ جدید فقط به همین درخواست افزوده می‌شود و برای استفادهٔ عمومی، نیازمند تأیید مدیر سازمان است.</p>{customTagError&&<p className="custom-tag-error" role="alert">{customTagError}</p>}{form.tags.length>0&&<div className="tag-list">{form.tags.map(tag=><button type="button" key={tag.id??`${tag.kind}-${tag.name}`} onClick={()=>toggleTag(tag)}>#{tag.name} ×</button>)}</div>}</fieldset>
         {customFields.map(customInput)}
       </div>}
+      <SupportTeamSelector actor={actor} value={supportTeam} onChange={setSupportTeam}/>
+      {secondaryProposalIds.length>0&&<p className="hint">تیم رسیدگی انتخاب‌شده برای همهٔ درخواست‌های این ارسال اعمال می‌شود.</p>}
       {error&&<p className="error composer-error" role="alert">{error}{pipeline==='FAILED'&&smartIntakeEnabled&&<button type="button" onClick={()=>void runAi()}>تلاش دوباره</button>}</p>}
       <div className="quick-ticket-actions"><Button type="submit" loading={submitBusy} disabled={blocksManualSubmit(pipelineBusy,Boolean(recording),recordingActive)}><Send size={17}/>{secondaryProposalIds.length?`ثبت ${secondaryProposalIds.length+1} درخواست`:'ثبت درخواست'}</Button><Button type="button" variant="danger" className="cancel-intake-button" onClick={()=>setConfirmCancelOpen(true)} disabled={submitBusy||cancelBusy||!hasCancellableDraft}><Trash2 size={15}/>انصراف</Button><span>{pipelineBusy&&!recording?'می‌توانید بدون انتظار برای AI، عنوان را دستی وارد و درخواست را ثبت کنید.':'AI هرگز درخواست را خودکار ثبت نمی‌کند؛ پیش از ارسال همه فیلدها قابل ویرایش‌اند.'}</span></div>
     </form>

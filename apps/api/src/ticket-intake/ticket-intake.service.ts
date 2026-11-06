@@ -1,5 +1,6 @@
 import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { randomUUID } from 'node:crypto';
+import { randomUUID, createHash } from 'node:crypto';
+import type { PoolClient } from 'pg';
 import { AiCredentialService } from '../ai/ai-credential.service.js';
 import { redactForAi } from '../ai/redactor.js';
 import { AttachmentService } from '../attachments/attachment.service.js';
@@ -373,16 +374,16 @@ export class TicketIntakeService {
     }
   }
 
-  async createDraft(actor:TicketActor, data:CreateDraftData & { intakeSessionId?:string }) {
+  async createDraft(actor:TicketActor, data:CreateDraftData & { intakeSessionId?:string }, existingClient?:PoolClient,skipOrganizationAssignment=false) {
     if (!data.title?.trim() || data.title.trim().length < 3 || data.title.trim().length > 200 || !data.description?.trim() || data.description.length > 10_000) throw new BadRequestException('Title and description are required');
-    if (!data.intakeSessionId) return this.tickets.createDraft(actor,data);
-    return this.database.withOrganization(actor.organizationId, async (client) => {
+    const work=async(client:PoolClient)=>{
+      if(!data.intakeSessionId){const ticket=await this.tickets.createDraftWithClient(client,actor,data,skipOrganizationAssignment);await this.tickets.attachIntakeTagsWithClient(client,actor,ticket.id,data.tags??[]);return ticket;}
       const session = await this.owned(client,actor,data.intakeSessionId!,true);
       this.assertMutable(session);
       if (processingStates.has(session.status)) throw new BadRequestException('Ticket intake is still being processed');
       if (session.voice_storage_key && !session.voice_verified_at) throw new BadRequestException('Voice upload is not verified');
       if (session.voice_storage_key && !this.voiceObjectMatches(session,await this.storage.head(session.voice_storage_key))) throw new BadRequestException('Voice object metadata has changed');
-      const ticket = await this.tickets.createDraftWithClient(client,actor,data);
+      const ticket = await this.tickets.createDraftWithClient(client,actor,data,skipOrganizationAssignment);
       const intakeTags=data.tags ?? (session.analysis_result?.suggestions as {tags?:Array<{id?:string;name?:string;kind?:'DOMAIN'|'SERVICE_ASSET'|'ISSUE_TYPE'|'IMPACT_SCOPE'|'CONTEXT'|'OTHER'}>} | null)?.tags ?? [];
       await this.tickets.attachIntakeTagsWithClient(client,actor,ticket.id,intakeTags);
       await this.recordTitleCandidate(client,actor,ticket.id,data.title);
@@ -402,30 +403,54 @@ export class TicketIntakeService {
       await client.query("UPDATE ticket_intake_sessions SET status='CONSUMED',ticket_id=$2,consumed_at=now(),updated_at=now() WHERE id=$1",[session.id,ticket.id]);
       await this.audit(client,actor,'ticket_intake.consumed',session.id,{ticketId:ticket.id,voiceAttached:Boolean(session.voice_storage_key&&session.voice_verified_at),conversationVoiceCount:conversationVoices.length});
       return {...ticket,intakeSessionId:session.id};
-    });
+    };
+    return existingClient?work(existingClient):this.database.withOrganization(actor.organizationId,work);
   }
 
-  async createBatch(actor:TicketActor,data:CreateDraftData & {intakeSessionId:string;secondaryProposalIds?:string[]}) {
+  async createBatch(actor:TicketActor,data:CreateDraftData & {intakeSessionId:string;secondaryProposalIds?:string[];supportTeam?:'ORGANIZATION'|'JUPITER'},requestKey?:string) {
     if (!data.intakeSessionId) throw new BadRequestException('Ticket intake is required');
     if (!data.title?.trim() || data.title.trim().length<3 || data.title.trim().length>200 || !data.description?.trim() || data.description.length>10_000) throw new BadRequestException('Title and description are required');
     const selected=[...new Set((data.secondaryProposalIds??[]).filter((id):id is string=>typeof id==='string'))].slice(0,2);
-    return this.database.withOrganization(actor.organizationId,async client=>{
+    return this.submission(actor,{mode:'BATCH',data},requestKey,async client=>{
       const session=await this.owned(client,actor,data.intakeSessionId,true);this.assertMutable(session);
       if(session.status!=='SUCCEEDED')throw new BadRequestException('Ticket intake must finish before batch creation');
       const proposals=(session.secondary_issues??[]) as Array<{id?:string;selectable?:boolean;eligible?:boolean;ticket?:CreateDraftData;summary?:string}>;
       const chosen=selected.map(id=>proposals.find(proposal=>proposal.id===id)).filter((proposal):proposal is {id:string;ticket:CreateDraftData;summary:string}=>Boolean(proposal?.id&&(proposal.selectable??proposal.eligible)&&proposal.ticket&&proposal.summary));
       if(chosen.length!==selected.length)throw new BadRequestException('Selected secondary proposal is unavailable');
-      const primary=await this.tickets.createDraftWithClient(client,actor,data);await this.tickets.attachIntakeTagsWithClient(client,actor,primary.id,data.tags??[]);await this.recordTitleCandidate(client,actor,primary.id,data.title);
+      const primary=await this.tickets.createDraftWithClient(client,actor,data,data.supportTeam==='JUPITER');await this.tickets.attachIntakeTagsWithClient(client,actor,primary.id,data.tags??[]);await this.recordTitleCandidate(client,actor,primary.id,data.title);
       if(session.voice_storage_key&&session.voice_original_filename&&session.voice_content_type&&session.voice_byte_size&&session.voice_verified_at){if(!this.voiceObjectMatches(session,await this.storage.head(session.voice_storage_key)))throw new BadRequestException('Voice object metadata has changed');await this.attachments.attachAvailableWithClient(client,actor,primary.id,{storageKey:session.voice_storage_key,filename:session.voice_original_filename,contentType:session.voice_content_type,byteSize:Number(session.voice_byte_size)});}
       const voices=(await client.query<IntakeMessageRow>("SELECT * FROM ticket_intake_messages WHERE intake_session_id=$1 AND content_type='VOICE' AND discarded_at IS NULL ORDER BY sequence_number",[session.id])).rows;
       for(const voice of voices){if(!voice.voice_storage_key||!voice.voice_original_filename||!voice.voice_content_type||!voice.voice_byte_size||!voice.voice_verified_at||!this.voiceMessageMatches(voice,await this.storage.head(voice.voice_storage_key)))throw new BadRequestException('Voice upload is not verified');await this.attachments.attachAvailableWithClient(client,actor,primary.id,{storageKey:voice.voice_storage_key,filename:voice.voice_original_filename,contentType:voice.voice_content_type,byteSize:Number(voice.voice_byte_size)});}
-      await this.tickets.submitWithClient(client,actor,primary);
+      await this.tickets.submitWithClient(client,actor,primary,data.supportTeam);
       const secondary=[] as Array<{id:string;ticketNumber:number;title:string}>;
-      for(const proposal of chosen){const ticket=await this.tickets.createDraftWithClient(client,actor,proposal.ticket);await this.tickets.attachIntakeTagsWithClient(client,actor,ticket.id,proposal.ticket.tags??[]);await this.recordTitleCandidate(client,actor,ticket.id,proposal.ticket.title);await this.tickets.submitWithClient(client,actor,ticket);await client.query('INSERT INTO ticket_intake_secondary_ticket_links(organization_id,intake_session_id,proposal_id,primary_ticket_id,secondary_ticket_id) VALUES($1,$2,$3,$4,$5)',[actor.organizationId,session.id,proposal.id,primary.id,ticket.id]);secondary.push({id:ticket.id,ticketNumber:ticket.ticket_number,title:ticket.title});}
+      for(const proposal of chosen){const ticket=await this.tickets.createDraftWithClient(client,actor,proposal.ticket,data.supportTeam==='JUPITER');await this.tickets.attachIntakeTagsWithClient(client,actor,ticket.id,proposal.ticket.tags??[]);await this.recordTitleCandidate(client,actor,ticket.id,proposal.ticket.title);await this.tickets.submitWithClient(client,actor,ticket,data.supportTeam);await client.query('INSERT INTO ticket_intake_secondary_ticket_links(organization_id,intake_session_id,proposal_id,primary_ticket_id,secondary_ticket_id) VALUES($1,$2,$3,$4,$5)',[actor.organizationId,session.id,proposal.id,primary.id,ticket.id]);secondary.push({id:ticket.id,ticketNumber:ticket.ticket_number,title:ticket.title});}
       await client.query(`INSERT INTO ticket_intake_provenance(organization_id,ticket_id,intake_session_id,analysis_contract_version,analysis_result,confidence_by_field) VALUES($1,$2,$3,$4,$5,$6)`,[actor.organizationId,primary.id,session.id,session.analysis_contract_version,session.analysis_result,session.confidence_by_field]);
       await client.query("UPDATE ticket_intake_sessions SET status='CONSUMED',ticket_id=$2,consumed_at=now(),updated_at=now() WHERE id=$1",[session.id,primary.id]);
       await this.audit(client,actor,'ticket_intake.batch_consumed',session.id,{primaryTicketId:primary.id,secondaryTicketIds:secondary.map(item=>item.id),secondaryProposalIds:selected,conversationVoiceCount:voices.length});
       return {primary:{id:primary.id,ticketNumber:primary.ticket_number,title:primary.title},secondary,intakeSessionId:session.id};
+    });
+  }
+
+  private async submission<T>(actor:TicketActor,data:unknown,key:string|undefined,work:(c:PoolClient)=>Promise<T>):Promise<T> {
+    if(key&&!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(key))throw new BadRequestException('کلید ثبت معتبر نیست.');
+    const hash=createHash('sha256').update(JSON.stringify(data)).digest('hex');
+    return this.database.withOrganization(actor.organizationId,async c=>{
+      if(key){
+        await c.query('SELECT pg_advisory_xact_lock(hashtext($1))',[`ticket-submit:${actor.organizationId}:${actor.userId}:${key}`]);
+        const receipt=(await c.query<{request_hash:string;result:T}>('SELECT request_hash,result FROM ticket_submission_receipts WHERE organization_id=$1 AND user_id=$2 AND request_key=$3',[actor.organizationId,actor.userId,key])).rows[0];
+        if(receipt){if(receipt.request_hash!==hash)throw new BadRequestException('این کلید برای درخواست دیگری استفاده شده است.');return receipt.result;}
+      }
+      const result=await work(c);
+      if(key)await c.query('INSERT INTO ticket_submission_receipts(organization_id,user_id,request_key,request_hash,result) VALUES($1,$2,$3,$4,$5)',[actor.organizationId,actor.userId,key,hash,JSON.stringify(result)]);
+      return result;
+    });
+  }
+  async createRequest(actor:TicketActor,data:CreateDraftData&{intakeSessionId?:string;supportTeam?:'ORGANIZATION'|'JUPITER'},key:string) {
+    if(!key)throw new BadRequestException('کلید ثبت الزامی است.');
+    return this.submission(actor,{mode:'SINGLE',data},key,async c=>{
+      const ticket=await this.createDraft(actor,data,c,data.supportTeam==='JUPITER');
+      const submitted=await this.tickets.submitWithClient(c,actor,ticket,data.supportTeam);
+      return {id:submitted.id,ticket_number:ticket.ticket_number,status:submitted.status};
     });
   }
 

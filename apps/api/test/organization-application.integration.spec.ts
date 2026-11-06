@@ -13,6 +13,7 @@ import { CommercialService } from '../src/commercial/commercial.service.js';
 import { SubscriptionLifecycleService } from '../src/commercial/subscription-lifecycle.service.js';
 import { AssistService } from '../src/assist/assist.service.js';
 import { AssistCapacityService } from '../src/assist/assist-capacity.service.js';
+import { AssistRoutingService } from '../src/assist/assist-routing.service.js';
 import { NotificationService } from '../src/notifications/notification.service.js';
 import { TicketService } from '../src/tickets/ticket.service.js';
 import { AppearanceService } from '../src/appearance/appearance.service.js';
@@ -37,8 +38,9 @@ const commercial = new CommercialService(database, notifications, subscriptions)
 const organizationAccess = new OrganizationAccessPolicy();
 const setupWizard = new OrganizationSetupService(database, organizationAccess, commercial, notifications);
 const organizations = new OrganizationService(database, {} as never, organizationAccess, setupWizard);
-const assist = new AssistService(database, commercial);
 const assistCapacity = new AssistCapacityService(database, notifications);
+const routing = new AssistRoutingService(database,commercial);
+const assist = new AssistService(database, commercial,assistCapacity,routing);
 const tickets = new TicketService(database);
 const appearance = new AppearanceService(database, organizationAccess);
 const createdEmails: string[] = [];
@@ -123,6 +125,7 @@ afterAll(async () => {
   await database.transaction(async c=>{await c.query("SET LOCAL session_replication_role = 'replica'");await c.query('DELETE FROM assist_capacity_ledger WHERE organization_id IN ($1,$2,$3)', [directoryOrganizationA,directoryOrganizationB,setupOrganizationId]);});
   await database.query('DELETE FROM organization_assist_capacity_allocations WHERE organization_id IN ($1,$2,$3)', [directoryOrganizationA,directoryOrganizationB,setupOrganizationId]);
   await database.query('DELETE FROM assist_capacity_packages WHERE code LIKE $1', [`ASSIST_CAPACITY_${fixtureId.toUpperCase()}%`]);
+  await database.query('DELETE FROM assist_capacity_packages WHERE code IN ($1,$2)', [`LEGACY_${fixtureId.toUpperCase()}`,`LIFECYCLE_${fixtureId.toUpperCase()}`]);
   await database.query('DELETE FROM assist_cases WHERE assigned_support_agent_user_id=$1', [assistAgentId]);
   await database.query('DELETE FROM assist_cases WHERE organization_id IN ($1,$2,$3)', [directoryOrganizationA,directoryOrganizationB,setupOrganizationId]);
   await database.query('DELETE FROM organization_assist_policies WHERE organization_id IN ($1,$2,$3)', [directoryOrganizationA,directoryOrganizationB,setupOrganizationId]);
@@ -743,14 +746,16 @@ describe('public accounts and organization applications', () => {
     await database.withOrganization(setupOrganizationId,c=>c.query("INSERT INTO commercial_subscriptions(organization_id,product_id,status,starts_at,ends_at) VALUES($1,$2,'ACTIVE',now(),now()+interval '10 days')",[setupOrganizationId,assistProduct.id]));
     await assist.saveAgent(platformAdminId,{userId:assistAgentId,status:'ACTIVE'});
     await assist.savePolicy(platformAdminId,{organizationId:setupOrganizationId,requestPolicy:'USER_REQUEST_ALLOWED',defaultAccessScope:'ROUTED_ONLY',capacityUnits:1});
+    const legacyPack=await assistCapacity.savePackage(platformAdminId,{productId:assistProduct.id,code:`LEGACY_${fixtureId.toUpperCase()}`,name:'Legacy capacity fixture',includedUnits:1});
+    await assistCapacity.assign(platformAdminId,{organizationId:setupOrganizationId,packageId:legacyPack.id,units:1,startsAt:new Date(Date.now()-60000).toISOString(),expiresAt:new Date(Date.now()+86400000).toISOString()});
     const ticket=(await database.query<{id:string;status:string}>('INSERT INTO tickets(organization_id,requester_user_id,title,description,status) VALUES($1,$2,$3,$4,\'OPEN\') RETURNING id,status',[setupOrganizationId,setupOwnerId,'Lifecycle assist ticket','Independent lifecycle ticket'])).rows[0];
     const requested=await assist.request(actor,ticket.id,'کمک لازم است');
     expect(requested.status).toBe('REQUESTED'); expect((await database.query<{status:string}>('SELECT status FROM tickets WHERE id=$1',[ticket.id])).rows[0].status).toBe('OPEN');
     await assist.approve(actor,requested.id);
     await assist.createGrant(platformAdminId,{organizationId:setupOrganizationId,supportAgentUserId:assistAgentId,scope:'ROUTED_ONLY',ticketId:ticket.id,expiresAt:new Date(Date.now()+86_400_000).toISOString()});
     await assist.accept(assistAgentId,requested.id);
-    await expect(assist.accept(assistAgentId,requested.id)).rejects.toBeDefined();
-    expect((await database.withOrganization(setupOrganizationId,c=>c.query<{capacity_units:number}>('SELECT capacity_units FROM organization_assist_policies'))).rows[0].capacity_units).toBe(0);
+    await expect(assist.accept(assistAgentId,requested.id)).resolves.toBeDefined();
+    expect((await database.withOrganization(setupOrganizationId,c=>c.query("SELECT id FROM assist_capacity_ledger WHERE assist_case_id=$1 AND event_type='CONSUMED'",[requested.id]))).rowCount).toBe(1);
     await assist.agentState(assistAgentId,requested.id,'IN_PROGRESS'); await assist.agentState(assistAgentId,requested.id,'COMPLETED');
     expect((await database.query<{status:string}>('SELECT status FROM tickets WHERE id=$1',[ticket.id])).rows[0].status).toBe('OPEN');
   });
@@ -762,10 +767,10 @@ describe('public accounts and organization applications', () => {
     await assistCapacity.assign(platformAdminId,{organizationId:setupOrganizationId,packageId:packageRecord.id,source:'INCLUDED',units:1,startsAt:new Date(Date.now()-60_000).toISOString(),expiresAt:new Date(Date.now()+86_400_000).toISOString(),contractReference:'acceptance-test'});
     await commercial.saveAvailability(platformAdminId,{capabilityCode:'JUPITER_ASSIST',isAvailable:true}); await commercial.saveFeatureSetting(platformAdminId,{organizationId:setupOrganizationId,capabilityCode:'JUPITER_ASSIST',enabled:true}); await commercial.saveEntitlement(platformAdminId,{organizationId:setupOrganizationId,capabilityCode:'JUPITER_ASSIST',status:'ACTIVE',startsAt:'2020-01-01',productId:product.id});
     await database.withOrganization(setupOrganizationId,c=>c.query("INSERT INTO commercial_subscriptions(organization_id,product_id,status,starts_at,ends_at) VALUES($1,$2,'ACTIVE',now(),now()+interval '10 days')",[setupOrganizationId,product.id]));
-    const packageAssist=new AssistService(database,commercial,assistCapacity); await packageAssist.saveAgent(platformAdminId,{userId:assistAgentId,status:'ACTIVE'}); await packageAssist.savePolicy(platformAdminId,{organizationId:setupOrganizationId,requestPolicy:'USER_REQUEST_ALLOWED',defaultAccessScope:'ROUTED_ONLY',assistSlaMinutes:60});
-    const ticket=(await database.query<{id:string}>('INSERT INTO tickets(organization_id,requester_user_id,title,description) VALUES($1,$2,$3,$4) RETURNING id',[setupOrganizationId,setupOwnerId,'Package assist','capacity test'])).rows[0].id; const queued=await packageAssist.request(actor,ticket); await packageAssist.approve(actor,queued.id); await packageAssist.createGrant(platformAdminId,{organizationId:setupOrganizationId,supportAgentUserId:assistAgentId,scope:'ROUTED_ONLY',ticketId:ticket,expiresAt:new Date(Date.now()+86_400_000).toISOString()});
-    expect((await assistCapacity.ownerSummary(actor)).allocations[0]).toMatchObject({remaining:1,source:'INCLUDED'}); await packageAssist.accept(assistAgentId,queued.id); await expect(packageAssist.accept(assistAgentId,queued.id)).rejects.toBeDefined();
-    const settled=await database.withOrganization(setupOrganizationId,c=>c.query<{count:number;remaining:number}>(`SELECT count(*) FILTER (WHERE event_type='CONSUMED')::int count,COALESCE(sum(unit_delta),0)::int remaining FROM assist_capacity_ledger WHERE organization_id=$1`,[setupOrganizationId])); expect(settled.rows[0]).toMatchObject({count:1,remaining:0});
+    const packageAssist=new AssistService(database,commercial,assistCapacity,routing); await packageAssist.saveAgent(platformAdminId,{userId:assistAgentId,status:'ACTIVE'}); await packageAssist.savePolicy(platformAdminId,{organizationId:setupOrganizationId,requestPolicy:'USER_REQUEST_ALLOWED',defaultAccessScope:'ROUTED_ONLY',assistSlaMinutes:60});
+    const ticket=(await database.query<{id:string}>('INSERT INTO tickets(organization_id,requester_user_id,title,description) VALUES($1,$2,$3,$4) RETURNING id',[setupOrganizationId,setupOwnerId,'Package assist','capacity test'])).rows[0].id; await database.query("UPDATE tickets SET status='OPEN' WHERE id=$1",[ticket]); const queued=await packageAssist.request(actor,ticket); await packageAssist.approve(actor,queued.id); await packageAssist.createGrant(platformAdminId,{organizationId:setupOrganizationId,supportAgentUserId:assistAgentId,scope:'ROUTED_ONLY',ticketId:ticket,expiresAt:new Date(Date.now()+86_400_000).toISOString()});
+    expect((await assistCapacity.ownerSummary(actor)).allocations).toEqual(expect.arrayContaining([expect.objectContaining({remaining:1,source:'INCLUDED'})])); await packageAssist.accept(assistAgentId,queued.id); await expect(packageAssist.accept(assistAgentId,queued.id)).resolves.toBeDefined();
+    const settled=await database.withOrganization(setupOrganizationId,c=>c.query<{count:number;remaining:number}>(`SELECT count(*) FILTER (WHERE event_type='CONSUMED' AND assist_case_id=$2)::int count,COALESCE(sum(unit_delta),0)::int remaining FROM assist_capacity_ledger WHERE organization_id=$1`,[setupOrganizationId,queued.id])); expect(settled.rows[0]).toMatchObject({count:1,remaining:0});
   });
 
   it('delivers deduplicated Assist package notices only to active owners and suspends definitions without changing issued allocations', async () => {
@@ -949,7 +954,9 @@ describe('public accounts and organization applications', () => {
     const assistSubscription=(await database.withOrganization(setupOrganizationId,c=>c.query<{id:string}>("INSERT INTO commercial_subscriptions(organization_id,product_id,status,starts_at,ends_at) VALUES($1,$2,'ACTIVE',now(),now()+interval '10 days') RETURNING id",[setupOrganizationId,assistProduct.id]))).rows[0].id;
     await database.withOrganization(setupOrganizationId,c=>c.query("INSERT INTO commercial_subscriptions(organization_id,product_id,status,starts_at,ends_at) VALUES($1,$2,'ACTIVE',now(),now()+interval '10 days')",[setupOrganizationId,unrelated.id]));
     await assist.saveAgent(platformAdminId,{userId:assistAgentId,status:'ACTIVE'}); await assist.savePolicy(platformAdminId,{organizationId:setupOrganizationId,requestPolicy:'USER_REQUEST_ALLOWED',defaultAccessScope:'ROUTED_ONLY',capacityUnits:10});
-    const queue=async()=>{const ticket=(await database.query<{id:string}>('INSERT INTO tickets(organization_id,requester_user_id,title,description) VALUES($1,$2,$3,$4) RETURNING id',[setupOrganizationId,setupOwnerId,'Assist تجاری','آزمون'])).rows[0].id; const request=await assist.request(actor,ticket); await assist.approve(actor,request.id); await assist.createGrant(platformAdminId,{organizationId:setupOrganizationId,supportAgentUserId:assistAgentId,scope:'ROUTED_ONLY',ticketId:ticket,expiresAt:new Date(Date.now()+86_400_000).toISOString()}); return request.id;};
+    const lifecyclePack=await assistCapacity.savePackage(platformAdminId,{productId:assistProduct.id,code:`LIFECYCLE_${fixtureId.toUpperCase()}`,name:'Lifecycle capacity fixture',includedUnits:10});
+    await assistCapacity.assign(platformAdminId,{organizationId:setupOrganizationId,packageId:lifecyclePack.id,units:10,startsAt:new Date(Date.now()-60000).toISOString(),expiresAt:new Date(Date.now()+86400000).toISOString()});
+    const queue=async()=>{const ticket=(await database.query<{id:string}>('INSERT INTO tickets(organization_id,requester_user_id,title,description) VALUES($1,$2,$3,$4) RETURNING id',[setupOrganizationId,setupOwnerId,'Assist تجاری','آزمون'])).rows[0].id; await database.query("UPDATE tickets SET status='OPEN' WHERE id=$1",[ticket]); const request=await assist.request(actor,ticket); await assist.approve(actor,request.id); await assist.createGrant(platformAdminId,{organizationId:setupOrganizationId,supportAgentUserId:assistAgentId,scope:'ROUTED_ONLY',ticketId:ticket,expiresAt:new Date(Date.now()+86_400_000).toISOString()}); return request.id;};
     const accepted=await queue(); await expect(assist.accept(assistAgentId,accepted)).resolves.toBeDefined();
     await subscriptions.pastDue(platformAdminId,setupOrganizationId,assistSubscription,1); const inGrace=await queue(); await expect(assist.accept(assistAgentId,inGrace)).resolves.toBeDefined();
     await database.withOrganization(setupOrganizationId,c=>c.query("UPDATE commercial_subscriptions SET status='EXPIRED' WHERE id=$1",[assistSubscription]));

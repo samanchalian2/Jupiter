@@ -3,6 +3,7 @@ import { PoolClient } from 'pg';
 import { DatabaseService } from '../database/database.service.js';
 import { assertTransition, TicketStatus } from './ticket-lifecycle.js';
 import { addBusinessMinutes } from '../sla/business-time.js';
+import { AssistRoutingService } from '../assist/assist-routing.service.js';
 
 type Actor = { userId: string; organizationId: string; roles: string[] };
 export type CreateDraftData = { title:string; description:string; priority?:string; departmentId?:string; categoryId?:string; subcategoryId?:string; locationId?:string; disciplineId?:string; customFields?:Record<string,unknown>; tags?:IntakeTagInput[] };
@@ -13,13 +14,13 @@ const readableCatalogs = new Set(['departments', 'categories', 'subcategories', 
 
 @Injectable()
 export class TicketService {
-  constructor(private readonly database: DatabaseService) {}
+  constructor(private readonly database: DatabaseService, private readonly assistRouting?: AssistRoutingService) {}
 
   async createDraft(actor: Actor, data: CreateDraftData) {
     return this.database.withOrganization(actor.organizationId, async client => { const ticket=await this.createDraftWithClient(client,actor,data); await this.attachIntakeTagsWithClient(client,actor,ticket.id,data.tags??[]); return ticket; });
   }
 
-  async createDraftWithClient(client: PoolClient, actor: Actor, data: CreateDraftData) {
+  async createDraftWithClient(client: PoolClient, actor: Actor, data: CreateDraftData, skipOrganizationAssignment=false) {
       const result = await client.query(
         'INSERT INTO tickets(organization_id,requester_user_id,title,description,priority,department_id,category_id,subcategory_id,location_id,discipline_id) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING id,ticket_number,status,title,description,priority,requester_user_id,created_at',
         [actor.organizationId, actor.userId, data.title, data.description, data.priority ?? 'NORMAL', data.departmentId ?? null, data.categoryId ?? null, data.subcategoryId ?? null, data.locationId ?? null, data.disciplineId ?? null],
@@ -29,7 +30,7 @@ export class TicketService {
       const policy = (await client.query<{id:string;first_response_minutes:number;resolution_minutes:number}>('SELECT id,first_response_minutes,resolution_minutes FROM sla_policies WHERE priority=$1 AND is_active=true ORDER BY id LIMIT 1',[data.priority ?? 'NORMAL'])).rows[0];
       if (policy) { const calendar=(await client.query<{timezone:string;workdays:number[];start_minute:number;end_minute:number}>('SELECT timezone,workdays,start_minute,end_minute FROM business_calendars WHERE organization_id=$1',[actor.organizationId])).rows[0]??{timezone:'UTC',workdays:[1,2,3,4,5],start_minute:480,end_minute:1020}; const now=new Date(); await client.query('INSERT INTO ticket_sla_clocks(ticket_id,organization_id,policy_id,first_response_due_at,resolution_due_at) VALUES($1,$2,$3,$4,$5)',[result.rows[0].id,actor.organizationId,policy.id,addBusinessMinutes(now,policy.first_response_minutes,{timezone:calendar.timezone,workdays:calendar.workdays,startMinute:calendar.start_minute,endMinute:calendar.end_minute}),addBusinessMinutes(now,policy.resolution_minutes,{timezone:calendar.timezone,workdays:calendar.workdays,startMinute:calendar.start_minute,endMinute:calendar.end_minute})]); }
       const assignmentRule=(await client.query<{assignee_user_id:string}>('SELECT assignee_user_id FROM assignment_rules WHERE is_active=true AND (department_id=$1 OR department_id IS NULL) ORDER BY department_id NULLS LAST LIMIT 1',[data.departmentId??null])).rows[0];
-      if (assignmentRule) { await client.query('INSERT INTO ticket_assignments(organization_id,ticket_id,assigned_to_user_id,assigned_by_user_id) VALUES($1,$2,$3,$4)',[actor.organizationId,result.rows[0].id,assignmentRule.assignee_user_id,actor.userId]); await this.activity(client,actor,result.rows[0].id,'ticket.auto_assigned','STAFF',{assignedToUserId:assignmentRule.assignee_user_id}); }
+      if (assignmentRule&&!skipOrganizationAssignment) { await client.query('INSERT INTO ticket_assignments(organization_id,ticket_id,assigned_to_user_id,assigned_by_user_id) VALUES($1,$2,$3,$4)',[actor.organizationId,result.rows[0].id,assignmentRule.assignee_user_id,actor.userId]); await this.activity(client,actor,result.rows[0].id,'ticket.auto_assigned','STAFF',{assignedToUserId:assignmentRule.assignee_user_id}); }
       await this.activity(client, actor, result.rows[0].id, 'ticket.draft_created', 'REQUESTER');
       return result.rows[0];
   }
@@ -51,14 +52,31 @@ export class TicketService {
     }
   }
 
-  async submit(actor: Actor, ticketId: string) { return this.changeStatus(actor, ticketId, 'OPEN'); }
+  async submit(actor: Actor, ticketId: string, supportTeam?:'ORGANIZATION'|'JUPITER') {
+    if(supportTeam!==undefined&&!['ORGANIZATION','JUPITER'].includes(supportTeam))throw new ForbiddenException('تیم رسیدگی معتبر نیست.');
+    return this.database.withOrganization(actor.organizationId,async c=>{
+      const ticket=(await c.query('SELECT * FROM tickets WHERE id=$1 AND requester_user_id=$2 FOR UPDATE',[ticketId,actor.userId])).rows[0];
+      if(!ticket)throw new NotFoundException();
+      const result=ticket.status==='DRAFT'?await this.submitWithClient(c,actor,ticket):ticket;
+      if(supportTeam==='JUPITER'){
+        if(!this.assistRouting)throw new ForbiddenException('پشتیبانی ژوپیتر در دسترس نیست.');
+        await this.assistRouting.requestWithClient(c,actor,ticketId);
+      }
+      return result;
+    });
+  }
 
-  async submitWithClient(client:PoolClient, actor:Actor, ticket:{id:string;status:TicketStatus;requester_user_id:string}) {
+  async submitWithClient(client:PoolClient, actor:Actor, ticket:{id:string;status:TicketStatus;requester_user_id:string}, supportTeam?:'ORGANIZATION'|'JUPITER') {
+    if(supportTeam!==undefined&&!['ORGANIZATION','JUPITER'].includes(supportTeam))throw new ForbiddenException('تیم رسیدگی معتبر نیست.');
     if (ticket.status !== 'DRAFT' || ticket.requester_user_id !== actor.userId) throw new ForbiddenException();
     assertTransition(ticket.status,'OPEN');
     await client.query('UPDATE tickets SET status=\'OPEN\',updated_at=now() WHERE id=$1',[ticket.id]);
     await client.query('INSERT INTO ticket_status_transitions(organization_id,ticket_id,from_status,to_status,changed_by_user_id) VALUES($1,$2,\'DRAFT\',\'OPEN\',$3)',[actor.organizationId,ticket.id,actor.userId]);
     await this.activity(client,actor,ticket.id,'ticket.status_changed','REQUESTER',{from:'DRAFT',to:'OPEN'});
+    if(supportTeam==='JUPITER'){
+      if(!this.assistRouting)throw new ForbiddenException('پشتیبانی ژوپیتر در دسترس نیست.');
+      await this.assistRouting.requestWithClient(client,actor,ticket.id);
+    }
     return {...ticket,status:'OPEN' as TicketStatus};
   }
 
@@ -104,6 +122,7 @@ export class TicketService {
            COALESCE((SELECT max(message.created_at) FROM ticket_messages message WHERE message.ticket_id=t.id),t.updated_at),
            COALESCE((SELECT max(activity.created_at) FROM ticket_activities activity WHERE activity.ticket_id=t.id AND activity.visibility='REQUESTER'),t.updated_at)) AS last_activity_at,
          requester.display_name AS requester_display_name,
+         (SELECT status FROM assist_cases WHERE ticket_id=t.id) AS assist_status,
          department.name AS department_name,category.name AS category_name,location.name AS location_name,
          assignee.id AS assigned_to_user_id,assignee.display_name AS assignee_display_name,
          sla.resolution_due_at,sla.warning_at,sla.breached_at,

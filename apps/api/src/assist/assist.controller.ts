@@ -2,10 +2,16 @@ import { Body, Controller, Get, Headers, Param, Post, UnauthorizedException } fr
 import { AuthService } from '../auth/auth.service.js';
 import { AssistService } from './assist.service.js'; import { AssistCapacityService } from './assist-capacity.service.js';
 import { TicketActorService } from '../tickets/ticket-actor.service.js';
+import { AssistRoutingService } from './assist-routing.service.js';
 
 @Controller('platform/assist')
 export class AssistController {
-  constructor(private readonly auth: AuthService, private readonly actors: TicketActorService, private readonly assist: AssistService, private readonly capacity: AssistCapacityService) {}
+  constructor(private readonly auth: AuthService, private readonly actors: TicketActorService, private readonly assist: AssistService, private readonly capacity: AssistCapacityService,private readonly routing:AssistRoutingService) {}
+  @Get('availability') availability(@Headers('authorization') a?:string,@Headers('x-organization-id') o?:string) {return this.actors.fromHeaders(a,o).then(actor=>this.routing.availability(actor));}
+  @Get('platform/cases/:id/ticket') ticket(@Param('id') id:string,@Headers('authorization') a?:string) {return this.user(a).then(user=>this.assist.ticket(user,id));}
+  @Get('platform/cases/:id/messages') messages(@Param('id') id:string,@Headers('authorization') a?:string) {return this.user(a).then(user=>this.assist.messages(user,id));}
+  @Post('platform/cases/:id/messages') message(@Param('id') id:string,@Body() body:{body?:string},@Headers('authorization') a?:string) {return this.user(a).then(user=>this.assist.addMessage(user,id,body.body));}
+  @Post('organization-setting') setting(@Body() body:{enabled?:boolean},@Headers('authorization') a?:string,@Headers('x-organization-id') o?:string) {return this.actors.fromHeaders(a,o).then(actor=>this.routing.saveSetting(actor,body.enabled));}
   private async user(authorization?: string) { const token=authorization?.replace(/^Bearer\s+/i,''); if (!token) throw new UnauthorizedException(); return (await this.auth.verify(token)).sub; }
   @Get('agents') agents(@Headers('authorization') authorization?: string) { return this.user(authorization).then(userId=>this.assist.agents(userId)); }
   @Post('agents') agent(@Body() body:{userId?:string;status?:'ACTIVE'|'SUSPENDED'},@Headers('authorization') authorization?:string) { return this.user(authorization).then(userId=>this.assist.saveAgent(userId,body)); }

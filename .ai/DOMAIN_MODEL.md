@@ -1,5 +1,12 @@
 # Domain Model
 
+DEC-071/migration075: nullable organization_assist_policies.self_service_enabled
+preserves legacy policies; assist_cases.ticket_only_delegation snapshots explicit
+consent. support_access_grants.assist_case_id binds organization/case/ticket with
+composite FK and ticket-only nonrestricted constraint. ticket_submission_receipts
+stores org/user/UUID key, request hash and replay result; no identity split or
+ticket lifecycle state added.
+
 ## GOAL-070 additions (DEC-066)
 
 User gains must_change_password=false and credential_version=0 through migration074;

@@ -1,5 +1,11 @@
 # Jupiter Master Upgrade Plan
 
+## 2026-11-07 — Direct organization Assist routing
+
+Owner-approved DEC-071 implementation/local acceptance in progress. Evidence
+docs/ASSIST_ROUTING_20261107.md; additive migration075. No mobile development or
+self-service organization registration implementation included. Release pending.
+
 ## GOAL-070 — Saba onboarding implemented / Preview accepted (2026-10-27)
 
 Owner-approved P0→P1→P2/DEC-066/migration074 delivered to Preview only. API191,

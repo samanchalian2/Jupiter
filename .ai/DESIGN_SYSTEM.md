@@ -362,3 +362,10 @@ Do use neutral surfaces, compact headings, meaningful grouping, controlled
 brand emphasis and reusable primitives. Don't add a new component library,
 change the React/Vite stack, create arbitrary tenant themes, make AI look like
 decoration, or alter ticket/AI/authorization behavior for visual convenience.
+# Assist routing (DEC-071)
+
+Use a compact native radio group labelled «رسیدگی توسط», default organization
+team. Jupiter remains visible when disabled, with readable inline reason rather
+than tooltip-only text. No color/brand change or new navigation. Native keyboard
+behavior and44px label targets. Operational Assist reply forms are not commercial
+configuration forms and must remain visible when those forms are collapsed.
