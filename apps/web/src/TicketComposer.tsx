@@ -7,6 +7,7 @@ import { Button, Card, ConfirmDialog } from './ui';
 import { beginVoiceRecording, prepareVoiceCapture, type VoiceRecordingHandle } from './voiceRecording';
 import { ContextualHelpTrigger } from './ContextualHelp';
 import { SupportTeamSelector, type SupportTeam } from './AssistRouting';
+import { requestKey as idempotencyKey } from './requestKey';
 
 type Catalog = { id: string; name: string; category_id?: string };
 type CustomField = { field_key:string; label:string; field_type:'TEXT'|'NUMBER'|'DATE'|'SELECT'|'BOOLEAN'; options:unknown[]; is_required:boolean };
@@ -18,7 +19,6 @@ const phaseLabels:Record<Exclude<PipelinePhase,''>,string>={UPLOADING:'در حا
 
 function formatDuration(seconds:number) { const safe=Math.min(60,Math.max(0,Math.floor(seconds))); return `${String(Math.floor(safe/60)).padStart(2,'0')}:${String(safe%60).padStart(2,'0')}`; }
 function extension(contentType:string) { return contentType==='audio/wav'?'wav':contentType==='audio/ogg'?'ogg':contentType==='audio/mp4'?'mp4':'webm'; }
-function idempotencyKey() { return globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(16).slice(2)}`; }
 
 export function TicketComposer({ actor, onCreated, onCancelled }: { actor:Actor; onCreated:(ticketId:string,notice?:string)=>void; onCancelled:()=>void }) {
   const [catalogs,setCatalogs]=useState<{departments:Catalog[];categories:Catalog[];subcategories:Catalog[];locations:Catalog[];disciplines:Catalog[]}>({departments:[],categories:[],subcategories:[],locations:[],disciplines:[]});
