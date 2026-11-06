@@ -17,7 +17,9 @@ import { AiCredentialService } from '../src/ai/ai-credential.service.js';
 import { AttachmentService } from '../src/attachments/attachment.service.js';
 import type { AttachmentStorage } from '../src/attachments/attachment-storage.js';
 
-if(!/^\/goal070_tests_[a-f0-9]{32}$/.test(new URL(process.env.DATABASE_URL!).pathname))throw Error('Use disposable isolated API runner');
+const target=new URL(process.env.DATABASE_URL!);
+const disposable=/^\/goal070_tests_[a-f0-9]{32}$/.test(target.pathname)||(process.env.CI==='true'&&target.pathname==='/jupiter_ci');
+if(!disposable||!['127.0.0.1','localhost','[::1]'].includes(target.hostname))throw Error('Use disposable isolated API runner or explicit ephemeral CI database');
 const db=new DatabaseService(),commercial=new CommercialService(db),routing=new AssistRoutingService(db,commercial),capacity=new AssistCapacityService(db);
 const assist=new AssistService(db,commercial,capacity,routing),tickets=new TicketService(db,routing);
 const storage={} as AttachmentStorage;
@@ -57,7 +59,7 @@ beforeAll(async()=>{
   const server=createServer();await new Promise<void>(done=>server.listen(0,'127.0.0.1',done));const address=server.address();if(!address||typeof address==='string')throw Error('No isolated API port');const port=address.port;await new Promise<void>(done=>server.close(()=>done()));base=`http://127.0.0.1:${port}/api/v1`;
   child=spawn(process.execPath,['dist/main.js'],{cwd:process.cwd(),windowsHide:true,env:{...process.env,NODE_ENV:'test',JWT_SECRET:jwtSecret,API_HOST:'127.0.0.1',API_PORT:String(port),WEB_ORIGIN:'http://127.0.0.1:5174',JUPITER_WORKER_ENABLED:'false'},stdio:'ignore'});
   let ready=false;for(let i=0;i<100;i++){if(child.exitCode!==null)throw Error('Isolated API terminated');try{const r=await fetch(`${base}/health`);if(r.ok){ready=true;break;}}catch{}await new Promise(done=>setTimeout(done,100));}if(!ready)throw Error('Isolated API not ready');
-});
+},30000);
 afterAll(async()=>{
   try{
     if(process.env.ASSIST_BROWSER_ACCEPTANCE==='true'){
@@ -115,6 +117,7 @@ describe('organization-authorized direct Assist',()=>{
     await assist.agentState(agent,record.id,'COMPLETED');
     await expect(assist.messages(agent,record.id)).rejects.toBeDefined();
     expect((await db.query('SELECT revoked_at FROM support_access_grants WHERE assist_case_id=$1',[record.id])).rows[0].revoked_at).toBeTruthy();
+    expect((await db.query("SELECT id FROM audit_logs WHERE organization_id=$1 AND actor_user_id=$2 AND action='assist.delegated_grant_ended' AND metadata->>'assistCaseId'=$3",[org,agent,record.id])).rowCount).toBe(1);
   });
   it('preserves manual submission while disabled, and denies cross-tenant requests',async()=>{
     const ticket=await intake.createRequest(actor(),{...payload(),supportTeam:'ORGANIZATION'},randomUUID());

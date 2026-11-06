@@ -12,6 +12,13 @@ esac
 candidate=$root/releases/assist-routing-20261107
 stamp=$(date -u +%Y%m%dT%H%M%SZ)
 backup=$root/backups/assist-routing-$stamp
+if [[ "$mode" == help ]]; then
+  actor=$(runuser -u postgres -- psql -X -d jupiter -Atc "SELECT id FROM users WHERE lower(email)='admin@jupiter.local' AND is_active AND is_platform_admin LIMIT 1")
+  [[ "$actor" =~ ^[0-9a-f-]{36}$ ]]
+  cd "$candidate/apps/api"
+  node --env-file="$envfile" --import tsx scripts/publish-help-catalog.ts --actor-id="$actor" --slug=jupiter-assist
+  exit 0
+fi
 if [[ "$mode" == prepare ]]; then
   test ! -e "$candidate"
   mkdir -p "$candidate"
